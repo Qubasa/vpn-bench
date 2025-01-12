@@ -6,7 +6,7 @@ sys.path.insert(
     0, os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
 )
 
-from vpn_bench import terraform  # NOQA
+from vpn_bench import cli  # NOQA
 
 if __name__ == "__main__":
-    main()
+    cli.run_cli()
