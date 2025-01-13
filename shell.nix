@@ -2,7 +2,7 @@
   clan-cli,
   mkShell,
   python3,
-  terraform,
+  opentofu,
   iperf3,
 }:
 
@@ -14,7 +14,7 @@ mkShell {
   buildInputs =  
   [ 
     clan-cli-module
-    terraform 
+    opentofu 
     iperf3
     python3
   ];
