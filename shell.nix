@@ -4,6 +4,7 @@
   python3,
   opentofu,
   iperf3,
+  treefmt
 }:
 
 
@@ -17,6 +18,7 @@ mkShell {
     opentofu 
     iperf3
     python3
+    treefmt
   ];
 
   shellHook = ''
@@ -29,5 +31,9 @@ mkShell {
 
     # Add clan command to PATH
     export PATH="$PKG_ROOT/bin":"$PATH"
+
+    if [ -f .local.env ]; then
+      source .local.env
+    fi
   '';
 }

@@ -82,16 +82,16 @@
         };
       };
       perSystem =
-        { pkgs, inputs', system, ... }:#
+        { pkgs, inputs', ... }:#
         let
           clan-cli = inputs'.clan-core.packages.clan-cli;
           
         in 
         {
-          _module.args.pkgs = import nixpkgs {
-            inherit system;
-            config.allowUnfree = true;
-          };
+          # _module.args.pkgs = import nixpkgs {
+          #   inherit system;
+          #   config.allowUnfree = true;
+          # };
           
           devShells.default = pkgs.callPackage ./shell.nix { inherit clan-cli;};
         };
