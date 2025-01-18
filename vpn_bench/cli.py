@@ -4,9 +4,11 @@ import argparse
 from clan_cli.custom_logger import setup_logging
 import logging
 from vpn_bench.terraform import tr_create, tr_destroy, tr_metadata
+from vpn_bench.clan import clan_clean
 from vpn_bench import Config, Provider
-from clan_cli.dirs import user_data_dir
+from clan_cli.dirs import user_data_dir, user_cache_dir
 from .clan import clan_init
+from pathlib import Path
 
 log = logging.getLogger(__name__)
 
@@ -24,6 +26,9 @@ def run_cli():
     create_parser.add_argument(
         "--provider", choices=[p.value for p in Provider], default=Provider.GCloud.value
     )
+    create_parser.add_argument(
+        "--ssh-key", help="SSH key path", default="~/.ssh/id_rsa.pub"
+    )
 
     destroy_parser = subparsers.add_parser("destroy", help="Destroy resources")
     destroy_parser.add_argument(
@@ -37,13 +42,28 @@ def run_cli():
 
     clan_parser = subparsers.add_parser("clan", help="Clan command")
     clan_parser.add_argument("--debug", action="store_true", help="Enable debug mode")
+    clan_parser.add_argument(
+        "--provider", choices=[p.value for p in Provider], default=Provider.GCloud.value
+    )
+    clan_parser.add_argument(
+        "--ssh-key", help="SSH key path", default="~/.ssh/id_rsa.pub"
+    )
 
     args = parser.parse_args()
     is_debug = getattr(args, "debug", False)
     data_dir = user_data_dir() / "vpn_bench"
+    data_dir.mkdir(parents=True, exist_ok=True)
+    cache_dir = user_cache_dir() / "vpn_bench"
+    cache_dir.mkdir(parents=True, exist_ok=True)
     tr_dir = data_dir / "terraform"
     clan_dir = data_dir / "clan"
-    config = Config(debug=is_debug, data_dir=data_dir, tr_dir=tr_dir, clan_dir=clan_dir)
+    config = Config(
+        debug=is_debug,
+        data_dir=data_dir,
+        tr_dir=tr_dir,
+        cache_dir=cache_dir,
+        clan_dir=clan_dir,
+    )
 
     if config.debug:
         setup_logging(logging.DEBUG)
@@ -54,16 +74,27 @@ def run_cli():
 
     log.debug("Debug mode enabled")
 
-    if args.subcommand == "create":
+    if getattr(args, "ssh_key", False):
+        ssh_key = Path(args.ssh_key).expanduser()
+        if not ssh_key.exists():
+            log.error(
+                f"SSH key {ssh_key} does not exist, please specify one with --ssh-key"
+            )
+            return
+
+    if getattr(args, "provider", False):
         provider = Provider.from_str(args.provider)
-        tr_create(config, provider, args.m)
+
+    if args.subcommand == "create":
+        tr_create(config, ssh_key, provider, args.m)
     elif args.subcommand == "destroy":
         tr_destroy(config)
+        clan_clean(config)
     elif args.subcommand == "metadata":
         tr_metadata(config)
-    elif args.subcommand == "clan":
+    elif args.subcommand == "clan":  #
         machines = tr_metadata(config)
-        clan_init(machines, config)
+        clan_init(config, provider, ssh_key, machines)
 
     else:
         parser.print_help()

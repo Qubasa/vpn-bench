@@ -3,7 +3,7 @@
 from clan_cli.cmd import run, RunOpts, Log
 import logging
 from vpn_bench import Config, Provider
-from vpn_bench.assets import get_asset
+from vpn_bench.assets import get_cloud_asset
 import shutil
 from pathlib import Path
 import json
@@ -19,31 +19,40 @@ class TrMachine:
     ip: str
 
 
-def terra_create_machine(config: Config, provider: Provider, name: str) -> None:
-    tr_template_f = get_asset(provider, "templates") / "vm.tf"
+def terra_create_machine(
+    config: Config, ssh_key_path: Path, provider: Provider, name: str
+) -> None:
+    tr_template_f = get_cloud_asset(provider, "templates") / "vm.tf"
     with tr_template_f.open("r") as f:
         template = Template(f.read())
 
     dest_f = config.tr_dir / f"{name}-instance.tf"
 
+    ssh_key = ssh_key_path.read_text().removesuffix("\n")
+
     with dest_f.open("w") as f:
-        instance = template.substitute({"vm_name": name})
+        instance = template.substitute({"vm_name": name, "ssh_key": ssh_key})
         f.write(instance)
     log.info(f"Written {dest_f}")
 
 
 def tr_init(config: Config, provider: Provider) -> None:
-    config.data_dir.mkdir(parents=True, exist_ok=True)
     log.debug(f"Data dir: {config.data_dir}")
-    tr_folder = get_asset(provider, "terraform")
+    tr_folder = get_cloud_asset(provider, "terraform")
     tr_dest_folder = config.tr_dir
     if not tr_dest_folder.exists():
         shutil.copytree(tr_folder, tr_dest_folder, dirs_exist_ok=True)
-        run(["tofu", "init"], RunOpts(cwd=tr_dest_folder, log=Log.BOTH))
+        run(
+            ["tofu", f"-chdir={config.tr_dir}", "init"],
+            RunOpts(cwd=tr_dest_folder, log=Log.BOTH),
+        )
 
 
 def tr_metadata(config: Config) -> list[TrMachine]:
-    res = run(["tofu", "output", "--json"], RunOpts(cwd=config.tr_dir, log=Log.STDERR))
+    res = run(
+        ["tofu", f"-chdir={config.tr_dir}", "output", "--json"],
+        RunOpts(cwd=config.tr_dir, log=Log.STDERR),
+    )
     jdata = json.loads(res.stdout)
 
     machines = []
@@ -60,16 +69,23 @@ def tr_metadata(config: Config) -> list[TrMachine]:
 
 def tr_clean(config: Config):
     tr_folder = config.tr_dir
-    shutil.rmtree(tr_folder)
+    shutil.rmtree(tr_folder, ignore_errors=True)
 
 
-def tr_create(config: Config, provider: Provider, machines: list[str]):
+def tr_create(config: Config, ssh_key: Path, provider: Provider, machines: list[str]):
     tr_init(config, provider)
     for machine in machines:
-        terra_create_machine(config, provider, machine)
-    run(["tofu", "apply", "-auto-approve"], RunOpts(cwd=config.tr_dir, log=Log.BOTH))
+        terra_create_machine(config, ssh_key, provider, machine)
+    run(
+        ["tofu", f"-chdir={config.tr_dir}", "apply", "-auto-approve"],
+        RunOpts(log=Log.BOTH),
+    )
 
 
 def tr_destroy(config: Config):
-    run(["tofu", "destroy", "-auto-approve"], RunOpts(cwd=config.tr_dir, log=Log.BOTH))
+    run(
+        ["tofu", f"-chdir={config.tr_dir}", "destroy", "-auto-approve"],
+        RunOpts(log=Log.BOTH, check=False),
+    )
     tr_clean(config)
+    log.info("Resources destroyed")

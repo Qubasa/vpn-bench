@@ -19,5 +19,6 @@ class Provider(Enum):
 class Config:
     debug: bool
     data_dir: Path
+    cache_dir: Path
     tr_dir: Path
     clan_dir: Path
