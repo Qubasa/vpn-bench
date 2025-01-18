@@ -29,8 +29,9 @@ def clan_clean(config: Config):
 def add_clanModule(clan_dir: Path, module_name: str, exists_ok: bool = False) -> None:
     autoimports_dir = clan_dir / "imports" / "inventory"
     autoimports_dir.mkdir(parents=True, exist_ok=True)
+
     shutil.copytree(
-        get_clanModule(module_name), autoimports_dir, dirs_exist_ok=exists_ok
+        get_clanModule(module_name), autoimports_dir / module_name, dirs_exist_ok=exists_ok
     )
     commit_file(autoimports_dir, clan_dir, f"Add {module_name} module")
 
