@@ -10,12 +10,7 @@
       };
     };
   };
-  # Bad practice.
-  # Should we add 'clanModules' to specialArgs?
-  imports = [
-    ../../sshd
-    ../../root-password
-  ];
+
   config = {
     users.users.root.openssh.authorizedKeys.keys = builtins.attrValues config.clan.admin.allowedKeys;
   };

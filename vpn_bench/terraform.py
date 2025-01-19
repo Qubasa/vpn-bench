@@ -74,7 +74,9 @@ def tr_clean(config: Config) -> None:
     shutil.rmtree(tr_folder, ignore_errors=True)
 
 
-def tr_create(config: Config, ssh_key: Path, provider: Provider, machines: list[str]) -> None:
+def tr_create(
+    config: Config, ssh_key: Path, provider: Provider, machines: list[str]
+) -> None:
     tr_init(config, provider)
     for machine in machines:
         terra_create_machine(config, ssh_key, provider, machine)

@@ -34,7 +34,7 @@ in
     # Add current package to PYTHONPATH
     export PYTHONPATH="$PKG_ROOT''${PYTHONPATH:+:$PYTHONPATH:}"
 
-    # Add clan command to PATH
+    # Add bin folder to PATH
     export PATH="$PKG_ROOT/bin":"$PATH"
 
     if [ -f .local.env ]; then
