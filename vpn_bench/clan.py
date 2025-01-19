@@ -1,50 +1,55 @@
-from vpn_bench.terraform import TrMachine
-import clan_cli.clan.create
-
-# TODO: We need to fix this circular import problem in clan_cli!
-from clan_cli.machines.create import CreateOptions as ClanCreateOptions, create_machine
-from clan_cli.machines.install import InstallOptions, install_machine
-from clan_cli.machines.machines import Machine
-from clan_cli.inventory import load_inventory_eval, set_inventory
-from clan_cli.inventory.classes import (
-    Machine as InventoryMachine,
-    MachineDeploy,
-    Inventory,
-)
-from clan_cli.clan_uri import FlakeId
-from clan_cli.git import commit_file
-from clan_cli.ssh.host_key import HostKeyCheck
-from clan_cli.nix import nix_command
-from clan_cli.cmd import run, RunOpts
-from vpn_bench import Config
-from clan_cli.machines.hardware import HardwareConfig
-from clan_cli.errors import ClanError
-from pathlib import Path
 import logging
 import shutil
+from pathlib import Path
+
+import clan_cli.clan.create
+from clan_cli.clan_uri import FlakeId
+from clan_cli.cmd import RunOpts, run
+from clan_cli.errors import ClanError
+from clan_cli.git import commit_file
+from clan_cli.inventory import load_inventory_eval, set_inventory
+from clan_cli.inventory.classes import (
+    Inventory,
+    MachineDeploy,
+)
+from clan_cli.inventory.classes import (
+    Machine as InventoryMachine,
+)
+
+# TODO: We need to fix this circular import problem in clan_cli!
+from clan_cli.machines.create import CreateOptions as ClanCreateOptions
+from clan_cli.machines.create import create_machine
+from clan_cli.machines.hardware import HardwareConfig
+from clan_cli.machines.install import InstallOptions, install_machine
+from clan_cli.machines.machines import Machine
+from clan_cli.nix import nix_command
+from clan_cli.ssh.host_key import HostKeyCheck
+
+from vpn_bench import Config
+from vpn_bench.terraform import TrMachine
 
 log = logging.getLogger(__name__)
-from vpn_bench.assets import get_cloud_asset, get_clanModule
 from vpn_bench import Provider
+from vpn_bench.assets import get_clan_module, get_cloud_asset
 
 
-def clan_clean(config: Config):
+def clan_clean(config: Config) -> None:
     shutil.rmtree(config.clan_dir, ignore_errors=True)
 
 
-def add_clanModule(clan_dir: Path, module_name: str, exists_ok: bool = False) -> None:
+def add_clan_module(clan_dir: Path, module_name: str, exists_ok: bool = False) -> None:
     autoimports_dir = clan_dir / "imports" / "inventory"
     autoimports_dir.mkdir(parents=True, exist_ok=True)
 
     shutil.copytree(
-        get_clanModule(module_name),
+        get_clan_module(module_name),
         autoimports_dir / module_name,
         dirs_exist_ok=exists_ok,
     )
     commit_file(autoimports_dir, clan_dir, f"Add {module_name} module")
 
 
-def install_clanModule(clan_dir: Path, module_name: str, machine: Machine) -> None:
+def install_clan_module(clan_dir: Path, module_name: str, machine: Machine) -> None:
     pass
 
 
@@ -53,7 +58,7 @@ def clan_init(
     provider: Provider,
     ssh_key_path: Path,
     tr_machines: list[TrMachine],
-):
+) -> None:
     try:
         clan_cli.clan.create.create_clan(
             clan_cli.clan.create.CreateOptions(config.clan_dir)
@@ -83,7 +88,7 @@ def clan_init(
         )
 
     # Add the machines to the myadmin module
-    add_clanModule(clan_dir.path, "myadmin", exists_ok=True)
+    add_clan_module(clan_dir.path, "myadmin", exists_ok=True)
     inventory: Inventory = load_inventory_eval(clan_dir.path)
     inventory["services"]["myadmin"] = {
         "someid": {

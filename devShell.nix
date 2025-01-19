@@ -18,6 +18,7 @@ in
   with pkgs; [ 
     clan-cli-module
     mypy
+    ruff
     opentofu 
     # treefmt with config defined in ./flake-parts/formatting.nix
     config.treefmt.build.wrapper

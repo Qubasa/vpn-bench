@@ -1,14 +1,16 @@
 #!/usr/bin/env python3
 
-from clan_cli.cmd import run, RunOpts, Log
+import json
 import logging
+import shutil
+from dataclasses import dataclass
+from pathlib import Path
+from string import Template
+
+from clan_cli.cmd import Log, RunOpts, run
+
 from vpn_bench import Config, Provider
 from vpn_bench.assets import get_cloud_asset
-import shutil
-from pathlib import Path
-import json
-from dataclasses import dataclass
-from string import Template
 
 log = logging.getLogger(__name__)
 
@@ -67,12 +69,12 @@ def tr_metadata(config: Config) -> list[TrMachine]:
     return machines
 
 
-def tr_clean(config: Config):
+def tr_clean(config: Config) -> None:
     tr_folder = config.tr_dir
     shutil.rmtree(tr_folder, ignore_errors=True)
 
 
-def tr_create(config: Config, ssh_key: Path, provider: Provider, machines: list[str]):
+def tr_create(config: Config, ssh_key: Path, provider: Provider, machines: list[str]) -> None:
     tr_init(config, provider)
     for machine in machines:
         terra_create_machine(config, ssh_key, provider, machine)
@@ -82,7 +84,7 @@ def tr_create(config: Config, ssh_key: Path, provider: Provider, machines: list[
     )
 
 
-def tr_destroy(config: Config):
+def tr_destroy(config: Config) -> None:
     run(
         ["tofu", f"-chdir={config.tr_dir}", "destroy", "-auto-approve"],
         RunOpts(log=Log.BOTH, check=False),

@@ -1,9 +1,9 @@
 from pathlib import Path
-from typing import Literal
+
 from vpn_bench import Provider
 
 
-def get_clanModule(module_name: str) -> Path:
+def get_clan_module(module_name: str) -> Path:
     curr = Path(__file__).parent
     module = curr / "clanModules" / module_name
     if not module.exists():

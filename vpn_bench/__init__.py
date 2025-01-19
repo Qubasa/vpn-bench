@@ -1,7 +1,6 @@
-from dataclasses import dataclass, field
-from pathlib import Path
-from typing import List
+from dataclasses import dataclass
 from enum import Enum
+from pathlib import Path
 
 
 class Provider(Enum):
@@ -11,8 +10,8 @@ class Provider(Enum):
     def from_str(label: str) -> "Provider":
         if label in Provider._value2member_map_:
             return Provider(Provider._value2member_map_[label])
-        else:
-            raise ValueError(f"Unknown provider: {label}")
+        msg = f"Unknown provider: {label}"
+        raise ValueError(msg)
 
 
 @dataclass

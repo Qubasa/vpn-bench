@@ -1,19 +1,22 @@
 #!/usr/bin/env python3
 
 import argparse
-from clan_cli.custom_logger import setup_logging
 import logging
-from vpn_bench.terraform import tr_create, tr_destroy, tr_metadata
-from vpn_bench.clan import clan_clean
-from vpn_bench import Config, Provider
-from clan_cli.dirs import user_data_dir, user_cache_dir
-from .clan import clan_init
 from pathlib import Path
+
+from clan_cli.custom_logger import setup_logging
+from clan_cli.dirs import user_cache_dir, user_data_dir
+
+from vpn_bench import Config, Provider
+from vpn_bench.clan import clan_clean
+from vpn_bench.terraform import tr_create, tr_destroy, tr_metadata
+
+from .clan import clan_init
 
 log = logging.getLogger(__name__)
 
 
-def run_cli():
+def run_cli() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--debug", action="store_true", help="Enable debug mode")
     subparsers = parser.add_subparsers(dest="subcommand")
