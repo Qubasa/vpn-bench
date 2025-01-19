@@ -24,7 +24,11 @@
         "x86_64-darwin"
         "aarch64-darwin"
       ];
-      imports = [ inputs.clan-core.flakeModules.default  ./treefmt.nix ];
+      imports = [ 
+        inputs.clan-core.flakeModules.default  
+        ./treefmt.nix 
+        ./devShell.nix
+      ];
 
 
       # https://docs.clan.lol/getting-started/flake-parts/
@@ -81,19 +85,6 @@
             };
         };
       };
-      perSystem =
-        { pkgs, inputs', system, ... }:#
-        let
-          clan-cli = inputs'.clan-core.packages.clan-cli;
-          
-        in 
-        {
-          _module.args.pkgs = import nixpkgs {
-            inherit system;
-            config.allowUnfree = true;
-          };
-          
-          devShells.default = pkgs.callPackage ./shell.nix { inherit clan-cli;};
-        };
+
     });
 }

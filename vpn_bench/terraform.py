@@ -55,7 +55,7 @@ def tr_metadata(config: Config) -> list[TrMachine]:
     )
     jdata = json.loads(res.stdout)
 
-    machines = []
+    machines: list[TrMachine] = []
     for name, data in jdata.items():
         machine = TrMachine(name, data["value"]["ip_address"])
         max_name_length = (

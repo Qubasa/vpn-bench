@@ -10,7 +10,7 @@ class Provider(Enum):
     @staticmethod
     def from_str(label: str) -> "Provider":
         if label in Provider._value2member_map_:
-            return Provider._value2member_map_[label]
+            return Provider(Provider._value2member_map_[label])
         else:
             raise ValueError(f"Unknown provider: {label}")
 

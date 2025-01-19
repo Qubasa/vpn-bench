@@ -6,10 +6,16 @@ from clan_cli.machines.create import CreateOptions as ClanCreateOptions, create_
 from clan_cli.machines.install import InstallOptions, install_machine
 from clan_cli.machines.machines import Machine
 from clan_cli.inventory import load_inventory_eval, set_inventory
-from clan_cli.inventory.classes import Machine as InventoryMachine, MachineDeploy
+from clan_cli.inventory.classes import (
+    Machine as InventoryMachine,
+    MachineDeploy,
+    Inventory,
+)
 from clan_cli.clan_uri import FlakeId
 from clan_cli.git import commit_file
 from clan_cli.ssh.host_key import HostKeyCheck
+from clan_cli.nix import nix_command
+from clan_cli.cmd import run, RunOpts
 from vpn_bench import Config
 from clan_cli.machines.hardware import HardwareConfig
 from clan_cli.errors import ClanError
@@ -31,7 +37,9 @@ def add_clanModule(clan_dir: Path, module_name: str, exists_ok: bool = False) ->
     autoimports_dir.mkdir(parents=True, exist_ok=True)
 
     shutil.copytree(
-        get_clanModule(module_name), autoimports_dir / module_name, dirs_exist_ok=exists_ok
+        get_clanModule(module_name),
+        autoimports_dir / module_name,
+        dirs_exist_ok=exists_ok,
     )
     commit_file(autoimports_dir, clan_dir, f"Add {module_name} module")
 
@@ -53,13 +61,19 @@ def clan_init(
     except ClanError as e:
         log.error(e)
 
-    clan_dir = FlakeId(config.clan_dir)
+    clan_dir = FlakeId(str(config.clan_dir))
 
-    add_clanModule(clan_dir.path, "myadmin", exists_ok=True)
+    # Update the flake.nix to point to my fork of clan-core
+    flake_nix = clan_dir.path / "flake.nix"
+    with flake_nix.open("r+") as f:
+        orig_url = "https://git.clan.lol/clan/clan-core/archive/main.tar.gz"
+        my_url = "https://git.clan.lol/Qubasa/clan-core/archive/imports_dir.tar.gz"
+        text = f.read().replace(orig_url, my_url)
+        f.seek(0)
+        f.write(text)
+    run(nix_command(["flake", "update", "clan-core"]), RunOpts(cwd=clan_dir.path))
 
-    inventory = load_inventory_eval(clan_dir.path)
-    breakpoint()
-
+    # Create the machines
     for tr_machine in tr_machines:
         inv_machine = InventoryMachine(
             name=tr_machine.name, deploy=MachineDeploy(targetHost=tr_machine.ip)
@@ -68,8 +82,22 @@ def clan_init(
             ClanCreateOptions(clan_dir, inv_machine, target_host=tr_machine.ip)
         )
 
-    hardware_conf = get_cloud_asset(provider, "clan") / "hardware-configuration.nix"
+    # Add the machines to the myadmin module
+    add_clanModule(clan_dir.path, "myadmin", exists_ok=True)
+    inventory: Inventory = load_inventory_eval(clan_dir.path)
+    inventory["services"]["myadmin"] = {
+        "someid": {
+            "roles": {
+                "default": {
+                    "machines": [tr_machines.name for tr_machines in tr_machines]
+                }
+            }
+        }
+    }
+    set_inventory(inventory, clan_dir.path, "Add myadmin service")
 
+    # Install the machines
+    hardware_conf = get_cloud_asset(provider, "clan") / "hardware-configuration.nix"
     for tr_machine in tr_machines:
         # TODO: This is a hack, we should automatically generate the hardware-config.nix
         # kenji is working on this

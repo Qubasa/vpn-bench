@@ -1,22 +1,26 @@
+{ ... }:
 {
-  clan-cli,
-  mkShell,
-  python3,
-  opentofu,
-  iperf3,
-  treefmt
-}:
-
+  perSystem =
+    {
+      pkgs,
+      inputs',
+      config,
+      ...
+    }:
 
 let 
-  clan-cli-module = python3.pkgs.toPythonModule clan-cli;
+  clan-cli-module = pkgs.python3.pkgs.toPythonModule inputs'.clan-core.packages.clan-cli;
 in 
-mkShell { 
+{
+
+ devShells.default = pkgs.mkShell { 
   buildInputs =  
-  [ 
+  with pkgs; [ 
     clan-cli-module
+    mypy
     opentofu 
-    iperf3
+    # treefmt with config defined in ./flake-parts/formatting.nix
+    config.treefmt.build.wrapper
     python3
     treefmt
   ];
@@ -36,4 +40,6 @@ mkShell {
       source .local.env
     fi
   '';
+ };
+};
 }
