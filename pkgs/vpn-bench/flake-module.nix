@@ -6,6 +6,8 @@
     
     {
       pkgs,
+      config,
+      self',
       inputs',
       ...
     }:
@@ -13,6 +15,12 @@
       clan-cli-module = pkgs.python3.pkgs.toPythonModule inputs'.clan-core.packages.clan-cli;
     in 
     {
-      packages.default = pkgs.callPackage ./default.nix { inherit clan-cli-module; };
+      packages.vpn-bench = pkgs.callPackage ./default.nix { inherit clan-cli-module; };
+
+      devShells.vpn-bench = pkgs.callPackage ./shell.nix {  
+        inherit (self'.packages) vpn-bench; 
+        # treefmt with config defined in ./flake-parts/formatting.nix
+        custom_treefmt = config.treefmt.build.wrapper;
+        };
     };
 }

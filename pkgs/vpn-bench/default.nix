@@ -1,6 +1,8 @@
 {
   python3Packages,
   clan-cli-module,
+  opentofu,
+  terraform-backend-git,
   ...
 }:
 
@@ -12,5 +14,9 @@ python3Packages.buildPythonApplication {
   pythonImportsCheck = [ "vpn_bench" ];
 
   build-system = with python3Packages; [ setuptools ];
-  propagatedBuildInputs = [ clan-cli-module ];
+  propagatedBuildInputs = [ 
+    clan-cli-module
+    opentofu
+    terraform-backend-git
+  ];
 }
