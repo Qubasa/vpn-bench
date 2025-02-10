@@ -7,8 +7,8 @@ from pathlib import Path
 from clan_cli.custom_logger import setup_logging
 from clan_cli.dirs import user_cache_dir, user_data_dir
 
-from vpn_bench import Config, Provider
 from vpn_bench.clan import clan_clean
+from vpn_bench.data import Config, Provider
 from vpn_bench.terraform import tr_create, tr_destroy, tr_metadata
 
 from .clan import clan_init

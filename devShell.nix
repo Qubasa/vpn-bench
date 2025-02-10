@@ -22,6 +22,7 @@ in
     opentofu 
     # treefmt with config defined in ./flake-parts/formatting.nix
     config.treefmt.build.wrapper
+    terraform-backend-git
     python3
     treefmt
   ];

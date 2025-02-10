@@ -27,11 +27,10 @@ from clan_cli.nix import nix_command
 from clan_cli.ssh.host import Host
 from clan_cli.ssh.host_key import HostKeyCheck
 
-from vpn_bench import Config
+from vpn_bench.data import Config, Provider
 from vpn_bench.terraform import TrMachine
 
 log = logging.getLogger(__name__)
-from vpn_bench import Provider
 from vpn_bench.assets import get_clan_module, get_cloud_asset
 
 

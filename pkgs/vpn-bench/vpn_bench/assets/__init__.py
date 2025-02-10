@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from vpn_bench import Provider
+from vpn_bench.data import Provider
 
 
 def get_clan_module(module_name: str) -> Path:

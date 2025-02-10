@@ -9,8 +9,8 @@ from string import Template
 
 from clan_cli.cmd import Log, RunOpts, run
 
-from vpn_bench import Config, Provider
 from vpn_bench.assets import get_cloud_asset
+from vpn_bench.data import Config, Provider
 
 log = logging.getLogger(__name__)
 
