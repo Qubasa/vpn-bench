@@ -60,10 +60,7 @@ def tr_metadata(config: Config) -> list[TrMachine]:
     machines: list[TrMachine] = []
     for name, data in jdata.items():
         machine = TrMachine(name, data["value"]["ip_address"])
-        max_name_length = (
-            max(len(m.name) for m in machines) if machines else len(machine.name)
-        )
-        log.info(f"{machine.name:<{max_name_length}}: {machine.ip}")
+        log.info(f"{machine.name}@{machine.ip}")
         machines.append(machine)
 
     return machines

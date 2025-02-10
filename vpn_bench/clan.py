@@ -1,12 +1,12 @@
-import json
 import logging
 import shutil
 from pathlib import Path
 
 import clan_cli.clan.create
 from clan_cli.api.disk import set_machine_disk_schema
-from clan_cli.clan_uri import FlakeId
+from clan_cli.clan_uri import Flake
 from clan_cli.cmd import RunOpts, run
+from clan_cli.dirs import get_clan_flake_toplevel
 from clan_cli.git import commit_file
 from clan_cli.inventory import load_inventory_eval, set_inventory
 from clan_cli.inventory.classes import (
@@ -23,7 +23,7 @@ from clan_cli.machines.create import create_machine
 from clan_cli.machines.hardware import HardwareConfig
 from clan_cli.machines.install import InstallOptions, install_machine
 from clan_cli.machines.machines import Machine
-from clan_cli.nix import nix_command, nix_eval
+from clan_cli.nix import nix_command
 from clan_cli.ssh.host import Host
 from clan_cli.ssh.host_key import HostKeyCheck
 
@@ -51,21 +51,20 @@ def add_clan_module(clan_dir: Path, module_name: str, exists_ok: bool = False) -
     commit_file(autoimports_dir, clan_dir, f"Add {module_name} module")
 
 
-def install_clan_module(clan_dir: Path, module_name: str, machine: Machine) -> None:
-    pass
-
-
-def get_clan_core_dir(clan_dir: FlakeId) -> str:
-    cmd = nix_eval(
-        [
-            "--impure",
-            "--json",
-            "--expr",
-            f'(builtins.getFlake "{clan_dir.path}").inputs.clan-core.outPath',
-        ]
+def can_ssh_login(host: Host) -> bool:
+    host = Host.from_host(host)
+    host.host_key_check = HostKeyCheck.NONE
+    host.ssh_options.update(
+        {
+            "PasswordAuthentication": "no",
+            "BatchMode": "yes",
+        }
     )
-    res = run(cmd).stdout
-    return json.loads(res)
+
+    result = host.run(["exit"], RunOpts(check=False, shell=True))
+
+    # Check the return code
+    return result.returncode == 0
 
 
 # Clan TODO: We should generally start thinking about API usability and how to make it less fragmented
@@ -77,24 +76,30 @@ def clan_init(
     ssh_key_path: Path,
     tr_machines: list[TrMachine],
 ) -> None:
-    clan_dir = FlakeId(str(config.clan_dir))
-
-    if clan_dir.path.exists():
-        result = input(f"Directory {clan_dir.path} already exists. Delete it? [y/N] ")
+    if config.clan_dir.exists():
+        result = input(f"Directory {config.clan_dir} already exists. Delete it? [y/N] ")
         if result.lower() != "y":
             log.error("Aborting")
         else:
-            shutil.rmtree(clan_dir.path)
+            shutil.rmtree(config.clan_dir)
 
+    clan_dir = Flake(str(config.clan_dir))
+
+    local_clan = get_clan_flake_toplevel()
     clan_cli.clan.create.create_clan(
-        clan_cli.clan.create.CreateOptions(config.clan_dir)
+        clan_cli.clan.create.CreateOptions(
+            src_flake=Flake(str(local_clan)),
+            template_name="vpnBenchClan",
+            dest=config.clan_dir,
+            update_clan=False,
+        )
     )
 
     # Update the flake.nix to point to my fork of clan-core
     flake_nix = clan_dir.path / "flake.nix"
     with flake_nix.open("r+") as f:
-        orig_url = "https://git.clan.lol/clan/clan-core/archive/main.tar.gz"
-        my_url = "https://git.clan.lol/Qubasa/clan-core/archive/imports_dir.tar.gz"
+        orig_url = "__VPN_BENCH_PATH__"
+        my_url = str(local_clan)
         text = f.read().replace(orig_url, my_url)
         f.seek(0)
         f.write(text)
@@ -111,13 +116,15 @@ def clan_init(
         create_machine(ClanCreateOptions(clan_dir, inv_machine, target_host=host.host))
 
     # Add the machines to the myadmin module
-    add_clan_module(clan_dir.path, "myadmin", exists_ok=True)
     inventory: Inventory = load_inventory_eval(clan_dir.path)
     inventory["services"]["myadmin"] = {
         "someid": {
             "roles": {
                 "default": {
-                    "machines": [tr_machines.name for tr_machines in tr_machines]
+                    "machines": [tr_machines.name for tr_machines in tr_machines],
+                    "config": {
+                        "allowedKeys": [ssh_key_path.read_text()],
+                    },
                 }
             }
         }
@@ -131,7 +138,7 @@ def clan_init(
     nix_config = get_cloud_asset(provider, "clan") / "configuration.nix"
     for tr_machine in tr_machines:
         # Clan TODO: This is a hack, we should automatically generate the hardware-config.nix
-        # kenji is working on this
+        # in nixos-anywhere, kenji is working on this
         shutil.copy(
             hardware_conf,
             config.clan_dir / "machines" / tr_machine.name / "facter.json",
@@ -145,14 +152,25 @@ def clan_init(
             name=tr_machine.name, flake=clan_dir, host_key_check=HostKeyCheck.NONE
         )
 
+        # Clan TODO: We shouldn't need to set this manually, when the facter generation works this should be automatic
         placeholders = {"mainDisk": "/dev/sda"}
         set_machine_disk_schema(
-            clan_dir.path, machine.name, "single-disk", placeholders
+            clan_dir.path,
+            machine.name,
+            "single-disk",
+            placeholders,
+            allow_uknown_placeholders=True,
         )
 
         # Clan TODO: machine.target_host assumes that the host is reachable over root@ip but this is not always the case
         # We should have a way to specify the user
         host = Host(user=tr_machine.name, host=tr_machine.ip)
+
+        # If we can't login with the machine name user we try root user
+        if not can_ssh_login(host):
+            log.warning("Could not login with machine name user, trying root user")
+            host.user = "root"
+
         install_machine(
             InstallOptions(
                 machine,

@@ -30,6 +30,21 @@
         ./devShell.nix
       ];
 
+      flake = {
+        clanModules = {
+          "myadmin" = ./clanModules/myadmin;
+        };
+        clan = {
+          templates = {
+            clan = {
+              "vpnBenchClan" = {
+                description = "VPN Bench Clan";
+                path = ./templates/clan/minimal;
+              };
+            };
+          };
+        };
+      };
 
       # https://docs.clan.lol/getting-started/flake-parts/
       clan = {
