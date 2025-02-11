@@ -27,7 +27,9 @@ def run_cli() -> None:
     )
     create_parser.add_argument("--debug", action="store_true", help="Enable debug mode")
     create_parser.add_argument(
-        "--provider", choices=[p.value for p in Provider], default=Provider.GCloud.value
+        "--provider",
+        choices=[p.value for p in Provider],
+        default=Provider.Hetzner.value,
     )
     create_parser.add_argument(
         "--ssh-key", help="SSH key path", default="~/.ssh/id_rsa.pub"
@@ -37,16 +39,26 @@ def run_cli() -> None:
     destroy_parser.add_argument(
         "--debug", action="store_true", help="Enable debug mode"
     )
+    destroy_parser.add_argument(
+        "--provider",
+        choices=[p.value for p in Provider],
+        default=Provider.Hetzner.value,
+    )
+    destroy_parser.add_argument(
+        "--force", action="store_true", help="Delete local data even if remote fails"
+    )
 
     metadata_parser = subparsers.add_parser("metadata", help="Show metadata")
     metadata_parser.add_argument(
         "--debug", action="store_true", help="Enable debug mode"
     )
 
-    clan_parser = subparsers.add_parser("clan", help="Clan command")
+    clan_parser = subparsers.add_parser("install", help="Install command")
     clan_parser.add_argument("--debug", action="store_true", help="Enable debug mode")
     clan_parser.add_argument(
-        "--provider", choices=[p.value for p in Provider], default=Provider.GCloud.value
+        "--provider",
+        choices=[p.value for p in Provider],
+        default=Provider.Hetzner.value,
     )
     clan_parser.add_argument(
         "--ssh-key", help="SSH key path", default="~/.ssh/id_rsa.pub"
@@ -91,11 +103,14 @@ def run_cli() -> None:
     if args.subcommand == "create":
         tr_create(config, ssh_key, provider, args.m)
     elif args.subcommand == "destroy":
-        tr_destroy(config)
+        tr_destroy(config, provider, args.force)
         clan_clean(config)
     elif args.subcommand == "metadata":
-        tr_metadata(config)
-    elif args.subcommand == "clan":  #
+        meta = tr_metadata(config)
+        for machine in meta:
+            print(machine)
+
+    elif args.subcommand == "install":
         machines = tr_metadata(config)
         clan_init(config, provider, ssh_key, machines)
 

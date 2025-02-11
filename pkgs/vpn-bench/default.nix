@@ -2,7 +2,6 @@
   python3Packages,
   clan-cli-module,
   opentofu,
-  terraform-backend-git,
   ...
 }:
 
@@ -17,6 +16,5 @@ python3Packages.buildPythonApplication {
   propagatedBuildInputs = [ 
     clan-cli-module
     opentofu
-    terraform-backend-git
   ];
 }

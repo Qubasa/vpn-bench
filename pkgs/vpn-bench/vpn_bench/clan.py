@@ -27,11 +27,11 @@ from clan_cli.nix import nix_command
 from clan_cli.ssh.host import Host
 from clan_cli.ssh.host_key import HostKeyCheck
 
+from vpn_bench.assets import get_clan_module, get_cloud_asset
 from vpn_bench.data import Config, Provider
 from vpn_bench.terraform import TrMachine
 
 log = logging.getLogger(__name__)
-from vpn_bench.assets import get_clan_module, get_cloud_asset
 
 
 def clan_clean(config: Config) -> None:
@@ -106,10 +106,11 @@ def clan_init(
 
     # Create the machines
     for tr_machine in tr_machines:
-        host = Host(user=tr_machine.name, host=tr_machine.ip)
+        assert tr_machine["ipv4"] is not None
+        host = Host(user=tr_machine["name"], host=tr_machine["ipv4"])
         # TODO: We should have somekind of method that creates a Machine object from a InventoryMachine object
         inv_machine = InventoryMachine(
-            name=tr_machine.name, deploy=MachineDeploy(targetHost=host.host)
+            name=tr_machine["name"], deploy=MachineDeploy(targetHost=host.host)
         )
         # Clan TODO: We should require the Host object here instead of a string
         create_machine(ClanCreateOptions(clan_dir, inv_machine, target_host=host.host))
@@ -120,7 +121,7 @@ def clan_init(
         "someid": {
             "roles": {
                 "default": {
-                    "machines": [tr_machines.name for tr_machines in tr_machines],
+                    "machines": [tr_machine["name"] for tr_machine in tr_machines],
                     "config": {
                         "allowedKeys": [ssh_key_path.read_text()],
                     },
@@ -140,15 +141,15 @@ def clan_init(
         # in nixos-anywhere, kenji is working on this
         shutil.copy(
             hardware_conf,
-            config.clan_dir / "machines" / tr_machine.name / "facter.json",
+            config.clan_dir / "machines" / tr_machine["name"] / "facter.json",
         )
         shutil.copy(
             nix_config,
-            config.clan_dir / "machines" / tr_machine.name / "configuration.nix",
+            config.clan_dir / "machines" / tr_machine["name"] / "configuration.nix",
         )
         # Clan TODO: We should have a method that creates a Host object from a machine object
         machine = Machine(
-            name=tr_machine.name, flake=clan_dir, host_key_check=HostKeyCheck.NONE
+            name=tr_machine["name"], flake=clan_dir, host_key_check=HostKeyCheck.NONE
         )
 
         # Clan TODO: We shouldn't need to set this manually, when the facter generation works this should be automatic
@@ -163,7 +164,8 @@ def clan_init(
 
         # Clan TODO: machine.target_host assumes that the host is reachable over root@ip but this is not always the case
         # We should have a way to specify the user
-        host = Host(user=tr_machine.name, host=tr_machine.ip)
+        assert tr_machine["ipv4"] is not None
+        host = Host(user=tr_machine["name"], host=tr_machine["ipv4"])
 
         # If we can't login with the machine name user we try root user
         if not can_ssh_login(host):

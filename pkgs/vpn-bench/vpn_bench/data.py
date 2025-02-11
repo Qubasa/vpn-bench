@@ -5,6 +5,7 @@ from pathlib import Path
 
 class Provider(Enum):
     GCloud = "gcloud"
+    Hetzner = "hetzner"
 
     @staticmethod
     def from_str(label: str) -> "Provider":

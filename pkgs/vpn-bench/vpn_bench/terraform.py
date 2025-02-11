@@ -2,10 +2,11 @@
 
 import json
 import logging
+import os
 import shutil
-from dataclasses import dataclass
+import sys
 from pathlib import Path
-from string import Template
+from typing import Any, TypedDict
 
 from clan_cli.cmd import Log, RunOpts, run
 
@@ -15,27 +16,11 @@ from vpn_bench.data import Config, Provider
 log = logging.getLogger(__name__)
 
 
-@dataclass
-class TrMachine:
+class TrMachine(TypedDict):
     name: str
-    ip: str
-
-
-def terra_create_machine(
-    config: Config, ssh_key_path: Path, provider: Provider, name: str
-) -> None:
-    tr_template_f = get_cloud_asset(provider, "templates") / "vm.tf"
-    with tr_template_f.open("r") as f:
-        template = Template(f.read())
-
-    dest_f = config.tr_dir / f"{name}-instance.tf"
-
-    ssh_key = ssh_key_path.read_text().removesuffix("\n")
-
-    with dest_f.open("w") as f:
-        instance = template.substitute({"vm_name": name, "ssh_key": ssh_key})
-        f.write(instance)
-    log.info(f"Written {dest_f}")
+    location: str
+    server_type: str
+    ipv4: str | None
 
 
 def tr_init(config: Config, provider: Provider) -> None:
@@ -57,13 +42,11 @@ def tr_metadata(config: Config) -> list[TrMachine]:
     )
     jdata = json.loads(res.stdout)
 
-    machines: list[TrMachine] = []
-    for name, data in jdata.items():
-        machine = TrMachine(name, data["value"]["ip_address"])
-        log.info(f"{machine.name}@{machine.ip}")
-        machines.append(machine)
+    for _, data in jdata.items():
+        machines_dict = data["value"]
+        return list(machines_dict.values())
 
-    return machines
+    return []
 
 
 def tr_clean(config: Config) -> None:
@@ -71,22 +54,100 @@ def tr_clean(config: Config) -> None:
     shutil.rmtree(tr_folder, ignore_errors=True)
 
 
+def tr_write_vars(config: Config, data: dict[str, Any]) -> None:
+    vars_file = config.tr_dir / "servers.auto.tfvars.json"
+    with vars_file.open("w") as json_file:
+        json.dump(data, json_file, indent=2)
+
+
+def tr_ask_for_api_key(provider: Provider) -> None:
+    match provider:
+        case Provider.Hetzner:
+            if os.environ.get("TF_VAR_hcloud_token"):
+                log.debug("Hetzner Cloud API token found in environment")
+                return
+
+            if bitwarden_api_key_loc := os.environ.get("BW_API_KEY_LOC"):
+                log.debug("Bitwarden API key location found in environment")
+                did_login = run(
+                    ["bw", "login", "--check"], RunOpts(log=Log.BOTH, check=False)
+                )
+                if did_login.returncode != 0:
+                    log.info("Bitwarden not logged in")
+                    log.info("Please login to Bitwarden CLI")
+                    run(
+                        ["bw", "login"],
+                        RunOpts(
+                            log=Log.BOTH,
+                            stderr=sys.stderr.buffer,
+                            error_msg="Failed to login to Bitwarden CLI",
+                            needs_user_terminal=True,
+                        ),
+                    )
+
+                res = run(
+                    ["bw", "get", "item", bitwarden_api_key_loc],
+                    RunOpts(
+                        log=Log.NONE,
+                        stderr=sys.stderr.buffer,
+                        needs_user_terminal=True,
+                        error_msg="Failed to get Hetzner Cloud API token from Bitwarden",
+                    ),
+                )
+                api_token = json.loads(res.stdout)["login"]["password"]
+                os.environ["TF_VAR_hcloud_token"] = api_token
+            if not os.environ.get("TF_VAR_hcloud_token"):
+                log.info("Hetzner Cloud API token not found in environment")
+                log.info(
+                    "Please generate one. Follow for more info: https://docs.hetzner.com/cloud/api/getting-started/generating-api-token/"
+                )
+                api_token = input("Enter your Hetzner Cloud API token: ")
+                os.environ["TF_VAR_hcloud_token"] = api_token
+        case Provider.GCloud:
+            msg = "GCloud not implemented yet"
+            raise NotImplementedError(msg)
+
+
 def tr_create(
     config: Config, ssh_key: Path, provider: Provider, machines: list[str]
 ) -> None:
+    tr_ask_for_api_key(provider)
     tr_init(config, provider)
-    for machine in machines:
-        terra_create_machine(config, ssh_key, provider, machine)
+    match provider:
+        case Provider.Hetzner:
+            servers: list[TrMachine] = []
+            for machine in machines:
+                servers.append(
+                    {
+                        "name": machine,
+                        "location": "sin",  # TODO: Make configurable
+                        "server_type": "ccx13",
+                        "ipv4": None,
+                    }
+                )
+            tr_write_vars(
+                config,
+                {
+                    "ssh_pubkey": ssh_key.read_text(),
+                    "os_image": "ubuntu-24.04",
+                    "servers": servers,
+                },
+            )
+        case Provider.GCloud:
+            msg = "GCloud not implemented yet"
+            raise NotImplementedError(msg)
+
     run(
         ["tofu", f"-chdir={config.tr_dir}", "apply", "-auto-approve"],
         RunOpts(log=Log.BOTH),
     )
 
 
-def tr_destroy(config: Config) -> None:
+def tr_destroy(config: Config, provider: Provider, force: bool) -> None:
+    tr_ask_for_api_key(provider)
     run(
         ["tofu", f"-chdir={config.tr_dir}", "destroy", "-auto-approve"],
-        RunOpts(log=Log.BOTH, check=False),
+        RunOpts(log=Log.BOTH, check=force),
     )
     tr_clean(config)
     log.info("Resources destroyed")
