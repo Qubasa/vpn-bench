@@ -12,6 +12,6 @@
   };
 
   config = {
-    users.users.root.openssh.authorizedKeys.keys = builtins.attrValues config.clan.admin.allowedKeys;
+    users.users.root.openssh.authorizedKeys.keys = builtins.attrValues config.clan.myadmin.allowedKeys;
   };
 }

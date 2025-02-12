@@ -2,21 +2,21 @@
 
 import argparse
 import logging
+import os
 from pathlib import Path
 
 from clan_cli.custom_logger import setup_logging
 from clan_cli.dirs import user_cache_dir, user_data_dir
 
-from vpn_bench.clan import clan_clean
+from vpn_bench.clan import AgeOpts, clan_clean, clan_init
 from vpn_bench.data import Config, Provider
+from vpn_bench.errors import VpnBenchError
 from vpn_bench.terraform import tr_create, tr_destroy, tr_metadata
-
-from .clan import clan_init
 
 log = logging.getLogger(__name__)
 
 
-def run_cli() -> None:
+def create_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser()
     parser.add_argument("--debug", action="store_true", help="Enable debug mode")
     subparsers = parser.add_subparsers(dest="subcommand")
@@ -32,7 +32,10 @@ def run_cli() -> None:
         default=Provider.Hetzner.value,
     )
     create_parser.add_argument(
-        "--ssh-key", help="SSH key path", default="~/.ssh/id_rsa.pub"
+        "--ssh-pubkey",
+        help="SSH pubkey path",
+        type=Path,
+        default=os.environ.get("SSH_PUB_KEY_PATH"),
     )
 
     destroy_parser = subparsers.add_parser("destroy", help="Destroy resources")
@@ -60,10 +63,20 @@ def run_cli() -> None:
         choices=[p.value for p in Provider],
         default=Provider.Hetzner.value,
     )
+    clan_parser.add_argument("--age-user", help="Age user")
+    clan_parser.add_argument("--age-pubkey", help="Age pubkey", type=Path)
     clan_parser.add_argument(
-        "--ssh-key", help="SSH key path", default="~/.ssh/id_rsa.pub"
+        "--ssh-pubkey",
+        help="SSH pubkey path",
+        default=os.environ.get("SSH_PUBKEY_PATH"),
+        type=Path,
     )
 
+    return parser
+
+
+def run_cli() -> None:
+    parser = create_parser()
     args = parser.parse_args()
     is_debug = getattr(args, "debug", False)
     data_dir = user_data_dir() / "vpn_bench"
@@ -89,19 +102,16 @@ def run_cli() -> None:
 
     log.debug("Debug mode enabled")
 
-    if getattr(args, "ssh_key", False):
-        ssh_key = Path(args.ssh_key).expanduser()
-        if not ssh_key.exists():
-            log.error(
-                f"SSH key {ssh_key} does not exist, please specify one with --ssh-key"
-            )
-            return
-
     if getattr(args, "provider", False):
         provider = Provider.from_str(args.provider)
 
     if args.subcommand == "create":
-        tr_create(config, ssh_key, provider, args.m)
+        if args.ssh_pubkey is None:
+            msg = """Please specify an SSH key with --ssh-pubkey
+            or set the SSH_PUBKEY_PATH environment variable"""
+            raise VpnBenchError(msg)
+
+        tr_create(config, args.ssh_pubkey, provider, machines=args.m)
     elif args.subcommand == "destroy":
         tr_destroy(config, provider, args.force)
         clan_clean(config)
@@ -112,7 +122,26 @@ def run_cli() -> None:
 
     elif args.subcommand == "install":
         machines = tr_metadata(config)
-        clan_init(config, provider, ssh_key, machines)
+
+        if args.ssh_pubkey is None:
+            msg = "Please specify a path to an SSH pubkey with --ssh-pubkey or set the SSH_PUBKEY_PATH environment variable"
+            raise VpnBenchError(msg)
+
+        age_pubkey_path: Path | None = None
+        if args.age_pubkey is None:
+            if age_pubkey_str := os.environ.get("AGE_PUBKEY_PATH"):
+                age_pubkey_path = Path(age_pubkey_str)
+
+        age_usr_str = None
+        if args.age_user is None:
+            age_usr_str = os.environ.get("AGE_USER")
+            if not age_usr_str:
+                age_usr_str = os.environ.get("USER")
+
+        assert age_usr_str is not None
+        age_opts = AgeOpts(username=age_usr_str, pubkey=age_pubkey_path)
+
+        clan_init(config, provider, args.ssh_pubkey, age_opts, machines)
 
     else:
         parser.print_help()

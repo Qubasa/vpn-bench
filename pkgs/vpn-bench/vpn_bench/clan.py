@@ -1,5 +1,6 @@
 import logging
 import shutil
+from dataclasses import dataclass
 from pathlib import Path
 
 import clan_cli.clan.create
@@ -24,11 +25,18 @@ from clan_cli.machines.hardware import HardwareConfig
 from clan_cli.machines.install import InstallOptions, install_machine
 from clan_cli.machines.machines import Machine
 from clan_cli.nix import nix_command
+from clan_cli.secrets.key import generate_key
+from clan_cli.secrets.sops import (
+    KeyType,
+    maybe_get_admin_public_key,
+)
+from clan_cli.secrets.users import add_user
 from clan_cli.ssh.host import Host
 from clan_cli.ssh.host_key import HostKeyCheck
 
 from vpn_bench.assets import get_clan_module, get_cloud_asset
 from vpn_bench.data import Config, Provider
+from vpn_bench.errors import VpnBenchError
 from vpn_bench.terraform import TrMachine
 
 log = logging.getLogger(__name__)
@@ -66,6 +74,12 @@ def can_ssh_login(host: Host) -> bool:
     return result.returncode == 0
 
 
+@dataclass
+class AgeOpts:
+    username: str
+    pubkey: None | Path = None
+
+
 # Clan TODO: We should generally start thinking about API usability and how to make it less fragmented
 # I spend a lot of time trying to figure out which functions I needed to call to do what I wanted to do (and I know where to look)
 # I feel like it could be time to factor out the API into an external python package?
@@ -73,6 +87,7 @@ def clan_init(
     config: Config,
     provider: Provider,
     ssh_key_path: Path,
+    age_opts: AgeOpts,
     tr_machines: list[TrMachine],
 ) -> None:
     if config.clan_dir.exists():
@@ -93,6 +108,22 @@ def clan_init(
             update_clan=False,
         )
     )
+
+    if age_opts.pubkey is None:
+        sops_key = maybe_get_admin_public_key()
+        if sops_key is None:
+            res = input("No sops key found. Do you want to generate one? [y/N] ")
+
+            if res.lower() != "y":
+                msg = "No sops key found, please generate one."
+                raise VpnBenchError(msg)
+            sops_key = generate_key()
+
+        sops_pubkey = sops_key.pubkey
+    else:
+        sops_pubkey = age_opts.pubkey.read_text()
+
+    add_user(clan_dir.path, age_opts.username, sops_pubkey, KeyType.AGE, False)
 
     # Update the flake.nix to point to my fork of clan-core
     flake_nix = clan_dir.path / "flake.nix"
@@ -123,8 +154,19 @@ def clan_init(
                 "default": {
                     "machines": [tr_machine["name"] for tr_machine in tr_machines],
                     "config": {
-                        "allowedKeys": [ssh_key_path.read_text()],
+                        "allowedKeys": {age_opts.username: ssh_key_path.read_text()},
                     },
+                }
+            }
+        }
+    }
+
+    inventory["services"]["sshd"] = {
+        "someid": {
+            "roles": {
+                "server": {
+                    "machines": [tr_machine["name"] for tr_machine in tr_machines],
+                    "config": {},
                 }
             }
         }
@@ -137,8 +179,8 @@ def clan_init(
     hardware_conf = get_cloud_asset(provider, "clan") / "facter.json"
     nix_config = get_cloud_asset(provider, "clan") / "configuration.nix"
     for tr_machine in tr_machines:
-        # Clan TODO: This is a hack, we should automatically generate the hardware-config.nix
-        # in nixos-anywhere, kenji is working on this
+        # Clan TODO: We need nixos-anywhere to support multiple phases so that we can generate the hardware config
+        # and then the disk schema
         shutil.copy(
             hardware_conf,
             config.clan_dir / "machines" / tr_machine["name"] / "facter.json",
@@ -147,6 +189,7 @@ def clan_init(
             nix_config,
             config.clan_dir / "machines" / tr_machine["name"] / "configuration.nix",
         )
+
         # Clan TODO: We should have a method that creates a Host object from a machine object
         machine = Machine(
             name=tr_machine["name"], flake=clan_dir, host_key_check=HostKeyCheck.NONE

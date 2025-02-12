@@ -10,10 +10,17 @@ resource "hcloud_server" "servers" {
   image       = var.os_image
   location    = each.value.location
 
+  # To find the possible options look at the Cloudinit documentation below:
+  # https://cloudinit.readthedocs.io/en/latest/reference/yaml_examples/set_passwords.html
   user_data = <<-EOF
     #cloud-config
     ssh_authorized_keys:
       - ${var.ssh_pubkey}
+    ssh_pwauth: false
+    chpasswd:
+      expire: false
+      users:
+      - {name: root, password: Sahb7pied8, type: text}
   EOF
 }
 

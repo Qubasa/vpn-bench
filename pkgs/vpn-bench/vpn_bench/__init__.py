@@ -1,5 +1,18 @@
-from . import cli
+import logging
+
+from clan_cli.errors import ClanError
+
+from vpn_bench import cli
+from vpn_bench.errors import VpnBenchError
+
+log = logging.getLogger(__name__)
 
 
 def main() -> None:
-    cli.run_cli()
+    try:
+        cli.run_cli()
+    except (VpnBenchError, ClanError) as e:
+        if log.isEnabledFor(logging.DEBUG):
+            raise
+        log.error(e)
+        exit(1)

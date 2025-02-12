@@ -12,6 +12,7 @@ from clan_cli.cmd import Log, RunOpts, run
 
 from vpn_bench.assets import get_cloud_asset
 from vpn_bench.data import Config, Provider
+from vpn_bench.errors import VpnBenchError
 
 log = logging.getLogger(__name__)
 
@@ -27,8 +28,16 @@ def tr_init(config: Config, provider: Provider) -> None:
     log.debug(f"Data dir: {config.data_dir}")
     tr_folder = get_cloud_asset(provider, "terraform")
     tr_dest_folder = config.tr_dir
+    providers_cache_dir = config.cache_dir / ".terraform"
+    providers_cache_dir.mkdir(parents=True, exist_ok=True)
+    providers_dir = tr_dest_folder / ".terraform"
+
     if not tr_dest_folder.exists():
         shutil.copytree(tr_folder, tr_dest_folder, dirs_exist_ok=True)
+
+        log.info(f"Symlink: {providers_cache_dir} -> {providers_dir}")
+        providers_dir.symlink_to(providers_cache_dir)
+
         run(
             ["tofu", f"-chdir={config.tr_dir}", "init"],
             RunOpts(cwd=tr_dest_folder, log=Log.BOTH),
@@ -64,9 +73,7 @@ def tr_ask_for_api_key(provider: Provider) -> None:
     match provider:
         case Provider.Hetzner:
             if os.environ.get("TF_VAR_hcloud_token"):
-                log.debug("Hetzner Cloud API token found in environment")
                 return
-
             if bitwarden_api_key_loc := os.environ.get("BW_API_KEY_LOC"):
                 log.debug("Bitwarden API key location found in environment")
                 did_login = run(
@@ -111,6 +118,10 @@ def tr_ask_for_api_key(provider: Provider) -> None:
 def tr_create(
     config: Config, ssh_key: Path, provider: Provider, machines: list[str]
 ) -> None:
+    if not ssh_key.exists():
+        msg = f"SSH key {ssh_key} does not exist, please specify one with --ssh-key"
+        raise VpnBenchError(msg)
+
     tr_ask_for_api_key(provider)
     tr_init(config, provider)
     match provider:
