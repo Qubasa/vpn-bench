@@ -33,6 +33,7 @@ from clan_cli.secrets.sops import (
 from clan_cli.secrets.users import add_user
 from clan_cli.ssh.host import Host
 from clan_cli.ssh.host_key import HostKeyCheck
+from clan_cli.templates import copy_from_nixstore
 
 from vpn_bench.assets import get_clan_module, get_cloud_asset
 from vpn_bench.data import Config, Provider
@@ -50,7 +51,7 @@ def add_clan_module(clan_dir: Path, module_name: str, exists_ok: bool = False) -
     autoimports_dir = clan_dir / "imports" / "inventory"
     autoimports_dir.mkdir(parents=True, exist_ok=True)
 
-    shutil.copytree(
+    copy_from_nixstore(
         get_clan_module(module_name),
         autoimports_dir / module_name,
         dirs_exist_ok=exists_ok,
@@ -181,11 +182,12 @@ def clan_init(
     for tr_machine in tr_machines:
         # Clan TODO: We need nixos-anywhere to support multiple phases so that we can generate the hardware config
         # and then the disk schema
-        shutil.copy(
+        copy_from_nixstore(
             hardware_conf,
             config.clan_dir / "machines" / tr_machine["name"] / "facter.json",
         )
-        shutil.copy(
+
+        copy_from_nixstore(
             nix_config,
             config.clan_dir / "machines" / tr_machine["name"] / "configuration.nix",
         )

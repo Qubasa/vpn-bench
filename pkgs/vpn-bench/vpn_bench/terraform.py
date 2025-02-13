@@ -9,6 +9,8 @@ from pathlib import Path
 from typing import Any, TypedDict
 
 from clan_cli.cmd import Log, RunOpts, run
+from clan_cli.templates import copy_from_nixstore
+from clan_cli.vars.prompt import PromptType, ask
 
 from vpn_bench.assets import get_cloud_asset
 from vpn_bench.data import Config, Provider
@@ -33,7 +35,7 @@ def tr_init(config: Config, provider: Provider) -> None:
     providers_dir = tr_dest_folder / ".terraform"
 
     if not tr_dest_folder.exists():
-        shutil.copytree(tr_folder, tr_dest_folder, dirs_exist_ok=True)
+        copy_from_nixstore(tr_folder, tr_dest_folder)
 
         log.info(f"Symlink: {providers_cache_dir} -> {providers_dir}")
         providers_dir.symlink_to(providers_cache_dir)
@@ -108,7 +110,7 @@ def tr_ask_for_api_key(provider: Provider) -> None:
                 log.info(
                     "Please generate one. Follow for more info: https://docs.hetzner.com/cloud/api/getting-started/generating-api-token/"
                 )
-                api_token = input("Enter your Hetzner Cloud API token: ")
+                api_token = ask("Hetzner Cloud API token: ", PromptType.HIDDEN, None)
                 os.environ["TF_VAR_hcloud_token"] = api_token
         case Provider.GCloud:
             msg = "GCloud not implemented yet"
