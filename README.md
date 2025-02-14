@@ -18,7 +18,7 @@ If you just want to run the benchmark, just execute:
 2. **Download the application**
   - This will download vpn-bench and drop you in a shell with it. This will not install vpn-bench
   ```bash
-  nix shell git+https://git.clan.lol/Qubasa/vpn-benchmark.git#vpn-bench
+  nix shell git+https://git.clan.lol/Qubasa/vpn-benchmark.git#vpn-bench --refresh
   ```
 
 3. **Start benchmarking**
