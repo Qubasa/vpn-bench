@@ -110,7 +110,7 @@ def tr_ask_for_api_key(provider: Provider) -> None:
                 log.info(
                     "Please generate one. Follow for more info: https://docs.hetzner.com/cloud/api/getting-started/generating-api-token/"
                 )
-                api_token = ask("Hetzner Cloud API token: ", PromptType.HIDDEN, None)
+                api_token = ask("Hetzner Cloud API token", PromptType.HIDDEN, None)
                 os.environ["TF_VAR_hcloud_token"] = api_token
         case Provider.GCloud:
             msg = "GCloud not implemented yet"

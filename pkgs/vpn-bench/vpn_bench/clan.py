@@ -1,4 +1,5 @@
 import logging
+import os
 import shutil
 from dataclasses import dataclass
 from pathlib import Path
@@ -7,8 +8,6 @@ import clan_cli.clan.create
 from clan_cli.api.disk import set_machine_disk_schema
 from clan_cli.clan_uri import Flake
 from clan_cli.cmd import RunOpts, run
-from clan_cli.dirs import get_clan_flake_toplevel
-from clan_cli.git import commit_file
 from clan_cli.inventory import load_inventory_eval, set_inventory
 from clan_cli.inventory.classes import (
     Inventory,
@@ -35,7 +34,7 @@ from clan_cli.ssh.host import Host
 from clan_cli.ssh.host_key import HostKeyCheck
 from clan_cli.templates import copy_from_nixstore
 
-from vpn_bench.assets import get_clan_module, get_cloud_asset
+from vpn_bench.assets import get_cloud_asset
 from vpn_bench.data import Config, Provider
 from vpn_bench.errors import VpnBenchError
 from vpn_bench.terraform import TrMachine
@@ -45,18 +44,6 @@ log = logging.getLogger(__name__)
 
 def clan_clean(config: Config) -> None:
     shutil.rmtree(config.clan_dir, ignore_errors=True)
-
-
-def add_clan_module(clan_dir: Path, module_name: str, exists_ok: bool = False) -> None:
-    autoimports_dir = clan_dir / "imports" / "inventory"
-    autoimports_dir.mkdir(parents=True, exist_ok=True)
-
-    copy_from_nixstore(
-        get_clan_module(module_name),
-        autoimports_dir / module_name,
-        dirs_exist_ok=exists_ok,
-    )
-    commit_file(autoimports_dir, clan_dir, f"Add {module_name} module")
 
 
 def can_ssh_login(host: Host) -> bool:
@@ -100,10 +87,16 @@ def clan_init(
 
     clan_dir = Flake(str(config.clan_dir))
 
-    local_clan = get_clan_flake_toplevel()
+    vpn_bench_flake = os.environ.get("VPN_BENCH_FLAKE")
+    if vpn_bench_flake is None:
+        msg = "Could not find local clan flake"
+        raise VpnBenchError(msg)
+
+    vpnbench_clan = Path(vpn_bench_flake)
+
     clan_cli.clan.create.create_clan(
         clan_cli.clan.create.CreateOptions(
-            src_flake=Flake(str(local_clan)),
+            src_flake=Flake(str(vpnbench_clan)),
             template_name="vpnBenchClan",
             dest=config.clan_dir,
             update_clan=False,
@@ -130,7 +123,7 @@ def clan_init(
     flake_nix = clan_dir.path / "flake.nix"
     with flake_nix.open("r+") as f:
         orig_url = "__VPN_BENCH_PATH__"
-        my_url = str(local_clan)
+        my_url = str(vpnbench_clan)
         text = f.read().replace(orig_url, my_url)
         f.seek(0)
         f.write(text)
