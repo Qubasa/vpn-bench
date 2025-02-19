@@ -1,20 +1,22 @@
+import json
 import logging
 import os
 import shutil
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Any
 
 import clan_cli.clan.create
-from clan_cli.api.disk import set_machine_disk_schema
+from clan_cli.api.disk import hw_main_disk_options, set_machine_disk_schema
 from clan_cli.clan_uri import Flake
 from clan_cli.cmd import RunOpts, run
-from clan_cli.inventory import load_inventory_eval, set_inventory
-from clan_cli.inventory.classes import (
-    Inventory,
-    MachineDeploy,
-)
+from clan_cli.dirs import specific_machine_dir
+from clan_cli.inventory import patch_inventory_with
 from clan_cli.inventory.classes import (
     Machine as InventoryMachine,
+)
+from clan_cli.inventory.classes import (
+    MachineDeploy,
 )
 
 # Clan TODO: We need to fix this circular import problem in clan_cli!
@@ -32,9 +34,7 @@ from clan_cli.secrets.sops import (
 from clan_cli.secrets.users import add_user
 from clan_cli.ssh.host import Host
 from clan_cli.ssh.host_key import HostKeyCheck
-from clan_cli.templates import copy_from_nixstore
 
-from vpn_bench.assets import get_cloud_asset
 from vpn_bench.data import Config, Provider
 from vpn_bench.errors import VpnBenchError
 from vpn_bench.terraform import TrMachine
@@ -89,7 +89,7 @@ def clan_init(
 
     vpn_bench_flake = os.environ.get("VPN_BENCH_FLAKE")
     if vpn_bench_flake is None:
-        msg = "Could not find local clan flake"
+        msg = "Could not find VPN_BENCH_FLAKE in the environment"
         raise VpnBenchError(msg)
 
     vpnbench_clan = Path(vpn_bench_flake)
@@ -129,8 +129,50 @@ def clan_init(
         f.write(text)
     run(nix_command(["flake", "update", "clan-core"]), RunOpts(cwd=clan_dir.path))
 
+    # Add the machines to the myadmin module
+    inventory: dict[str, Any] = {}
+
+    inventory["myadmin"] = {
+        "someid": {
+            "roles": {
+                "default": {
+                    "tags": ["all"],
+                    "config": {
+                        "allowedKeys": {age_opts.username: ssh_key_path.read_text()},
+                    },
+                }
+            }
+        }
+    }
+
+    inventory["sshd"] = {
+        "someid": {
+            "roles": {
+                "server": {
+                    "tags": ["all"],
+                    "config": {},
+                }
+            }
+        }
+    }
+
+    inventory["zerotier"] = {
+        "someid": {
+            "roles": {
+                "controller": {
+                    "machines": [],
+                    "config": {},
+                },
+                "peer": {
+                    "machines": [],
+                    "config": {},
+                }
+            }
+        }
+    }
+
     # Create the machines
-    for tr_machine in tr_machines:
+    for machine_num, tr_machine in enumerate(tr_machines):
         assert tr_machine["ipv4"] is not None
         host = Host(user=tr_machine["name"], host=tr_machine["ipv4"])
         # TODO: We should have somekind of method that creates a Machine object from a InventoryMachine object
@@ -140,65 +182,30 @@ def clan_init(
         # Clan TODO: We should require the Host object here instead of a string
         create_machine(ClanCreateOptions(clan_dir, inv_machine, target_host=host.host))
 
-    # Add the machines to the myadmin module
-    inventory: Inventory = load_inventory_eval(clan_dir.path)
-    inventory["services"]["myadmin"] = {
-        "someid": {
-            "roles": {
-                "default": {
-                    "machines": [tr_machine["name"] for tr_machine in tr_machines],
-                    "config": {
-                        "allowedKeys": {age_opts.username: ssh_key_path.read_text()},
-                    },
-                }
-            }
-        }
-    }
-
-    inventory["services"]["sshd"] = {
-        "someid": {
-            "roles": {
-                "server": {
-                    "machines": [tr_machine["name"] for tr_machine in tr_machines],
-                    "config": {},
-                }
-            }
-        }
-    }
+        if machine_num == 0:
+            log.info(
+                f"Setting up the first machine {tr_machine['name']} as the zerotier controller"
+            )
+            inventory["zerotier"]["someid"]["roles"]["controller"][
+                "machines"
+            ].append(tr_machine["name"])
+        else:
+            log.info(f"Adding {tr_machine['name']} to the zerotier peers")
+            inventory["zerotier"]["someid"]["roles"]["peer"][
+                "machines"
+            ].append(tr_machine["name"])
 
     # Clan TODO: flake_dir: str | Path should be replaced with FlakeId everywhere in clan_cli
-    set_inventory(inventory, clan_dir.path, "Add myadmin service")
+    patch_inventory_with(clan_dir.path, "services", inventory)
 
     # Install the machines
-    hardware_conf = get_cloud_asset(provider, "clan") / "facter.json"
-    nix_config = get_cloud_asset(provider, "clan") / "configuration.nix"
     for tr_machine in tr_machines:
-        # Clan TODO: We need nixos-anywhere to support multiple phases so that we can generate the hardware config
-        # and then the disk schema
-        copy_from_nixstore(
-            hardware_conf,
-            config.clan_dir / "machines" / tr_machine["name"] / "facter.json",
-        )
-
-        copy_from_nixstore(
-            nix_config,
-            config.clan_dir / "machines" / tr_machine["name"] / "configuration.nix",
-        )
-
         # Clan TODO: We should have a method that creates a Host object from a machine object
         machine = Machine(
             name=tr_machine["name"], flake=clan_dir, host_key_check=HostKeyCheck.NONE
         )
 
-        # Clan TODO: We shouldn't need to set this manually, when the facter generation works this should be automatic
-        placeholders = {"mainDisk": "/dev/sda"}
-        set_machine_disk_schema(
-            clan_dir.path,
-            machine.name,
-            "single-disk",
-            placeholders,
-            allow_uknown_placeholders=True,
-        )
+        identity_file = config.data_dir / "id_ed25519"
 
         # Clan TODO: machine.target_host assumes that the host is reachable over root@ip but this is not always the case
         # We should have a way to specify the user
@@ -210,10 +217,44 @@ def clan_init(
             log.warning("Could not login with machine name user, trying root user")
             host.user = "root"
 
+        # TODO: Check if I have noisy neighbors, then redeploy
+        # fping, iperf, tc
         install_machine(
             InstallOptions(
                 machine,
                 target_host=host.target,
                 update_hardware_config=HardwareConfig.NIXOS_FACTER,
+                phases="kexec",
+                identity_file=identity_file,
+                debug=config.debug,
+            )
+        )
+
+        facter_path = (
+            specific_machine_dir(config.clan_dir, machine.name) / "facter.json"
+        )
+        with facter_path.open("r") as f:
+            facter_report = json.load(f)
+
+        disk_devs = hw_main_disk_options(facter_report)
+
+        assert disk_devs is not None
+
+        placeholders = {"mainDisk": disk_devs[0]}
+        set_machine_disk_schema(
+            clan_dir.path,
+            machine.name,
+            "single-disk",
+            placeholders
+        )
+
+        install_machine(
+            InstallOptions(
+                machine,
+                target_host=host.target,
+                update_hardware_config=HardwareConfig.NIXOS_FACTER,
+                phases="disko,install,reboot",
+                identity_file=identity_file,
+                debug=config.debug,
             )
         )

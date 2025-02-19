@@ -8,6 +8,7 @@ from pathlib import Path
 from clan_cli.custom_logger import setup_logging
 from clan_cli.dirs import user_cache_dir, user_data_dir
 
+from vpn_bench.bench import benchmark_vpn
 from vpn_bench.clan import AgeOpts, clan_clean, clan_init
 from vpn_bench.data import Config, Provider
 from vpn_bench.errors import VpnBenchError
@@ -23,19 +24,13 @@ def create_parser() -> argparse.ArgumentParser:
 
     create_parser = subparsers.add_parser("create", help="Create resources")
     create_parser.add_argument(
-        "-m", action="append", help="Add machine", default=["jon"]
+        "-m", action="append", help="Add machine", default=["jon", "sara"]
     )
     create_parser.add_argument("--debug", action="store_true", help="Enable debug mode")
     create_parser.add_argument(
         "--provider",
         choices=[p.value for p in Provider],
         default=Provider.Hetzner.value,
-    )
-    create_parser.add_argument(
-        "--ssh-pubkey",
-        help="SSH pubkey path",
-        type=Path,
-        default=os.environ.get("SSH_PUB_KEY_PATH"),
     )
 
     destroy_parser = subparsers.add_parser("destroy", help="Destroy resources")
@@ -72,6 +67,9 @@ def create_parser() -> argparse.ArgumentParser:
         type=Path,
     )
 
+    clan_parser = subparsers.add_parser("bench", help="Benchmark command")
+    clan_parser.add_argument("--debug", action="store_true", help="Enable debug mode")
+
     return parser
 
 
@@ -106,12 +104,7 @@ def run_cli() -> None:
         provider = Provider.from_str(args.provider)
 
     if args.subcommand == "create":
-        if args.ssh_pubkey is None:
-            msg = """Please specify an SSH key with --ssh-pubkey
-            or set the SSH_PUBKEY_PATH environment variable"""
-            raise VpnBenchError(msg)
-
-        tr_create(config, args.ssh_pubkey, provider, machines=args.m)
+        tr_create(config, provider, machines=args.m)
     elif args.subcommand == "destroy":
         tr_destroy(config, provider, args.force)
         clan_clean(config)
@@ -143,5 +136,8 @@ def run_cli() -> None:
 
         clan_init(config, provider, args.ssh_pubkey, age_opts, machines)
 
+    elif args.subcommand == "bench":
+        machines = tr_metadata(config)
+        benchmark_vpn(config, machines)
     else:
         parser.print_help()

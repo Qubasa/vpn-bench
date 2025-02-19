@@ -18,6 +18,8 @@ mkShell {
     # Add bin folder to PATH
     export PATH="$PKG_ROOT/bin":"$PATH"
 
+    export VPN_BENCH_FLAKE="$GIT_ROOT"
+
     if [ -f .local.env ]; then
       source .local.env
     fi

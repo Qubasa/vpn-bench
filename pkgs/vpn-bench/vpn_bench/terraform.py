@@ -4,8 +4,6 @@ import json
 import logging
 import os
 import shutil
-import sys
-from pathlib import Path
 from typing import Any, TypedDict
 
 from clan_cli.cmd import Log, RunOpts, run
@@ -14,7 +12,6 @@ from clan_cli.vars.prompt import PromptType, ask
 
 from vpn_bench.assets import get_cloud_asset
 from vpn_bench.data import Config, Provider
-from vpn_bench.errors import VpnBenchError
 
 log = logging.getLogger(__name__)
 
@@ -74,37 +71,6 @@ def tr_write_vars(config: Config, data: dict[str, Any]) -> None:
 def tr_ask_for_api_key(provider: Provider) -> None:
     match provider:
         case Provider.Hetzner:
-            if os.environ.get("TF_VAR_hcloud_token"):
-                return
-            if bitwarden_api_key_loc := os.environ.get("BW_API_KEY_LOC"):
-                log.debug("Bitwarden API key location found in environment")
-                did_login = run(
-                    ["bw", "login", "--check"], RunOpts(log=Log.BOTH, check=False)
-                )
-                if did_login.returncode != 0:
-                    log.info("Bitwarden not logged in")
-                    log.info("Please login to Bitwarden CLI")
-                    run(
-                        ["bw", "login"],
-                        RunOpts(
-                            log=Log.BOTH,
-                            stderr=sys.stderr.buffer,
-                            error_msg="Failed to login to Bitwarden CLI",
-                            needs_user_terminal=True,
-                        ),
-                    )
-
-                res = run(
-                    ["bw", "get", "item", bitwarden_api_key_loc],
-                    RunOpts(
-                        log=Log.NONE,
-                        stderr=sys.stderr.buffer,
-                        needs_user_terminal=True,
-                        error_msg="Failed to get Hetzner Cloud API token from Bitwarden",
-                    ),
-                )
-                api_token = json.loads(res.stdout)["login"]["password"]
-                os.environ["TF_VAR_hcloud_token"] = api_token
             if not os.environ.get("TF_VAR_hcloud_token"):
                 log.info("Hetzner Cloud API token not found in environment")
                 log.info(
@@ -117,15 +83,26 @@ def tr_ask_for_api_key(provider: Provider) -> None:
             raise NotImplementedError(msg)
 
 
-def tr_create(
-    config: Config, ssh_key: Path, provider: Provider, machines: list[str]
-) -> None:
-    if not ssh_key.exists():
-        msg = f"SSH key {ssh_key} does not exist, please specify one with --ssh-key"
-        raise VpnBenchError(msg)
-
+def tr_create(config: Config, provider: Provider, machines: list[str]) -> None:
     tr_ask_for_api_key(provider)
     tr_init(config, provider)
+
+    # do a ssh-keygen -t ed25519 -C "your_email@example.com"
+    cmd = [
+        "ssh-keygen",
+        "-t",
+        "ed25519",
+        "-C",
+        "example@example.com",
+        "-f",
+        f"{config.data_dir}/id_ed25519",
+        "-N",
+        "",
+        "-y",
+    ]
+    run(cmd, RunOpts(log=Log.BOTH))
+    ssh_key = config.data_dir / "id_ed25519.pub"
+
     match provider:
         case Provider.Hetzner:
             servers: list[TrMachine] = []
