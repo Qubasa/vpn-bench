@@ -18,6 +18,10 @@ disallow_untyped_calls = true
 disallow_untyped_defs = true
 no_implicit_optional = true
 
+[[tool.mypy.overrides]]
+module = "seaborn.*"
+ignore_missing_imports = true
+
 
 [tool.setuptools.package-data]
 vpn_bench = [

@@ -15,6 +15,18 @@ class Provider(Enum):
         raise ValueError(msg)
 
 
+class VPN(Enum):
+    Zerotier = "zerotier"
+    Mycelium = "mycelium"
+
+    @staticmethod
+    def from_str(label: str) -> "VPN":
+        if label in VPN._value2member_map_:
+            return VPN(VPN._value2member_map_[label])
+        msg = f"Unknown VPN: {label}"
+        raise ValueError(msg)
+
+
 @dataclass
 class Config:
     debug: bool
@@ -22,3 +34,4 @@ class Config:
     cache_dir: Path
     tr_dir: Path
     clan_dir: Path
+    bench_dir: Path

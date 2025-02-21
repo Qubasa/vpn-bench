@@ -10,7 +10,7 @@ from clan_cli.dirs import user_cache_dir, user_data_dir
 
 from vpn_bench.bench import benchmark_vpn
 from vpn_bench.clan import AgeOpts, clan_clean, clan_init
-from vpn_bench.data import Config, Provider
+from vpn_bench.data import VPN, Config, Provider
 from vpn_bench.errors import VpnBenchError
 from vpn_bench.terraform import tr_create, tr_destroy, tr_metadata
 
@@ -68,6 +68,12 @@ def create_parser() -> argparse.ArgumentParser:
     )
 
     clan_parser = subparsers.add_parser("bench", help="Benchmark command")
+    clan_parser.add_argument(
+        "--vpn",
+        choices=[p.value for p in VPN],
+        default=VPN.Zerotier.value,
+    )
+
     clan_parser.add_argument("--debug", action="store_true", help="Enable debug mode")
 
     return parser
@@ -83,12 +89,14 @@ def run_cli() -> None:
     cache_dir.mkdir(parents=True, exist_ok=True)
     tr_dir = data_dir / "terraform"
     clan_dir = data_dir / "clan"
+    bench_dir = data_dir / "bench"
     config = Config(
         debug=is_debug,
         data_dir=data_dir,
         tr_dir=tr_dir,
         cache_dir=cache_dir,
         clan_dir=clan_dir,
+        bench_dir=bench_dir,
     )
 
     if config.debug:
@@ -102,6 +110,9 @@ def run_cli() -> None:
 
     if getattr(args, "provider", False):
         provider = Provider.from_str(args.provider)
+
+    if getattr(args, "vpn", False):
+        vpn = VPN.from_str(args.vpn)
 
     if args.subcommand == "create":
         tr_create(config, provider, machines=args.m)
@@ -138,6 +149,6 @@ def run_cli() -> None:
 
     elif args.subcommand == "bench":
         machines = tr_metadata(config)
-        benchmark_vpn(config, machines)
+        benchmark_vpn(config, vpn, machines)
     else:
         parser.print_help()

@@ -11,7 +11,9 @@ from clan_cli.nix import nix_shell
 def run_bandwidth_test(server: str, port: int) -> float | None:
     try:
         # Use 'nix_shell' to run 'iperf3' within a Nix shell environment
-        cmd: list[str] = nix_shell(["nixpkgs#iperf3"], ["iperf3", "-c", server, "-p", str(port), "-J"])
+        cmd: list[str] = nix_shell(
+            ["nixpkgs#iperf3"], ["iperf3", "-c", server, "-p", str(port), "-J"]
+        )
         result = run(cmd)
         if result.returncode == 0:
             output = json.loads(result.stdout)
@@ -25,12 +27,13 @@ def run_bandwidth_test(server: str, port: int) -> float | None:
     else:
         return None
 
+
 def detect_noisy_neighbor(threshold_mbps: float = 900) -> bool:
     # List of public iperf3 servers
     servers: list[tuple[str, int]] = [
-        ("iperf.scottlinux.com", 5201),
-        ("iperf.as208195.net", 5201),
-        ("iperf.he.net", 5201),
+        ("qube.email", 5201),
+        # ("iperf.he.net", 5201),
+        # ("iperf3.moji.fr", 5201),
     ]
 
     bandwidth_results: list[float] = []
@@ -59,6 +62,7 @@ def detect_noisy_neighbor(threshold_mbps: float = 900) -> bool:
         return True  # Noisy neighbor detected
     print("Average bandwidth is above threshold.")
     return False  # No noisy neighbor detected
+
 
 if __name__ == "__main__":
     noisy_neighbor_detected: bool = detect_noisy_neighbor()

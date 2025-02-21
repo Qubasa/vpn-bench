@@ -166,7 +166,15 @@ def clan_init(
                 "peer": {
                     "machines": [],
                     "config": {},
-                }
+                },
+            }
+        }
+    }
+
+    inventory["iperf"] = {
+        "someid": {
+            "roles": {
+                "server": {"machines": [], "config": {}, "tags": ["all"]},
             }
         }
     }
@@ -186,14 +194,14 @@ def clan_init(
             log.info(
                 f"Setting up the first machine {tr_machine['name']} as the zerotier controller"
             )
-            inventory["zerotier"]["someid"]["roles"]["controller"][
-                "machines"
-            ].append(tr_machine["name"])
+            inventory["zerotier"]["someid"]["roles"]["controller"]["machines"].append(
+                tr_machine["name"]
+            )
         else:
             log.info(f"Adding {tr_machine['name']} to the zerotier peers")
-            inventory["zerotier"]["someid"]["roles"]["peer"][
-                "machines"
-            ].append(tr_machine["name"])
+            inventory["zerotier"]["someid"]["roles"]["peer"]["machines"].append(
+                tr_machine["name"]
+            )
 
     # Clan TODO: flake_dir: str | Path should be replaced with FlakeId everywhere in clan_cli
     patch_inventory_with(clan_dir.path, "services", inventory)
@@ -242,10 +250,7 @@ def clan_init(
 
         placeholders = {"mainDisk": disk_devs[0]}
         set_machine_disk_schema(
-            clan_dir.path,
-            machine.name,
-            "single-disk",
-            placeholders
+            clan_dir.path, machine.name, "single-disk", placeholders
         )
 
         install_machine(

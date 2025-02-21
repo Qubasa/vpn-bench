@@ -23,5 +23,9 @@ python3Packages.buildPythonApplication {
   propagatedBuildInputs = [ 
     clan-cli-module
     opentofu
-  ];
+  ] ++ (with python3Packages; [
+    matplotlib
+    pandas
+    pandas-stubs
+  ]);
 }
