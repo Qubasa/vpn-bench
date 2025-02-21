@@ -32,6 +32,7 @@
       flake = {
         clanModules = {
           "myadmin" = ./clanModules/myadmin;
+          "iperf" = ./clanModules/iperf;
         };
         clan = {
           templates = {
