@@ -28,24 +28,22 @@
         ./pkgs/vpn-bench/flake-module.nix
       ];
 
-
       flake = {
         clanModules = {
           "myadmin" = ./clanModules/myadmin;
           "iperf" = ./clanModules/iperf;
         };
-        clan = {
-          templates = {
-            clan = {
-              "vpnBenchClan" = {
-                description = "VPN Bench Clan";
-                path = ./templates/clan/minimal;
-              };
+      };
+
+      clan = {
+        templates = {
+          clan = {
+            "vpnBenchClan" = {
+              description = "VPN Bench Clan";
+              path = ./templates/clan/minimal;
             };
           };
         };
-      };
-
-    
+      };    
     };
 }

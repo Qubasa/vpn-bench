@@ -4,14 +4,13 @@ from dataclasses import dataclass
 from typing import Any
 
 from clan_cli.api import dataclass_to_dict
-from clan_cli.async_run import AsyncFuture, AsyncOpts, AsyncRuntime
+from clan_cli.async_run import AsyncFutureRef, AsyncRuntime
 from clan_cli.cmd import CmdOut
 from clan_cli.facts.list import get_all_facts
 from clan_cli.flake import Flake
 from clan_cli.machines.machines import Machine
-from clan_cli.ssh.host_key import HostKeyCheck
 from clan_cli.nix import nix_shell
-
+from clan_cli.ssh.host_key import HostKeyCheck
 
 # from clan_cli.ssh.upload import upload
 from vpn_bench.data import VPN, Config
@@ -55,13 +54,13 @@ def benchmark_vpn(config: Config, vpn: VPN, tr_machines: list[TrMachine]) -> Non
         bmachines.append(BenchMachine(cmachine=machine, vpn_ip=vpn_ip))
 
     with AsyncRuntime() as ctx:
-        futures: list[AsyncFuture[CmdOut, BenchMachine]] = []
+        futures: list[AsyncFutureRef[CmdOut, BenchMachine]] = []
         for bmachine in bmachines:
             host = bmachine.cmachine.target_host
-            # upload(host, )
             log.info(f"Benchmarking {bmachine.cmachine.name} with ip {bmachine.vpn_ip}")
-            future: AsyncFuture[CmdOut, BenchMachine] = ctx.async_run(
-                AsyncOpts(reference=bmachine),
+            future: AsyncFutureRef[CmdOut, BenchMachine] = ctx.async_run_ref(
+                bmachine,
+                None,
                 host.run,
                 nix_shell(["nixpkgs#iperf3"], ["iperf3", "--json", "-c", "qube.email"]),
             )

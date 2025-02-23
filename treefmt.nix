@@ -3,7 +3,7 @@
   imports = [ inputs.treefmt-nix.flakeModule ];
 
   perSystem =
-    { pkgs, inputs', ... }:
+    { self', pkgs, inputs', ... }:
     {
       treefmt = {
         # Used to find the project root
@@ -20,8 +20,8 @@
         programs.mypy.directories =
         {
           "vpn_bench" = {
-            directory = "vpn_bench";
-            extraPythonPackages = [(pkgs.python3.pkgs.toPythonModule inputs'.clan-core.packages.clan-cli)];
+            directory = "pkgs/vpn-bench/vpn_bench";
+            extraPythonPackages = [(pkgs.python3.pkgs.toPythonModule inputs'.clan-core.packages.clan-cli)] ++ self'.packages.vpn-bench.propagatedBuildInputs;
           };
           
         };

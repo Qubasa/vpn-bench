@@ -12,6 +12,7 @@ from clan_cli.vars.prompt import PromptType, ask
 
 from vpn_bench.assets import get_cloud_asset
 from vpn_bench.data import Config, Provider
+from vpn_bench.errors import VpnBenchError
 
 log = logging.getLogger(__name__)
 
@@ -83,7 +84,9 @@ def tr_ask_for_api_key(provider: Provider) -> None:
             raise NotImplementedError(msg)
 
 
-def tr_create(config: Config, provider: Provider, machines: list[str]) -> None:
+def tr_create(
+    config: Config, provider: Provider, location: str | None, machines: list[str]
+) -> None:
     tr_ask_for_api_key(provider)
     tr_init(config, provider)
 
@@ -106,11 +109,28 @@ def tr_create(config: Config, provider: Provider, machines: list[str]) -> None:
     match provider:
         case Provider.Hetzner:
             servers: list[TrMachine] = []
+
+            allowed_locations = {
+                "nbg1": "DE: Nuremberg",
+                "fsn1": "DE: Falkenstein",
+                "hel1": "FIN: Helsinki",
+                "ash": "US: Ashburn",
+                "hil": "US: Hillsboro",
+                "sin": "SG: Singapore",
+            }
+            if location is None:
+                location = "nbg1"
+                log.info(f"No location specified. Using default location: {location}")
+
+            if location not in allowed_locations:
+                msg = f"Invalid location: {location}. Valid locations: {json.dumps(allowed_locations, indent=2)}"
+                raise VpnBenchError(msg)
+
             for machine in machines:
                 servers.append(
                     {
                         "name": machine,
-                        "location": "sin",  # TODO: Make configurable
+                        "location": location,
                         "server_type": "ccx13",
                         "ipv4": None,
                     }
