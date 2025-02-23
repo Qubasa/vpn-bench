@@ -68,16 +68,16 @@ def setup_sops_key(age_opts: AgeOpts) -> str:
 def update_flake_nix(clan_dir: Path, vpnbench_clan: Path) -> None:
     """Update flake.nix with correct path."""
     flake_nix = clan_dir / "flake.nix"
-    vpnbench_flake = Flake(str(vpnbench_clan))
-    vpnbench_flake.prefetch()
+    # vpnbench_flake = Flake(str(vpnbench_clan))
+    # vpnbench_flake.prefetch()
     with flake_nix.open("r+") as f:
         text = f.read().replace(
             "__VPN_BENCH_PATH__",
-            f"path:{vpnbench_flake.store_path}?narHash={vpnbench_flake.hash}",
+            f"path:{clan_dir}",
         )
         f.seek(0)
         f.write(text)
-    run(nix_command(["flake", "update", "clan-core"]), RunOpts(cwd=clan_dir))
+    run(nix_command(["flake", "update"]), RunOpts(cwd=clan_dir))
     commit_file(flake_nix, clan_dir, "Update flake.nix with correct path")
 
 
@@ -113,6 +113,16 @@ def create_base_inventory(username: str, ssh_key_content: str) -> dict[str, Any]
                 }
             }
         },
+
+        "my-trusted-nix-caches": {
+            "someid": {
+                "roles": {
+                    "default": {
+                        "tags": ["all"],
+                    }
+                }
+            }
+        }
     }
 
 
@@ -130,18 +140,6 @@ def setup_machine(
     create_machine(
         ClanCreateOptions(Flake(str(clan_dir)), inv_machine, target_host=host.host)
     )
-
-    # Configure ZeroTier role
-    if machine_num == 0:
-        log.info(f"Setting up {tr_machine['name']} as the zerotier controller")
-        inventory["zerotier"]["someid"]["roles"]["controller"]["machines"].append(
-            tr_machine["name"]
-        )
-    else:
-        log.info(f"Adding {tr_machine['name']} to the zerotier peers")
-        inventory["zerotier"]["someid"]["roles"]["peer"]["machines"].append(
-            tr_machine["name"]
-        )
 
 
 def clan_init(
@@ -190,7 +188,7 @@ def clan_init(
     patch_inventory_with(config.clan_dir, "services", inventory)
 
     with AsyncRuntime() as runtime:
-        for machine_num, tr_machine in enumerate(tr_machines):
+        for tr_machine in tr_machines:
             name = tr_machine["name"]
             runtime.async_run(
                 AsyncOpts(tid=name, async_ctx=AsyncContext(prefix=name)),
@@ -198,8 +196,6 @@ def clan_init(
                 config,
                 config.clan_dir,
                 tr_machine,
-                machine_num,
-                inventory,
             )
         runtime.join_all()
         runtime.check_all()
