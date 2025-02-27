@@ -32,6 +32,7 @@
         clanModules = {
           "myadmin" = ./clanModules/myadmin;
           "iperf" = ./clanModules/iperf;
+          "my-trusted-nix-caches" = ./clanModules/my-trusted-nix-caches;
         };
       };
 
@@ -41,6 +42,10 @@
             "vpnBenchClan" = {
               description = "VPN Bench Clan";
               path = ./templates/clan/minimal;
+            };
+            "testClan" = {
+              description = "test";
+              path = ./test.txt;
             };
           };
         };

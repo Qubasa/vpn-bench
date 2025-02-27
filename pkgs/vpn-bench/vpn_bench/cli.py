@@ -12,6 +12,7 @@ from vpn_bench.bench import benchmark_vpn
 from vpn_bench.clan import AgeOpts, clan_clean, clan_init
 from vpn_bench.data import VPN, Config, Provider
 from vpn_bench.errors import VpnBenchError
+from vpn_bench.plot import plot_data
 from vpn_bench.terraform import tr_create, tr_destroy, tr_metadata
 
 log = logging.getLogger(__name__)
@@ -66,14 +67,21 @@ def create_parser() -> argparse.ArgumentParser:
         type=Path,
     )
 
-    clan_parser = subparsers.add_parser("bench", help="Benchmark command")
-    clan_parser.add_argument(
+    bench_parser = subparsers.add_parser("bench", help="Benchmark command")
+    bench_parser.add_argument(
         "--vpn",
         choices=[p.value for p in VPN],
         default=VPN.Zerotier.value,
     )
+    bench_parser.add_argument("--debug", action="store_true", help="Enable debug mode")
 
-    clan_parser.add_argument("--debug", action="store_true", help="Enable debug mode")
+    plot_parser = subparsers.add_parser("plot", help="Plot the data from benchmark")
+    plot_parser.add_argument("--debug", action="store_true", help="Enable debug mode")
+    plot_parser.add_argument(
+        "--vpn",
+        choices=[p.value for p in VPN],
+        default=VPN.Zerotier.value,
+    )
 
     return parser
 
@@ -156,5 +164,8 @@ def run_cli() -> None:
     elif args.subcommand == "bench":
         machines = tr_metadata(config)
         benchmark_vpn(config, vpn, machines)
+    elif args.subcommand == "plot":
+        machines = tr_metadata(config)
+        plot_data(config, machines, vpn)
     else:
         parser.print_help()

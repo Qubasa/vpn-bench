@@ -73,12 +73,12 @@ def update_flake_nix(clan_dir: Path, vpnbench_clan: Path) -> None:
     with flake_nix.open("r+") as f:
         text = f.read().replace(
             "__VPN_BENCH_PATH__",
-            f"path:{clan_dir}",
+            f"path://{vpnbench_clan}",
         )
         f.seek(0)
         f.write(text)
-    run(nix_command(["flake", "update"]), RunOpts(cwd=clan_dir))
     commit_file(flake_nix, clan_dir, "Update flake.nix with correct path")
+    run(nix_command(["flake", "lock"]), RunOpts(cwd=clan_dir))
 
 
 def create_base_inventory(username: str, ssh_key_content: str) -> dict[str, Any]:
@@ -113,7 +113,6 @@ def create_base_inventory(username: str, ssh_key_content: str) -> dict[str, Any]
                 }
             }
         },
-
         "my-trusted-nix-caches": {
             "someid": {
                 "roles": {
@@ -122,7 +121,7 @@ def create_base_inventory(username: str, ssh_key_content: str) -> dict[str, Any]
                     }
                 }
             }
-        }
+        },
     }
 
 

@@ -1,11 +1,11 @@
 {
-  inputs.clan-core.url = "https://git.clan.lol/clan/clan-core/archive/main.tar.gz";
-  inputs.vpn-bench = {
-    url = "__VPN_BENCH_PATH__";
-    inputs.nixpkgs.follows = "clan-core/nixpkgs";
+  inputs = {
+    cvpn-bench = {
+      url = "__VPN_BENCH_PATH__";
+    };
+    nixpkgs.follows = "cvpn-bench/nixpkgs";
+    clan-core.follows = "cvpn-bench/clan-core";
   };
-  inputs.nixpkgs.follows = "clan-core/nixpkgs";
-
 
   outputs =
     { self, clan-core, ... }:
