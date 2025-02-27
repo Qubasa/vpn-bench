@@ -26,6 +26,7 @@
         inputs.clan-core.flakeModules.default  
         ./treefmt.nix 
         ./pkgs/vpn-bench/flake-module.nix
+        ./pkgs/webview-ui/flake-module.nix
       ];
 
       flake = {

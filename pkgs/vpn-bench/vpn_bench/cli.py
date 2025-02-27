@@ -46,10 +46,14 @@ def create_parser() -> argparse.ArgumentParser:
         "--force", action="store_true", help="Delete local data even if remote fails"
     )
 
-    metadata_parser = subparsers.add_parser("metadata", help="Show metadata")
+    metadata_parser = subparsers.add_parser("meta", help="Show metadata")
     metadata_parser.add_argument(
         "--debug", action="store_true", help="Enable debug mode"
     )
+
+    ssh_parser = subparsers.add_parser("ssh", help="SSH into a machine")
+    ssh_parser.add_argument("--debug", action="store_true", help="Enable debug mode")
+    ssh_parser.add_argument("machine", help="Machine to SSH into")
 
     clan_parser = subparsers.add_parser("install", help="Install command")
     clan_parser.add_argument("--debug", action="store_true", help="Enable debug mode")
@@ -133,7 +137,7 @@ def run_cli() -> None:
     elif args.subcommand == "destroy":
         tr_destroy(config, provider, args.force)
         clan_clean(config)
-    elif args.subcommand == "metadata":
+    elif args.subcommand == "meta":
         meta = tr_metadata(config)
         for machine in meta:
             print(machine)
@@ -167,5 +171,18 @@ def run_cli() -> None:
     elif args.subcommand == "plot":
         machines = tr_metadata(config)
         plot_data(config, machines, vpn)
+    elif args.subcommand == "ssh":
+        machines = tr_metadata(config)
+        import subprocess
+
+        found = False
+        for machine in machines:
+            if machine["name"] == args.machine:
+                found = True
+                target = f"root@{machine['ipv4']}"
+                log.info(f"ssh {target}")
+                subprocess.run(["ssh", f"{target}"])
+        if not found:
+            log.error(f"Machine {args.machine} not found")
     else:
         parser.print_help()

@@ -4,11 +4,13 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+from clan_cli.api import dataclass_to_dict
 from clan_cli.cmd import Log, RunOpts, run
 from clan_cli.facts.list import get_all_facts
 from clan_cli.flake import Flake
 from clan_cli.inventory import patch_inventory_with
 from clan_cli.machines.machines import Machine
+from clan_cli.machines.update import deploy_machines
 from clan_cli.nix import nix_command
 from clan_cli.ssh.host_key import HostKeyCheck
 from clan_cli.ssh.upload import upload
@@ -27,7 +29,6 @@ log = logging.getLogger(__name__)
 class BenchMachine:
     cmachine: Machine
     vpn_ip: str
-    iperf_report: dict[str, Any] | None = None
 
 
 def install_zerotier(config: Config, tr_machines: list[TrMachine]) -> None:
@@ -61,36 +62,88 @@ def install_zerotier(config: Config, tr_machines: list[TrMachine]) -> None:
     patch_inventory_with(config.clan_dir, "services.zerotier", zerotier_conf)
 
 
-def benchmark_vpn(config: Config, vpn: VPN, tr_machines: list[TrMachine]) -> None:
-    clan_dir = Flake(str(config.clan_dir))
+def run_iperf_test(
+    host: Any, target_host: str, remote_iperf3_pubkey: Path, udp_mode: bool = False
+) -> dict[str, Any]:
+    """Run a single iperf3 test and return the results."""
+    cmd = [
+        "shell",
+        "nixpkgs#iperf3",
+        "-c",
+        "iperf3",
+        "--bidir",
+        "--json",
+        "-Z",
+        "-c",
+        target_host,
+        "--username",
+        "mario",
+        "--rsa-public-key-path",
+        str(remote_iperf3_pubkey),
+    ]
 
-    # TODO: Add build_host test in clan-cli
-    machines = [
+    if udp_mode:
+        cmd.extend(["-u", "--udp-counters-64bit", "-b", "0"])
+
+    res = host.run(
+        nix_command(cmd),
+        RunOpts(log=Log.BOTH),
+        extra_env={"IPERF3_PASSWORD": "mambaBudo"},
+    )
+    return json.loads(res.stdout)
+
+
+def save_iperf_results(
+    result_dir: Path, json_data: dict[str, Any], test_type: str
+) -> None:
+    """Save iperf test results to a file."""
+    result_dir.mkdir(parents=True, exist_ok=True)
+    with (result_dir / f"{test_type}_iperf3.json").open("w") as f:
+        json.dump(json_data, f, indent=4)
+
+
+def run_benchmarks(config: Config, vpn: VPN, bmachines: list[BenchMachine]) -> None:
+    """Run TCP and UDP benchmarks for each machine."""
+
+    # Upload iperf3 public key
+    local_iperf3_pubkey = get_asset("iperf3.public")
+    remote_iperf3_pubkey = Path("/tmp/iperf3.public")
+    for pos, bmachine in enumerate(bmachines):
+        next_bmachine = bmachines[pos + 1] if pos + 1 < len(bmachines) else bmachines[0]
+        host = bmachine.cmachine.target_host
+        log.info(f"Benchmarking {bmachine.cmachine.name} with ip {bmachine.vpn_ip}")
+        result_dir = config.bench_dir / vpn.name / f"{pos}_{bmachine.cmachine.name}"
+
+        # Upload iperf3 public key
+        upload(host, local_iperf3_pubkey, remote_iperf3_pubkey)
+
+        # Run TCP test
+        tcp_results = run_iperf_test(
+            host, next_bmachine.vpn_ip, remote_iperf3_pubkey, udp_mode=False
+        )
+        save_iperf_results(result_dir, tcp_results, "tcp")
+
+        # Run UDP test
+        udp_results = run_iperf_test(
+            host, next_bmachine.vpn_ip, remote_iperf3_pubkey, udp_mode=True
+        )
+        save_iperf_results(result_dir, udp_results, "udp")
+
+
+def create_machine_obj(config: Config, tr_machines: list[TrMachine]) -> list[Machine]:
+    """Initialize Machine objects for each terraform machine."""
+    clan_dir = Flake(str(config.clan_dir))
+    return [
         Machine(
             name=tr_machine["name"], flake=clan_dir, host_key_check=HostKeyCheck.NONE
         )
         for tr_machine in tr_machines
     ]
 
+
+def get_vpn_ips(machines: list[Machine], vpn: VPN) -> list[BenchMachine]:
+    """Query and collect VPN IPs for each machine."""
     bmachines: list[BenchMachine] = []
-
-    log.info(f"Benchmarking VPN {vpn}")
-
-    # Add VPN to the inventory
-    match vpn:
-        case VPN.Zerotier:
-            install_zerotier(config, tr_machines)
-        case VPN.Mycelium:
-            raise NotImplementedError
-        case _:
-            msg = f"VPN {vpn} not supported"
-            raise VpnBenchError(msg)
-
-    # Update machines
-    # deploy_machines(machines)
-
-    run(["nix", "flake", "update", "cvpn-bench", "--flake", str(clan_dir)])
-    # Query VPN IPs
     for machine in machines:
         facts = get_all_facts(machine)["TODO"]
         match vpn:
@@ -98,76 +151,65 @@ def benchmark_vpn(config: Config, vpn: VPN, tr_machines: list[TrMachine]) -> Non
                 vpn_ip = facts["zerotier-ip"].decode()
             case VPN.Mycelium:
                 raise NotImplementedError
+            case VPN.NoVPN:
+                vpn_ip = "gchq.icu"
             case _:
                 msg = f"VPN {vpn} not supported"
                 raise VpnBenchError(msg)
 
         bmachines.append(BenchMachine(cmachine=machine, vpn_ip=vpn_ip))
+    return bmachines
 
-    # Run iperf3
-    for bmachine in bmachines:
-        host = bmachine.cmachine.target_host
-        log.info(f"Benchmarking {bmachine.cmachine.name} with ip {bmachine.vpn_ip}")
 
-        local_iperf3_pubkey = get_asset("iperf3.public")
-        remote_iperf3_pubkey = Path("/tmp/iperf3.public")
-        upload(host, local_iperf3_pubkey, remote_iperf3_pubkey)
-        # TCP test
-        res = host.run(
-            nix_command(
-                [
-                    "shell",
-                    "nixpkgs#iperf3",
-                    "-c",
-                    "iperf3",
-                    "-Z",
-                    "--bidir",
-                    "--json",
-                    "-c",
-                    "gchq.icu",
-                    "--username",
-                    "mario",
-                    "--rsa-public-key-path",
-                    str(remote_iperf3_pubkey),
-                ]
-            ),
-            RunOpts(log=Log.BOTH),
-            extra_env={"IPERF3_PASSWORD": "mambaBudo"},
-        )
-        json_data = json.loads(res.stdout)
+def install_vpn(
+    config: Config, vpn: VPN, tr_machines: list[TrMachine]
+) -> list[Machine]:
+    # Setup VPN configuration
+    match vpn:
+        case VPN.Zerotier:
+            install_zerotier(config, tr_machines)
+        case VPN.Mycelium:
+            raise NotImplementedError
+        case VPN.NoVPN:
+            pass
+        case _:
+            msg = f"VPN {vpn} not supported"
+            raise VpnBenchError(msg)
 
-        result_dir = config.bench_dir / bmachine.cmachine.name / vpn.name
-        result_dir.mkdir(parents=True, exist_ok=True)
-        with (result_dir / "tcp_iperf3.json").open("w") as f:
-            json.dump(json_data, f, indent=4)
+    # Initialize and configure machines
+    machines = create_machine_obj(config, tr_machines)
 
-        # UDP test
-        res = host.run(
-            nix_command(
-                [
-                    "shell",
-                    "nixpkgs#iperf3",
-                    "-c",
-                    "iperf3",
-                    "--bidir",
-                    "--json",
-                    "-Z",
-                    "-u",
-                    "--udp-counters-64bit",
-                    "-c",
-                    "gchq.icu",
-                    "--username",
-                    "mario",
-                    "--rsa-public-key-path",
-                    str(remote_iperf3_pubkey),
-                ]
-            ),
-            RunOpts(log=Log.BOTH),
-            extra_env={"IPERF3_PASSWORD": "mambaBudo"},
-        )
-        json_data = json.loads(res.stdout)
+    # Update cvpn-bench flake input, else error because of mismatched input
+    run(["nix", "flake", "update", "cvpn-bench", "--flake", str(config.clan_dir)])
 
-        result_dir = config.bench_dir / bmachine.cmachine.name / vpn.name
-        result_dir.mkdir(parents=True, exist_ok=True)
-        with (result_dir / "udp_iperf3.json").open("w") as f:
-            json.dump(json_data, f, indent=4)
+    # Update machine configuration
+    deploy_machines(machines)
+
+    return machines
+
+
+def save_machine_layout(
+    config: Config, vpn: VPN, bmachines: list[BenchMachine]
+) -> None:
+    """Save the machine layout to a file."""
+
+    layout = dataclass_to_dict(bmachines)
+    result_dir = config.bench_dir / vpn.name
+    result_dir.mkdir(parents=True, exist_ok=True)
+    with (result_dir / "layout.json").open("w") as f:
+        json.dump(layout, f, indent=4)
+
+
+def benchmark_vpn(config: Config, vpn: VPN, tr_machines: list[TrMachine]) -> None:
+    """Main function to coordinate VPN benchmarking."""
+    log.info(f"Benchmarking VPN {vpn}")
+
+    # Install VPN
+    machines = install_vpn(config, vpn, tr_machines)
+
+    # Get the VPN IP of each machine
+    bmachines = get_vpn_ips(machines, vpn)
+    save_machine_layout(config, vpn, bmachines)
+
+    # Run benchmarks
+    run_benchmarks(config, vpn, bmachines)

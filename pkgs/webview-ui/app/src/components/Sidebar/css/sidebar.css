@@ -1,0 +1,26 @@
+/* Sidebar Elements */
+
+@import "./sidebar-header";
+@import "./sidebar-flyout";
+@import "./sidebar-list-item";
+@import "./sidebar-profile";
+
+/* Sidebar Structure */
+
+.sidebar {
+  @apply bg-inv-2 h-full border border-solid border-inv-2 min-w-72 rounded-xl;
+}
+
+.sidebar__body {
+  display: flex;
+  flex-direction: column;
+  gap: theme(padding.2);
+  padding: theme(padding.4) theme(padding.2);
+}
+
+.sidebar__section {
+  padding: theme(padding.2);
+  /* background-color: rgba(var(--clr-bg-inv-3) / 0.9); */
+  @apply bg-primary-800/90;
+  border-radius: theme(borderRadius.md);
+}

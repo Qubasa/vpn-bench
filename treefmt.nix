@@ -17,6 +17,53 @@
         programs.shfmt.enable = true;
         settings.formatter.shfmt.includes = [ "*.envrc" ];
 
+        programs.prettier = {
+          enable = true;
+          includes = [
+            "*.cjs"
+            "*.css"
+            "*.html"
+            "*.js"
+            "*.json"
+            "*.json5"
+            "*.jsx"
+            "*.mdx"
+            "*.mjs"
+            "*.scss"
+            "*.ts"
+            "*.tsx"
+            "*.vue"
+            "*.yaml"
+            "*.yml"
+          ];
+        };
+
+        settings.global.excludes = [
+          "*.png"
+          "*.svg"
+          "package-lock.json"
+          "*.jpeg"
+          "*.gitignore"
+          ".vscode/*"
+          "*.toml"
+          "*.clan-flake"
+          "*.code-workspace"
+          "*.pub"
+          "*.typed"
+          "*.age"
+          "*.list"
+          "*.desktop"
+          # ignore symlink
+          "docs/site/manual/contribute.md"
+          "*_test_cert"
+          "*_test_key"
+          "*/gnupg-home/*"
+          "*/sops/secrets/*"
+          "vars/*"
+          # prettier messes up our mkdocs flavoured markdown
+          "*.md"
+        ];
+
         programs.mypy.directories =
         {
           "vpn_bench" = {

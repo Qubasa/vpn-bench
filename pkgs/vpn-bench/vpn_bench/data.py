@@ -16,6 +16,7 @@ class Provider(Enum):
 
 
 class VPN(Enum):
+    NoVPN = "no_vpn"
     Zerotier = "zerotier"
     Mycelium = "mycelium"
 
