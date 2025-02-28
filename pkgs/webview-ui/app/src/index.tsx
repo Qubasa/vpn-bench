@@ -6,13 +6,11 @@ import "./index.css";
 import { QueryClient, QueryClientProvider } from "@tanstack/solid-query";
 
 import { Layout } from "./layout/layout";
+import { IperfDashboard } from "@/src/components/VpnBenchDashboard";
 
-import { Welcome } from "./routes/welcome";
-import { Zerotier } from "./routes/zerotier";
 import { Toaster } from "solid-toast";
-
 import { IconVariant } from "./components/icon";
-import { Components } from "./routes/components";
+import { benchData, BenchData, IperfReport } from "./benchData";
 
 export const client = new QueryClient();
 
@@ -37,36 +35,58 @@ export type AppRoute = Omit<RouteDefinition, "children"> & {
   hidden?: boolean;
 };
 
+// Function to generate routes from benchData
+function generateRoutesFromBenchData(data: BenchData): AppRoute[] {
+  return data.map((category) => {
+    // Convert category name to URL-friendly path
+    const path = `/${category.name.toLowerCase().replace(/\s+/g, "_")}`;
+
+    // Group machines by type
+    const tcpReports: IperfReport[] = [];
+    const udpReports: IperfReport[] = [];
+
+    // Process each machine's data
+    category.machines.forEach((machine) => {
+      machine.iperf3.forEach((iperfData) => {
+        if (iperfData.type === "tcp") {
+          tcpReports.push({
+            name: machine.name.replace(/^\d+_/, ""), // Remove leading numbers and underscore
+            data: iperfData.data,
+          });
+        } else if (iperfData.type === "udp") {
+          udpReports.push({
+            name: machine.name.replace(/^\d+_/, ""), // Remove leading numbers and underscore
+            data: iperfData.data,
+          });
+        }
+      });
+    });
+
+    // Return route config with IperfDashboard component
+    return {
+      path,
+      label: category.name,
+      component: () => (
+        <IperfDashboard tcpReports={tcpReports} udpReports={udpReports} />
+      ),
+      hidden: category.machines.length === 0, // Hide if no machines
+    };
+  });
+}
+
+// Generate routes from benchData
 export const routes: AppRoute[] = [
   {
     path: "/",
     label: "",
     hidden: true,
-    component: () => <Navigate href="/zerotier" />,
+    component: () => (
+      <Navigate
+        href={`/${benchData[0].name.toLowerCase().replace(/\s+/g, "_")}`}
+      />
+    ),
   },
-  {
-    path: "/zerotier",
-    label: "Zerotier",
-    component: () => <Zerotier />,
-  },
-  {
-    path: "/mycelium",
-    label: "Mycelium",
-    hidden: false,
-    component: () => <Welcome />,
-  },
-  // {
-  //   path: "/internal-dev",
-  //   label: "Internal (Only visible in dev mode)",
-  //   children: [
-  //     {
-  //       path: "/components",
-  //       label: "Components",
-  //       hidden: false,
-  //       component: () => <Components />,
-  //     },
-  //   ],
-  // },
+  ...generateRoutesFromBenchData(benchData),
 ];
 
 render(
@@ -80,6 +100,5 @@ render(
       </QueryClientProvider>
     </>
   ),
-  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   root!,
 );
