@@ -1,0 +1,187 @@
+[
+  {
+    "cmachine": {
+      "name": "luna",
+      "flake": {
+        "identifier": "/home/lhebendanz/.local/share/vpn_bench/clan"
+      },
+      "nix_options": [],
+      "cached_deployment": {
+        "buildHost": null,
+        "facts": {
+          "publicModule": "clan_cli.facts.public_modules.in_repo",
+          "secretModule": "clan_cli.facts.secret_modules.sops",
+          "secretUploadDirectory": "/var/lib/sops-nix",
+          "services": {
+            "zerotier": {
+              "generator": {
+                "finalScript": "set -eu -o pipefail\n\nexport PATH=\"/nix/store/s9alkaiv3gmg5xk5m1ysasqfvpq591bn-zerotierone-1.14.2/bin:/nix/store/0l539chjmcq5kdd43j6dgdjky4sjl7hl-python3-3.12.8/bin:/nix/store/wdap4cr3bnm685f27y9bb6q5b6q18msl-coreutils-9.5/bin\"\n\n# prepare sandbox user on platforms where this is supported\nmkdir -p /etc\n\ncat > /etc/group <<EOF\nroot:x:0:\nnixbld:!:$(id -g):\nnogroup:x:65534:\nEOF\n\ncat > /etc/passwd <<EOF\nroot:x:0:0:Nix build user:/build:/noshell\nnixbld:x:$(id -u):$(id -g):Nix build user:/build:/noshell\nnobody:x:65534:65534:Nobody:/:/noshell\nEOF\n\ncat > /etc/hosts <<EOF\n127.0.0.1 localhost\n::1 localhost\nEOF\n\nsource /nix/store/nxhszvydqak8zham8ra5cwcbghpr03aw-minifakeroot/share/minifakeroot/rc\npython3 /nix/store/76qxyya5k7md52v20v6r3nwdahjrapcx-generate.py --mode network \\\n  --ip \"$facts/zerotier-ip\" \\\n  --identity-secret \"$secrets/zerotier-identity-secret\" \\\n  --network-id \"$facts/zerotier-network-id\"\n\n",
+                "path": [
+                  "/nix/store/s9alkaiv3gmg5xk5m1ysasqfvpq591bn-zerotierone-1.14.2",
+                  "/nix/store/0l539chjmcq5kdd43j6dgdjky4sjl7hl-python3-3.12.8"
+                ],
+                "prompt": null,
+                "script": "source /nix/store/nxhszvydqak8zham8ra5cwcbghpr03aw-minifakeroot/share/minifakeroot/rc\npython3 /nix/store/76qxyya5k7md52v20v6r3nwdahjrapcx-generate.py --mode network \\\n  --ip \"$facts/zerotier-ip\" \\\n  --identity-secret \"$secrets/zerotier-identity-secret\" \\\n  --network-id \"$facts/zerotier-network-id\"\n"
+              },
+              "name": "zerotier",
+              "public": {
+                "zerotier-ip": {
+                  "name": "zerotier-ip",
+                  "path": "/nix/store/l77aqkc57pr32m9mm4idqdyrh6w42pwc-source/machines/luna/facts/zerotier-ip",
+                  "value": "fd47:abd2:9f4d:4745:2e99:9347:abd2:9f4d"
+                },
+                "zerotier-network-id": {
+                  "name": "zerotier-network-id",
+                  "path": "/nix/store/l77aqkc57pr32m9mm4idqdyrh6w42pwc-source/machines/luna/facts/zerotier-network-id",
+                  "value": "47abd29f4d47452e"
+                }
+              },
+              "secret": {
+                "zerotier-identity-secret": {
+                  "groups": [],
+                  "name": "zerotier-identity-secret",
+                  "path": "/run/secrets/luna-zerotier-identity-secret"
+                }
+              }
+            }
+          }
+        },
+        "nixosMobileWorkaround": false,
+        "password-store": {
+          "secretLocation": "/etc/secret-vars"
+        },
+        "requireExplicitUpdate": false,
+        "sops": {
+          "defaultGroups": []
+        },
+        "targetHost": "116.203.245.100",
+        "vars": {
+          "generators": {
+            "openssh": {
+              "dependencies": [],
+              "files": {
+                "ssh.id_ed25519": {
+                  "deploy": true,
+                  "group": "root",
+                  "mode": "400",
+                  "name": "ssh.id_ed25519",
+                  "neededFor": "services",
+                  "owner": "root",
+                  "secret": true
+                },
+                "ssh.id_ed25519.pub": {
+                  "deploy": true,
+                  "group": "root",
+                  "mode": "400",
+                  "name": "ssh.id_ed25519.pub",
+                  "neededFor": "services",
+                  "owner": "root",
+                  "secret": false
+                }
+              },
+              "migrateFact": "openssh",
+              "name": "openssh",
+              "prompts": {},
+              "share": false,
+              "validationHash": null
+            }
+          },
+          "publicModule": "clan_cli.vars.public_modules.in_repo",
+          "secretModule": "clan_cli.vars.secret_modules.sops"
+        }
+      },
+      "host_key_check": 3
+    },
+    "vpn_ip": "gchq.icu"
+  },
+  {
+    "cmachine": {
+      "name": "milo",
+      "flake": {
+        "identifier": "/home/lhebendanz/.local/share/vpn_bench/clan"
+      },
+      "nix_options": [],
+      "cached_deployment": {
+        "buildHost": null,
+        "facts": {
+          "publicModule": "clan_cli.facts.public_modules.in_repo",
+          "secretModule": "clan_cli.facts.secret_modules.sops",
+          "secretUploadDirectory": "/var/lib/sops-nix",
+          "services": {
+            "zerotier": {
+              "generator": {
+                "finalScript": "set -eu -o pipefail\n\nexport PATH=\"/nix/store/s9alkaiv3gmg5xk5m1ysasqfvpq591bn-zerotierone-1.14.2/bin:/nix/store/0l539chjmcq5kdd43j6dgdjky4sjl7hl-python3-3.12.8/bin:/nix/store/wdap4cr3bnm685f27y9bb6q5b6q18msl-coreutils-9.5/bin\"\n\n# prepare sandbox user on platforms where this is supported\nmkdir -p /etc\n\ncat > /etc/group <<EOF\nroot:x:0:\nnixbld:!:$(id -g):\nnogroup:x:65534:\nEOF\n\ncat > /etc/passwd <<EOF\nroot:x:0:0:Nix build user:/build:/noshell\nnixbld:x:$(id -u):$(id -g):Nix build user:/build:/noshell\nnobody:x:65534:65534:Nobody:/:/noshell\nEOF\n\ncat > /etc/hosts <<EOF\n127.0.0.1 localhost\n::1 localhost\nEOF\n\npython3 /nix/store/76qxyya5k7md52v20v6r3nwdahjrapcx-generate.py --mode identity \\\n  --ip \"$facts/zerotier-ip\" \\\n  --identity-secret \"$secrets/zerotier-identity-secret\" \\\n  --network-id 47abd29f4d47452e\n\n",
+                "path": [
+                  "/nix/store/s9alkaiv3gmg5xk5m1ysasqfvpq591bn-zerotierone-1.14.2",
+                  "/nix/store/0l539chjmcq5kdd43j6dgdjky4sjl7hl-python3-3.12.8"
+                ],
+                "prompt": null,
+                "script": "python3 /nix/store/76qxyya5k7md52v20v6r3nwdahjrapcx-generate.py --mode identity \\\n  --ip \"$facts/zerotier-ip\" \\\n  --identity-secret \"$secrets/zerotier-identity-secret\" \\\n  --network-id 47abd29f4d47452e\n"
+              },
+              "name": "zerotier",
+              "public": {
+                "zerotier-ip": {
+                  "name": "zerotier-ip",
+                  "path": "/nix/store/l77aqkc57pr32m9mm4idqdyrh6w42pwc-source/machines/milo/facts/zerotier-ip",
+                  "value": "fd47:abd2:9f4d:4745:2e99:933a:43ea:975f"
+                }
+              },
+              "secret": {
+                "zerotier-identity-secret": {
+                  "groups": [],
+                  "name": "zerotier-identity-secret",
+                  "path": "/run/secrets/milo-zerotier-identity-secret"
+                }
+              }
+            }
+          }
+        },
+        "nixosMobileWorkaround": false,
+        "password-store": {
+          "secretLocation": "/etc/secret-vars"
+        },
+        "requireExplicitUpdate": false,
+        "sops": {
+          "defaultGroups": []
+        },
+        "targetHost": "188.245.151.45",
+        "vars": {
+          "generators": {
+            "openssh": {
+              "dependencies": [],
+              "files": {
+                "ssh.id_ed25519": {
+                  "deploy": true,
+                  "group": "root",
+                  "mode": "400",
+                  "name": "ssh.id_ed25519",
+                  "neededFor": "services",
+                  "owner": "root",
+                  "secret": true
+                },
+                "ssh.id_ed25519.pub": {
+                  "deploy": true,
+                  "group": "root",
+                  "mode": "400",
+                  "name": "ssh.id_ed25519.pub",
+                  "neededFor": "services",
+                  "owner": "root",
+                  "secret": false
+                }
+              },
+              "migrateFact": "openssh",
+              "name": "openssh",
+              "prompts": {},
+              "share": false,
+              "validationHash": null
+            }
+          },
+          "publicModule": "clan_cli.vars.public_modules.in_repo",
+          "secretModule": "clan_cli.vars.secret_modules.sops"
+        }
+      },
+      "host_key_check": 3
+    },
+    "vpn_ip": "gchq.icu"
+  }
+]

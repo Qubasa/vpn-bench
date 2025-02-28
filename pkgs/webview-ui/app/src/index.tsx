@@ -8,6 +8,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/solid-query";
 import { Layout } from "./layout/layout";
 
 import { Welcome } from "./routes/welcome";
+import { Zerotier } from "./routes/zerotier";
 import { Toaster } from "solid-toast";
 
 import { IconVariant } from "./components/icon";
@@ -46,7 +47,7 @@ export const routes: AppRoute[] = [
   {
     path: "/zerotier",
     label: "Zerotier",
-    component: () => <Welcome />,
+    component: () => <Zerotier />,
   },
   {
     path: "/mycelium",

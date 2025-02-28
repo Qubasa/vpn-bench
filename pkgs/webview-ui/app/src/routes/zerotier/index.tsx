@@ -1,20 +1,23 @@
-import { setActiveURI } from "@/src/App";
-import { Button } from "@/src/components/button";
+import { IperfDashboard } from "@/src/components/IperfChart";
+import luna_tcp_iperf3 from "@/bench/NoVPN/0_luna/tcp_iperf3.json";
+import milo_tcp_iperf3 from "@/bench/NoVPN/1_milo/tcp_iperf3.json";
 
-import { useNavigate } from "@solidjs/router";
 
-export const Welcome = () => {
+export const Zerotier = () => {
+  const reports = [
+    { name: "milo", data: milo_tcp_iperf3 },
+    { name: "luna", data: luna_tcp_iperf3 }
+  ];
+  
   return (
-    <div class="hero min-h-[calc(100vh-10rem)]">
-      <div class="hero-content mb-32 text-center">
-        <div class="max-w-md">
-          <h1 class="text-5xl font-bold">Welcome to Clan</h1>
-          <p class="py-6">Own the services you use.</p>
-          <div class="flex flex-col items-start gap-2">
-            
-          </div>
-        </div>
-      </div>
-    </div>
+    <IperfDashboard 
+      reports={reports} 
+      height={{
+        throughput: 500,
+        timeSeries: 700,
+        cpu: 500,
+        retransmits: 500
+      }}
+    />
   );
 };

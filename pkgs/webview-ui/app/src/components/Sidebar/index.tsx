@@ -40,11 +40,6 @@ export const SidebarSection = (props: {
 };
 
 export const Sidebar = (props: RouteSectionProps) => {
-  createEffect(() => {
-    console.log("machines");
-    console.log(routes);
-  });
-
   return (
     <div class="sidebar opacity-95">
       <SidebarHeader clanName={"VPN Benchmarks"} />
