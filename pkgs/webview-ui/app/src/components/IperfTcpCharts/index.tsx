@@ -1,7 +1,7 @@
 import { Echart } from "../Echarts";
 
 // Define interfaces for typing
-interface IperfReportData {
+export interface IperfTcpReportData {
   end: {
     sum_sent: {
       bits_per_second: number;
@@ -15,23 +15,23 @@ interface IperfReportData {
       remote_total: number;
     };
   };
-  intervals?: Array<{
+  intervals?: {
     sum: {
       start: number;
       end: number;
       bits_per_second: number;
     };
-  }>;
+  }[];
 }
 
 // Combined report interface with name and data
-interface IperfReport {
+export interface IperfTcpReport {
   name: string;
-  data: IperfReportData;
+  data: IperfTcpReportData;
 }
 
 interface IperfTcpChartsProps {
-  reports: IperfReport[];
+  reports: IperfTcpReport[];
   height?: {
     throughput?: number;
     timeSeries?: number;
@@ -41,7 +41,7 @@ interface IperfTcpChartsProps {
 }
 
 // Throughput Chart Creator
-const createThroughputOption = (reports: IperfReport[]) => {
+const createThroughputOption = (reports: IperfTcpReport[]) => {
   return {
     title: {
       text: "Throughput Comparison (Mbps)",
@@ -51,7 +51,7 @@ const createThroughputOption = (reports: IperfReport[]) => {
       axisPointer: {
         type: "shadow",
       },
-      formatter: function (params: any) {
+      formatter: function (params: { name: string; value: number }[]) {
         return `${params[0].name}: ${params[0].value.toFixed(2)} Mbps`;
       },
     },
@@ -101,7 +101,7 @@ const createThroughputOption = (reports: IperfReport[]) => {
 };
 
 // CPU Utilization Chart Creator
-const createCpuOption = (reports: IperfReport[]) => {
+const createCpuOption = (reports: IperfTcpReport[]) => {
   return {
     title: {
       text: "CPU Utilization (%)",
@@ -158,7 +158,7 @@ const createCpuOption = (reports: IperfReport[]) => {
 };
 
 // Retransmits Chart Creator
-const createRetransmitsOption = (reports: IperfReport[]) => {
+const createRetransmitsOption = (reports: IperfTcpReport[]) => {
   return {
     title: {
       text: "TCP Retransmits",
@@ -202,15 +202,15 @@ const createRetransmitsOption = (reports: IperfReport[]) => {
 };
 
 // Time Series Chart Creator
-const createTimeSeriesOption = (reports: IperfReport[]) => {
+const createTimeSeriesOption = (reports: IperfTcpReport[]) => {
   // Get all intervals from all reports
   const allTimeStamps: string[] = [];
-  const seriesData: Array<{
+  const seriesData: {
     name: string;
     type: string;
     data: number[];
     color: string;
-  }> = [];
+  }[] = [];
 
   // Generate colors dynamically based on number of reports
   const colorPalette = [
@@ -303,7 +303,7 @@ export const IperfThroughputChart = ({
   reports,
   height = 500,
 }: {
-  reports: IperfReport[];
+  reports: IperfTcpReport[];
   height?: number;
 }) => {
   return <Echart option={createThroughputOption(reports)} height={height} />;
@@ -313,7 +313,7 @@ export const IperfTimeSeriesChart = ({
   reports,
   height = 700,
 }: {
-  reports: IperfReport[];
+  reports: IperfTcpReport[];
   height?: number;
 }) => {
   return <Echart option={createTimeSeriesOption(reports)} height={height} />;
@@ -323,7 +323,7 @@ export const IperfCpuChart = ({
   reports,
   height = 500,
 }: {
-  reports: IperfReport[];
+  reports: IperfTcpReport[];
   height?: number;
 }) => {
   return <Echart option={createCpuOption(reports)} height={height} />;
@@ -333,7 +333,7 @@ export const IperfRetransmitsChart = ({
   reports,
   height = 500,
 }: {
-  reports: IperfReport[];
+  reports: IperfTcpReport[];
   height?: number;
 }) => {
   return <Echart option={createRetransmitsOption(reports)} height={height} />;

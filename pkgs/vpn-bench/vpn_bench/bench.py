@@ -12,14 +12,16 @@ from clan_cli.inventory import patch_inventory_with
 from clan_cli.machines.machines import Machine
 from clan_cli.machines.update import deploy_machines
 from clan_cli.nix import nix_command
+from clan_cli.ssh.host import Host
 from clan_cli.ssh.host_key import HostKeyCheck
 from clan_cli.ssh.upload import upload
 
-from vpn_bench.assets import get_asset
+from vpn_bench.assets import get_iperf_asset
 
 # from clan_cli.ssh.upload import upload
 from vpn_bench.data import VPN, Config
 from vpn_bench.errors import VpnBenchError
+from vpn_bench.install import can_ssh_login
 from vpn_bench.terraform import TrMachine
 
 log = logging.getLogger(__name__)
@@ -62,8 +64,15 @@ def install_zerotier(config: Config, tr_machines: list[TrMachine]) -> None:
     patch_inventory_with(config.clan_dir, "services.zerotier", zerotier_conf)
 
 
+@dataclass
+class IperfCreds:
+    username: str
+    password: str
+    pubkey: Path
+
+
 def run_iperf_test(
-    host: Any, target_host: str, remote_iperf3_pubkey: Path, udp_mode: bool = False
+    host: Any, target_host: str, creds: IperfCreds, udp_mode: bool = False
 ) -> dict[str, Any]:
     """Run a single iperf3 test and return the results."""
     cmd = [
@@ -77,18 +86,18 @@ def run_iperf_test(
         "-c",
         target_host,
         "--username",
-        "mario",
+        creds.username,
         "--rsa-public-key-path",
-        str(remote_iperf3_pubkey),
+        str(creds.pubkey),
     ]
 
     if udp_mode:
-        cmd.extend(["-u", "--udp-counters-64bit", "-b", "0"])
+        cmd.extend(["-u", "--udp-counters-64bit"])
 
     res = host.run(
         nix_command(cmd),
         RunOpts(log=Log.BOTH),
-        extra_env={"IPERF3_PASSWORD": "mambaBudo"},
+        extra_env={"IPERF3_PASSWORD": creds.password},
     )
     return json.loads(res.stdout)
 
@@ -106,7 +115,6 @@ def run_benchmarks(config: Config, vpn: VPN, bmachines: list[BenchMachine]) -> N
     """Run TCP and UDP benchmarks for each machine."""
 
     # Upload iperf3 public key
-    local_iperf3_pubkey = get_asset("iperf3.public")
     remote_iperf3_pubkey = Path("/tmp/iperf3.public")
     for pos, bmachine in enumerate(bmachines):
         next_bmachine = bmachines[pos + 1] if pos + 1 < len(bmachines) else bmachines[0]
@@ -114,28 +122,48 @@ def run_benchmarks(config: Config, vpn: VPN, bmachines: list[BenchMachine]) -> N
         log.info(f"Benchmarking {bmachine.cmachine.name} with ip {bmachine.vpn_ip}")
         result_dir = config.bench_dir / vpn.name / f"{pos}_{bmachine.cmachine.name}"
 
+        creds = None
+        local_pubkey = None
+        match vpn:
+            case VPN.NoVPN:
+                local_pubkey = get_iperf_asset("clan_public.pem")
+                password = get_iperf_asset("clan_password.txt").read_text()
+                creds = IperfCreds(
+                    username="mario", password=password, pubkey=remote_iperf3_pubkey
+                )
+            case _:
+                local_pubkey = get_iperf_asset("vpb_public.pem")
+                password = get_iperf_asset("vpb_password.txt").read_text()
+                creds = IperfCreds(
+                    username="mario", password=password, pubkey=remote_iperf3_pubkey
+                )
+
         # Upload iperf3 public key
-        upload(host, local_iperf3_pubkey, remote_iperf3_pubkey)
+        upload(host, local_pubkey, remote_iperf3_pubkey)
 
         # Run TCP test
-        tcp_results = run_iperf_test(
-            host, next_bmachine.vpn_ip, remote_iperf3_pubkey, udp_mode=False
-        )
+        tcp_results = run_iperf_test(host, next_bmachine.vpn_ip, creds, udp_mode=False)
         save_iperf_results(result_dir, tcp_results, "tcp")
 
         # Run UDP test
-        udp_results = run_iperf_test(
-            host, next_bmachine.vpn_ip, remote_iperf3_pubkey, udp_mode=True
-        )
+        udp_results = run_iperf_test(host, next_bmachine.vpn_ip, creds, udp_mode=True)
         save_iperf_results(result_dir, udp_results, "udp")
 
 
 def create_machine_obj(config: Config, tr_machines: list[TrMachine]) -> list[Machine]:
     """Initialize Machine objects for each terraform machine."""
     clan_dir = Flake(str(config.clan_dir))
+
+    build_host = (
+        "root@localhost" if can_ssh_login(Host(host="localhost", user="root")) else None
+    )
+
     return [
         Machine(
-            name=tr_machine["name"], flake=clan_dir, host_key_check=HostKeyCheck.NONE
+            name=tr_machine["name"],
+            flake=clan_dir,
+            host_key_check=HostKeyCheck.NONE,
+            override_build_host=build_host,
         )
         for tr_machine in tr_machines
     ]
@@ -152,7 +180,7 @@ def get_vpn_ips(machines: list[Machine], vpn: VPN) -> list[BenchMachine]:
             case VPN.Mycelium:
                 raise NotImplementedError
             case VPN.NoVPN:
-                vpn_ip = "gchq.icu"
+                vpn_ip = "clan.lol"
             case _:
                 msg = f"VPN {vpn} not supported"
                 raise VpnBenchError(msg)

@@ -15,6 +15,7 @@ from clan_cli.ssh.host import Host
 from clan_cli.ssh.host_key import HostKeyCheck
 
 from vpn_bench.data import Config
+from vpn_bench.errors import VpnBenchError
 from vpn_bench.terraform import TrMachine
 
 log = logging.getLogger(__name__)
@@ -54,8 +55,12 @@ def install_single_machine(
     host = Host(user=tr_machine["name"], host=tr_machine["ipv4"])
 
     if not can_ssh_login(host):
-        log.warning("Could not login with machine name user, trying root user")
+        log.info("Could not login with machine name user, trying root user")
         host.user = "root"
+
+    if not can_ssh_login(host):
+        msg = f"Could not login to machine {tr_machine['name']} with user or root"
+        raise VpnBenchError(msg)
 
     install_machine(
         InstallOptions(

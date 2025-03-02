@@ -1,7 +1,3 @@
-
-
-
-
 resource "hcloud_server" "servers" {
   for_each = { for server in var.servers : server.name => server }
 
@@ -15,7 +11,7 @@ resource "hcloud_server" "servers" {
   user_data = <<-EOF
     #cloud-config
     ssh_authorized_keys:
-      - ${var.ssh_pubkey}
+      - ${join("\n      - ", var.ssh_pubkeys)}
     ssh_pwauth: false
     chpasswd:
       expire: false
@@ -25,14 +21,15 @@ resource "hcloud_server" "servers" {
 }
 
 output "vm_info" {
-  description = "Information about each VM, including name, location, server_type, and IP address"
+  description = "Information about each VM, including name, location, server_type, IP address, and user_data"
   value = {
     for server in var.servers :
     server.name => {
       name        = server.name,
       location    = server.location,
       server_type = server.server_type,
-      ipv4  = hcloud_server.servers[server.name].ipv4_address
+      ipv4        = hcloud_server.servers[server.name].ipv4_address,
+      user_data   = hcloud_server.servers[server.name].user_data
     }
   }
 }

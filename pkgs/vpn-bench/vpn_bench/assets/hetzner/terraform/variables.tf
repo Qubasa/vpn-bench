@@ -13,9 +13,9 @@ variable "servers" {
   }))
 }
 
-variable "ssh_pubkey" {
-  description = "SSH public key"
-  type        = string
+variable "ssh_pubkeys" {
+  description = "SSH public keys to add to the servers"
+  type        = list(string)
 }
 
 variable "os_image" {

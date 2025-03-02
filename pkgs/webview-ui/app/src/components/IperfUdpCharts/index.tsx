@@ -1,7 +1,7 @@
 import { Echart } from "../Echarts";
 
 // Define interfaces for UDP reports
-interface IperfUdpReportData {
+export interface IperfUdpReportData {
   end: {
     sum_sent: {
       bits_per_second: number;
@@ -21,7 +21,7 @@ interface IperfUdpReportData {
       remote_total: number;
     };
   };
-  intervals?: Array<{
+  intervals?: {
     sum: {
       start: number;
       end: number;
@@ -34,10 +34,10 @@ interface IperfUdpReportData {
       packets: number;
       lost_percent: number;
     };
-  }>;
+  }[];
 }
 
-interface IperfUdpReport {
+export interface IperfUdpReport {
   name: string;
   data: IperfUdpReportData;
 }
@@ -64,7 +64,7 @@ const createUdpThroughputOption = (reports: IperfUdpReport[]) => {
       axisPointer: {
         type: "shadow",
       },
-      formatter: function (params: any) {
+      formatter: function (params: { name: string; value: number }[]) {
         return `${params[0].name}: ${params[0].value.toFixed(2)} Mbps`;
       },
     },
@@ -124,7 +124,7 @@ const createPacketLossOption = (reports: IperfUdpReport[]) => {
       axisPointer: {
         type: "shadow",
       },
-      formatter: function (params: any) {
+      formatter: function (params: { name: string; value: number }[]) {
         return `${params[0].name}: ${params[0].value.toFixed(2)}%`;
       },
     },
@@ -179,7 +179,7 @@ const createJitterOption = (reports: IperfUdpReport[]) => {
       axisPointer: {
         type: "shadow",
       },
-      formatter: function (params: any) {
+      formatter: function (params: { name: string; value: number }[]) {
         return `${params[0].name}: ${params[0].value.toFixed(4)} ms`;
       },
     },
@@ -281,20 +281,20 @@ const createUdpCpuOption = (reports: IperfUdpReport[]) => {
 const createUdpTimeSeriesOption = (reports: IperfUdpReport[]) => {
   // Get all intervals from all reports
   const allTimeStamps: string[] = [];
-  const seriesData: Array<{
+  const seriesData: {
     name: string;
     type: string;
     data: number[];
     color: string;
-  }> = [];
+  }[] = [];
 
-  const packetLossSeries: Array<{
+  const packetLossSeries: {
     name: string;
     type: string;
     data: number[];
     color: string;
     yAxisIndex: number;
-  }> = [];
+  }[] = [];
 
   // Generate colors
   const colorPalette = [

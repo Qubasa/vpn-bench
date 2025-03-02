@@ -31,6 +31,12 @@ def create_parser() -> argparse.ArgumentParser:
         choices=[p.value for p in Provider],
         default=Provider.Hetzner.value,
     )
+    create_parser.add_argument(
+        "--ssh-pubkey",
+        help="SSH pubkey path",
+        default=os.environ.get("SSH_PUBKEY_PATH"),
+        type=Path,
+    )
     create_parser.add_argument("--location", help="Server location")
 
     destroy_parser = subparsers.add_parser("destroy", help="Destroy resources")
@@ -55,16 +61,18 @@ def create_parser() -> argparse.ArgumentParser:
     ssh_parser.add_argument("--debug", action="store_true", help="Enable debug mode")
     ssh_parser.add_argument("machine", help="Machine to SSH into")
 
-    clan_parser = subparsers.add_parser("install", help="Install command")
-    clan_parser.add_argument("--debug", action="store_true", help="Enable debug mode")
-    clan_parser.add_argument(
+    install_parser = subparsers.add_parser("install", help="Install command")
+    install_parser.add_argument(
+        "--debug", action="store_true", help="Enable debug mode"
+    )
+    install_parser.add_argument(
         "--provider",
         choices=[p.value for p in Provider],
         default=Provider.Hetzner.value,
     )
-    clan_parser.add_argument("--age-user", help="Age user")
-    clan_parser.add_argument("--age-pubkey", help="Age pubkey", type=Path)
-    clan_parser.add_argument(
+    install_parser.add_argument("--age-user", help="Age user")
+    install_parser.add_argument("--age-pubkey", help="Age pubkey", type=Path)
+    install_parser.add_argument(
         "--ssh-pubkey",
         help="SSH pubkey path",
         default=os.environ.get("SSH_PUBKEY_PATH"),
@@ -133,7 +141,7 @@ def run_cli() -> None:
         if len(machines) == 0:
             machines = ["milo", "luna"]
 
-        tr_create(config, provider, args.location, machines=machines)
+        tr_create(config, provider, args.location, args.ssh_pubkey, machines=machines)
     elif args.subcommand == "destroy":
         tr_destroy(config, provider, args.force)
         clan_clean(config)
@@ -184,5 +192,6 @@ def run_cli() -> None:
                 subprocess.run(["ssh", f"{target}"])
         if not found:
             log.error(f"Machine {args.machine} not found")
+
     else:
         parser.print_help()

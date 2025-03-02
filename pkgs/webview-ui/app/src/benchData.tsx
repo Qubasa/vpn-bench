@@ -1,100 +1,81 @@
+// benchData.ts
+// This uses Vite's import.meta.glob to dynamically import all JSON files from benchmark folders
 
-// Import actual benchmark data
-import luna_no_vpn_tcp from "@/bench/NoVPN/0_luna/tcp_iperf3.json";
-import milo_no_vpn_tcp from "@/bench/NoVPN/1_milo/tcp_iperf3.json";
-import luna_no_vpn_udp from "@/bench/NoVPN/0_luna/udp_iperf3.json";
-import milo_no_vpn_udp from "@/bench/NoVPN/1_milo/udp_iperf3.json";
+import { Machine, BenchCategory } from "@/src/index";
+import { IperfTcpReportData } from "@/src/components/IperfTcpCharts";
+import { IperfUdpReportData } from "./components/IperfUdpCharts";
 
-// Import the IperfReport type
-export interface IperfReport {
-  name: string;
-  data: any;
+type BenchData = BenchCategory[];
+
+// Use import.meta.glob to get all JSON files from the bench directory
+const benchFiles = import.meta.glob("@/bench/**/*.json", { eager: true });
+
+// Throw an error if benchFiles is empty
+if (Object.keys(benchFiles).length === 0) {
+  throw new Error("No benchmark files found.");
 }
 
-// Define types for benchmark data structure
-interface IperfData {
-  type: "tcp" | "udp";
-  data: any; // The actual iperf JSON data
+// Print all the files
+Object.keys(benchFiles).forEach((file) => {
+  console.log("File:", file);
+});
+
+// Process the files and build the data structure
+export function generateBenchData(): BenchData {
+  const categories: Record<string, BenchCategory> = {};
+
+  // Process each file path
+  Object.entries(benchFiles).forEach(([path, module]) => {
+    // Parse the path to extract category, machine, and file type
+    // Example path: /src/bench/NoVPN/0_luna/tcp_iperf3.json
+    const pathParts = path.split("/");
+
+    // Extract relevant parts
+    const categoryName = pathParts[2]; // "NoVPN"
+    const machineName = pathParts[3]; // "0_luna"
+    const fileName = pathParts[4]; // "tcp_iperf3.json" or "udp_iperf3.json"
+    console.log("Path parts:", pathParts);
+    // Skip if any part is missing
+    if (!categoryName || !machineName || !fileName) return;
+
+    // Determine if this is a TCP or UDP file
+    const isUdp = fileName.includes("udp");
+    const isTcp = fileName.includes("tcp");
+
+    if (!isUdp && !isTcp) return; // Skip unknown file types
+
+    // Create category if it doesn't exist
+    if (!categories[categoryName]) {
+      categories[categoryName] = {
+        name: categoryName,
+        machines: [],
+      };
+    }
+
+    // Find machine or create if it doesn't exist
+    let machine = categories[categoryName].machines.find(
+      (m) => m.name === machineName,
+    );
+    if (!machine) {
+      machine = {
+        name: machineName,
+        iperf3: { tcp: null, udp: null },
+      };
+      categories[categoryName].machines.push(machine);
+    }
+
+    // Add the data to the machine
+    if (isTcp) {
+      machine.iperf3.tcp = module as IperfTcpReportData;
+    } else if (isUdp) {
+      machine.iperf3.udp = module as IperfUdpReportData;
+    }
+  });
+
+  // Convert the categories object to an array
+  return Object.values(categories);
 }
 
-interface Machine {
-  name: string;
-  iperf3: IperfData[];
-}
-
-interface BenchCategory {
-  name: string;
-  machines: Machine[];
-}
-
-export type BenchData = BenchCategory[];
-
-// Define the benchmark data structure
-export const benchData: BenchData = [
-  {
-    name: "No VPN",
-    machines: [
-      {
-        name: "0_luna",
-        iperf3: [
-          {
-            type: "tcp",
-            data: luna_no_vpn_tcp,
-          },
-          {
-            type: "udp",
-            data: luna_no_vpn_udp,
-          },
-        ],
-      },
-      {
-        name: "1_milo",
-        iperf3: [
-          {
-            type: "tcp",
-            data: milo_no_vpn_tcp,
-          },
-          {
-            type: "udp",
-            data: milo_no_vpn_udp,
-          },
-        ],
-      },
-    ],
-  },
-  {
-    name: "Zerotier",
-    machines: [
-      {
-        name: "0_luna",
-        iperf3: [
-          {
-            type: "tcp",
-            data: luna_no_vpn_tcp,
-          },
-          {
-            type: "udp",
-            data: luna_no_vpn_udp,
-          },
-        ],
-      },
-      {
-        name: "1_milo",
-        iperf3: [
-          {
-            type: "tcp",
-            data: milo_no_vpn_tcp,
-          },
-          {
-            type: "udp",
-            data: milo_no_vpn_udp,
-          },
-        ],
-      },
-    ],
-  },
-  {
-    name: "Mycelium",
-    machines: [], // Empty for now, but structure exists for future
-  },
-];
+// Generate the benchmark data
+export const benchData = generateBenchData();
+console.log("Bench data:", benchData);

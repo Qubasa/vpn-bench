@@ -1,4 +1,3 @@
-/* @refresh reload */
 import { Portal, render } from "solid-js/web";
 import { Navigate, RouteDefinition, Router } from "@solidjs/router";
 
@@ -7,10 +6,28 @@ import { QueryClient, QueryClientProvider } from "@tanstack/solid-query";
 
 import { Layout } from "./layout/layout";
 import { IperfDashboard } from "@/src/components/VpnBenchDashboard";
-
+import { IperfTcpReport } from "@/src/components/IperfTcpCharts";
+import { IperfUdpReport } from "./components/IperfUdpCharts";
 import { Toaster } from "solid-toast";
 import { IconVariant } from "./components/icon";
-import { benchData, BenchData, IperfReport } from "./benchData";
+import { benchData } from "./benchData";
+import { IperfTcpReportData } from "@/src/components/IperfTcpCharts";
+import { IperfUdpReportData } from "./components/IperfUdpCharts";
+
+export interface Machine {
+  name: string;
+  iperf3: {
+    tcp: IperfTcpReportData | null;
+    udp: IperfUdpReportData | null;
+  };
+}
+
+export interface BenchCategory {
+  name: string;
+  machines: Machine[];
+}
+
+export type BenchData = BenchCategory[];
 
 export const client = new QueryClient();
 
@@ -42,24 +59,28 @@ function generateRoutesFromBenchData(data: BenchData): AppRoute[] {
     const path = `/${category.name.toLowerCase().replace(/\s+/g, "_")}`;
 
     // Group machines by type
-    const tcpReports: IperfReport[] = [];
-    const udpReports: IperfReport[] = [];
+    const tcpReports: IperfTcpReport[] = [];
+    const udpReports: IperfUdpReport[] = [];
 
     // Process each machine's data
     category.machines.forEach((machine) => {
-      machine.iperf3.forEach((iperfData) => {
-        if (iperfData.type === "tcp") {
-          tcpReports.push({
-            name: machine.name.replace(/^\d+_/, ""), // Remove leading numbers and underscore
-            data: iperfData.data,
-          });
-        } else if (iperfData.type === "udp") {
-          udpReports.push({
-            name: machine.name.replace(/^\d+_/, ""), // Remove leading numbers and underscore
-            data: iperfData.data,
-          });
-        }
-      });
+      if (machine.iperf3.tcp) {
+        tcpReports.push({
+          name: machine.name,
+          data: machine.iperf3.tcp,
+        });
+      } else {
+        console.warn(`No TCP data for ${machine.name}`);
+      }
+
+      if (machine.iperf3.udp) {
+        udpReports.push({
+          name: machine.name,
+          data: machine.iperf3.udp,
+        });
+      } else {
+        console.warn(`No UDP data for ${machine.name}`);
+      }
     });
 
     // Return route config with IperfDashboard component
@@ -100,5 +121,6 @@ render(
       </QueryClientProvider>
     </>
   ),
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   root!,
 );

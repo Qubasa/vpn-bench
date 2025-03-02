@@ -4,6 +4,7 @@ import json
 import logging
 import os
 import shutil
+from pathlib import Path
 from typing import Any, TypedDict
 
 from clan_cli.cmd import Log, RunOpts, run
@@ -85,7 +86,11 @@ def tr_ask_for_api_key(provider: Provider) -> None:
 
 
 def tr_create(
-    config: Config, provider: Provider, location: str | None, machines: list[str]
+    config: Config,
+    provider: Provider,
+    location: str | None,
+    user_ssh_pubkey: Path,
+    machines: list[str],
 ) -> None:
     tr_ask_for_api_key(provider)
     tr_init(config, provider)
@@ -104,8 +109,9 @@ def tr_create(
         "-y",
     ]
     run(cmd, RunOpts(log=Log.BOTH))
-    ssh_key = config.data_dir / "id_ed25519.pub"
+    anywhere_ssh_key = config.data_dir / "id_ed25519.pub"
 
+    ssh_pubkeys = [anywhere_ssh_key.read_text(), user_ssh_pubkey.read_text()]
     match provider:
         case Provider.Hetzner:
             servers: list[TrMachine] = []
@@ -138,7 +144,7 @@ def tr_create(
             tr_write_vars(
                 config,
                 {
-                    "ssh_pubkey": ssh_key.read_text(),
+                    "ssh_pubkeys": ssh_pubkeys,
                     "os_image": "ubuntu-24.04",
                     "servers": servers,
                 },

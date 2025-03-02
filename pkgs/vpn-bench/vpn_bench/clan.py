@@ -81,16 +81,24 @@ def update_flake_nix(clan_dir: Path, vpnbench_clan: Path) -> None:
     run(nix_command(["flake", "lock"]), RunOpts(cwd=clan_dir))
 
 
-def create_base_inventory(username: str, ssh_key_content: str) -> dict[str, Any]:
+@dataclass
+class SSHKey:
+    username: str
+    ssh_key_content: str
+
+
+def create_base_inventory(keys: list[SSHKey]) -> dict[str, Any]:
     """Create the base inventory structure."""
-    return {
+    inventory = {
         "myadmin": {
             "someid": {
                 "roles": {
                     "default": {
                         "tags": ["all"],
                         "config": {
-                            "allowedKeys": {username: ssh_key_content},
+                            "allowedKeys": {
+                                key.username: key.ssh_key_content for key in keys
+                            },
                         },
                     }
                 }
@@ -123,6 +131,7 @@ def create_base_inventory(username: str, ssh_key_content: str) -> dict[str, Any]
             }
         },
     }
+    return inventory
 
 
 def setup_machine(
@@ -176,8 +185,15 @@ def clan_init(
     # Update flake configuration
     update_flake_nix(config.clan_dir, vpnbench_clan)
 
+    generated_key = config.data_dir / "id_ed25519.pub"
+
+    ssh_keys = [
+        SSHKey(age_opts.username, generated_key.read_text()),
+        SSHKey("nixos-anywhere", ssh_key_path.read_text()),
+    ]
+
     # Create and configure inventory
-    inventory = create_base_inventory(age_opts.username, ssh_key_path.read_text())
+    inventory = create_base_inventory(ssh_keys)
 
     # Set up machines
     for machine_num, tr_machine in enumerate(tr_machines):

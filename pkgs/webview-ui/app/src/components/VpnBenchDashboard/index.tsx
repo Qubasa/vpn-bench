@@ -1,19 +1,19 @@
-import { IperfTcpCharts } from "@/src/components/IperfTcpCharts";
-import { IperfUdpCharts } from "@/src/components/IperfUdpCharts";
+import {
+  IperfTcpCharts,
+  IperfTcpReport,
+} from "@/src/components/IperfTcpCharts";
+import {
+  IperfUdpCharts,
+  IperfUdpReport,
+} from "@/src/components/IperfUdpCharts";
 import { Tabs } from "@kobalte/core/tabs";
 import { createSignal } from "solid-js";
 import "./style.css";
 
-// Define interfaces for the reports
-interface IperfReport {
-  name: string;
-  data: any; // Using 'any' for flexibility, but you could define stricter types
-}
-
 // Define props for the dashboard component
 interface IperfDashboardProps {
-  tcpReports: IperfReport[];
-  udpReports: IperfReport[];
+  tcpReports: IperfTcpReport[];
+  udpReports: IperfUdpReport[];
   tcpHeight?: {
     throughput?: number;
     timeSeries?: number;
