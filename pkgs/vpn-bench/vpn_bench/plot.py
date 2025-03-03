@@ -9,14 +9,14 @@ from typing import Any
 from clan_cli.cmd import run
 from clan_cli.nix import nix_build, nix_config
 
-from vpn_bench.data import VPN, Config
+from vpn_bench.data import Config
 from vpn_bench.errors import VpnBenchError
 from vpn_bench.terraform import TrMachine
 
 log = logging.getLogger(__name__)
 
 
-def plot_data(config: Config, tr_machines: list[TrMachine], vpn: VPN) -> None:
+def plot_data(config: Config, tr_machines: list[TrMachine]) -> None:
     vpn_bench_flake = os.environ.get("VPN_BENCH_FLAKE")
     nix_conf = nix_config()
     build_script = f"""

@@ -16,7 +16,8 @@ class Provider(Enum):
 
 
 class VPN(Enum):
-    NoVPN = "no_vpn"
+    External = "external"
+    Internal = "internal"
     Zerotier = "zerotier"
     Mycelium = "mycelium"
 

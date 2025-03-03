@@ -5,7 +5,9 @@ from pathlib import Path
 from typing import Any
 
 from clan_cli.api import dataclass_to_dict
+from clan_cli.async_run import AsyncRuntime
 from clan_cli.cmd import Log, RunOpts, run
+from clan_cli.facts.generate import generate_facts
 from clan_cli.facts.list import get_all_facts
 from clan_cli.flake import Flake
 from clan_cli.inventory import patch_inventory_with
@@ -15,6 +17,7 @@ from clan_cli.nix import nix_command
 from clan_cli.ssh.host import Host
 from clan_cli.ssh.host_key import HostKeyCheck
 from clan_cli.ssh.upload import upload
+from clan_cli.vars.get import get_var
 
 from vpn_bench.assets import get_iperf_asset
 
@@ -34,7 +37,7 @@ class BenchMachine:
 
 
 def install_zerotier(config: Config, tr_machines: list[TrMachine]) -> None:
-    zerotier_conf: dict[str, Any] = {
+    conf: dict[str, Any] = {
         "someid": {
             "roles": {
                 "controller": {
@@ -52,16 +55,30 @@ def install_zerotier(config: Config, tr_machines: list[TrMachine]) -> None:
         # Configure ZeroTier role
         if machine_num == 0:
             log.info(f"Setting up {tr_machine['name']} as the zerotier controller")
-            zerotier_conf["someid"]["roles"]["controller"]["machines"].append(
-                tr_machine["name"]
-            )
+            conf["someid"]["roles"]["controller"]["machines"].append(tr_machine["name"])
         else:
             log.info(f"Adding {tr_machine['name']} to the zerotier peers")
-            zerotier_conf["someid"]["roles"]["peer"]["machines"].append(
-                tr_machine["name"]
-            )
+            conf["someid"]["roles"]["peer"]["machines"].append(tr_machine["name"])
 
-    patch_inventory_with(config.clan_dir, "services.zerotier", zerotier_conf)
+    patch_inventory_with(config.clan_dir, "services.zerotier", conf)
+
+
+def install_mycelium(config: Config, tr_machines: list[TrMachine]) -> None:
+    conf: dict[str, Any] = {
+        "someid": {
+            "roles": {
+                "peer": {
+                    "machines": [],
+                    "config": {},
+                },
+            }
+        }
+    }
+    for _, tr_machine in enumerate(tr_machines):
+        log.info(f"Adding {tr_machine['name']} to the mycelium peers")
+        conf["someid"]["roles"]["peer"]["machines"].append(tr_machine["name"])
+
+    patch_inventory_with(config.clan_dir, "services.mycelium", conf)
 
 
 @dataclass
@@ -125,7 +142,7 @@ def run_benchmarks(config: Config, vpn: VPN, bmachines: list[BenchMachine]) -> N
         creds = None
         local_pubkey = None
         match vpn:
-            case VPN.NoVPN:
+            case VPN.External:
                 local_pubkey = get_iperf_asset("clan_public.pem")
                 password = get_iperf_asset("clan_password.txt").read_text()
                 creds = IperfCreds(
@@ -169,22 +186,30 @@ def create_machine_obj(config: Config, tr_machines: list[TrMachine]) -> list[Mac
     ]
 
 
-def get_vpn_ips(machines: list[Machine], vpn: VPN) -> list[BenchMachine]:
+def get_vpn_ips(
+    config: Config, machines: list[Machine], vpn: VPN
+) -> list[BenchMachine]:
     """Query and collect VPN IPs for each machine."""
     bmachines: list[BenchMachine] = []
     for machine in machines:
+        generate_facts([machine])
         facts = get_all_facts(machine)["TODO"]
+        vpn_ip: str | None = None
         match vpn:
             case VPN.Zerotier:
                 vpn_ip = facts["zerotier-ip"].decode()
             case VPN.Mycelium:
-                raise NotImplementedError
-            case VPN.NoVPN:
+                vpn_ip = get_var(
+                    str(config.clan_dir), machine.name, "mycelium/ip"
+                ).value.decode()
+            case VPN.External:
                 vpn_ip = "clan.lol"
+            case VPN.Internal:
+                vpn_ip = machine.target_host.host
             case _:
                 msg = f"VPN {vpn} not supported"
                 raise VpnBenchError(msg)
-
+        assert vpn_ip is not None
         bmachines.append(BenchMachine(cmachine=machine, vpn_ip=vpn_ip))
     return bmachines
 
@@ -197,8 +222,8 @@ def install_vpn(
         case VPN.Zerotier:
             install_zerotier(config, tr_machines)
         case VPN.Mycelium:
-            raise NotImplementedError
-        case VPN.NoVPN:
+            install_mycelium(config, tr_machines)
+        case VPN.Internal | VPN.External:
             pass
         case _:
             msg = f"VPN {vpn} not supported"
@@ -212,6 +237,20 @@ def install_vpn(
 
     # Update machine configuration
     deploy_machines(machines)
+
+    # Restart zerotier-one on all machines except the first
+    # TODO: This is a hack, we should have nix do this for us
+    with AsyncRuntime() as runtime:
+        for index, machine in enumerate(machines):
+            host = machine.target_host
+            match vpn:
+                case VPN.Zerotier:
+                    if index > 0:
+                        runtime.async_run(
+                            None, host.run, ["systemctl", "restart", "zerotierone"]
+                        )
+                case _:
+                    pass
 
     return machines
 
@@ -236,7 +275,7 @@ def benchmark_vpn(config: Config, vpn: VPN, tr_machines: list[TrMachine]) -> Non
     machines = install_vpn(config, vpn, tr_machines)
 
     # Get the VPN IP of each machine
-    bmachines = get_vpn_ips(machines, vpn)
+    bmachines = get_vpn_ips(config, machines, vpn)
     save_machine_layout(config, vpn, bmachines)
 
     # Run benchmarks

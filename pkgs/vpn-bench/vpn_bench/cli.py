@@ -83,17 +83,11 @@ def create_parser() -> argparse.ArgumentParser:
     bench_parser.add_argument(
         "--vpn",
         choices=[p.value for p in VPN],
-        default=VPN.Zerotier.value,
     )
     bench_parser.add_argument("--debug", action="store_true", help="Enable debug mode")
 
     plot_parser = subparsers.add_parser("plot", help="Plot the data from benchmark")
     plot_parser.add_argument("--debug", action="store_true", help="Enable debug mode")
-    plot_parser.add_argument(
-        "--vpn",
-        choices=[p.value for p in VPN],
-        default=VPN.Zerotier.value,
-    )
 
     return parser
 
@@ -175,10 +169,14 @@ def run_cli() -> None:
 
     elif args.subcommand == "bench":
         machines = tr_metadata(config)
-        benchmark_vpn(config, vpn, machines)
+        if args.vpn is None:
+            for vpn in VPN:
+                benchmark_vpn(config, vpn, machines)
+        else:
+            benchmark_vpn(config, vpn, machines)
     elif args.subcommand == "plot":
         machines = tr_metadata(config)
-        plot_data(config, machines, vpn)
+        plot_data(config, machines)
     elif args.subcommand == "ssh":
         machines = tr_metadata(config)
         import subprocess
