@@ -27,7 +27,9 @@ def plot_data(config: Config, tr_machines: list[TrMachine]) -> None:
         self.packages.{nix_conf["system"]}.webview-ui.override {{ benchDir = {config.bench_dir}; }}
     """
 
-    cmd = nix_build(["--log-format", "bar", "--impure", "--expr", build_script])
+    cmd = nix_build(
+        ["--log-format", "bar-with-logs", "--impure", "--expr", build_script]
+    )
     out = run(cmd)
 
     website_dir = Path(out.stdout.strip()) / "lib/node_modules/@clan/webview-ui/dist"

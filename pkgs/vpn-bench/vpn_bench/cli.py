@@ -9,9 +9,9 @@ from clan_cli.custom_logger import setup_logging
 from clan_cli.dirs import user_cache_dir, user_data_dir
 
 from vpn_bench.bench import benchmark_vpn
-from vpn_bench.clan import AgeOpts, clan_clean, clan_init
 from vpn_bench.data import VPN, Config, Provider, SSHKeyPair
 from vpn_bench.plot import plot_data
+from vpn_bench.setup import AgeOpts, clan_clean, clan_init
 from vpn_bench.ssh import generate_ssh_key, ssh_into_machine
 from vpn_bench.terraform import tr_create, tr_destroy, tr_metadata
 

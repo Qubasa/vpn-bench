@@ -252,6 +252,8 @@ def install_vpn(
                         )
                 case _:
                     pass
+
+        runtime.join_all()
         runtime.check_all()
 
     return machines

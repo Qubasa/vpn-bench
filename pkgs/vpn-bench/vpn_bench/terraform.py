@@ -115,7 +115,7 @@ def tr_create(
                     {
                         "name": machine,
                         "location": location,
-                        "server_type": "ccx13",
+                        "server_type": "ccx23",
                         "ipv4": None,
                     }
                 )

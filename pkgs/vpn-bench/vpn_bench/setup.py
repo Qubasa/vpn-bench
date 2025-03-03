@@ -21,7 +21,7 @@ from clan_cli.secrets.sops import KeyType, maybe_get_admin_public_key
 from clan_cli.secrets.users import add_user
 from clan_cli.ssh.host import Host
 
-from vpn_bench.data import Config, Provider
+from vpn_bench.data import Config, Provider, SSHKeyPair
 from vpn_bench.errors import VpnBenchError
 from vpn_bench.install import install_single_machine
 from vpn_bench.terraform import TrMachine
@@ -92,7 +92,13 @@ class InvSSHKeyEntry:
     ssh_pubkey_txt: str
 
 
-def create_base_inventory(keys: list[InvSSHKeyEntry]) -> dict[str, Any]:
+def create_base_inventory(ssh_keys_pairs: list[SSHKeyPair]) -> dict[str, Any]:
+    ssh_keys = [
+        InvSSHKeyEntry("nixos-anywhere", ssh_keys_pairs[0].public.read_text()),
+    ]
+    for num, ssh_key in enumerate(ssh_keys_pairs[1:]):
+        ssh_keys.append(InvSSHKeyEntry(f"user_{num}", ssh_key.public.read_text()))
+
     """Create the base inventory structure."""
     inventory = {
         "myadmin": {
@@ -102,7 +108,7 @@ def create_base_inventory(keys: list[InvSSHKeyEntry]) -> dict[str, Any]:
                         "tags": ["all"],
                         "config": {
                             "allowedKeys": {
-                                key.username: key.ssh_pubkey_txt for key in keys
+                                key.username: key.ssh_pubkey_txt for key in ssh_keys
                             },
                         },
                     }
@@ -193,16 +199,8 @@ def clan_init(
     # Update flake configuration
     update_flake_nix(config.clan_dir, vpnbench_clan)
 
-    ssh_keys = [
-        InvSSHKeyEntry("nixos-anywhere", config.ssh_keys[0].public.read_text()),
-    ]
-    for num, ssh_key in enumerate(config.ssh_keys[1:]):
-        ssh_keys.append(
-            InvSSHKeyEntry(f"{age_opts.username}_{num}", ssh_key.public.read_text())
-        )
-
     # Create and configure inventory
-    inventory = create_base_inventory(ssh_keys)
+    inventory = create_base_inventory(config.ssh_keys)
 
     # Set up machines
     for machine_num, tr_machine in enumerate(tr_machines):
