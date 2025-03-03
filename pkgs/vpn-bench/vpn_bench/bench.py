@@ -181,6 +181,7 @@ def create_machine_obj(config: Config, tr_machines: list[TrMachine]) -> list[Mac
             flake=clan_dir,
             host_key_check=HostKeyCheck.NONE,
             override_build_host=build_host,
+            private_key=config.ssh_keys[0].private,
         )
         for tr_machine in tr_machines
     ]
@@ -251,6 +252,7 @@ def install_vpn(
                         )
                 case _:
                     pass
+        runtime.check_all()
 
     return machines
 

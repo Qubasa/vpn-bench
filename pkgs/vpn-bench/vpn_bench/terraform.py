@@ -5,24 +5,17 @@ import logging
 import os
 import shutil
 from pathlib import Path
-from typing import Any, TypedDict
+from typing import Any
 
 from clan_cli.cmd import Log, RunOpts, run
 from clan_cli.templates import copy_from_nixstore
 from clan_cli.vars.prompt import PromptType, ask
 
 from vpn_bench.assets import get_cloud_asset
-from vpn_bench.data import Config, Provider
+from vpn_bench.data import Config, Provider, TrMachine
 from vpn_bench.errors import VpnBenchError
 
 log = logging.getLogger(__name__)
-
-
-class TrMachine(TypedDict):
-    name: str
-    location: str
-    server_type: str
-    ipv4: str | None
 
 
 def tr_init(config: Config, provider: Provider) -> None:
@@ -95,23 +88,8 @@ def tr_create(
     tr_ask_for_api_key(provider)
     tr_init(config, provider)
 
-    # do a ssh-keygen -t ed25519 -C "your_email@example.com"
-    cmd = [
-        "ssh-keygen",
-        "-t",
-        "ed25519",
-        "-C",
-        "example@example.com",
-        "-f",
-        f"{config.data_dir}/id_ed25519",
-        "-N",
-        "",
-        "-y",
-    ]
-    run(cmd, RunOpts(log=Log.BOTH))
-    anywhere_ssh_key = config.data_dir / "id_ed25519.pub"
+    ssh_pubkeys = [key.public.read_text() for key in config.ssh_keys]
 
-    ssh_pubkeys = [anywhere_ssh_key.read_text(), user_ssh_pubkey.read_text()]
     match provider:
         case Provider.Hetzner:
             servers: list[TrMachine] = []

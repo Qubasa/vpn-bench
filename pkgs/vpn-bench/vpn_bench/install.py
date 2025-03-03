@@ -4,37 +4,19 @@ from pathlib import Path
 
 from clan_cli.api.disk import hw_main_disk_options, set_machine_disk_schema
 from clan_cli.clan_uri import Flake
-from clan_cli.cmd import RunOpts
 from clan_cli.dirs import specific_machine_dir
 
 # Clan TODO: We need to fix this circular import problem in clan_cli!
 from clan_cli.machines.hardware import HardwareConfig
 from clan_cli.machines.install import InstallOptions, install_machine
 from clan_cli.machines.machines import Machine
-from clan_cli.ssh.host import Host
 from clan_cli.ssh.host_key import HostKeyCheck
 
-from vpn_bench.data import Config
+from vpn_bench.data import Config, TrMachine
 from vpn_bench.errors import VpnBenchError
-from vpn_bench.terraform import TrMachine
+from vpn_bench.ssh import can_ssh_login
 
 log = logging.getLogger(__name__)
-
-
-def can_ssh_login(host: Host) -> bool:
-    host = Host.from_host(host)
-    host.host_key_check = HostKeyCheck.NONE
-    host.ssh_options.update(
-        {
-            "PasswordAuthentication": "no",
-            "BatchMode": "yes",
-        }
-    )
-
-    result = host.run(["exit"], RunOpts(check=False, shell=True))
-
-    # Check the return code
-    return result.returncode == 0
 
 
 def install_single_machine(
@@ -44,15 +26,17 @@ def install_single_machine(
     log.info(f"Installing machine {tr_machine['name']}")
 
     assert tr_machine["ipv4"] is not None
-    host = Host(user=tr_machine["name"], host=tr_machine["ipv4"])
+    identity_file = config.ssh_keys[0].private
+
     machine = Machine(
-        name=tr_machine["name"], flake=clan_dir_flake, host_key_check=HostKeyCheck.NONE
+        name=tr_machine["name"],
+        flake=clan_dir_flake,
+        host_key_check=HostKeyCheck.NONE,
+        private_key=identity_file,
+        override_target_host=tr_machine["ipv4"],
     )
-
-    identity_file = config.data_dir / "id_ed25519"
-
     assert tr_machine["ipv4"] is not None
-    host = Host(user=tr_machine["name"], host=tr_machine["ipv4"])
+    host = machine.target_host
 
     if not can_ssh_login(host):
         log.info("Could not login with machine name user, trying root user")

@@ -1,6 +1,14 @@
 from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
+from typing import TypedDict
+
+
+class TrMachine(TypedDict):
+    name: str
+    location: str
+    server_type: str
+    ipv4: str | None
 
 
 class Provider(Enum):
@@ -30,6 +38,12 @@ class VPN(Enum):
 
 
 @dataclass
+class SSHKeyPair:
+    private: Path
+    public: Path
+
+
+@dataclass
 class Config:
     debug: bool
     data_dir: Path
@@ -37,3 +51,4 @@ class Config:
     tr_dir: Path
     clan_dir: Path
     bench_dir: Path
+    ssh_keys: list[SSHKeyPair]

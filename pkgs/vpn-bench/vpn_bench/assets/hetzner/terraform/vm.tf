@@ -11,7 +11,7 @@ resource "hcloud_server" "servers" {
   user_data = <<-EOF
     #cloud-config
     ssh_authorized_keys:
-      - ${join("\n      - ", var.ssh_pubkeys)}
+      - ${join("\n  - ", var.ssh_pubkeys)}
     ssh_pwauth: false
     chpasswd:
       expire: false
@@ -29,7 +29,6 @@ output "vm_info" {
       location    = server.location,
       server_type = server.server_type,
       ipv4        = hcloud_server.servers[server.name].ipv4_address,
-      user_data   = hcloud_server.servers[server.name].user_data
     }
   }
 }

@@ -10,9 +10,9 @@ from clan_cli.dirs import user_cache_dir, user_data_dir
 
 from vpn_bench.bench import benchmark_vpn
 from vpn_bench.clan import AgeOpts, clan_clean, clan_init
-from vpn_bench.data import VPN, Config, Provider
-from vpn_bench.errors import VpnBenchError
+from vpn_bench.data import VPN, Config, Provider, SSHKeyPair
 from vpn_bench.plot import plot_data
+from vpn_bench.ssh import generate_ssh_key, ssh_into_machine
 from vpn_bench.terraform import tr_create, tr_destroy, tr_metadata
 
 log = logging.getLogger(__name__)
@@ -34,7 +34,6 @@ def create_parser() -> argparse.ArgumentParser:
     create_parser.add_argument(
         "--ssh-pubkey",
         help="SSH pubkey path",
-        default=os.environ.get("SSH_PUBKEY_PATH"),
         type=Path,
     )
     create_parser.add_argument("--location", help="Server location")
@@ -71,12 +70,11 @@ def create_parser() -> argparse.ArgumentParser:
         default=Provider.Hetzner.value,
     )
     install_parser.add_argument("--age-user", help="Age user")
-    install_parser.add_argument("--age-pubkey", help="Age pubkey", type=Path)
+    install_parser.add_argument("--age-pubkey", help="Age pubkey", type=str)
     install_parser.add_argument(
         "--ssh-pubkey",
         help="SSH pubkey path",
-        default=os.environ.get("SSH_PUBKEY_PATH"),
-        type=Path,
+        type=str,
     )
 
     bench_parser = subparsers.add_parser("bench", help="Benchmark command")
@@ -92,10 +90,7 @@ def create_parser() -> argparse.ArgumentParser:
     return parser
 
 
-def run_cli() -> None:
-    parser = create_parser()
-    args = parser.parse_args()
-
+def create_conf_obj(args: argparse.Namespace) -> Config:
     is_debug = getattr(args, "debug", False)
     data_dir = user_data_dir() / "vpn_bench"
     data_dir.mkdir(parents=True, exist_ok=True)
@@ -106,14 +101,41 @@ def run_cli() -> None:
     bench_dir = data_dir / "bench"
     bench_dir.mkdir(parents=True, exist_ok=True)
 
-    config = Config(
+    gen_key = generate_ssh_key(data_dir)
+    ssh_keys = [gen_key]
+
+    pubkey_path: Path | None = None
+    if getattr(args, "ssh_pubkey", False):
+        pubkey_path = Path(args.ssh_pubkey)
+        assert pubkey_path is not None
+        ssh_keys.append(
+            SSHKeyPair(private=pubkey_path.with_suffix(""), public=pubkey_path)
+        )
+
+    if pubkey_path_str := os.environ.get("SSH_PUBKEY_PATH"):
+        pubkey_path = Path(pubkey_path_str)
+        ssh_keys.append(
+            SSHKeyPair(
+                private=Path(pubkey_path).with_suffix(""), public=Path(pubkey_path)
+            )
+        )
+
+    return Config(
         debug=is_debug,
         data_dir=data_dir,
         tr_dir=tr_dir,
         cache_dir=cache_dir,
         clan_dir=clan_dir,
         bench_dir=bench_dir,
+        ssh_keys=ssh_keys,
     )
+
+
+def run_cli() -> None:
+    parser = create_parser()
+    args = parser.parse_args()
+
+    config = create_conf_obj(args)
 
     if config.debug:
         setup_logging(logging.DEBUG)
@@ -134,11 +156,12 @@ def run_cli() -> None:
         machines = args.m
         if len(machines) == 0:
             machines = ["milo", "luna"]
-
         tr_create(config, provider, args.location, args.ssh_pubkey, machines=machines)
+
     elif args.subcommand == "destroy":
         tr_destroy(config, provider, args.force)
         clan_clean(config)
+
     elif args.subcommand == "meta":
         meta = tr_metadata(config)
         for machine in meta:
@@ -146,10 +169,6 @@ def run_cli() -> None:
 
     elif args.subcommand == "install":
         machines = tr_metadata(config)
-
-        if args.ssh_pubkey is None:
-            msg = "Please specify a path to an SSH pubkey with --ssh-pubkey or set the SSH_PUBKEY_PATH environment variable"
-            raise VpnBenchError(msg)
 
         age_pubkey_path: Path | None = None
         if args.age_pubkey is None:
@@ -165,7 +184,7 @@ def run_cli() -> None:
         assert age_usr_str is not None
         age_opts = AgeOpts(username=age_usr_str, pubkey=age_pubkey_path)
 
-        clan_init(config, provider, args.ssh_pubkey, age_opts, machines)
+        clan_init(config, provider, age_opts, machines)
 
     elif args.subcommand == "bench":
         machines = tr_metadata(config)
@@ -174,22 +193,14 @@ def run_cli() -> None:
                 benchmark_vpn(config, vpn, machines)
         else:
             benchmark_vpn(config, vpn, machines)
+
     elif args.subcommand == "plot":
         machines = tr_metadata(config)
         plot_data(config, machines)
+
     elif args.subcommand == "ssh":
         machines = tr_metadata(config)
-        import subprocess
-
-        found = False
-        for machine in machines:
-            if machine["name"] == args.machine:
-                found = True
-                target = f"root@{machine['ipv4']}"
-                log.info(f"ssh {target}")
-                subprocess.run(["ssh", f"{target}"])
-        if not found:
-            log.error(f"Machine {args.machine} not found")
+        ssh_into_machine(machines, args.machine, config.ssh_keys[0])
 
     else:
         parser.print_help()

@@ -38,6 +38,11 @@ class AgeOpts:
 def clan_clean(config: Config) -> None:
     shutil.rmtree(config.clan_dir, ignore_errors=True)
 
+    if config.bench_dir.exists():
+        answer = input("Want to delete the benchmark results too? [y/N]")
+        if answer.lower() == "y":
+            shutil.rmtree(config.bench_dir, ignore_errors=True)
+
 
 def check_and_clean_directory(clan_dir: Path) -> None:
     """Check if directory exists and ask for deletion if it does."""
@@ -82,12 +87,12 @@ def update_flake_nix(clan_dir: Path, vpnbench_clan: Path) -> None:
 
 
 @dataclass
-class SSHKey:
+class InvSSHKeyEntry:
     username: str
-    ssh_key_content: str
+    ssh_pubkey_txt: str
 
 
-def create_base_inventory(keys: list[SSHKey]) -> dict[str, Any]:
+def create_base_inventory(keys: list[InvSSHKeyEntry]) -> dict[str, Any]:
     """Create the base inventory structure."""
     inventory = {
         "myadmin": {
@@ -97,7 +102,7 @@ def create_base_inventory(keys: list[SSHKey]) -> dict[str, Any]:
                         "tags": ["all"],
                         "config": {
                             "allowedKeys": {
-                                key.username: key.ssh_key_content for key in keys
+                                key.username: key.ssh_pubkey_txt for key in keys
                             },
                         },
                     }
@@ -150,10 +155,13 @@ def setup_machine(
     )
 
 
+def reset_terminal() -> None:
+    print("\033c", end="", flush=True)
+
+
 def clan_init(
     config: Config,
     provider: Provider,
-    ssh_key_path: Path,
     age_opts: AgeOpts,
     tr_machines: list[TrMachine],
 ) -> None:
@@ -185,12 +193,13 @@ def clan_init(
     # Update flake configuration
     update_flake_nix(config.clan_dir, vpnbench_clan)
 
-    generated_key = config.data_dir / "id_ed25519.pub"
-
     ssh_keys = [
-        SSHKey(age_opts.username, generated_key.read_text()),
-        SSHKey("nixos-anywhere", ssh_key_path.read_text()),
+        InvSSHKeyEntry("nixos-anywhere", config.ssh_keys[0].public.read_text()),
     ]
+    for num, ssh_key in enumerate(config.ssh_keys[1:]):
+        ssh_keys.append(
+            InvSSHKeyEntry(f"{age_opts.username}_{num}", ssh_key.public.read_text())
+        )
 
     # Create and configure inventory
     inventory = create_base_inventory(ssh_keys)
@@ -215,4 +224,5 @@ def clan_init(
         runtime.join_all()
         runtime.check_all()
 
+    reset_terminal()
     log.info("Clan configuration initialized")
