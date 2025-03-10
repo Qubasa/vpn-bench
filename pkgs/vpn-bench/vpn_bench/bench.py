@@ -1,11 +1,12 @@
+import concurrent
 import json
 import logging
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
 from clan_cli.api import dataclass_to_dict
-from clan_cli.async_run import AsyncRuntime
 from clan_cli.cmd import Log, RunOpts, run
 from clan_cli.facts.generate import generate_facts
 from clan_cli.facts.list import get_all_facts
@@ -13,7 +14,7 @@ from clan_cli.flake import Flake
 from clan_cli.inventory import patch_inventory_with
 from clan_cli.machines.machines import Machine
 from clan_cli.machines.update import deploy_machines
-from clan_cli.nix import nix_command
+from clan_cli.nix import nix_command, nix_shell
 from clan_cli.ssh.host import Host
 from clan_cli.ssh.host_key import HostKeyCheck
 from clan_cli.ssh.upload import upload
@@ -25,6 +26,7 @@ from vpn_bench.assets import get_iperf_asset
 from vpn_bench.data import VPN, Config
 from vpn_bench.errors import VpnBenchError
 from vpn_bench.install import can_ssh_login
+from vpn_bench.setup import create_base_inventory
 from vpn_bench.terraform import TrMachine
 
 log = logging.getLogger(__name__)
@@ -36,7 +38,39 @@ class BenchMachine:
     vpn_ip: str
 
 
+def install_base_config(config: Config, tr_machines: list[TrMachine]) -> None:
+    conf = create_base_inventory(tr_machines, config.ssh_keys)
+    patch_inventory_with(config.clan_dir, "services", conf)
+
+
+def install_bench_config(
+    config: Config, tr_machines: list[TrMachine], bmachines: list[BenchMachine]
+) -> None:
+    conf = {}
+    pub_ips = {machine["ipv4"]: machine["name"] for machine in tr_machines}
+    vpn_ips = {bmachine.vpn_ip: bmachine.cmachine.name for bmachine in bmachines}
+    for bmachine in bmachines:
+        cpub = pub_ips.copy()
+        del cpub[bmachine.cmachine.target_host.host]
+        cvpn = vpn_ips.copy()
+        del cvpn[bmachine.vpn_ip]
+        conf[f"{bmachine.cmachine.name}_id"] = {
+            "roles": {
+                "default": {
+                    "machines": [bmachine.cmachine.name],
+                    "config": {
+                        "publicIPs": cpub,
+                        "vpnIPs": cvpn,
+                    },
+                }
+            }
+        }
+
+    patch_inventory_with(config.clan_dir, "services.my-nginx", conf)
+
+
 def install_zerotier(config: Config, tr_machines: list[TrMachine]) -> None:
+    base = create_base_inventory(tr_machines, config.ssh_keys)
     conf: dict[str, Any] = {
         "someid": {
             "roles": {
@@ -60,16 +94,18 @@ def install_zerotier(config: Config, tr_machines: list[TrMachine]) -> None:
             log.info(f"Adding {tr_machine['name']} to the zerotier peers")
             conf["someid"]["roles"]["peer"]["machines"].append(tr_machine["name"])
 
-    patch_inventory_with(config.clan_dir, "services.zerotier", conf)
+    base["zerotier"] = conf
+    patch_inventory_with(config.clan_dir, "services", base)
 
 
 def install_mycelium(config: Config, tr_machines: list[TrMachine]) -> None:
+    base = create_base_inventory(tr_machines, config.ssh_keys)
     conf: dict[str, Any] = {
         "someid": {
             "roles": {
                 "peer": {
                     "machines": [],
-                    "config": {},
+                    "config": {"openFirewall": True, "addHostedPublicNodes": True},
                 },
             }
         }
@@ -78,7 +114,8 @@ def install_mycelium(config: Config, tr_machines: list[TrMachine]) -> None:
         log.info(f"Adding {tr_machine['name']} to the mycelium peers")
         conf["someid"]["roles"]["peer"]["machines"].append(tr_machine["name"])
 
-    patch_inventory_with(config.clan_dir, "services.mycelium", conf)
+    base["mycelium"] = conf
+    patch_inventory_with(config.clan_dir, "services", base)
 
 
 @dataclass
@@ -109,7 +146,7 @@ def run_iperf_test(
     ]
 
     if udp_mode:
-        cmd.extend(["-u", "--udp-counters-64bit"])
+        cmd.extend(["-u", "--udp-counters-64bit", "-b", "0"])
 
     res = host.run(
         nix_command(cmd),
@@ -162,9 +199,15 @@ def run_benchmarks(config: Config, vpn: VPN, bmachines: list[BenchMachine]) -> N
         tcp_results = run_iperf_test(host, next_bmachine.vpn_ip, creds, udp_mode=False)
         save_iperf_results(result_dir, tcp_results, "tcp")
 
-        # Run UDP test
-        udp_results = run_iperf_test(host, next_bmachine.vpn_ip, creds, udp_mode=True)
-        save_iperf_results(result_dir, udp_results, "udp")
+        match vpn:
+            case vpn.Mycelium:
+                pass
+            case _:
+                # Run UDP test
+                udp_results = run_iperf_test(
+                    host, next_bmachine.vpn_ip, creds, udp_mode=True
+                )
+                save_iperf_results(result_dir, udp_results, "udp")
 
 
 def create_machine_obj(config: Config, tr_machines: list[TrMachine]) -> list[Machine]:
@@ -200,9 +243,11 @@ def get_vpn_ips(
             case VPN.Zerotier:
                 vpn_ip = facts["zerotier-ip"].decode()
             case VPN.Mycelium:
-                vpn_ip = get_var(
-                    str(config.clan_dir), machine.name, "mycelium/ip"
-                ).value.decode()
+                vpn_ip = (
+                    get_var(str(config.clan_dir), machine.name, "mycelium/ip")
+                    .value.decode()
+                    .strip("\n")
+                )  # TODO: Fix the newline in the var
             case VPN.External:
                 vpn_ip = "clan.lol"
             case VPN.Internal:
@@ -215,9 +260,67 @@ def get_vpn_ips(
     return bmachines
 
 
+def delete_old_state(machines: list[Machine]) -> None:
+    state_dirs = [
+        "/etc/zerotier",
+        "/var/lib/zerotier-one",
+        "/var/lib/mycelium",
+        "/var/lib/private/mycelium/",
+        "/var/lib/connection-check",
+    ]
+
+    with ThreadPoolExecutor() as executor:
+        futures = []
+        for _index, machine in enumerate(machines):
+            host = machine.target_host
+            future = executor.submit(
+                host.run,
+                ["rm", "-rf", *state_dirs],
+                RunOpts(log=Log.BOTH),
+            )
+            futures.append(future)
+        concurrent.futures.wait(futures)
+
+
+def get_connection_timings(config: Config, vpn: VPN, machines: list[Machine]) -> None:
+    match vpn:
+        case VPN.Internal | VPN.External:
+            return
+        case _:
+            pass
+
+    with ThreadPoolExecutor() as executor:
+        futures = []
+        for index, machine in enumerate(machines):
+            src = f"{machine.target_host.target}:/var/lib/connection-check/connection_timings.json"
+            dest = config.bench_dir / vpn.name / f"{index}_{machine.name}"
+            dest.mkdir(parents=True, exist_ok=True)
+            priv_key = str(config.ssh_keys[0].private)
+            future = executor.submit(
+                run,
+                nix_shell(["nixpkgs#openssh"], ["scp", "-i", priv_key, src, str(dest)]),
+                RunOpts(log=Log.BOTH),
+            )
+            futures.append(future)
+        concurrent.futures.wait(futures)
+
+
 def install_vpn(
     config: Config, vpn: VPN, tr_machines: list[TrMachine]
-) -> list[Machine]:
+) -> list[BenchMachine]:
+    # Update cvpn-bench flake input, else error because of mismatched input
+    run(["nix", "flake", "update", "cvpn-bench", "--flake", str(config.clan_dir)])
+
+    install_base_config(config, tr_machines)
+
+    # Initialize and configure machines
+    machines = create_machine_obj(config, tr_machines)
+
+    # Update machine without VPNs to remove any previous VPN configuration
+    deploy_machines(machines)
+
+    delete_old_state(machines)
+
     # Setup VPN configuration
     match vpn:
         case VPN.Zerotier:
@@ -230,33 +333,20 @@ def install_vpn(
             msg = f"VPN {vpn} not supported"
             raise VpnBenchError(msg)
 
-    # Initialize and configure machines
-    machines = create_machine_obj(config, tr_machines)
+    # Get the VPN IP of each machine
+    bmachines = get_vpn_ips(config, machines, vpn)
+    save_machine_layout(config, vpn, bmachines)
 
-    # Update cvpn-bench flake input, else error because of mismatched input
-    run(["nix", "flake", "update", "cvpn-bench", "--flake", str(config.clan_dir)])
+    # Install modules that require the VPN IPs
+    install_bench_config(config, tr_machines, bmachines)
 
-    # Update machine configuration
+    # Update machine configuration with VPNs
     deploy_machines(machines)
 
-    # Restart zerotier-one on all machines except the first
-    # TODO: This is a hack, we should have nix do this for us
-    with AsyncRuntime() as runtime:
-        for index, machine in enumerate(machines):
-            host = machine.target_host
-            match vpn:
-                case VPN.Zerotier:
-                    if index > 0:
-                        runtime.async_run(
-                            None, host.run, ["systemctl", "restart", "zerotierone"]
-                        )
-                case _:
-                    pass
+    get_connection_timings(config, vpn, machines)
 
-        runtime.join_all()
-        runtime.check_all()
-
-    return machines
+    breakpoint()
+    return bmachines
 
 
 def save_machine_layout(
@@ -271,16 +361,17 @@ def save_machine_layout(
         json.dump(layout, f, indent=4)
 
 
-def benchmark_vpn(config: Config, vpn: VPN, tr_machines: list[TrMachine]) -> None:
+def benchmark_vpn(
+    config: Config, vpn: VPN, tr_machines: list[TrMachine], only_update: bool = False
+) -> None:
     """Main function to coordinate VPN benchmarking."""
     log.info(f"Benchmarking VPN {vpn}")
 
     # Install VPN
-    machines = install_vpn(config, vpn, tr_machines)
+    bmachines = install_vpn(config, vpn, tr_machines)
 
-    # Get the VPN IP of each machine
-    bmachines = get_vpn_ips(config, machines, vpn)
-    save_machine_layout(config, vpn, bmachines)
-
-    # Run benchmarks
-    run_benchmarks(config, vpn, bmachines)
+    if not only_update:
+        # Run benchmarks
+        run_benchmarks(config, vpn, bmachines)
+    else:
+        log.info("Only updating the machine configuration, skipping benchmarks")

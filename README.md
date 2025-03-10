@@ -1,6 +1,8 @@
 # VPN Benchmark Tooling
 
-This repository creates a network of VMs on the google cloud with opentofu, 
+!!! This is a Work In Progress
+
+This repository creates a network of VMs on the Hetzner cloud with opentofu, 
 installs clan on every machine and then performs benchmarks for different VPNs.
 
 ## Run
@@ -24,9 +26,11 @@ If you just want to run the benchmark, just execute:
 3. **Start benchmarking**
   And afterwards you have access to the `vpn-bench` command. To start the benchmarking execute:
   ```bash
-  vpn-bench create # <-- Creates the VMs with terraform
-  vpn-bench metadata # <-- To see the cloud metadata for the created VMs
-  vpn-bench install # <-- Install benchmarking on VMs
+  vpb create # <-- Creates the VMs with terraform
+  vpb meta # <-- To see the cloud metadata for the created VMs
+  vpb install # <-- Install benchmarking on VMs
+  vpb bench # <-- Runs the benchmarks
+  vpb plot # <-- Plots the results into a static website
   ```
 
 ## Development Setup

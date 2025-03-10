@@ -35,6 +35,7 @@
           "myadmin" = ./clanModules/myadmin;
           "iperf" = ./clanModules/iperf;
           "my-trusted-nix-caches" = ./clanModules/my-trusted-nix-caches;
+          "my-nginx" = ./clanModules/my-nginx;
         };
       };
 

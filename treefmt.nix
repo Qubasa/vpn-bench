@@ -67,7 +67,7 @@
         programs.mypy.directories =
         {
           "vpn_bench" = {
-            directory = "pkgs/vpn-bench/vpn_bench";
+            directory = "pkgs/vpn-bench";
             extraPythonPackages = [(pkgs.python3.pkgs.toPythonModule inputs'.clan-core.packages.clan-cli)] ++ self'.packages.vpn-bench.propagatedBuildInputs;
           };
           

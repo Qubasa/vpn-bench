@@ -92,7 +92,9 @@ class InvSSHKeyEntry:
     ssh_pubkey_txt: str
 
 
-def create_base_inventory(ssh_keys_pairs: list[SSHKeyPair]) -> dict[str, Any]:
+def create_base_inventory(
+    tr_machines: list[TrMachine], ssh_keys_pairs: list[SSHKeyPair]
+) -> dict[str, Any]:
     ssh_keys = [
         InvSSHKeyEntry("nixos-anywhere", ssh_keys_pairs[0].public.read_text()),
     ]
@@ -162,7 +164,16 @@ def setup_machine(
 
 
 def reset_terminal() -> None:
+    """
+    Reset the terminal to its initial state, similar to 'tput reset'.
+    This clears the screen, resets all attributes, and moves cursor to home position.
+    """
+    # ESC sequence for full reset
     print("\033c", end="", flush=True)
+
+    # Alternative approach with more specific commands
+    # Clear screen, reset attributes, and move cursor to home position
+    print("\033[2J\033[H\033[0m", end="", flush=True)
 
 
 def clan_init(
@@ -200,7 +211,7 @@ def clan_init(
     update_flake_nix(config.clan_dir, vpnbench_clan)
 
     # Create and configure inventory
-    inventory = create_base_inventory(config.ssh_keys)
+    inventory = create_base_inventory(tr_machines, config.ssh_keys)
 
     # Set up machines
     for machine_num, tr_machine in enumerate(tr_machines):
