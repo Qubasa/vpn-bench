@@ -102,16 +102,26 @@ export function generateGeneralData(): GeneralData | undefined {
     console.log("File name:", fileName);
 
     if (fileName === "connection_timings.json") {
+      const filteredConnectionTimings = Object.fromEntries(
+        Object.entries(module as ConnectionTimings).filter(
+          ([key]) => key !== "default",
+        ),
+      );
       if (result) {
-        result.connection_timings = module as ConnectionTimings;
+        result.connection_timings = filteredConnectionTimings;
       } else {
-        result = { connection_timings: module as ConnectionTimings };
+        result = { connection_timings: filteredConnectionTimings };
       }
     } else if (fileName === "reboot_connection_timings.json") {
+      const filteredConnectionTimings = Object.fromEntries(
+        Object.entries(module as ConnectionTimings).filter(
+          ([key]) => key !== "default",
+        ),
+      );
       if (result) {
-        result.reboot_connection_timings = module as ConnectionTimings;
+        result.reboot_connection_timings = filteredConnectionTimings;
       } else {
-        result = { reboot_connection_timings: module as ConnectionTimings };
+        result = { reboot_connection_timings: filteredConnectionTimings };
       }
     }
   });

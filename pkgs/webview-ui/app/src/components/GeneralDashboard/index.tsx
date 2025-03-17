@@ -7,12 +7,28 @@ export type ConnectionTimings = Record<string, ConnectionData>;
 
 // Convert time string (H:MM:SS.MS) to milliseconds
 const timeToMs = (timeStr: string) => {
-  const parts = timeStr.split(":");
-  const hours = parseInt(parts[0], 10);
-  const minutes = parseInt(parts[1], 10);
-  const seconds = parseFloat(parts[2]);
+  if (!timeStr || typeof timeStr !== "string") {
+    return NaN; // Will be filtered out later
+  }
 
-  return (hours * 60 * 60 + minutes * 60 + seconds) * 1000;
+  try {
+    const parts = timeStr.split(":");
+    if (parts.length !== 3) {
+      return NaN;
+    }
+
+    const hours = parseInt(parts[0], 10);
+    const minutes = parseInt(parts[1], 10);
+    const seconds = parseFloat(parts[2]);
+
+    if (isNaN(hours) || isNaN(minutes) || isNaN(seconds)) {
+      return NaN;
+    }
+
+    return (hours * 60 * 60 + minutes * 60 + seconds) * 1000;
+  } catch (e) {
+    return NaN;
+  }
 };
 
 // Process data for boxplot visualization
@@ -22,27 +38,58 @@ const processDataForBoxplot = (report: ConnectionTimings) => {
   const categories = [];
 
   for (const service of services) {
-    if (service === "default") {
+    // Get time values and ensure we have valid data
+    const timeValues = Object.values(report[service]);
+    if (timeValues.length === 0) {
+      continue; // Skip empty services
+    }
+
+    // Convert and filter out any invalid times
+    const timings = timeValues
+      .map((time) => {
+        try {
+          return timeToMs(time);
+        } catch (e) {
+          console.warn(`Invalid time format for service ${service}:`, time);
+          return null;
+        }
+      })
+      .filter(
+        (time) => time !== null && !isNaN(time) && isFinite(time),
+      ) as number[];
+
+    // Skip if we don't have valid timings
+    if (timings.length === 0) {
+      console.warn(`No valid timing data for service ${service}`);
       continue;
     }
-    const timings = Object.values(report[service]).map((time) =>
-      timeToMs(time),
-    );
 
-    // For boxplot we need: [min, Q1, median, Q3, max]
+    // Sort for calculations
     timings.sort((a, b) => a - b);
-    const min = Math.min(...timings);
-    const max = Math.max(...timings);
-    const median =
-      timings.length % 2 === 0
-        ? (timings[timings.length / 2 - 1] + timings[timings.length / 2]) / 2
-        : timings[Math.floor(timings.length / 2)];
 
-    // Simple Q1 and Q3 calculation
-    const q1 =
-      timings.length > 1 ? timings[Math.floor(timings.length / 4)] : min;
-    const q3 =
-      timings.length > 1 ? timings[Math.floor((3 * timings.length) / 4)] : max;
+    // Calculate boxplot statistics safely
+    const min = timings[0];
+    const max = timings[timings.length - 1];
+
+    let median;
+    if (timings.length === 1) {
+      median = timings[0];
+    } else if (timings.length % 2 === 0) {
+      median =
+        (timings[timings.length / 2 - 1] + timings[timings.length / 2]) / 2;
+    } else {
+      median = timings[Math.floor(timings.length / 2)];
+    }
+
+    // Q1 and Q3 calculation with better handling of small datasets
+    let q1, q3;
+    if (timings.length <= 2) {
+      q1 = min;
+      q3 = max;
+    } else {
+      q1 = timings[Math.floor(timings.length / 4)];
+      q3 = timings[Math.floor((3 * timings.length) / 4)];
+    }
 
     boxplotData.push([min, q1, median, q3, max]);
     categories.push(service);
@@ -64,11 +111,17 @@ const createConnectionTimingsOption = (
     const nodeData = report[service];
 
     Object.entries(nodeData).forEach(([node, timeStr]) => {
-      const ms = timeToMs(timeStr);
-      scatterData.push([i, ms, node]); // [category index, value, node name]
+      try {
+        const ms = timeToMs(timeStr);
+        if (!isNaN(ms) && isFinite(ms)) {
+          scatterData.push([i, ms, node]); // [category index, value, node name]
+        }
+      } catch (e) {
+        console.warn(`Could not process node ${node} for service ${service}`);
+      }
     });
   }
-  console.log(scatterData);
+
   return {
     title: {
       text: title,
@@ -185,19 +238,23 @@ export const GeneralDashboard = ({
   return (
     <div style={{ display: "flex", "flex-direction": "column", gap: "20px" }}>
       <Show when={bootstrap_connection_timings}>
-        <ConnectionTimingsChart
-          report={bootstrap_connection_timings!}
-          height={700}
-          title="Bootstrap Connection Times"
-        />
+        {(timings) => (
+          <ConnectionTimingsChart
+            report={timings()}
+            height={700}
+            title="Bootstrap Connection Times"
+          />
+        )}
       </Show>
-      {/* <Show when={reboot_connection_timings}>
-        <ConnectionTimingsChart
-          report={reboot_connection_timings!}
-          height={700}
-          title="Reboot Connection Times"
-        />
-      </Show> */}
+      <Show when={reboot_connection_timings}>
+        {(timings) => (
+          <ConnectionTimingsChart
+            report={timings()}
+            height={700}
+            title="Reboot Connection Times"
+          />
+        )}
+      </Show>
     </div>
   );
 };
