@@ -1,9 +1,11 @@
 // benchData.ts
 // This uses Vite's import.meta.glob to dynamically import all JSON files from benchmark folders
 
-import { Machine, BenchCategory } from "@/src/index";
+import { BenchCategory } from "@/src/index";
 import { IperfTcpReportData } from "@/src/components/IperfTcpCharts";
 import { IperfUdpReportData } from "./components/IperfUdpCharts";
+import { ConnectionTimings } from "./components/GeneralDashboard";
+import { connect } from "http2";
 
 type BenchData = BenchCategory[];
 
@@ -14,11 +16,6 @@ const benchFiles = import.meta.glob("@/bench/**/*.json", { eager: true });
 if (Object.keys(benchFiles).length === 0) {
   throw new Error("No benchmark files found.");
 }
-
-// Print all the files
-Object.keys(benchFiles).forEach((file) => {
-  console.log("File:", file);
-});
 
 // Process the files and build the data structure
 export function generateBenchData(): BenchData {
@@ -32,9 +29,14 @@ export function generateBenchData(): BenchData {
 
     // Extract relevant parts
     const categoryName = pathParts[2]; // "NoVPN"
+
+    if (categoryName === "General") {
+      return;
+    }
+
     const machineName = pathParts[3]; // "0_luna"
     const fileName = pathParts[4]; // "tcp_iperf3.json" or "udp_iperf3.json"
-    console.log("Path parts:", pathParts);
+
     // Skip if any part is missing
     if (!categoryName || !machineName || !fileName) return;
 
@@ -79,3 +81,42 @@ export function generateBenchData(): BenchData {
 // Generate the benchmark data
 export const benchData = generateBenchData();
 console.log("Bench data:", benchData);
+
+const generalFiles = import.meta.glob("@/bench/General/**/*.json", {
+  eager: true,
+});
+
+export interface GeneralData {
+  connection_timings?: ConnectionTimings;
+  reboot_connection_timings?: ConnectionTimings;
+}
+
+export function generateGeneralData(): GeneralData | undefined {
+  let result: GeneralData | undefined;
+
+  // Process each file path
+  Object.entries(generalFiles).forEach(([path, module]) => {
+    const pathParts = path.split("/");
+
+    const fileName = pathParts[3];
+    console.log("File name:", fileName);
+
+    if (fileName === "connection_timings.json") {
+      if (result) {
+        result.connection_timings = module as ConnectionTimings;
+      } else {
+        result = { connection_timings: module as ConnectionTimings };
+      }
+    } else if (fileName === "reboot_connection_timings.json") {
+      if (result) {
+        result.reboot_connection_timings = module as ConnectionTimings;
+      } else {
+        result = { reboot_connection_timings: module as ConnectionTimings };
+      }
+    }
+  });
+
+  return result;
+}
+export const generalData = generateGeneralData();
+console.log("General data:", generalData);

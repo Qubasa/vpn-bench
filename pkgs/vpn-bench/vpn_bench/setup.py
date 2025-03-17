@@ -15,7 +15,7 @@ from clan_cli.inventory.classes import Machine as InventoryMachine
 from clan_cli.inventory.classes import MachineDeploy
 from clan_cli.machines.create import CreateOptions as ClanCreateOptions
 from clan_cli.machines.create import create_machine
-from clan_cli.nix import nix_command
+from clan_cli.nix import nix_command, nix_shell
 from clan_cli.secrets.key import generate_key
 from clan_cli.secrets.sops import KeyType, maybe_get_admin_public_key
 from clan_cli.secrets.users import add_user
@@ -163,17 +163,13 @@ def setup_machine(
     )
 
 
+# TODO: We should add something like this into clan_cli
 def reset_terminal() -> None:
     """
     Reset the terminal to its initial state, similar to 'tput reset'.
     This clears the screen, resets all attributes, and moves cursor to home position.
     """
-    # ESC sequence for full reset
-    print("\033c", end="", flush=True)
-
-    # Alternative approach with more specific commands
-    # Clear screen, reset attributes, and move cursor to home position
-    print("\033[2J\033[H\033[0m", end="", flush=True)
+    run(nix_shell(["nixpkgs#ncurses"], ["tput", "reset"]))
 
 
 def clan_init(

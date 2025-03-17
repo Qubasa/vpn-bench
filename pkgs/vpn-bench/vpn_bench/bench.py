@@ -1,121 +1,21 @@
-import concurrent
 import json
 import logging
-from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from clan_cli.api import dataclass_to_dict
-from clan_cli.cmd import Log, RunOpts, run
-from clan_cli.facts.generate import generate_facts
-from clan_cli.facts.list import get_all_facts
-from clan_cli.flake import Flake
-from clan_cli.inventory import patch_inventory_with
-from clan_cli.machines.machines import Machine
-from clan_cli.machines.update import deploy_machines
-from clan_cli.nix import nix_command, nix_shell
-from clan_cli.ssh.host import Host
-from clan_cli.ssh.host_key import HostKeyCheck
+from clan_cli.cmd import Log, RunOpts
+from clan_cli.nix import nix_command
 from clan_cli.ssh.upload import upload
-from clan_cli.vars.get import get_var
 
 from vpn_bench.assets import get_iperf_asset
 
 # from clan_cli.ssh.upload import upload
-from vpn_bench.data import VPN, Config
-from vpn_bench.errors import VpnBenchError
-from vpn_bench.install import can_ssh_login
-from vpn_bench.setup import create_base_inventory
+from vpn_bench.data import VPN, BenchMachine, Config
 from vpn_bench.terraform import TrMachine
+from vpn_bench.vpn import install_vpn
 
 log = logging.getLogger(__name__)
-
-
-@dataclass
-class BenchMachine:
-    cmachine: Machine
-    vpn_ip: str
-
-
-def install_base_config(config: Config, tr_machines: list[TrMachine]) -> None:
-    conf = create_base_inventory(tr_machines, config.ssh_keys)
-    patch_inventory_with(config.clan_dir, "services", conf)
-
-
-def install_bench_config(
-    config: Config, tr_machines: list[TrMachine], bmachines: list[BenchMachine]
-) -> None:
-    conf = {}
-    pub_ips = {machine["ipv4"]: machine["name"] for machine in tr_machines}
-    vpn_ips = {bmachine.vpn_ip: bmachine.cmachine.name for bmachine in bmachines}
-    for bmachine in bmachines:
-        cpub = pub_ips.copy()
-        del cpub[bmachine.cmachine.target_host.host]
-        cvpn = vpn_ips.copy()
-        del cvpn[bmachine.vpn_ip]
-        conf[f"{bmachine.cmachine.name}_id"] = {
-            "roles": {
-                "default": {
-                    "machines": [bmachine.cmachine.name],
-                    "config": {
-                        "publicIPs": cpub,
-                        "vpnIPs": cvpn,
-                    },
-                }
-            }
-        }
-
-    patch_inventory_with(config.clan_dir, "services.my-nginx", conf)
-
-
-def install_zerotier(config: Config, tr_machines: list[TrMachine]) -> None:
-    base = create_base_inventory(tr_machines, config.ssh_keys)
-    conf: dict[str, Any] = {
-        "someid": {
-            "roles": {
-                "controller": {
-                    "machines": [],
-                    "config": {},
-                },
-                "peer": {
-                    "machines": [],
-                    "config": {},
-                },
-            }
-        }
-    }
-    for machine_num, tr_machine in enumerate(tr_machines):
-        # Configure ZeroTier role
-        if machine_num == 0:
-            log.info(f"Setting up {tr_machine['name']} as the zerotier controller")
-            conf["someid"]["roles"]["controller"]["machines"].append(tr_machine["name"])
-        else:
-            log.info(f"Adding {tr_machine['name']} to the zerotier peers")
-            conf["someid"]["roles"]["peer"]["machines"].append(tr_machine["name"])
-
-    base["zerotier"] = conf
-    patch_inventory_with(config.clan_dir, "services", base)
-
-
-def install_mycelium(config: Config, tr_machines: list[TrMachine]) -> None:
-    base = create_base_inventory(tr_machines, config.ssh_keys)
-    conf: dict[str, Any] = {
-        "someid": {
-            "roles": {
-                "peer": {
-                    "machines": [],
-                    "config": {"openFirewall": True, "addHostedPublicNodes": True},
-                },
-            }
-        }
-    }
-    for _, tr_machine in enumerate(tr_machines):
-        log.info(f"Adding {tr_machine['name']} to the mycelium peers")
-        conf["someid"]["roles"]["peer"]["machines"].append(tr_machine["name"])
-
-    base["mycelium"] = conf
-    patch_inventory_with(config.clan_dir, "services", base)
 
 
 @dataclass
@@ -208,157 +108,6 @@ def run_benchmarks(config: Config, vpn: VPN, bmachines: list[BenchMachine]) -> N
                     host, next_bmachine.vpn_ip, creds, udp_mode=True
                 )
                 save_iperf_results(result_dir, udp_results, "udp")
-
-
-def create_machine_obj(config: Config, tr_machines: list[TrMachine]) -> list[Machine]:
-    """Initialize Machine objects for each terraform machine."""
-    clan_dir = Flake(str(config.clan_dir))
-
-    build_host = (
-        "root@localhost" if can_ssh_login(Host(host="localhost", user="root")) else None
-    )
-
-    return [
-        Machine(
-            name=tr_machine["name"],
-            flake=clan_dir,
-            host_key_check=HostKeyCheck.NONE,
-            override_build_host=build_host,
-            private_key=config.ssh_keys[0].private,
-        )
-        for tr_machine in tr_machines
-    ]
-
-
-def get_vpn_ips(
-    config: Config, machines: list[Machine], vpn: VPN
-) -> list[BenchMachine]:
-    """Query and collect VPN IPs for each machine."""
-    bmachines: list[BenchMachine] = []
-    for machine in machines:
-        generate_facts([machine])
-        facts = get_all_facts(machine)["TODO"]
-        vpn_ip: str | None = None
-        match vpn:
-            case VPN.Zerotier:
-                vpn_ip = facts["zerotier-ip"].decode()
-            case VPN.Mycelium:
-                vpn_ip = (
-                    get_var(str(config.clan_dir), machine.name, "mycelium/ip")
-                    .value.decode()
-                    .strip("\n")
-                )  # TODO: Fix the newline in the var
-            case VPN.External:
-                vpn_ip = "clan.lol"
-            case VPN.Internal:
-                vpn_ip = machine.target_host.host
-            case _:
-                msg = f"VPN {vpn} not supported"
-                raise VpnBenchError(msg)
-        assert vpn_ip is not None
-        bmachines.append(BenchMachine(cmachine=machine, vpn_ip=vpn_ip))
-    return bmachines
-
-
-def delete_old_state(machines: list[Machine]) -> None:
-    state_dirs = [
-        "/etc/zerotier",
-        "/var/lib/zerotier-one",
-        "/var/lib/mycelium",
-        "/var/lib/private/mycelium/",
-        "/var/lib/connection-check",
-    ]
-
-    with ThreadPoolExecutor() as executor:
-        futures = []
-        for _index, machine in enumerate(machines):
-            host = machine.target_host
-            future = executor.submit(
-                host.run,
-                ["rm", "-rf", *state_dirs],
-                RunOpts(log=Log.BOTH),
-            )
-            futures.append(future)
-        concurrent.futures.wait(futures)
-
-
-def get_connection_timings(config: Config, vpn: VPN, machines: list[Machine]) -> None:
-    match vpn:
-        case VPN.Internal | VPN.External:
-            return
-        case _:
-            pass
-
-    with ThreadPoolExecutor() as executor:
-        futures = []
-        for index, machine in enumerate(machines):
-            src = f"{machine.target_host.target}:/var/lib/connection-check/connection_timings.json"
-            dest = config.bench_dir / vpn.name / f"{index}_{machine.name}"
-            dest.mkdir(parents=True, exist_ok=True)
-            priv_key = str(config.ssh_keys[0].private)
-            future = executor.submit(
-                run,
-                nix_shell(["nixpkgs#openssh"], ["scp", "-i", priv_key, src, str(dest)]),
-                RunOpts(log=Log.BOTH),
-            )
-            futures.append(future)
-        concurrent.futures.wait(futures)
-
-
-def install_vpn(
-    config: Config, vpn: VPN, tr_machines: list[TrMachine]
-) -> list[BenchMachine]:
-    # Update cvpn-bench flake input, else error because of mismatched input
-    run(["nix", "flake", "update", "cvpn-bench", "--flake", str(config.clan_dir)])
-
-    install_base_config(config, tr_machines)
-
-    # Initialize and configure machines
-    machines = create_machine_obj(config, tr_machines)
-
-    # Update machine without VPNs to remove any previous VPN configuration
-    deploy_machines(machines)
-
-    delete_old_state(machines)
-
-    # Setup VPN configuration
-    match vpn:
-        case VPN.Zerotier:
-            install_zerotier(config, tr_machines)
-        case VPN.Mycelium:
-            install_mycelium(config, tr_machines)
-        case VPN.Internal | VPN.External:
-            pass
-        case _:
-            msg = f"VPN {vpn} not supported"
-            raise VpnBenchError(msg)
-
-    # Get the VPN IP of each machine
-    bmachines = get_vpn_ips(config, machines, vpn)
-    save_machine_layout(config, vpn, bmachines)
-
-    # Install modules that require the VPN IPs
-    install_bench_config(config, tr_machines, bmachines)
-
-    # Update machine configuration with VPNs
-    deploy_machines(machines)
-
-    get_connection_timings(config, vpn, machines)
-
-    breakpoint()
-    return bmachines
-
-
-def save_machine_layout(
-    config: Config, vpn: VPN, bmachines: list[BenchMachine]
-) -> None:
-    """Save the machine layout to a file."""
-
-    layout = dataclass_to_dict(bmachines)
-    result_dir = config.bench_dir / vpn.name
-    result_dir.mkdir(parents=True, exist_ok=True)
-    with (result_dir / "layout.json").open("w") as f:
-        json.dump(layout, f, indent=4)
 
 
 def benchmark_vpn(

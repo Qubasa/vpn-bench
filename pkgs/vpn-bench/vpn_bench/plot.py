@@ -9,6 +9,7 @@ from typing import Any
 from clan_cli.cmd import run
 from clan_cli.nix import nix_build, nix_config
 
+from vpn_bench.connection_timings import analyse_connection_timings
 from vpn_bench.data import Config
 from vpn_bench.errors import VpnBenchError
 from vpn_bench.terraform import TrMachine
@@ -18,6 +19,10 @@ log = logging.getLogger(__name__)
 
 def plot_data(config: Config, tr_machines: list[TrMachine]) -> None:
     vpn_bench_flake = os.environ.get("VPN_BENCH_FLAKE")
+
+    analyse_connection_timings(config, tr_machines)
+
+    log.info("Building webview-ui for plotting the data")
     nix_conf = nix_config()
     build_script = f"""
     let

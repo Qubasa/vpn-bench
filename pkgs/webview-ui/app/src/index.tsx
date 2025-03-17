@@ -10,10 +10,10 @@ import { IperfTcpReport } from "@/src/components/IperfTcpCharts";
 import { IperfUdpReport } from "./components/IperfUdpCharts";
 import { Toaster } from "solid-toast";
 import { IconVariant } from "./components/icon";
-import { benchData } from "./benchData";
+import { benchData, generalData, GeneralData } from "./benchData";
 import { IperfTcpReportData } from "@/src/components/IperfTcpCharts";
 import { IperfUdpReportData } from "./components/IperfUdpCharts";
-
+import { GeneralDashboard } from "./components/GeneralDashboard";
 export interface Machine {
   name: string;
   iperf3: {
@@ -95,6 +95,26 @@ function generateRoutesFromBenchData(data: BenchData): AppRoute[] {
   });
 }
 
+function generateAppRouteFromGeneralData(
+  data: GeneralData | undefined,
+): AppRoute[] {
+  if (!data) {
+    return [];
+  }
+  return [
+    {
+      path: "/general",
+      label: "General",
+      component: () => (
+        <GeneralDashboard
+          bootstrap_connection_timings={data.connection_timings}
+          reboot_connection_timings={data.reboot_connection_timings}
+        />
+      ),
+    },
+  ];
+}
+
 // Generate routes from benchData
 export const routes: AppRoute[] = [
   {
@@ -108,6 +128,7 @@ export const routes: AppRoute[] = [
     ),
   },
   ...generateRoutesFromBenchData(benchData),
+  ...generateAppRouteFromGeneralData(generalData),
 ];
 
 render(

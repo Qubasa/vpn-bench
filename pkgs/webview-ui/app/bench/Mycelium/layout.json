@@ -1,0 +1,212 @@
+[
+  {
+    "cmachine": {
+      "name": "luna",
+      "flake": {
+        "identifier": "/home/lhebendanz/.local/share/vpn_bench/clan",
+        "hash": "sha256-ZQUoRIWfAmuBn8Tc9PPkb0kjfu7c7OrqsqPhHBVGtSc=",
+        "flake_cache_path": "/home/lhebendanz/.cache/clan/flakes/37ed0f566c038918478af788f36af0bc1bac4dc3",
+        "store_path": "/nix/store/3f34bcdl443j31dbk78ir7lfzdmipzx3-source"
+      },
+      "nix_options": [],
+      "cached_deployment": {
+        "buildHost": null,
+        "facts": {
+          "publicModule": "clan_cli.facts.public_modules.in_repo",
+          "secretModule": "clan_cli.facts.secret_modules.sops",
+          "secretUploadDirectory": "/var/lib/sops-nix",
+          "services": {}
+        },
+        "nixosMobileWorkaround": false,
+        "password-store": {
+          "secretLocation": "/etc/secret-vars"
+        },
+        "requireExplicitUpdate": false,
+        "sops": {
+          "defaultGroups": []
+        },
+        "targetHost": "188.245.151.45",
+        "vars": {
+          "generators": {
+            "mycelium": {
+              "dependencies": [],
+              "files": {
+                "ip": {
+                  "deploy": true,
+                  "group": "root",
+                  "mode": "400",
+                  "name": "ip",
+                  "neededFor": "services",
+                  "owner": "root",
+                  "secret": false
+                },
+                "key": {
+                  "deploy": true,
+                  "group": "root",
+                  "mode": "400",
+                  "name": "key",
+                  "neededFor": "services",
+                  "owner": "root",
+                  "secret": true
+                },
+                "pubkey": {
+                  "deploy": true,
+                  "group": "root",
+                  "mode": "400",
+                  "name": "pubkey",
+                  "neededFor": "services",
+                  "owner": "root",
+                  "secret": false
+                }
+              },
+              "migrateFact": null,
+              "name": "mycelium",
+              "prompts": {},
+              "share": false,
+              "validationHash": null
+            },
+            "openssh": {
+              "dependencies": [],
+              "files": {
+                "ssh.id_ed25519": {
+                  "deploy": true,
+                  "group": "root",
+                  "mode": "400",
+                  "name": "ssh.id_ed25519",
+                  "neededFor": "services",
+                  "owner": "root",
+                  "secret": true
+                },
+                "ssh.id_ed25519.pub": {
+                  "deploy": true,
+                  "group": "root",
+                  "mode": "400",
+                  "name": "ssh.id_ed25519.pub",
+                  "neededFor": "services",
+                  "owner": "root",
+                  "secret": false
+                }
+              },
+              "migrateFact": "openssh",
+              "name": "openssh",
+              "prompts": {},
+              "share": false,
+              "validationHash": null
+            }
+          },
+          "publicModule": "clan_cli.vars.public_modules.in_repo",
+          "secretModule": "clan_cli.vars.secret_modules.sops"
+        }
+      },
+      "override_build_host": "root@localhost",
+      "private_key": "/home/lhebendanz/.local/share/vpn_bench/keys/id_ed25519",
+      "host_key_check": 3
+    },
+    "vpn_ip": "467:15fe:df14:f2cb:4fa2:6301:7b90:e1eb"
+  },
+  {
+    "cmachine": {
+      "name": "milo",
+      "flake": {
+        "identifier": "/home/lhebendanz/.local/share/vpn_bench/clan",
+        "hash": "sha256-ZQUoRIWfAmuBn8Tc9PPkb0kjfu7c7OrqsqPhHBVGtSc=",
+        "flake_cache_path": "/home/lhebendanz/.cache/clan/flakes/37ed0f566c038918478af788f36af0bc1bac4dc3",
+        "store_path": "/nix/store/3f34bcdl443j31dbk78ir7lfzdmipzx3-source"
+      },
+      "nix_options": [],
+      "cached_deployment": {
+        "buildHost": null,
+        "facts": {
+          "publicModule": "clan_cli.facts.public_modules.in_repo",
+          "secretModule": "clan_cli.facts.secret_modules.sops",
+          "secretUploadDirectory": "/var/lib/sops-nix",
+          "services": {}
+        },
+        "nixosMobileWorkaround": false,
+        "password-store": {
+          "secretLocation": "/etc/secret-vars"
+        },
+        "requireExplicitUpdate": false,
+        "sops": {
+          "defaultGroups": []
+        },
+        "targetHost": "116.203.245.100",
+        "vars": {
+          "generators": {
+            "mycelium": {
+              "dependencies": [],
+              "files": {
+                "ip": {
+                  "deploy": true,
+                  "group": "root",
+                  "mode": "400",
+                  "name": "ip",
+                  "neededFor": "services",
+                  "owner": "root",
+                  "secret": false
+                },
+                "key": {
+                  "deploy": true,
+                  "group": "root",
+                  "mode": "400",
+                  "name": "key",
+                  "neededFor": "services",
+                  "owner": "root",
+                  "secret": true
+                },
+                "pubkey": {
+                  "deploy": true,
+                  "group": "root",
+                  "mode": "400",
+                  "name": "pubkey",
+                  "neededFor": "services",
+                  "owner": "root",
+                  "secret": false
+                }
+              },
+              "migrateFact": null,
+              "name": "mycelium",
+              "prompts": {},
+              "share": false,
+              "validationHash": null
+            },
+            "openssh": {
+              "dependencies": [],
+              "files": {
+                "ssh.id_ed25519": {
+                  "deploy": true,
+                  "group": "root",
+                  "mode": "400",
+                  "name": "ssh.id_ed25519",
+                  "neededFor": "services",
+                  "owner": "root",
+                  "secret": true
+                },
+                "ssh.id_ed25519.pub": {
+                  "deploy": true,
+                  "group": "root",
+                  "mode": "400",
+                  "name": "ssh.id_ed25519.pub",
+                  "neededFor": "services",
+                  "owner": "root",
+                  "secret": false
+                }
+              },
+              "migrateFact": "openssh",
+              "name": "openssh",
+              "prompts": {},
+              "share": false,
+              "validationHash": null
+            }
+          },
+          "publicModule": "clan_cli.vars.public_modules.in_repo",
+          "secretModule": "clan_cli.vars.secret_modules.sops"
+        }
+      },
+      "override_build_host": "root@localhost",
+      "private_key": "/home/lhebendanz/.local/share/vpn_bench/keys/id_ed25519",
+      "host_key_check": 3
+    },
+    "vpn_ip": "45a:c364:38ee:d0cc:16a9:64f0:1381:7309"
+  }
+]

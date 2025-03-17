@@ -46,10 +46,10 @@
               description = "VPN Bench Clan";
               path = ./templates/clan/minimal;
             };
-            "testClan" = {
-              description = "test";
-              path = ./test.txt;
-            };
+            # "testClan" = {
+            #   description = "test";
+            #   path = ./test.txt;
+            # };
           };
         };
       };    
