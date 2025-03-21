@@ -160,7 +160,7 @@ def run_cli() -> None:
     if args.subcommand == "create":
         machines = args.m
         if len(machines) == 0:
-            machines = ["milo", "luna"]
+            machines = ["milo", "luna", "yuki"]
         tr_create(config, provider, args.location, args.ssh_pubkey, machines=machines)
 
     elif args.subcommand == "destroy":
@@ -189,7 +189,7 @@ def run_cli() -> None:
         assert age_usr_str is not None
         age_opts = AgeOpts(username=age_usr_str, pubkey=age_pubkey_path)
 
-        clan_init(config, provider, age_opts, machines)
+        clan_init(config, age_opts, machines)
 
     elif args.subcommand == "bench":
         machines = tr_metadata(config)

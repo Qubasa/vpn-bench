@@ -102,7 +102,7 @@ def create_base_inventory(
         ssh_keys.append(InvSSHKeyEntry(f"user_{num}", ssh_key.public.read_text()))
 
     """Create the base inventory structure."""
-    inventory = {
+    inventory: dict[str, Any] = {
         "myadmin": {
             "someid": {
                 "roles": {
@@ -134,6 +134,22 @@ def create_base_inventory(
                 }
             }
         },
+        "nperf": {
+            "someid": {
+                "roles": {
+                    "server": {"tags": ["all"]},
+                }
+            }
+        },
+        "state-version": {
+            "someid": {
+                "roles": {
+                    "default": {
+                        "tags": ["all"],
+                    }
+                }
+            }
+        },
         "my-trusted-nix-caches": {
             "someid": {
                 "roles": {
@@ -144,6 +160,30 @@ def create_base_inventory(
             }
         },
     }
+
+    for machine in tr_machines:
+        match machine["provider"]:
+            case Provider.Hetzner:
+                if "hetzner-ips" not in inventory:
+                    inventory["hetzner-ips"] = {}
+                instance_name = f"{machine['name']}_id"
+                inventory["hetzner-ips"][instance_name] = {
+                    "roles": {
+                        "default": {
+                            "machines": [machine["name"]],
+                            "config": {
+                                "ipAddresses": [
+                                    f"{machine['ipv4']}/32",
+                                    f"{machine['ipv6']}/64",
+                                ],
+                            },
+                        }
+                    }
+                }
+
+            case _:
+                pass
+
     return inventory
 
 
@@ -174,7 +214,6 @@ def reset_terminal() -> None:
 
 def clan_init(
     config: Config,
-    provider: Provider,
     age_opts: AgeOpts,
     tr_machines: list[TrMachine],
 ) -> None:

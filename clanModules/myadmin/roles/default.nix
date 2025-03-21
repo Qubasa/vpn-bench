@@ -13,5 +13,9 @@
 
   config = {
     users.users.root.openssh.authorizedKeys.keys = builtins.attrValues config.clan.myadmin.allowedKeys;
+    nixpkgs.config.allowUnfree = true;
+    nixpkgs.config.permittedInsecurePackages = [
+      "openssl-1.1.1w"
+    ];
   };
 }

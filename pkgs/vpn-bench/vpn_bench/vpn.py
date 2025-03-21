@@ -154,7 +154,10 @@ def save_machine_layout(
 
 
 def install_vpn(
-    config: Config, vpn: VPN, tr_machines: list[TrMachine]
+    config: Config,
+    vpn: VPN,
+    tr_machines: list[TrMachine],
+    no_reboot_timings: bool = False,
 ) -> list[BenchMachine]:
     # Update cvpn-bench flake input, else error because of mismatched input
     run(["nix", "flake", "update", "cvpn-bench", "--flake", str(config.clan_dir)])
@@ -207,6 +210,7 @@ def install_vpn(
 
     download_connection_timings(config, vpn, machines)
 
-    reboot_connection_timings(config, vpn, machines)
+    if not no_reboot_timings:
+        reboot_connection_timings(config, vpn, machines)
 
     return bmachines

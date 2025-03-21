@@ -9,17 +9,13 @@ from clan_cli.cmd import Log, RunOpts
 from clan_cli.machines.machines import Machine
 
 
-class TrMachine(TypedDict):
-    name: str
-    location: str
-    server_type: str
-    ipv4: str | None
-
-
 @dataclass
 class BenchMachine:
     cmachine: Machine
     vpn_ip: str
+
+
+# type Provider = Literal["gcloud", "hetzner"]
 
 
 class Provider(Enum):
@@ -32,6 +28,15 @@ class Provider(Enum):
             return Provider(Provider._value2member_map_[label])
         msg = f"Unknown provider: {label}"
         raise ValueError(msg)
+
+
+class TrMachine(TypedDict):
+    name: str
+    location: str
+    server_type: str
+    ipv4: str | None
+    ipv6: str | None
+    provider: Provider
 
 
 class VPN(Enum):

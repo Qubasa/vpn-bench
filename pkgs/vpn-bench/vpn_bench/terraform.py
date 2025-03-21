@@ -45,11 +45,19 @@ def tr_metadata(config: Config) -> list[TrMachine]:
     )
     jdata = json.loads(res.stdout)
 
-    for _, data in jdata.items():
-        machines_dict = data["value"]
-        return list(machines_dict.values())
+    machines = []
+    for _name, data in jdata["vm_info"]["value"].items():
+        tr_machine = TrMachine(
+            name=data["name"],
+            location=data["location"],
+            server_type=data["server_type"],
+            ipv4=data["ipv4"],
+            ipv6=data["ipv6"],
+            provider=Provider.from_str(data["provider"]),
+        )
+        machines.append(tr_machine)
 
-    return []
+    return machines
 
 
 def tr_clean(config: Config) -> None:
@@ -92,7 +100,7 @@ def tr_create(
 
     match provider:
         case Provider.Hetzner:
-            servers: list[TrMachine] = []
+            servers: list[dict[str, Any]] = []
 
             allowed_locations = {
                 "nbg1": "DE: Nuremberg",
@@ -117,6 +125,7 @@ def tr_create(
                         "location": location,
                         "server_type": "ccx23",
                         "ipv4": None,
+                        "ipv6": None,
                     }
                 )
             tr_write_vars(

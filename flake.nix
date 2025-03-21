@@ -9,7 +9,6 @@
   inputs.treefmt-nix.url = "github:numtide/treefmt-nix";
   inputs.treefmt-nix.inputs.nixpkgs.follows = "nixpkgs";
 
-
   outputs =
     inputs@{
       clan-core,
@@ -28,7 +27,10 @@
         ./treefmt.nix 
         ./pkgs/vpn-bench/flake-module.nix
         ./pkgs/webview-ui/flake-module.nix
+        ./pkgs/qperf/flake-module.nix
+        ./pkgs/nperf/flake-module.nix
       ];
+
 
       flake = {
         clanModules = {
@@ -36,6 +38,9 @@
           "iperf" = ./clanModules/iperf;
           "my-trusted-nix-caches" = ./clanModules/my-trusted-nix-caches;
           "my-nginx" = ./clanModules/my-nginx;
+          "qperf" = ./clanModules/qperf;
+          "nperf" = ./clanModules/nperf;
+          "hetzner-ips" = ./clanModules/hetzner-ips;
         };
       };
 
@@ -46,10 +51,6 @@
               description = "VPN Bench Clan";
               path = ./templates/clan/minimal;
             };
-            # "testClan" = {
-            #   description = "test";
-            #   path = ./test.txt;
-            # };
           };
         };
       };    

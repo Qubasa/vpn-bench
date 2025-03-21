@@ -1,68 +1,17 @@
-import json
 import logging
-from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
 
-from clan_cli.cmd import Log, RunOpts
-from clan_cli.nix import nix_command
 from clan_cli.ssh.upload import upload
 
 from vpn_bench.assets import get_iperf_asset
 
 # from clan_cli.ssh.upload import upload
 from vpn_bench.data import VPN, BenchMachine, Config
+from vpn_bench.iperf3 import IperfCreds, run_iperf_test, save_iperf_results
 from vpn_bench.terraform import TrMachine
 from vpn_bench.vpn import install_vpn
 
 log = logging.getLogger(__name__)
-
-
-@dataclass
-class IperfCreds:
-    username: str
-    password: str
-    pubkey: Path
-
-
-def run_iperf_test(
-    host: Any, target_host: str, creds: IperfCreds, udp_mode: bool = False
-) -> dict[str, Any]:
-    """Run a single iperf3 test and return the results."""
-    cmd = [
-        "shell",
-        "nixpkgs#iperf3",
-        "-c",
-        "iperf3",
-        "--bidir",
-        "--json",
-        "-Z",
-        "-c",
-        target_host,
-        "--username",
-        creds.username,
-        "--rsa-public-key-path",
-        str(creds.pubkey),
-    ]
-
-    if udp_mode:
-        cmd.extend(["-u", "--udp-counters-64bit", "-b", "0"])
-
-    res = host.run(
-        nix_command(cmd),
-        RunOpts(log=Log.BOTH),
-        extra_env={"IPERF3_PASSWORD": creds.password},
-    )
-    return json.loads(res.stdout)
-
-
-def save_iperf_results(
-    result_dir: Path, json_data: dict[str, Any], test_type: str
-) -> None:
-    """Save iperf test results to a file."""
-    result_dir.mkdir(parents=True, exist_ok=True)
-    with (result_dir / f"{test_type}_iperf3.json").open("w") as f:
-        json.dump(json_data, f, indent=4)
 
 
 def run_benchmarks(config: Config, vpn: VPN, bmachines: list[BenchMachine]) -> None:
@@ -109,15 +58,22 @@ def run_benchmarks(config: Config, vpn: VPN, bmachines: list[BenchMachine]) -> N
                 )
                 save_iperf_results(result_dir, udp_results, "udp")
 
+                # # Run QUICK test
+                # quick_result = run_qperf_test(host, next_bmachine.vpn_ip)
+                # save_qperf_results(result_dir, quick_result)
+
 
 def benchmark_vpn(
-    config: Config, vpn: VPN, tr_machines: list[TrMachine], only_update: bool = False
+    config: Config,
+    vpn: VPN,
+    tr_machines: list[TrMachine],
+    only_update: bool = False,
 ) -> None:
     """Main function to coordinate VPN benchmarking."""
     log.info(f"Benchmarking VPN {vpn}")
 
     # Install VPN
-    bmachines = install_vpn(config, vpn, tr_machines)
+    bmachines = install_vpn(config, vpn, tr_machines, no_reboot_timings=only_update)
 
     if not only_update:
         # Run benchmarks

@@ -27,10 +27,21 @@
     clan-core.clanModules.nginx
   ];
 
+
   config = {
+
+    # We do this to override default curl with curlHTTP3
+    users.users.root = {
+      packages = [
+        pkgs.curlHTTP3
+      ];
+    };
+
     services.nginx = {
       enable = true;
+      package = pkgs.nginxQuic;
       virtualHosts."example.com" = {
+        quic = true;
         root = "/var/www/example";
         serverAliases = lib.attrNames config.clan.my-nginx.publicIPs ++ lib.attrNames config.clan.my-nginx.vpnIPs;
         locations."/name" = {
