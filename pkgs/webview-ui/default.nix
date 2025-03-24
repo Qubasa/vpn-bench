@@ -2,7 +2,7 @@
 {
 lib,
 buildNpmPackage,
-nodejs_20,
+nodejs_18,
 importNpmLock,
 fonts,
 benchDir ? null,
@@ -11,7 +11,7 @@ benchDir ? null,
 buildNpmPackage {
   pname = "clan-webview-ui";
   version = "0.0.1";
-  nodejs = nodejs_20;
+  nodejs = nodejs_18;
   src = ./app;
 
   npmDeps = importNpmLock { npmRoot = ./app; };

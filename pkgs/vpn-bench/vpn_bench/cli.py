@@ -9,7 +9,7 @@ from clan_cli.custom_logger import setup_logging
 from clan_cli.dirs import user_cache_dir, user_data_dir
 
 from vpn_bench.bench import benchmark_vpn
-from vpn_bench.data import VPN, Config, Provider, SSHKeyPair
+from vpn_bench.data import VPN, BenchType, Config, Provider, SSHKeyPair
 from vpn_bench.plot import plot_data
 from vpn_bench.setup import AgeOpts, clan_clean, clan_init
 from vpn_bench.ssh import generate_ssh_key, ssh_into_machine
@@ -84,9 +84,14 @@ def create_parser() -> argparse.ArgumentParser:
     )
     bench_parser.add_argument("--debug", action="store_true", help="Enable debug mode")
     bench_parser.add_argument(
-        "--update",
+        "--skip-con-times",
         action="store_true",
-        help="Only update machines don't start benchmark",
+        help="Don't get vpn connection timings",
+    )
+    bench_parser.add_argument(
+        "--type",
+        choices=[p.value for p in BenchType],
+        default=BenchType.ALL.value,
     )
 
     plot_parser = subparsers.add_parser("plot", help="Plot the data from benchmark")
@@ -192,12 +197,15 @@ def run_cli() -> None:
         clan_init(config, age_opts, machines)
 
     elif args.subcommand == "bench":
+        if getattr(args, "type", False):
+            bench_type = BenchType.from_str(args.type)
+
         machines = tr_metadata(config)
         if args.vpn is None:
             for vpn in VPN:
-                benchmark_vpn(config, vpn, machines, args.update)
+                benchmark_vpn(config, vpn, machines, args.skip_con_times, bench_type)
         else:
-            benchmark_vpn(config, vpn, machines, args.update)
+            benchmark_vpn(config, vpn, machines, args.skip_con_times, bench_type)
 
     elif args.subcommand == "plot":
         machines = tr_metadata(config)

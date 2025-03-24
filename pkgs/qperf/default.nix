@@ -5,10 +5,10 @@ pkgs.clangStdenv.mkDerivation {
   version = "nightly";
 
   src = pkgs.fetchFromGitHub {
-    owner = "rbruenig";
+    owner = "qubasa";
     repo = "qperf";
-    rev = "6b290e3234beedbc1fdec13951020bf81b87eaf3";
-    sha256 = "sha256-NIwM7s8YyAwxomSFH0NTMkpRGOStskLmLhO1PmL0kGY=";
+    rev = "e27a2fb66a09865b4098743d543a56ecbdf683d1";
+    sha256 = "sha256-7tnayI8S8Hu3h2XPD/YfLebKGKEcxyin0Hplp4yITUQ=";
     fetchSubmodules = true;
   };
 
@@ -20,9 +20,11 @@ pkgs.clangStdenv.mkDerivation {
   nativeBuildInputs = with pkgs; [
     gnumake
     cmake
-    clang-tools
+    llvmPackages.clang
+    llvmPackages.bintools
+    llvmPackages.lld
     pkg-config
-    openssl_1_1.dev
+    openssl_3_4.dev
     libev
     perl
   ];

@@ -28,7 +28,6 @@
         ./pkgs/vpn-bench/flake-module.nix
         ./pkgs/webview-ui/flake-module.nix
         ./pkgs/qperf/flake-module.nix
-        ./pkgs/nperf/flake-module.nix
       ];
 
 
@@ -39,7 +38,6 @@
           "my-trusted-nix-caches" = ./clanModules/my-trusted-nix-caches;
           "my-nginx" = ./clanModules/my-nginx;
           "qperf" = ./clanModules/qperf;
-          "nperf" = ./clanModules/nperf;
           "hetzner-ips" = ./clanModules/hetzner-ips;
         };
       };

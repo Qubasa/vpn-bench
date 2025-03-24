@@ -11,10 +11,20 @@ let
 
   api = {
     enable = mkEnableOption "qperf network throughput testing server";
-    port = mkOption {
-      type = types.ints.u16;
-      default = 18080;
-      description = "Server port to listen on for qperf client requests.";
+    startPort = mkOption {
+      type = types.port;
+      default = 18000;
+      description = "Port to listen on for qperf client requests. Incremented by 1 for each core.";
+    };
+    maxNumCores = mkOption {
+      type = lib.types.int;
+      default = 2;
+      description = "Maximum number of cores qperf can use. Will open that many UDP ports.";
+    };
+    address = mkOption {
+      type = types.str;
+      default = "::";
+      description = "Server address to listen on for qperf client requests. Default ipv6 any.";
     };
     openFirewall = mkOption {
       type = types.bool;
@@ -39,7 +49,6 @@ let
   };
 
   imp = {
-
   environment.systemPackages = [ package ];
 
   users.groups.qperf = { };
@@ -52,7 +61,10 @@ let
   };
 
     networking.firewall = mkIf cfg.openFirewall {
-      allowedUDPPorts = [ cfg.port ];
+      allowedUDPPortRanges = [ {
+        from = cfg.startPort;
+        to = cfg.startPort + cfg.maxNumCores - 1;
+      } ];
     };
 
     systemd.services.qperf = {
@@ -73,8 +85,9 @@ let
         '';
         ExecStart = ''
           ${lib.getExe package} \
-            -s \
-            -p ${toString cfg.port} \
+            -s ${cfg.address} \
+            -p ${toString cfg.startPort} \
+            -n ${toString cfg.maxNumCores} \
             ${escapeShellArgs cfg.extraFlags}
         '';
       };

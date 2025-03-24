@@ -157,7 +157,7 @@ def install_vpn(
     config: Config,
     vpn: VPN,
     tr_machines: list[TrMachine],
-    no_reboot_timings: bool = False,
+    get_con_times: bool = True,
 ) -> list[BenchMachine]:
     # Update cvpn-bench flake input, else error because of mismatched input
     run(["nix", "flake", "update", "cvpn-bench", "--flake", str(config.clan_dir)])
@@ -167,17 +167,20 @@ def install_vpn(
     # Initialize and configure machines
     machines = create_machine_obj(config, tr_machines)
 
-    # Update machine without VPNs to remove any previous VPN configuration
-    deploy_machines(machines)
+    if get_con_times:
+        # Update machine without VPNs to remove any previous VPN configuration
+        deploy_machines(machines)
 
-    state_dirs = [
-        "/etc/zerotier",
-        "/var/lib/zerotier-one",
-        "/var/lib/mycelium",
-        "/var/lib/private/mycelium/",
-        "/var/lib/connection-check",
-    ]
-    delete_dirs(state_dirs, machines)
+        state_dirs = [
+            "/root/qperf",
+            "/var/lib/qperf/qperf",
+            "/etc/zerotier",
+            "/var/lib/zerotier-one",
+            "/var/lib/mycelium",
+            "/var/lib/private/mycelium/",
+            "/var/lib/connection-check",
+        ]
+        delete_dirs(state_dirs, machines)
 
     # Setup VPN configuration
     match vpn:
@@ -202,15 +205,15 @@ def install_vpn(
     bmachines = get_vpn_ips(config, machines, vpn)
     save_machine_layout(config, vpn, bmachines)
 
-    # Install VPN connection timing service
-    install_connection_timings_conf(config, tr_machines, bmachines)
+    if get_con_times:
+        # Install VPN connection timing service
+        install_connection_timings_conf(config, tr_machines, bmachines)
 
     # Update machine configuration with VPNs
     deploy_machines(machines)
 
-    download_connection_timings(config, vpn, machines)
-
-    if not no_reboot_timings:
+    if get_con_times:
+        download_connection_timings(config, vpn, machines)
         reboot_connection_timings(config, vpn, machines)
 
     return bmachines

@@ -35,6 +35,7 @@ export function generateBenchData(): BenchData {
     }
 
     const machineName = pathParts[3]; // "0_luna"
+    console.log("Machine name:", machineName);
     const fileName = pathParts[4]; // "tcp_iperf3.json" or "udp_iperf3.json"
 
     // Skip if any part is missing

@@ -134,7 +134,7 @@ def create_base_inventory(
                 }
             }
         },
-        "nperf": {
+        "qperf": {
             "someid": {
                 "roles": {
                     "server": {"tags": ["all"]},

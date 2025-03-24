@@ -53,6 +53,20 @@ class VPN(Enum):
         raise ValueError(msg)
 
 
+class BenchType(Enum):
+    ALL = "all"
+    NONE = "none"
+    IPERF3 = "iperf3"
+    QPERF = "qperf"
+
+    @staticmethod
+    def from_str(label: str) -> "BenchType":
+        if label in BenchType._value2member_map_:
+            return BenchType(BenchType._value2member_map_[label])
+        msg = f"Unknown BenchType: {label}"
+        raise ValueError(msg)
+
+
 @dataclass
 class SSHKeyPair:
     private: Path
