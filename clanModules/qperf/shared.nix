@@ -85,6 +85,7 @@ let
         '';
         ExecStart = ''
           ${lib.getExe package} \
+            -g \
             -s ${cfg.address} \
             -p ${toString cfg.startPort} \
             -n ${toString cfg.maxNumCores} \

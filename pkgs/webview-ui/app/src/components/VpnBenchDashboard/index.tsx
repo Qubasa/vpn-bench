@@ -7,6 +7,10 @@ import {
   IperfUdpReport,
 } from "@/src/components/IperfUdpCharts";
 import { Tabs } from "@kobalte/core/tabs";
+import {
+  QperfReport,
+  QperfChartsDashboard,
+} from "@/src/components/QperfCharts";
 import { createSignal } from "solid-js";
 import "./style.css";
 
@@ -31,11 +35,13 @@ interface IperfDashboardProps {
   tabLabels?: {
     tcp?: string;
     udp?: string;
+    qperf?: string;
   };
+  qperfReports: QperfReport[];
   className?: string;
 }
 
-export const IperfDashboard = (props: IperfDashboardProps) => {
+export const VpnDashboard = (props: IperfDashboardProps) => {
   // Default values
   const tcpHeight = props.tcpHeight || {
     throughput: 500,
@@ -55,6 +61,7 @@ export const IperfDashboard = (props: IperfDashboardProps) => {
   const tabLabels = props.tabLabels || {
     tcp: "TCP Performance",
     udp: "UDP Performance",
+    qperf: "HTTP3 Performance",
   };
 
   const defaultTab = props.defaultTab || "tcp_iperf";
@@ -72,6 +79,9 @@ export const IperfDashboard = (props: IperfDashboardProps) => {
         <Tabs.Trigger class="tabs__trigger" value="udp_iperf">
           {tabLabels.udp}
         </Tabs.Trigger>
+        <Tabs.Trigger class="tabs__trigger" value="qperf">
+          {tabLabels.qperf}
+        </Tabs.Trigger>
         <Tabs.Indicator class="tabs__indicator" />
       </Tabs.List>
 
@@ -81,6 +91,10 @@ export const IperfDashboard = (props: IperfDashboardProps) => {
 
       <Tabs.Content class="tabs__content" value="udp_iperf">
         <IperfUdpCharts reports={props.udpReports} height={udpHeight} />
+      </Tabs.Content>
+
+      <Tabs.Content class="tabs__content" value="qperf">
+        <QperfChartsDashboard reports={props.qperfReports} />
       </Tabs.Content>
     </Tabs>
   );

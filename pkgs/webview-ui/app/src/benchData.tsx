@@ -5,6 +5,7 @@ import { BenchCategory } from "@/src/index";
 import { IperfTcpReportData } from "@/src/components/IperfTcpCharts";
 import { IperfUdpReportData } from "./components/IperfUdpCharts";
 import { ConnectionTimings } from "./components/GeneralDashboard";
+import { QperfData, QperfReport } from "./components/QperfCharts";
 import { connect } from "http2";
 
 type BenchData = BenchCategory[];
@@ -41,12 +42,6 @@ export function generateBenchData(): BenchData {
     // Skip if any part is missing
     if (!categoryName || !machineName || !fileName) return;
 
-    // Determine if this is a TCP or UDP file
-    const isUdp = fileName.includes("udp");
-    const isTcp = fileName.includes("tcp");
-
-    if (!isUdp && !isTcp) return; // Skip unknown file types
-
     // Create category if it doesn't exist
     if (!categories[categoryName]) {
       categories[categoryName] = {
@@ -59,19 +54,42 @@ export function generateBenchData(): BenchData {
     let machine = categories[categoryName].machines.find(
       (m) => m.name === machineName,
     );
+
+    // If machine doesn't exist, create it
     if (!machine) {
       machine = {
         name: machineName,
         iperf3: { tcp: null, udp: null },
+        qperf: null,
       };
       categories[categoryName].machines.push(machine);
     }
 
-    // Add the data to the machine
-    if (isTcp) {
-      machine.iperf3.tcp = module as IperfTcpReportData;
-    } else if (isUdp) {
-      machine.iperf3.udp = module as IperfUdpReportData;
+    // Filter out the default field in module objects
+    const filteredModule = Object.fromEntries(
+      Object.entries(module as IperfTcpReportData).filter(
+        ([key]) => key !== "default",
+      ),
+    );
+
+    // Handle iperf3 files
+    if (fileName.includes("iperf3")) {
+      // Determine if this is a TCP or UDP file
+      const isUdp = fileName.includes("udp");
+      const isTcp = fileName.includes("tcp");
+
+      if (!isUdp && !isTcp) return; // Skip unknown file types
+
+      // Add the data to the machine
+      if (isTcp) {
+        machine.iperf3.tcp = filteredModule as IperfTcpReportData;
+      } else if (isUdp) {
+        machine.iperf3.udp = filteredModule as IperfUdpReportData;
+      }
+
+      // Handle qperf files
+    } else if (fileName == "qperf.json") {
+      machine.qperf = filteredModule as QperfData;
     }
   });
 

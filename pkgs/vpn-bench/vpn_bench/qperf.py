@@ -133,6 +133,7 @@ def run_qperf_test(host: Host, target_host: str) -> QperfSummaryDict:
             cmd = [
                 "qperf",
                 "-n",
+                "-g",
                 "1",
                 "-p",
                 str(18000 + core),

@@ -5,7 +5,7 @@ import "./index.css";
 import { QueryClient, QueryClientProvider } from "@tanstack/solid-query";
 
 import { Layout } from "./layout/layout";
-import { IperfDashboard } from "@/src/components/VpnBenchDashboard";
+import { VpnDashboard } from "@/src/components/VpnBenchDashboard";
 import { IperfTcpReport } from "@/src/components/IperfTcpCharts";
 import { IperfUdpReport } from "./components/IperfUdpCharts";
 import { Toaster } from "solid-toast";
@@ -14,12 +14,14 @@ import { benchData, generalData, GeneralData } from "./benchData";
 import { IperfTcpReportData } from "@/src/components/IperfTcpCharts";
 import { IperfUdpReportData } from "./components/IperfUdpCharts";
 import { GeneralDashboard } from "./components/GeneralDashboard";
+import { QperfData, QperfReport } from "./components/QperfCharts";
 export interface Machine {
   name: string;
   iperf3: {
     tcp: IperfTcpReportData | null;
     udp: IperfUdpReportData | null;
   };
+  qperf: QperfData | null;
 }
 
 export interface BenchCategory {
@@ -61,6 +63,7 @@ function generateRoutesFromBenchData(data: BenchData): AppRoute[] {
     // Group machines by type
     const tcpReports: IperfTcpReport[] = [];
     const udpReports: IperfUdpReport[] = [];
+    const qperfReports: QperfReport[] = [];
 
     // Process each machine's data
     category.machines.forEach((machine) => {
@@ -81,6 +84,15 @@ function generateRoutesFromBenchData(data: BenchData): AppRoute[] {
       } else {
         console.warn(`No UDP data for ${machine.name}`);
       }
+
+      if (machine.qperf) {
+        qperfReports.push({
+          name: machine.name,
+          data: machine.qperf,
+        });
+      } else {
+        console.warn(`No Qperf data for ${machine.name}`);
+      }
     });
 
     // Return route config with IperfDashboard component
@@ -88,7 +100,11 @@ function generateRoutesFromBenchData(data: BenchData): AppRoute[] {
       path,
       label: category.name,
       component: () => (
-        <IperfDashboard tcpReports={tcpReports} udpReports={udpReports} />
+        <VpnDashboard
+          tcpReports={tcpReports}
+          udpReports={udpReports}
+          qperfReports={qperfReports}
+        />
       ),
       hidden: category.machines.length === 0, // Hide if no machines
     };
