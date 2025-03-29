@@ -5,8 +5,8 @@ import { BenchCategory } from "@/src/index";
 import { IperfTcpReportData } from "@/src/components/IperfTcpCharts";
 import { IperfUdpReportData } from "./components/IperfUdpCharts";
 import { ConnectionTimings } from "./components/GeneralDashboard";
-import { QperfData, QperfReport } from "./components/QperfCharts";
-import { connect } from "http2";
+import { QperfData } from "./components/QperfCharts";
+import { HyperfineResults } from "./components/HyperfineCharts";
 
 type BenchData = BenchCategory[];
 
@@ -61,6 +61,7 @@ export function generateBenchData(): BenchData {
         name: machineName,
         iperf3: { tcp: null, udp: null },
         qperf: null,
+        nixCache: null,
       };
       categories[categoryName].machines.push(machine);
     }
@@ -90,6 +91,8 @@ export function generateBenchData(): BenchData {
       // Handle qperf files
     } else if (fileName == "qperf.json") {
       machine.qperf = filteredModule as QperfData;
+    } else if (fileName == "nix-cache.json") {
+      machine.nixCache = filteredModule as HyperfineResults
     }
   });
 

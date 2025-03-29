@@ -9,7 +9,7 @@ from clan_cli.custom_logger import setup_logging
 from clan_cli.dirs import user_cache_dir, user_data_dir
 
 from vpn_bench.bench import benchmark_vpn
-from vpn_bench.data import VPN, BenchType, Config, Provider, SSHKeyPair
+from vpn_bench.data import VPN, Config, Provider, SSHKeyPair, TestType
 from vpn_bench.plot import plot_data
 from vpn_bench.setup import AgeOpts, clan_clean, clan_init
 from vpn_bench.ssh import generate_ssh_key, ssh_into_machine
@@ -89,9 +89,11 @@ def create_parser() -> argparse.ArgumentParser:
         help="Don't get vpn connection timings",
     )
     bench_parser.add_argument(
-        "--type",
-        choices=[p.value for p in BenchType],
-        default=BenchType.ALL.value,
+        "--test",
+        help="Tests to run, default is none",
+        action="append",
+        choices=[t.value for t in TestType] + ["all"],
+        default=[],
     )
 
     plot_parser = subparsers.add_parser("plot", help="Plot the data from benchmark")
@@ -197,15 +199,25 @@ def run_cli() -> None:
         clan_init(config, age_opts, machines)
 
     elif args.subcommand == "bench":
-        if getattr(args, "type", False):
-            bench_type = BenchType.from_str(args.type)
+        tests: list[str] = args.test
+        tests_enum: list[TestType] = []
+
+        if len(tests) == 0:
+            log.warning("No benchmark tests specified with --test, defaulting to none")
+        elif len(tests) == 1 and tests[0] == "all":
+            for btest in TestType:
+                tests_enum.append(btest)
+        else:
+            for test in tests:
+                bench_type = TestType.from_str(test)
+                tests_enum.append(bench_type)
 
         machines = tr_metadata(config)
         if args.vpn is None:
             for vpn in VPN:
-                benchmark_vpn(config, vpn, machines, args.skip_con_times, bench_type)
+                benchmark_vpn(config, vpn, machines, tests_enum, args.skip_con_times)
         else:
-            benchmark_vpn(config, vpn, machines, args.skip_con_times, bench_type)
+            benchmark_vpn(config, vpn, machines, tests_enum, args.skip_con_times)
 
     elif args.subcommand == "plot":
         machines = tr_metadata(config)

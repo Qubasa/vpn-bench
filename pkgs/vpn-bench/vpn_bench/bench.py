@@ -4,10 +4,9 @@ from pathlib import Path
 from clan_cli.ssh.upload import upload
 
 from vpn_bench.assets import get_iperf_asset
-
-# from clan_cli.ssh.upload import upload
-from vpn_bench.data import VPN, BenchMachine, BenchType, Config
+from vpn_bench.data import VPN, BenchMachine, Config, TestType
 from vpn_bench.iperf3 import IperfCreds, run_iperf_test, save_iperf_results
+from vpn_bench.nix_cache import run_nix_cache_test, save_nix_cache_results
 from vpn_bench.qperf import run_qperf_test, save_qperf_results
 from vpn_bench.terraform import TrMachine
 from vpn_bench.vpn import install_vpn
@@ -16,7 +15,7 @@ log = logging.getLogger(__name__)
 
 
 def run_benchmarks(
-    config: Config, vpn: VPN, bmachines: list[BenchMachine], bench_type: BenchType
+    config: Config, vpn: VPN, bmachines: list[BenchMachine], tests: list[TestType]
 ) -> None:
     """Run TCP and UDP benchmarks for each machine."""
 
@@ -47,41 +46,43 @@ def run_benchmarks(
         # Upload iperf3 public key
         upload(host, local_pubkey, remote_iperf3_pubkey)
 
-        match bench_type:
-            case BenchType.ALL | BenchType.IPERF3:
-                # Run TCP test
-                tcp_results = run_iperf_test(
-                    host, next_bmachine.vpn_ip, creds, udp_mode=False
-                )
-                save_iperf_results(result_dir, tcp_results, "tcp")
+        for test in tests:
+            match test:
+                case TestType.IPERF3:
+                    # Run TCP test
+                    tcp_results = run_iperf_test(
+                        host, next_bmachine.vpn_ip, creds, udp_mode=False
+                    )
+                    save_iperf_results(result_dir, tcp_results, "tcp")
 
-                match vpn:
-                    case vpn.Mycelium:
-                        pass
-                    case _:
-                        # Run UDP test
-                        udp_results = run_iperf_test(
-                            host, next_bmachine.vpn_ip, creds, udp_mode=True
-                        )
-                        save_iperf_results(result_dir, udp_results, "udp")
-            case BenchType.ALL | BenchType.QPERF:
-                # Run QUICK test
-                quick_result = run_qperf_test(host, next_bmachine.vpn_ip)
-                save_qperf_results(result_dir, quick_result)
-
-            case BenchType.NONE:
-                log.info("Skipping benchmarking")
-            case _:
-                msg = f"Unknown BenchType: {bench_type}"
-                raise ValueError(msg)
+                    match vpn:
+                        case vpn.Mycelium:
+                            pass
+                        case _:
+                            # Run UDP test
+                            udp_results = run_iperf_test(
+                                host, next_bmachine.vpn_ip, creds, udp_mode=True
+                            )
+                            save_iperf_results(result_dir, udp_results, "udp")
+                case TestType.QPERF:
+                    # Run QUICK test
+                    quick_result = run_qperf_test(host, next_bmachine.vpn_ip)
+                    save_qperf_results(result_dir, quick_result)
+                case TestType.NIX_CACHE:
+                    # Run NIX cache test
+                    nix_cache_result = run_nix_cache_test(bmachine, vpn, bmachines)
+                    save_nix_cache_results(result_dir, nix_cache_result)
+                case _:
+                    msg = f"Unknown BenchType: {test}"
+                    raise ValueError(msg)
 
 
 def benchmark_vpn(
     config: Config,
     vpn: VPN,
     tr_machines: list[TrMachine],
+    tests: list[TestType],
     skip_reboot_timings: bool = False,
-    bench_type: BenchType = BenchType.ALL,
 ) -> None:
     """Main function to coordinate VPN benchmarking."""
     log.info(f"Benchmarking VPN {vpn}")
@@ -92,4 +93,4 @@ def benchmark_vpn(
     )
 
     # Run benchmarks
-    run_benchmarks(config, vpn, bmachines, bench_type)
+    run_benchmarks(config, vpn, bmachines, tests)

@@ -21,14 +21,10 @@ from vpn_bench.connection_timings import (
     install_connection_timings_conf,
     reboot_connection_timings,
 )
-
-# from clan_cli.ssh.upload import upload
-# from clan_cli.ssh.upload import upload
 from vpn_bench.data import VPN, BenchMachine, Config, delete_dirs
 from vpn_bench.errors import VpnBenchError
-
-# from clan_cli.ssh.upload import upload
 from vpn_bench.install import can_ssh_login
+from vpn_bench.nix_cache import install_nix_cache
 from vpn_bench.setup import create_base_inventory
 from vpn_bench.terraform import TrMachine
 
@@ -208,6 +204,9 @@ def install_vpn(
     if get_con_times:
         # Install VPN connection timing service
         install_connection_timings_conf(config, tr_machines, bmachines)
+
+    # Install Nix cache
+    install_nix_cache(config, tr_machines, bmachines)
 
     # Update machine configuration with VPNs
     deploy_machines(machines)

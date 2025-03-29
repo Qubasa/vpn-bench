@@ -11,13 +11,16 @@ import {
   QperfReport,
   QperfChartsDashboard,
 } from "@/src/components/QperfCharts";
-import { createSignal } from "solid-js";
 import "./style.css";
+import { HyperfineCharts, HyperfineResults } from "../HyperfineCharts";
+import { For, JSX } from "solid-js";
+
 
 // Define props for the dashboard component
 interface IperfDashboardProps {
   tcpReports: IperfTcpReport[];
   udpReports: IperfUdpReport[];
+  nixCacheReports: HyperfineResults;
   tcpHeight?: {
     throughput?: number;
     timeSeries?: number;
@@ -58,13 +61,41 @@ export const VpnDashboard = (props: IperfDashboardProps) => {
     cpu: 500,
   };
 
-  const tabLabels = props.tabLabels || {
-    tcp: "TCP Performance",
-    udp: "UDP Performance",
-    qperf: "HTTP3 Performance",
+  const tabLabels = {
+    tcp: props.tabLabels?.tcp || "TCP Performance",
+    udp: props.tabLabels?.udp || "UDP Performance",
+    qperf: props.tabLabels?.qperf || "HTTP3 Performance",
   };
+  interface TabConfig {
+    value: string;
+    label: string;
+    content: JSX.Element;
+  }
 
   const defaultTab = props.defaultTab || "tcp_iperf";
+
+  const tabs: TabConfig[] = [
+    {
+      value: "tcp_iperf",
+      label: tabLabels.tcp,
+      content: <IperfTcpCharts reports={props.tcpReports} height={tcpHeight} />,
+    },
+    {
+      value: "udp_iperf",
+      label: tabLabels.udp,
+      content: <IperfUdpCharts reports={props.udpReports} height={udpHeight} />,
+    },
+    {
+      value: "qperf",
+      label: tabLabels.qperf,
+      content: <QperfChartsDashboard reports={props.qperfReports} />,
+    },
+    {
+      value: "nix-cache",
+      label: "Nix Cache Performance",
+      content: <HyperfineCharts data={props.nixCacheReports} />,
+    }
+  ];
 
   return (
     <Tabs
@@ -82,6 +113,9 @@ export const VpnDashboard = (props: IperfDashboardProps) => {
         <Tabs.Trigger class="tabs__trigger" value="qperf">
           {tabLabels.qperf}
         </Tabs.Trigger>
+        <Tabs.Trigger class="tabs__trigger" value="nix-cache">
+          Nix Cache
+        </Tabs.Trigger>
         <Tabs.Indicator class="tabs__indicator" />
       </Tabs.List>
 
@@ -95,6 +129,10 @@ export const VpnDashboard = (props: IperfDashboardProps) => {
 
       <Tabs.Content class="tabs__content" value="qperf">
         <QperfChartsDashboard reports={props.qperfReports} />
+      </Tabs.Content>
+
+      <Tabs.Content class="tabs__content" value="nix-cache">
+        <HyperfineCharts data={props.nixCacheReports} />
       </Tabs.Content>
     </Tabs>
   );

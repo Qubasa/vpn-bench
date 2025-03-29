@@ -28,7 +28,13 @@
   ];
 
 
-  config = {
+  config = 
+  let 
+    hostName = config.networking.hostName;
+    serverAliases = lib.attrNames config.clan.my-nginx.publicIPs ++ lib.attrNames config.clan.my-nginx.vpnIPs ++ 
+    [ "v4.${hostName}" "v6.${hostName}" ];
+
+  in {
 
     # We do this to override default curl with curlHTTP3
     users.users.root = {
@@ -40,12 +46,12 @@
     services.nginx = {
       enable = true;
       package = pkgs.nginxQuic;
-      virtualHosts."example.com" = {
+      virtualHosts."vpn.${hostName}" = {
         quic = true;
         root = "/var/www/example";
-        serverAliases = lib.attrNames config.clan.my-nginx.publicIPs ++ lib.attrNames config.clan.my-nginx.vpnIPs;
+        serverAliases = serverAliases;
         locations."/name" = {
-          return = "200 ${config.networking.hostName}";
+          return = "200 ${hostName}";
         };
       };
     };

@@ -15,6 +15,8 @@ import { IperfTcpReportData } from "@/src/components/IperfTcpCharts";
 import { IperfUdpReportData } from "./components/IperfUdpCharts";
 import { GeneralDashboard } from "./components/GeneralDashboard";
 import { QperfData, QperfReport } from "./components/QperfCharts";
+import { HyperfineResults } from "./components/HyperfineCharts";
+
 export interface Machine {
   name: string;
   iperf3: {
@@ -22,6 +24,7 @@ export interface Machine {
     udp: IperfUdpReportData | null;
   };
   qperf: QperfData | null;
+  nixCache: HyperfineResults | null;
 }
 
 export interface BenchCategory {
@@ -104,6 +107,7 @@ function generateRoutesFromBenchData(data: BenchData): AppRoute[] {
           tcpReports={tcpReports}
           udpReports={udpReports}
           qperfReports={qperfReports}
+          nixCacheReports={category.machines[0].nixCache!}
         />
       ),
       hidden: category.machines.length === 0, // Hide if no machines

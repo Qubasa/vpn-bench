@@ -53,16 +53,15 @@ class VPN(Enum):
         raise ValueError(msg)
 
 
-class BenchType(Enum):
-    ALL = "all"
-    NONE = "none"
+class TestType(Enum):
     IPERF3 = "iperf3"
     QPERF = "qperf"
+    NIX_CACHE = "nix-cache"
 
     @staticmethod
-    def from_str(label: str) -> "BenchType":
-        if label in BenchType._value2member_map_:
-            return BenchType(BenchType._value2member_map_[label])
+    def from_str(label: str) -> "TestType":
+        if label in TestType._value2member_map_:
+            return TestType(TestType._value2member_map_[label])
         msg = f"Unknown BenchType: {label}"
         raise ValueError(msg)
 

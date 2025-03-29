@@ -9,6 +9,9 @@ installs clan on every machine and then performs benchmarks for different VPNs.
 
 If you just want to run the benchmark, just execute:
 
+```
+ hyperfine --show-output 'rm -R ~/.cache/nix/binary-cache-*.sqlite*; rm -rf /tmp/cache; nix copy --from "{url}" --to "file:///tmp/cache?compression=none" /nix/store/jlkypcf54nrh4n6r0l62ryx93z752hb2-firefox-132.0' -L url https://nixos.tvix.store/,https://cache.nixos.org/,https://hetzner-cache.numtide.com/
+```
 
 1. **Install Nix Package Manager**:
 

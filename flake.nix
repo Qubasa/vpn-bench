@@ -39,6 +39,8 @@
           "my-nginx" = ./clanModules/my-nginx;
           "qperf" = ./clanModules/qperf;
           "hetzner-ips" = ./clanModules/hetzner-ips;
+          "my-static-hosts" = ./clanModules/my-static-hosts;
+          "nix-cache" = ./clanModules/nix-cache;
         };
       };
 

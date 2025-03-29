@@ -159,6 +159,18 @@ def create_base_inventory(
                 }
             }
         },
+        "my-static-hosts": {
+            "someid": {
+                "roles": {
+                    "default": {
+                        "tags": ["all"],
+                        "config": {
+                            "ipToHostnames": {},
+                        },
+                    }
+                }
+            }
+        },
     }
 
     for machine in tr_machines:
