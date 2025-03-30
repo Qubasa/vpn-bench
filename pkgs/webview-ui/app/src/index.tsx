@@ -15,7 +15,7 @@ import { IperfTcpReportData } from "@/src/components/IperfTcpCharts";
 import { IperfUdpReportData } from "./components/IperfUdpCharts";
 import { GeneralDashboard } from "./components/GeneralDashboard";
 import { QperfData, QperfReport } from "./components/QperfCharts";
-import { HyperfineResults } from "./components/HyperfineCharts";
+import { HyperfineData, HyperfineReport } from "./components/HyperfineCharts";
 
 export interface Machine {
   name: string;
@@ -24,7 +24,7 @@ export interface Machine {
     udp: IperfUdpReportData | null;
   };
   qperf: QperfData | null;
-  nixCache: HyperfineResults | null;
+  nixCache: HyperfineData | null;
 }
 
 export interface BenchCategory {
@@ -67,6 +67,7 @@ function generateRoutesFromBenchData(data: BenchData): AppRoute[] {
     const tcpReports: IperfTcpReport[] = [];
     const udpReports: IperfUdpReport[] = [];
     const qperfReports: QperfReport[] = [];
+    const nixCacheReports: HyperfineReport[] = [];
 
     // Process each machine's data
     category.machines.forEach((machine) => {
@@ -96,6 +97,13 @@ function generateRoutesFromBenchData(data: BenchData): AppRoute[] {
       } else {
         console.warn(`No Qperf data for ${machine.name}`);
       }
+
+      if (machine.nixCache) {
+        nixCacheReports.push({
+          name: machine.name,
+          data: machine.nixCache,
+        });
+      }
     });
 
     // Return route config with IperfDashboard component
@@ -107,7 +115,7 @@ function generateRoutesFromBenchData(data: BenchData): AppRoute[] {
           tcpReports={tcpReports}
           udpReports={udpReports}
           qperfReports={qperfReports}
-          nixCacheReports={category.machines[0].nixCache!}
+          nixCacheReports={nixCacheReports}
         />
       ),
       hidden: category.machines.length === 0, // Hide if no machines

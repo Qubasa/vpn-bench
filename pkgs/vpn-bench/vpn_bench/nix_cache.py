@@ -1,7 +1,5 @@
-import concurrent
 import json
 import logging
-from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from typing import Any
 
@@ -66,7 +64,7 @@ def install_nix_cache(
     patch_inventory_with(config.clan_dir, "services.nix-cache", conf)
 
 
-def init_nix_cache_path(host: Host, cache_targets: list[BenchMachine]) -> None:
+def init_nix_cache_path(host: Host, cache_target: Host) -> None:
     cmd = [
         "copy",
         "--from",
@@ -74,24 +72,14 @@ def init_nix_cache_path(host: Host, cache_targets: list[BenchMachine]) -> None:
         "/nix/store/jlkypcf54nrh4n6r0l62ryx93z752hb2-firefox-132.0",
     ]
 
-    with ThreadPoolExecutor() as executor:
-        futures = []
-        for target in cache_targets:
-            host = target.cmachine.target_host
-            future = executor.submit(host.run, nix_command(cmd), RunOpts(log=Log.BOTH))
-            futures.append(future)
-        done, not_done = concurrent.futures.wait(futures)
-        for future in done:
-            exc = future.exception()
-            if exc is not None:
-                raise exc
+    cache_target.run(nix_command(cmd), RunOpts(log=Log.BOTH))
 
 
 def run_nix_cache_test(
-    fetch_machine: BenchMachine, vpn: VPN, cache_targets: list[BenchMachine]
+    fetch_machine: BenchMachine, vpn: VPN, cache_target: BenchMachine
 ) -> dict[str, Any]:
     host = fetch_machine.cmachine.target_host
-    init_nix_cache_path(host, cache_targets)
+    init_nix_cache_path(host, cache_target.cmachine.target_host)
 
     clear_cache_cmd = "rm -R ~/.cache/nix/binary-cache-*.sqlite*; rm -rf /tmp/cache;"
 
@@ -105,13 +93,7 @@ def run_nix_cache_test(
         "/nix/store/jlkypcf54nrh4n6r0l62ryx93z752hb2-firefox-132.0",
     ]
 
-    urls = ",".join(
-        [
-            f"http://vpn.{bmachine.cmachine.name}"
-            for bmachine in cache_targets
-            if bmachine != fetch_machine
-        ]
-    )
+    urls = ",".join([f"http://vpn.{cache_target.cmachine.name}"])
 
     cmd = [
         "hyperfine",

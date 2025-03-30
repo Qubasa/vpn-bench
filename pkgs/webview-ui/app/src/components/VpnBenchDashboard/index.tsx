@@ -12,15 +12,14 @@ import {
   QperfChartsDashboard,
 } from "@/src/components/QperfCharts";
 import "./style.css";
-import { HyperfineCharts, HyperfineResults } from "../HyperfineCharts";
+import { HyperfineCharts, HyperfineReport } from "../HyperfineCharts";
 import { For, JSX } from "solid-js";
-
 
 // Define props for the dashboard component
 interface IperfDashboardProps {
   tcpReports: IperfTcpReport[];
   udpReports: IperfUdpReport[];
-  nixCacheReports: HyperfineResults;
+  nixCacheReports: HyperfineReport[];
   tcpHeight?: {
     throughput?: number;
     timeSeries?: number;
@@ -93,8 +92,8 @@ export const VpnDashboard = (props: IperfDashboardProps) => {
     {
       value: "nix-cache",
       label: "Nix Cache Performance",
-      content: <HyperfineCharts data={props.nixCacheReports} />,
-    }
+      content: <HyperfineCharts reports={props.nixCacheReports} />,
+    },
   ];
 
   return (
@@ -132,7 +131,7 @@ export const VpnDashboard = (props: IperfDashboardProps) => {
       </Tabs.Content>
 
       <Tabs.Content class="tabs__content" value="nix-cache">
-        <HyperfineCharts data={props.nixCacheReports} />
+        <HyperfineCharts reports={props.nixCacheReports} />
       </Tabs.Content>
     </Tabs>
   );

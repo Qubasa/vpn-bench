@@ -70,7 +70,7 @@ def run_benchmarks(
                     save_qperf_results(result_dir, quick_result)
                 case TestType.NIX_CACHE:
                     # Run NIX cache test
-                    nix_cache_result = run_nix_cache_test(bmachine, vpn, bmachines)
+                    nix_cache_result = run_nix_cache_test(bmachine, vpn, next_bmachine)
                     save_nix_cache_results(result_dir, nix_cache_result)
                 case _:
                     msg = f"Unknown BenchType: {test}"

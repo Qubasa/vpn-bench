@@ -57,7 +57,7 @@ interface IperfUdpChartsProps {
 const createUdpThroughputOption = (reports: IperfUdpReport[]) => {
   return {
     title: {
-      text: "UDP Throughput Comparison (Mbps)",
+      text: "Total Throughput",
     },
     tooltip: {
       trigger: "axis",
@@ -81,7 +81,6 @@ const createUdpThroughputOption = (reports: IperfUdpReport[]) => {
       feature: {
         saveAsImage: {},
         dataView: { show: true, readOnly: false },
-        restore: {},
       },
     },
     xAxis: {
@@ -96,18 +95,28 @@ const createUdpThroughputOption = (reports: IperfUdpReport[]) => {
       {
         name: "Sent",
         type: "bar",
-        data: reports.map(
-          (report) => report.data.end.sum_sent.bits_per_second / 1000000,
+        data: reports.map((report) =>
+          (report.data.end.sum_sent.bits_per_second / 1000000).toFixed(1),
         ),
         color: "#3498db",
+        label: {
+          show: true,
+          position: "top",
+          formatter: "{c} Mbps",
+        },
       },
       {
         name: "Received",
         type: "bar",
-        data: reports.map(
-          (report) => report.data.end.sum_received.bits_per_second / 1000000,
+        data: reports.map((report) =>
+          (report.data.end.sum_received.bits_per_second / 1000000).toFixed(1),
         ),
         color: "#2ecc71",
+        label: {
+          show: true,
+          position: "top",
+          formatter: "{c} Mbps",
+        },
       },
     ],
   };
@@ -117,7 +126,7 @@ const createUdpThroughputOption = (reports: IperfUdpReport[]) => {
 const createPacketLossOption = (reports: IperfUdpReport[]) => {
   return {
     title: {
-      text: "UDP Packet Loss (%)",
+      text: "Packet Loss",
     },
     tooltip: {
       trigger: "axis",
@@ -125,7 +134,7 @@ const createPacketLossOption = (reports: IperfUdpReport[]) => {
         type: "shadow",
       },
       formatter: function (params: { name: string; value: number }[]) {
-        return `${params[0].name}: ${params[0].value.toFixed(2)}%`;
+        return `${params[0].name}: ${params[0].value.toFixed(1)}%`;
       },
     },
     grid: {
@@ -138,7 +147,6 @@ const createPacketLossOption = (reports: IperfUdpReport[]) => {
       feature: {
         saveAsImage: {},
         dataView: { show: true, readOnly: false },
-        restore: {},
       },
     },
     xAxis: {
@@ -154,8 +162,8 @@ const createPacketLossOption = (reports: IperfUdpReport[]) => {
       {
         name: "Packet Loss",
         type: "bar",
-        data: reports.map(
-          (report) => report.data.end.sum_received.lost_percent,
+        data: reports.map((report) =>
+          report.data.end.sum_received.lost_percent.toFixed(1),
         ),
         color: "#e74c3c",
         label: {
@@ -172,7 +180,7 @@ const createPacketLossOption = (reports: IperfUdpReport[]) => {
 const createJitterOption = (reports: IperfUdpReport[]) => {
   return {
     title: {
-      text: "UDP Jitter (ms)",
+      text: "Jitter",
     },
     tooltip: {
       trigger: "axis",
@@ -193,7 +201,6 @@ const createJitterOption = (reports: IperfUdpReport[]) => {
       feature: {
         saveAsImage: {},
         dataView: { show: true, readOnly: false },
-        restore: {},
       },
     },
     xAxis: {
@@ -208,7 +215,9 @@ const createJitterOption = (reports: IperfUdpReport[]) => {
       {
         name: "Jitter",
         type: "bar",
-        data: reports.map((report) => report.data.end.sum_received.jitter_ms),
+        data: reports.map((report) =>
+          report.data.end.sum_received.jitter_ms.toFixed(3),
+        ),
         color: "#9b59b6",
         label: {
           show: true,
@@ -224,7 +233,7 @@ const createJitterOption = (reports: IperfUdpReport[]) => {
 const createUdpCpuOption = (reports: IperfUdpReport[]) => {
   return {
     title: {
-      text: "CPU Utilization (%)",
+      text: "CPU Utilization",
     },
     tooltip: {
       trigger: "axis",
@@ -245,7 +254,6 @@ const createUdpCpuOption = (reports: IperfUdpReport[]) => {
       feature: {
         saveAsImage: {},
         dataView: { show: true, readOnly: false },
-        restore: {},
       },
     },
     xAxis: {
@@ -255,23 +263,34 @@ const createUdpCpuOption = (reports: IperfUdpReport[]) => {
     yAxis: {
       type: "value",
       name: "Percentage (%)",
+      max: 100,
     },
     series: [
       {
         name: "Host CPU",
         type: "bar",
-        data: reports.map(
-          (report) => report.data.end.cpu_utilization_percent.host_total,
+        data: reports.map((report) =>
+          report.data.end.cpu_utilization_percent.host_total.toFixed(1),
         ),
         color: "#9b59b6",
+        label: {
+          show: true,
+          position: "top",
+          formatter: "{c} %",
+        },
       },
       {
         name: "Remote CPU",
         type: "bar",
-        data: reports.map(
-          (report) => report.data.end.cpu_utilization_percent.remote_total,
+        data: reports.map((report) =>
+          report.data.end.cpu_utilization_percent.remote_total.toFixed(1),
         ),
         color: "#e74c3c",
+        label: {
+          show: true,
+          position: "top",
+          formatter: "{c} %",
+        },
       },
     ],
   };
@@ -284,14 +303,14 @@ const createUdpTimeSeriesOption = (reports: IperfUdpReport[]) => {
   const seriesData: {
     name: string;
     type: string;
-    data: number[];
+    data: string[];
     color: string;
   }[] = [];
 
   const packetLossSeries: {
     name: string;
     type: string;
-    data: number[];
+    data: string[];
     color: string;
     yAxisIndex: number;
   }[] = [];
@@ -329,8 +348,8 @@ const createUdpTimeSeriesOption = (reports: IperfUdpReport[]) => {
     });
 
     // Create throughput series data for this report
-    const throughputData = report.data.intervals.map(
-      (interval) => interval.sum.bits_per_second / 1000000,
+    const throughputData = report.data.intervals.map((interval) =>
+      (interval.sum.bits_per_second / 1000000).toFixed(1),
     );
 
     seriesData.push({
@@ -341,8 +360,8 @@ const createUdpTimeSeriesOption = (reports: IperfUdpReport[]) => {
     });
 
     // Create packet loss series if available
-    const packetLossData = report.data.intervals.map(
-      (interval) => interval.sum_bidir_reverse?.lost_percent || 0,
+    const packetLossData = report.data.intervals.map((interval) =>
+      (interval.sum_bidir_reverse?.lost_percent || 0).toFixed(2),
     );
 
     packetLossSeries.push({
@@ -359,7 +378,7 @@ const createUdpTimeSeriesOption = (reports: IperfUdpReport[]) => {
 
   return {
     title: {
-      text: "UDP Performance Over Time",
+      text: "Performance Over Time",
     },
     tooltip: {
       trigger: "axis",
@@ -380,7 +399,6 @@ const createUdpTimeSeriesOption = (reports: IperfUdpReport[]) => {
       feature: {
         saveAsImage: {},
         dataView: { show: true, readOnly: false },
-        restore: {},
       },
     },
     xAxis: {
@@ -388,7 +406,7 @@ const createUdpTimeSeriesOption = (reports: IperfUdpReport[]) => {
       name: "Time (seconds)",
       nameLocation: "middle",
       nameGap: 30,
-      data: allTimeStamps,
+      data: allTimeStamps.map((stamp) => parseFloat(stamp).toFixed(2)),
     },
     yAxis: [
       {

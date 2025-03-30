@@ -6,7 +6,7 @@ import { IperfTcpReportData } from "@/src/components/IperfTcpCharts";
 import { IperfUdpReportData } from "./components/IperfUdpCharts";
 import { ConnectionTimings } from "./components/GeneralDashboard";
 import { QperfData } from "./components/QperfCharts";
-import { HyperfineResults } from "./components/HyperfineCharts";
+import { HyperfineData } from "./components/HyperfineCharts";
 
 type BenchData = BenchCategory[];
 
@@ -92,7 +92,7 @@ export function generateBenchData(): BenchData {
     } else if (fileName == "qperf.json") {
       machine.qperf = filteredModule as QperfData;
     } else if (fileName == "nix-cache.json") {
-      machine.nixCache = filteredModule as HyperfineResults
+      machine.nixCache = filteredModule as HyperfineData;
     }
   });
 
