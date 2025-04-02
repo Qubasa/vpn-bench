@@ -32,7 +32,6 @@
     let 
       hostName = config.networking.hostName;
     in  {
-      package = pkgs.nginxStable.override { modules = [ pkgs.nginxModules.zstd ]; };
     
       virtualHosts."cache.vpn.${hostName}" = {
         serverAliases = [ "cache.v4.${hostName}" "cache.v6.${hostName}" ];
@@ -45,8 +44,6 @@
           proxy_set_header Upgrade $http_upgrade;
           proxy_set_header Connection $connection_upgrade;
 
-          zstd on;
-          zstd_types application/x-nix-archive;
         '';
       };
     };

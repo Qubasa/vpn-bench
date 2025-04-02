@@ -25,13 +25,16 @@ def install_connection_timings_conf(
     config: Config, tr_machines: list[TrMachine], bmachines: list[BenchMachine]
 ) -> None:
     conf = {}
-    pub_ips = {machine["ipv4"]: machine["name"] for machine in tr_machines}
-    vpn_ips = {bmachine.vpn_ip: bmachine.cmachine.name for bmachine in bmachines}
+    pub_ips = {f"v4.{machine['name']}": machine["name"] for machine in tr_machines}
+    vpn_ips = {
+        f"vpn.{bmachine.cmachine.name}": bmachine.cmachine.name
+        for bmachine in bmachines
+    }
     for bmachine in bmachines:
         cpub = pub_ips.copy()
-        del cpub[bmachine.cmachine.target_host.host]
+        del cpub[f"v4.{bmachine.cmachine.name}"]
         cvpn = vpn_ips.copy()
-        del cvpn[bmachine.vpn_ip]
+        del cvpn[f"vpn.{bmachine.cmachine.name}"]
         conf[f"{bmachine.cmachine.name}_id"] = {
             "roles": {
                 "default": {

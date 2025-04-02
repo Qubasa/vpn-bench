@@ -12,7 +12,7 @@ from clan_cli.machines.install import InstallOptions, install_machine
 from clan_cli.machines.machines import Machine
 from clan_cli.ssh.host_key import HostKeyCheck
 
-from vpn_bench.data import Config, TrMachine
+from vpn_bench.data import Config, Provider, TrMachine
 from vpn_bench.errors import VpnBenchError
 from vpn_bench.ssh import can_ssh_login
 
@@ -25,7 +25,10 @@ def install_single_machine(
     clan_dir_flake = Flake(str(clan_dirp))
     log.info(f"Installing machine {tr_machine['name']}")
 
-    assert tr_machine["ipv4"] is not None
+    host_ip = (
+        tr_machine["ipv6"] if tr_machine["ipv6"] is not None else tr_machine["ipv4"]
+    )
+    assert host_ip is not None
     identity_file = config.ssh_keys[0].private
 
     machine = Machine(
@@ -33,18 +36,31 @@ def install_single_machine(
         flake=clan_dir_flake,
         host_key_check=HostKeyCheck.NONE,
         private_key=identity_file,
-        override_target_host=tr_machine["ipv4"],
+        override_target_host=host_ip,
     )
-    assert tr_machine["ipv4"] is not None
+
     host = machine.target_host
 
-    if not can_ssh_login(host):
-        log.info("Could not login with machine name user, trying root user")
-        host.user = "root"
+    match tr_machine["provider"]:
+        case Provider.Chameleon:
+            host.user = "cc"
+            if not can_ssh_login(host):
+                host.user = "root"
 
-    if not can_ssh_login(host):
-        msg = f"Could not login to machine {tr_machine['name']} with user or root"
-        raise VpnBenchError(msg)
+            if not can_ssh_login(host):
+                msg = f"Could not login to machine {tr_machine['name']} with cc or root"
+                raise VpnBenchError(msg)
+
+        case _:
+            if not can_ssh_login(host):
+                log.info("Could not login with machine name user, trying root user")
+                host.user = "root"
+
+            if not can_ssh_login(host):
+                msg = (
+                    f"Could not login to machine {tr_machine['name']} with user or root"
+                )
+                raise VpnBenchError(msg)
 
     install_machine(
         InstallOptions(
@@ -56,6 +72,10 @@ def install_single_machine(
             debug=config.debug,
         )
     )
+
+    # We need to set the user to root after the kexec phase
+    # as this os image only has the root user
+    host.user = "root"
 
     facter_path = (
         specific_machine_dir(clan_dir_flake.path, machine.name) / "facter.json"

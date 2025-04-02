@@ -17,9 +17,10 @@ import { For, JSX } from "solid-js";
 
 // Define props for the dashboard component
 interface IperfDashboardProps {
-  tcpReports: IperfTcpReport[];
-  udpReports: IperfUdpReport[];
-  nixCacheReports: HyperfineReport[];
+  tcpReports: IperfTcpReport[] | null;
+  udpReports: IperfUdpReport[] | null;
+  nixCacheReports: HyperfineReport[] | null;
+  qperfReports: QperfReport[] | null;
   tcpHeight?: {
     throughput?: number;
     timeSeries?: number;
@@ -39,10 +40,8 @@ interface IperfDashboardProps {
     udp?: string;
     qperf?: string;
   };
-  qperfReports: QperfReport[];
   className?: string;
 }
-
 export const VpnDashboard = (props: IperfDashboardProps) => {
   // Default values
   const tcpHeight = props.tcpHeight || {
@@ -65,34 +64,71 @@ export const VpnDashboard = (props: IperfDashboardProps) => {
     udp: props.tabLabels?.udp || "UDP Performance",
     qperf: props.tabLabels?.qperf || "HTTP3 Performance",
   };
+
   interface TabConfig {
     value: string;
     label: string;
+    // content is a JSX.Element
     content: JSX.Element;
   }
 
   const defaultTab = props.defaultTab || "tcp_iperf";
+  const FallbackMessage = () => (
+    <div
+      style={{
+        background: "#f9f9f9",
+        border: "1px solid #e0e0e0",
+        "border-radius": "8px",
+        padding: "20px",
+        "text-align": "center",
+        color: "#555",
+        "font-size": "16px",
+        margin: "1rem 0",
+      }}
+    >
+      <p style={{ margin: 0 }}>
+        No data available. Please run the benchmark to see the performance
+        results.
+      </p>
+    </div>
+  );
 
   const tabs: TabConfig[] = [
     {
       value: "tcp_iperf",
       label: tabLabels.tcp,
-      content: <IperfTcpCharts reports={props.tcpReports} height={tcpHeight} />,
+      content: props.tcpReports ? (
+        <IperfTcpCharts reports={props.tcpReports} height={tcpHeight} />
+      ) : (
+        <FallbackMessage />
+      ),
     },
     {
       value: "udp_iperf",
       label: tabLabels.udp,
-      content: <IperfUdpCharts reports={props.udpReports} height={udpHeight} />,
+      content: props.udpReports ? (
+        <IperfUdpCharts reports={props.udpReports} height={udpHeight} />
+      ) : (
+        <FallbackMessage />
+      ),
     },
     {
       value: "qperf",
       label: tabLabels.qperf,
-      content: <QperfChartsDashboard reports={props.qperfReports} />,
+      content: props.qperfReports ? (
+        <QperfChartsDashboard reports={props.qperfReports} />
+      ) : (
+        <FallbackMessage />
+      ),
     },
     {
       value: "nix-cache",
       label: "Nix Cache Performance",
-      content: <HyperfineCharts reports={props.nixCacheReports} />,
+      content: props.nixCacheReports ? (
+        <HyperfineCharts reports={props.nixCacheReports} />
+      ) : (
+        <FallbackMessage />
+      ),
     },
   ];
 
@@ -119,19 +155,35 @@ export const VpnDashboard = (props: IperfDashboardProps) => {
       </Tabs.List>
 
       <Tabs.Content class="tabs__content" value="tcp_iperf">
-        <IperfTcpCharts reports={props.tcpReports} height={tcpHeight} />
+        {props.tcpReports ? (
+          <IperfTcpCharts reports={props.tcpReports} height={tcpHeight} />
+        ) : (
+          <FallbackMessage />
+        )}
       </Tabs.Content>
 
       <Tabs.Content class="tabs__content" value="udp_iperf">
-        <IperfUdpCharts reports={props.udpReports} height={udpHeight} />
+        {props.udpReports ? (
+          <IperfUdpCharts reports={props.udpReports} height={udpHeight} />
+        ) : (
+          <FallbackMessage />
+        )}
       </Tabs.Content>
 
       <Tabs.Content class="tabs__content" value="qperf">
-        <QperfChartsDashboard reports={props.qperfReports} />
+        {props.qperfReports ? (
+          <QperfChartsDashboard reports={props.qperfReports} />
+        ) : (
+          <FallbackMessage />
+        )}
       </Tabs.Content>
 
       <Tabs.Content class="tabs__content" value="nix-cache">
-        <HyperfineCharts reports={props.nixCacheReports} />
+        {props.nixCacheReports ? (
+          <HyperfineCharts reports={props.nixCacheReports} />
+        ) : (
+          <FallbackMessage />
+        )}
       </Tabs.Content>
     </Tabs>
   );

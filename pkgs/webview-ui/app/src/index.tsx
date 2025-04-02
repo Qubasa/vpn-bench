@@ -57,68 +57,61 @@ export type AppRoute = Omit<RouteDefinition, "children"> & {
   hidden?: boolean;
 };
 
-// Function to generate routes from benchData
+// Function to generate routes from benchData in a more functional style
 function generateRoutesFromBenchData(data: BenchData): AppRoute[] {
   return data.map((category) => {
-    // Convert category name to URL-friendly path
     const path = `/${category.name.toLowerCase().replace(/\s+/g, "_")}`;
 
-    // Group machines by type
-    const tcpReports: IperfTcpReport[] = [];
-    const udpReports: IperfUdpReport[] = [];
-    const qperfReports: QperfReport[] = [];
-    const nixCacheReports: HyperfineReport[] = [];
+    const tcpReports = category.machines
+      .map((machine) => {
+        if (!machine.iperf3.tcp) {
+          console.warn(`No TCP data for ${machine.name}`);
+          return null;
+        }
+        return { name: machine.name, data: machine.iperf3.tcp };
+      })
+      .filter(Boolean) as IperfTcpReport[];
 
-    // Process each machine's data
-    category.machines.forEach((machine) => {
-      if (machine.iperf3.tcp) {
-        tcpReports.push({
-          name: machine.name,
-          data: machine.iperf3.tcp,
-        });
-      } else {
-        console.warn(`No TCP data for ${machine.name}`);
-      }
+    const udpReports = category.machines
+      .map((machine) => {
+        if (!machine.iperf3.udp) {
+          console.warn(`No UDP data for ${machine.name}`);
+          return null;
+        }
+        return { name: machine.name, data: machine.iperf3.udp };
+      })
+      .filter(Boolean) as IperfUdpReport[];
 
-      if (machine.iperf3.udp) {
-        udpReports.push({
-          name: machine.name,
-          data: machine.iperf3.udp,
-        });
-      } else {
-        console.warn(`No UDP data for ${machine.name}`);
-      }
+    const qperfReports = category.machines
+      .map((machine) => {
+        if (!machine.qperf) {
+          console.warn(`No Qperf data for ${machine.name}`);
+          return null;
+        }
+        return { name: machine.name, data: machine.qperf };
+      })
+      .filter(Boolean) as QperfReport[];
 
-      if (machine.qperf) {
-        qperfReports.push({
-          name: machine.name,
-          data: machine.qperf,
-        });
-      } else {
-        console.warn(`No Qperf data for ${machine.name}`);
-      }
+    const nixCacheReports = category.machines
+      .map((machine) =>
+        machine.nixCache
+          ? { name: machine.name, data: machine.nixCache }
+          : null,
+      )
+      .filter(Boolean) as HyperfineReport[];
 
-      if (machine.nixCache) {
-        nixCacheReports.push({
-          name: machine.name,
-          data: machine.nixCache,
-        });
-      }
-    });
-
-    // Return route config with IperfDashboard component
     return {
       path,
       label: category.name,
       component: () => (
         <VpnDashboard
-          tcpReports={tcpReports}
-          udpReports={udpReports}
-          qperfReports={qperfReports}
-          nixCacheReports={nixCacheReports}
+          tcpReports={tcpReports.length ? tcpReports : null}
+          udpReports={udpReports.length ? udpReports : null}
+          qperfReports={qperfReports.length ? qperfReports : null}
+          nixCacheReports={nixCacheReports.length ? nixCacheReports : null}
         />
       ),
-      hidden: category.machines.length === 0, // Hide if no machines
+      hidden: category.machines.length === 0,
     };
   });
 }

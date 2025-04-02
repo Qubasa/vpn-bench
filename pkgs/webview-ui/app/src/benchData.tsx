@@ -73,25 +73,15 @@ export function generateBenchData(): BenchData {
       ),
     );
 
-    // Handle iperf3 files
-    if (fileName.includes("iperf3")) {
-      // Determine if this is a TCP or UDP file
-      const isUdp = fileName.includes("udp");
-      const isTcp = fileName.includes("tcp");
+    if (fileName === "tcp_iperf3.json") {
+      machine.iperf3.tcp = filteredModule as IperfTcpReportData;
+    } else if (fileName === "udp_iperf3.json") {
+      machine.iperf3.udp = filteredModule as IperfUdpReportData;
+    }
 
-      if (!isUdp && !isTcp) return; // Skip unknown file types
-
-      // Add the data to the machine
-      if (isTcp) {
-        machine.iperf3.tcp = filteredModule as IperfTcpReportData;
-      } else if (isUdp) {
-        machine.iperf3.udp = filteredModule as IperfUdpReportData;
-      }
-
-      // Handle qperf files
-    } else if (fileName == "qperf.json") {
+    if (fileName === "qperf.json") {
       machine.qperf = filteredModule as QperfData;
-    } else if (fileName == "nix-cache.json") {
+    } else if (fileName === "nix-cache.json") {
       machine.nixCache = filteredModule as HyperfineData;
     }
   });

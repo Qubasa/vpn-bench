@@ -71,6 +71,10 @@
       assertion = lib.length config.systemd.services."connection-check".after == 1;
       message = "connection-check detected multiple or no VPN services only one is allowed";
     }
+    {
+      assertion = (config.clan ? my-static-hosts) == true;
+      message = "The my-nginx module requires the my-static-hosts module to be configured with the hostnames.";
+    }
   ];
 
   systemd.services."connection-check" = {

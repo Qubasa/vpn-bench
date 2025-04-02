@@ -30,6 +30,8 @@ def run_iperf_test(
         "-c",
         "iperf3",
         "--bidir",
+        "--connect-timeout",
+        "300",  # 5 seconds
         "--json",
         "-Z",
         "-c",
@@ -45,16 +47,8 @@ def run_iperf_test(
 
     res = host.run(
         nix_command(cmd),
-        RunOpts(log=Log.BOTH),
+        RunOpts(log=Log.BOTH, check=False),
         extra_env={"IPERF3_PASSWORD": creds.password},
     )
+
     return json.loads(res.stdout)
-
-
-def save_iperf_results(
-    result_dir: Path, json_data: dict[str, Any], test_type: str
-) -> None:
-    """Save iperf test results to a file."""
-    result_dir.mkdir(parents=True, exist_ok=True)
-    with (result_dir / f"{test_type}_iperf3.json").open("w") as f:
-        json.dump(json_data, f, indent=4)

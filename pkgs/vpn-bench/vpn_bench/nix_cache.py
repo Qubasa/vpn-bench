@@ -22,15 +22,20 @@ def install_nix_cache(
     ip_to_hostnames: dict[str, list[str]] = {}
     for index, machine in enumerate(tr_machines):
         assert machine["ipv4"] is not None
-        assert machine["ipv6"] is not None
         ip_to_hostnames[machine["ipv4"]] = [
             f"v4.{machine['name']}",
             f"cache.{machine['name']}",
         ]
-        ip_to_hostnames[machine["ipv6"]] = [
-            f"v6.{machine['name']}",
-            f"cache.v6.{machine['name']}",
-        ]
+        if machine["ipv6"] is not None:
+            ip_to_hostnames[machine["ipv6"]] = [
+                f"v6.{machine['name']}",
+                f"cache.v6.{machine['name']}",
+            ]
+        if machine["internal_ipv6"] is not None:
+            ip_to_hostnames[machine["internal_ipv6"]] = [
+                f"internal.v6.{machine['name']}",
+                f"cache.internal.v6.{machine['name']}",
+            ]
         ip_to_hostnames[bmachines[index].vpn_ip] = [
             f"vpn.{machine['name']}",
             f"cache.vpn.{machine['name']}",
@@ -93,7 +98,7 @@ def run_nix_cache_test(
         "/nix/store/jlkypcf54nrh4n6r0l62ryx93z752hb2-firefox-132.0",
     ]
 
-    urls = ",".join([f"http://vpn.{cache_target.cmachine.name}"])
+    urls = ",".join([f"http://cache.vpn.{cache_target.cmachine.name}"])
 
     cmd = [
         "hyperfine",
@@ -121,5 +126,9 @@ def run_nix_cache_test(
 def save_nix_cache_results(result_dir: Path, json_data: dict[str, Any]) -> None:
     """Save iperf test results to a file."""
     result_dir.mkdir(parents=True, exist_ok=True)
+    crash_file = result_dir / "nix-cache_crash.json"
+    if crash_file.exists():
+        crash_file.unlink()
+
     with (result_dir / "nix-cache.json").open("w") as f:
         json.dump(json_data, f, indent=4)

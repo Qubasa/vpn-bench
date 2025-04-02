@@ -21,6 +21,7 @@ class BenchMachine:
 class Provider(Enum):
     GCloud = "gcloud"
     Hetzner = "hetzner"
+    Chameleon = "chameleon"
 
     @staticmethod
     def from_str(label: str) -> "Provider":
@@ -32,10 +33,11 @@ class Provider(Enum):
 
 class TrMachine(TypedDict):
     name: str
-    location: str
+    location: str | None
     server_type: str
     ipv4: str | None
     ipv6: str | None
+    internal_ipv6: str | None
     provider: Provider
 
 

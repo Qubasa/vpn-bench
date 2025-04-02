@@ -7,8 +7,8 @@ pkgs.clangStdenv.mkDerivation {
   src = pkgs.fetchFromGitHub {
     owner = "qubasa";
     repo = "qperf";
-    rev = "e27a2fb66a09865b4098743d543a56ecbdf683d1";
-    sha256 = "sha256-7tnayI8S8Hu3h2XPD/YfLebKGKEcxyin0Hplp4yITUQ=";
+    rev = "423098cdc67f6b100b7413af1a876ef51722460d";
+    sha256 = "sha256-Xlk5dpuq0+p7pPHijXDTPnxUK915DBOxgtDcES3tmbA=";
     fetchSubmodules = true;
   };
 

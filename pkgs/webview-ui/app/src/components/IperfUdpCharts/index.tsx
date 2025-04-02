@@ -65,7 +65,7 @@ const createUdpThroughputOption = (reports: IperfUdpReport[]) => {
         type: "shadow",
       },
       formatter: function (params: { name: string; value: number }[]) {
-        return `${params[0].name}: ${params[0].value.toFixed(2)} Mbps`;
+        return `Sent: ${params[0].value} Mbps<br/>Received: ${params[1].value} Mbps`;
       },
     },
     legend: {
@@ -134,7 +134,7 @@ const createPacketLossOption = (reports: IperfUdpReport[]) => {
         type: "shadow",
       },
       formatter: function (params: { name: string; value: number }[]) {
-        return `${params[0].name}: ${params[0].value.toFixed(1)}%`;
+        return `${params[0].name}: ${params[0].value}%`;
       },
     },
     grid: {
@@ -188,7 +188,7 @@ const createJitterOption = (reports: IperfUdpReport[]) => {
         type: "shadow",
       },
       formatter: function (params: { name: string; value: number }[]) {
-        return `${params[0].name}: ${params[0].value.toFixed(4)} ms`;
+        return `${params[0].name}: ${params[0].value} ms`;
       },
     },
     grid: {

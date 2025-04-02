@@ -132,7 +132,9 @@ def run_qperf_test(host: Host, target_host: str) -> QperfSummaryDict:
         for core in range(num_cores):
             cmd = [
                 "qperf",
-                "-n",
+                "-mm",
+                "-i",
+                "1",
                 "-g",
                 "1",
                 "-p",
@@ -230,5 +232,9 @@ def calculate_percentiles(values: list[T]) -> dict[str, float]:
 def save_qperf_results(result_dir: Path, json_data: QperfSummaryDict) -> None:
     """Save qperf test results to a file."""
     result_dir.mkdir(parents=True, exist_ok=True)
+
+    crash_file = result_dir / "qperf_crash.json"
+    if crash_file.exists():
+        crash_file.unlink()
     with (result_dir / "qperf.json").open("w") as f:
         json.dump(json_data, f, indent=4)

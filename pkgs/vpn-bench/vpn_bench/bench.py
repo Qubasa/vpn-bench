@@ -1,13 +1,17 @@
 import logging
+from collections.abc import Callable
 from pathlib import Path
+from typing import Any, ParamSpec
 
+from clan_cli.errors import ClanError
 from clan_cli.ssh.upload import upload
 
 from vpn_bench.assets import get_iperf_asset
 from vpn_bench.data import VPN, BenchMachine, Config, TestType
-from vpn_bench.iperf3 import IperfCreds, run_iperf_test, save_iperf_results
-from vpn_bench.nix_cache import run_nix_cache_test, save_nix_cache_results
-from vpn_bench.qperf import run_qperf_test, save_qperf_results
+from vpn_bench.errors import save_bench_report
+from vpn_bench.iperf3 import IperfCreds, run_iperf_test
+from vpn_bench.nix_cache import run_nix_cache_test
+from vpn_bench.qperf import run_qperf_test
 from vpn_bench.terraform import TrMachine
 from vpn_bench.vpn import install_vpn
 
@@ -46,32 +50,51 @@ def run_benchmarks(
         # Upload iperf3 public key
         upload(host, local_pubkey, remote_iperf3_pubkey)
 
+        P = ParamSpec("P")  # noqa: N806
+
+        def execute_test(
+            func: Callable[P, Any], *args: P.args, **kwargs: P.kwargs
+        ) -> dict[str, Any] | ClanError:
+            try:
+                return func(*args, **kwargs)
+            except ClanError as err:
+                return err
+
         for test in tests:
             match test:
                 case TestType.IPERF3:
-                    # Run TCP test
-                    tcp_results = run_iperf_test(
-                        host, next_bmachine.vpn_ip, creds, udp_mode=False
+                    tcp_results = execute_test(
+                        run_iperf_test,
+                        host,
+                        "vpn." + next_bmachine.cmachine.name,
+                        creds,
+                        udp_mode=False,
                     )
-                    save_iperf_results(result_dir, tcp_results, "tcp")
+                    save_bench_report(result_dir, tcp_results, "tcp_iperf3.json")
 
-                    match vpn:
-                        case vpn.Mycelium:
-                            pass
-                        case _:
-                            # Run UDP test
-                            udp_results = run_iperf_test(
-                                host, next_bmachine.vpn_ip, creds, udp_mode=True
-                            )
-                            save_iperf_results(result_dir, udp_results, "udp")
+                    udp_results = execute_test(
+                        run_iperf_test,
+                        host,
+                        "vpn." + next_bmachine.cmachine.name,
+                        creds,
+                        udp_mode=True,
+                    )
+                    save_bench_report(result_dir, udp_results, "udp_iperf3.json")
+
                 case TestType.QPERF:
-                    # Run QUICK test
-                    quick_result = run_qperf_test(host, next_bmachine.vpn_ip)
-                    save_qperf_results(result_dir, quick_result)
+                    quick_result = execute_test(
+                        run_qperf_test,
+                        host,
+                        "vpn." + next_bmachine.cmachine.name,
+                    )
+                    save_bench_report(result_dir, quick_result, "qperf.json")
+
                 case TestType.NIX_CACHE:
-                    # Run NIX cache test
-                    nix_cache_result = run_nix_cache_test(bmachine, vpn, next_bmachine)
-                    save_nix_cache_results(result_dir, nix_cache_result)
+                    nix_cache_result = execute_test(
+                        run_nix_cache_test, bmachine, vpn, next_bmachine
+                    )
+                    save_bench_report(result_dir, nix_cache_result, "nix_cache.json")
+
                 case _:
                     msg = f"Unknown BenchType: {test}"
                     raise ValueError(msg)

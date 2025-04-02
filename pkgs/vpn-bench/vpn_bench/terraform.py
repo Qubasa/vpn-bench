@@ -4,6 +4,7 @@ import json
 import logging
 import os
 import shutil
+import textwrap
 from pathlib import Path
 from typing import Any
 
@@ -49,10 +50,11 @@ def tr_metadata(config: Config) -> list[TrMachine]:
     for _name, data in jdata["vm_info"]["value"].items():
         tr_machine = TrMachine(
             name=data["name"],
-            location=data["location"],
+            location=data.get("location"),
             server_type=data["server_type"],
             ipv4=data["ipv4"],
-            ipv6=data["ipv6"],
+            ipv6=data.get("ipv6"),
+            internal_ipv6=data.get("internal_ipv6"),
             provider=Provider.from_str(data["provider"]),
         )
         machines.append(tr_machine)
@@ -84,6 +86,17 @@ def tr_ask_for_api_key(provider: Provider) -> None:
         case Provider.GCloud:
             msg = "GCloud not implemented yet"
             raise NotImplementedError(msg)
+        case Provider.Chameleon:
+            openstack = Path("~/.config/openstack/clouds.yaml").expanduser()
+            if not openstack.exists():
+                msg = textwrap.dedent(
+                    f"""\
+                    Openstack cloud config not found at {openstack}.
+                    Please download the file from the Chameleon portal and place it at the above location.
+                    For more info go to: https://chameleoncloud.readthedocs.io/en/latest/technical/cli.html#creating-an-application-credential
+                    """
+                )
+                raise VpnBenchError(msg)
 
 
 def tr_create(
@@ -97,11 +110,10 @@ def tr_create(
     tr_init(config, provider)
 
     ssh_pubkeys = [key.public.read_text() for key in config.ssh_keys]
+    servers: list[dict[str, Any]] = []
 
     match provider:
         case Provider.Hetzner:
-            servers: list[dict[str, Any]] = []
-
             allowed_locations = {
                 "nbg1": "DE: Nuremberg",
                 "fsn1": "DE: Falkenstein",
@@ -138,6 +150,28 @@ def tr_create(
             )
         case Provider.GCloud:
             msg = "GCloud not implemented yet"
+            raise NotImplementedError(msg)
+
+        case Provider.Chameleon:
+            for machine in machines:
+                servers.append(
+                    {
+                        "name": machine,
+                        "server_type": "m1.large",
+                        "ipv4": None,
+                        "ipv6": None,
+                    }
+                )
+                tr_write_vars(
+                    config,
+                    {
+                        "ssh_pubkeys": ssh_pubkeys,
+                        "os_image": "CC-Ubuntu24.04",
+                        "servers": servers,
+                    },
+                )
+        case _:
+            msg = f"Provider {provider} not implemented yet"
             raise NotImplementedError(msg)
 
     run(

@@ -74,22 +74,6 @@ if [[ ! $SERVICE_NAME =~ \.service$ ]]; then
   SERVICE_NAME="${SERVICE_NAME}.service"
 fi
 
-# Check if service exists with retry logic (10 attempts, 1 sec delay)
-attempt=0
-max_attempts=30
-while [ $attempt -lt $max_attempts ]; do
-  if systemctl list-units --all --type=service | awk '{print $1}' | grep -qx "$SERVICE_NAME"; then
-    break
-  fi
-  attempt=$((attempt + 1))
-  sleep 1
-done
-
-if [ $attempt -eq $max_attempts ]; then
-  log "Error: Service $SERVICE_NAME does not exist after $max_attempts attempts"
-  exit 3
-fi
-
 log "Waiting for $SERVICE_NAME to complete..."
 start_time=$(date +%s)
 end_time=$((start_time + MAX_WAIT_SECONDS))

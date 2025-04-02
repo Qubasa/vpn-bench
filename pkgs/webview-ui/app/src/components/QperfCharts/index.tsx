@@ -143,40 +143,18 @@ const createQperfBoxplotOption = (
     unitSymbol = " ms";
   }
 
-  // Create individual series for each machine to apply different colors
-  const seriesData = boxplotData.map((data, index) => {
-    const colorScheme = getMachineColorScheme(index);
-
-    return {
-      name: categories[index],
-      type: "boxplot",
-      data: [data], // Single boxplot for this machine
-      tooltip: { trigger: "item" },
-      itemStyle: {
-        borderWidth: 2,
-        borderColor: colorScheme.borderColor,
-      },
-      emphasis: {
-        itemStyle: colorScheme.emphasis,
-      },
-      boxWidth: [8, 50],
-      animationDelay: index * 50,
-    };
-  });
-
-  // Custom tooltip formatter that uses the machine-specific color
+  // Custom tooltip formatter using x-axis categories
   const tooltipFormatter = function (params: {
-    data: number[];
-    seriesIndex: number;
-    seriesName: string;
+    data: { value: number[] };
+    dataIndex: number;
   }) {
-    const data = params.data;
-    const machineIndex = params.seriesIndex;
+    const machineIndex = params.dataIndex;
     const machineColor = getMachineColor(machineIndex);
     const colorBox = `<span style="display:inline-block;margin-right:5px;border-radius:10px;width:10px;height:10px;background-color:${machineColor}"></span>`;
+    const data = params.data.value;
 
     return `<div style="padding: 5px; border-radius: 5px; box-shadow: 0 0 10px rgba(0,0,0,0.1)">
-              <div style="font-weight: bold; border-bottom: 1px solid #eee; padding-bottom: 5px; margin-bottom: 5px">${params.seriesName}</div>
+              <div style="font-weight: bold; border-bottom: 1px solid #eee; padding-bottom: 5px; margin-bottom: 5px">${categories[machineIndex]}</div>
               <div>${colorBox} Min: <strong>${data[0].toFixed(2)}${unitSymbol}</strong></div>
               <div>${colorBox} Q1: <strong>${data[1].toFixed(2)}${unitSymbol}</strong></div>
               <div>${colorBox} Median: <strong>${data[2].toFixed(2)}${unitSymbol}</strong></div>
@@ -184,6 +162,28 @@ const createQperfBoxplotOption = (
               <div>${colorBox} Max: <strong>${data[4].toFixed(2)}${unitSymbol}</strong></div>
             </div>`;
   };
+
+  // Create one boxplot series with each data item corresponding to a machine.
+  const seriesData = [
+    {
+      type: "boxplot",
+      data: boxplotData.map((data, index) => {
+        const colorScheme = getMachineColorScheme(index);
+        return {
+          value: data,
+          itemStyle: {
+            borderWidth: 2,
+            borderColor: colorScheme.borderColor,
+          },
+          emphasis: {
+            itemStyle: colorScheme.emphasis,
+          },
+          boxWidth: [8, 50],
+        };
+      }),
+      animationDelay: (idx: number) => idx * 50,
+    },
+  ];
 
   const result = {
     title: {
@@ -220,30 +220,15 @@ const createQperfBoxplotOption = (
       top: "15%",
       containLabel: true,
     },
-    legend: {
-      data: categories,
-      bottom: 0,
-      icon: "rect",
-      itemWidth: 10,
-      itemHeight: 10,
-      textStyle: {
-        fontSize: 12,
-      },
-    },
     xAxis: {
       type: "category",
-      data: [""], // Single category since we're using multiple series
+      data: categories,
       boundaryGap: true,
       nameGap: 30,
       axisLabel: {
         show: true,
         margin: 15,
         fontSize: 12,
-      },
-      axisLine: {
-        lineStyle: {
-          color: "#ddd",
-        },
       },
       axisTick: {
         alignWithLabel: true,
@@ -323,7 +308,7 @@ const createQperfBarChartOption = (
   metric: MetricKey,
   title: string,
 ) => {
-  const { categories, barData } = processDataForQperfBarChart(reports, metric);
+  const { categories } = processDataForQperfBarChart(reports, metric);
 
   // Define label and tooltip formatting based on the metric being plotted
   let yAxisName = "";
@@ -337,19 +322,23 @@ const createQperfBarChartOption = (
     unitSymbol = "%";
   }
 
-  // Custom tooltip formatter that uses the machine-specific color
+  // Custom tooltip formatter that uses the machine-specific color and shows min, median and max
   const tooltipFormatter = function (params: {
     dataIndex: number;
     name: string;
     value: number;
+    data: { custom: { min: number; median: number; max: number } };
   }) {
     const machineIndex = params.dataIndex;
     const machineColor = getMachineColor(machineIndex);
     const colorBox = `<span style="display:inline-block;margin-right:5px;border-radius:10px;width:10px;height:10px;background-color:${machineColor}"></span>`;
+    const { min, median, max } = params.data.custom;
 
     return `<div style="padding: 5px; border-radius: 5px; box-shadow: 0 0 10px rgba(0,0,0,0.1)">
               <div style="font-weight: bold; border-bottom: 1px solid #eee; padding-bottom: 5px; margin-bottom: 5px">${params.name}</div>
-              <div>${colorBox} Median: <strong>${params.value.toFixed(2)}${unitSymbol}</strong></div>
+              <div>${colorBox} Min: <strong>${min.toFixed(2)}${unitSymbol}</strong></div>
+              <div>${colorBox} Median: <strong>${median.toFixed(2)}${unitSymbol}</strong></div>
+              <div>${colorBox} Max: <strong>${max.toFixed(2)}${unitSymbol}</strong></div>
             </div>`;
   };
 
@@ -398,7 +387,6 @@ const createQperfBarChartOption = (
         margin: 15,
         fontSize: 12,
       },
-
       axisTick: { alignWithLabel: true },
     },
     yAxis: {
@@ -425,9 +413,15 @@ const createQperfBarChartOption = (
     series: [
       {
         type: "bar",
-        data: barData.map((value, index) => {
+        data: reports.map((report, index) => {
+          const perc = getPercentilesByMetric(report.data, metric);
+          // Calculate min and max with an assumption similar to boxplots
+          const min = perc.p25 * 0.9;
+          const median = perc.p50;
+          const max = perc.p75 * 1.1;
           return {
-            value: value,
+            value: median,
+            custom: { min, median, max },
             itemStyle: {
               color: getMachineColor(index),
               borderRadius: [5, 5, 0, 0],

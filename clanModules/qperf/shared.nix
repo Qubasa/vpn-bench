@@ -88,7 +88,7 @@ let
             -g \
             -s ${cfg.address} \
             -p ${toString cfg.startPort} \
-            -n ${toString cfg.maxNumCores} \
+            -i ${toString cfg.maxNumCores} \
             ${escapeShellArgs cfg.extraFlags}
         '';
       };

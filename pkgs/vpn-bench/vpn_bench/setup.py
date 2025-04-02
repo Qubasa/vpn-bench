@@ -203,8 +203,11 @@ def setup_machine(
     clan_dir: Path, tr_machine: TrMachine, machine_num: int, inventory: dict[str, Any]
 ) -> None:
     """Set up a single machine in the inventory."""
-    assert tr_machine["ipv4"] is not None
-    host = Host(user=tr_machine["name"], host=tr_machine["ipv4"])
+    host_ip = (
+        tr_machine["ipv6"] if tr_machine["ipv6"] is not None else tr_machine["ipv4"]
+    )
+    assert host_ip is not None
+    host = Host(user=tr_machine["name"], host=host_ip)
 
     inv_machine = InventoryMachine(
         name=tr_machine["name"], deploy=MachineDeploy(targetHost=host.host)
