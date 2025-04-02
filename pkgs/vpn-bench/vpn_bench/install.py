@@ -26,7 +26,9 @@ def install_single_machine(
     log.info(f"Installing machine {tr_machine['name']}")
 
     host_ip = (
-        tr_machine["ipv6"] if tr_machine["ipv6"] is not None else tr_machine["ipv4"]
+        f"[{tr_machine['ipv6']}]"
+        if tr_machine["ipv6"] is not None
+        else tr_machine["ipv4"]
     )
     assert host_ip is not None
     identity_file = config.ssh_keys[0].private

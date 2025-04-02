@@ -29,7 +29,7 @@ output "vm_info" {
       location    = server.location,
       server_type = server.server_type,
       ipv4        = hcloud_server.servers[server.name].ipv4_address,
-      ipv6        = hcloud_server.servers[server.name].ipv6_address,
+      internal_ipv6        = hcloud_server.servers[server.name].ipv6_address,
       provider    = "hetzner",
     }
   }

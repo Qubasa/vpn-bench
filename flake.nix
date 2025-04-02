@@ -30,20 +30,6 @@
         ./pkgs/qperf/flake-module.nix
       ];
 
-
-      flake = {
-        clanModules = {
-          "myadmin" = ./clanModules/myadmin;
-          "iperf" = ./clanModules/iperf;
-          "my-trusted-nix-caches" = ./clanModules/my-trusted-nix-caches;
-          "my-nginx" = ./clanModules/my-nginx;
-          "qperf" = ./clanModules/qperf;
-          "hetzner-ips" = ./clanModules/hetzner-ips;
-          "my-static-hosts" = ./clanModules/my-static-hosts;
-          "nix-cache" = ./clanModules/nix-cache;
-        };
-      };
-
       clan = {
         templates = {
           clan = {
@@ -52,6 +38,17 @@
               path = ./templates/clan/minimal;
             };
           };
+        };
+
+        modules = {
+          "myadmin" = ./clanModules/myadmin;
+          "iperf" = ./clanModules/iperf;
+          "my-trusted-nix-caches" = ./clanModules/my-trusted-nix-caches;
+          "my-nginx" = ./clanModules/my-nginx;
+          "qperf" = ./clanModules/qperf;
+          "hetzner-ips" = ./clanModules/hetzner-ips;
+          "my-static-hosts" = ./clanModules/my-static-hosts;
+          "nix-cache" = ./clanModules/nix-cache;
         };
       };    
     };

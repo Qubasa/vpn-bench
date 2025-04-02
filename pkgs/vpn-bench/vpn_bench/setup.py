@@ -204,7 +204,9 @@ def setup_machine(
 ) -> None:
     """Set up a single machine in the inventory."""
     host_ip = (
-        tr_machine["ipv6"] if tr_machine["ipv6"] is not None else tr_machine["ipv4"]
+        f"[{tr_machine['ipv6']}]"
+        if tr_machine["ipv6"] is not None
+        else tr_machine["ipv4"]
     )
     assert host_ip is not None
     host = Host(user=tr_machine["name"], host=host_ip)
