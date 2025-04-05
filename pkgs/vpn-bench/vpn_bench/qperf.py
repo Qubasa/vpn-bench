@@ -132,7 +132,6 @@ def run_qperf_test(host: Host, target_host: str) -> QperfSummaryDict:
         for core in range(num_cores):
             cmd = [
                 "qperf",
-                #    "-mm",
                 "-i",
                 "1",
                 "-g",

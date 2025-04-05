@@ -24,6 +24,7 @@ def run_iperf_test(
     host: Host, target_host: str, creds: IperfCreds, udp_mode: bool = False
 ) -> dict[str, Any]:
     """Run a single iperf3 test and return the results."""
+
     cmd = [
         "shell",
         "nixpkgs#iperf3",
