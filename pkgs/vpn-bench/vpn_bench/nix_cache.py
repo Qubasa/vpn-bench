@@ -42,31 +42,28 @@ def install_nix_cache(
         ]
 
     conf = {
-        "some_id": {
-            "roles": {
-                "default": {
-                    "tags": ["all"],
-                    "config": {
-                        "ipToHostnames": ip_to_hostnames,
-                    },
-                }
+        "module": {"name": "my-static-hosts-new", "input": "cvpn-bench"},
+        "roles": {
+            "default": {
+                "tags": { "all": {} },
+                "settings": {
+                    "ipToHostnames": ip_to_hostnames,
+                },
             }
-        }
+        },
     }
-
-    patch_inventory_with(config.clan_dir, "services.my-static-hosts", conf)
+    patch_inventory_with(config.clan_dir, "instances.my-static-hosts-new-all", conf)
 
     conf = {
-        "some_id": {
-            "roles": {
-                "default": {
-                    "tags": ["all"],
-                }
+        "module": {"name": "nix-cache-new", "input": "cvpn-bench"},
+        "roles": {
+            "default": {
+                "tags": {"all": {}},
             }
-        }
+        },
     }
 
-    patch_inventory_with(config.clan_dir, "services.nix-cache", conf)
+    patch_inventory_with(config.clan_dir, "instances.nix-cache-new-all", conf)
 
 
 def init_nix_cache_path(host: Host, cache_target: Host) -> None:

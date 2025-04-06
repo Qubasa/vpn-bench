@@ -32,12 +32,14 @@ log = logging.getLogger(__name__)
 
 
 def install_base_config(config: Config, tr_machines: list[TrMachine]) -> None:
-    conf = create_base_inventory(tr_machines, config.ssh_keys)
-    patch_inventory_with(config.clan_dir, "services", conf)
+    inventory = create_base_inventory(tr_machines, config.ssh_keys)
+    patch_inventory_with(config.clan_dir, "services", inventory.services)
+
+    patch_inventory_with(config.clan_dir, "instances", inventory.instances)
 
 
 def install_zerotier(config: Config, tr_machines: list[TrMachine]) -> None:
-    base = create_base_inventory(tr_machines, config.ssh_keys)
+    base = create_base_inventory(tr_machines, config.ssh_keys).services
     conf: dict[str, Any] = {
         "someid": {
             "roles": {
@@ -66,7 +68,7 @@ def install_zerotier(config: Config, tr_machines: list[TrMachine]) -> None:
 
 
 def install_mycelium(config: Config, tr_machines: list[TrMachine]) -> None:
-    base = create_base_inventory(tr_machines, config.ssh_keys)
+    base = create_base_inventory(tr_machines, config.ssh_keys).services
     conf: dict[str, Any] = {
         "someid": {
             "roles": {

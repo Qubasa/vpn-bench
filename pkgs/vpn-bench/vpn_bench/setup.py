@@ -92,9 +92,15 @@ class InvSSHKeyEntry:
     ssh_pubkey_txt: str
 
 
+@dataclass
+class InventoryWrapper:
+    instances: dict[str, Any]
+    services: dict[str, Any]
+
+
 def create_base_inventory(
     tr_machines: list[TrMachine], ssh_keys_pairs: list[SSHKeyPair]
-) -> dict[str, Any]:
+) -> InventoryWrapper:
     ssh_keys = [
         InvSSHKeyEntry("nixos-anywhere", ssh_keys_pairs[0].public.read_text()),
     ]
@@ -103,20 +109,6 @@ def create_base_inventory(
 
     """Create the base inventory structure."""
     inventory: dict[str, Any] = {
-        "myadmin": {
-            "someid": {
-                "roles": {
-                    "default": {
-                        "tags": ["all"],
-                        "config": {
-                            "allowedKeys": {
-                                key.username: key.ssh_pubkey_txt for key in ssh_keys
-                            },
-                        },
-                    }
-                }
-            }
-        },
         "sshd": {
             "someid": {
                 "roles": {
@@ -134,13 +126,6 @@ def create_base_inventory(
                 }
             }
         },
-        "qperf": {
-            "someid": {
-                "roles": {
-                    "server": {"tags": ["all"]},
-                }
-            }
-        },
         "state-version": {
             "someid": {
                 "roles": {
@@ -155,18 +140,6 @@ def create_base_inventory(
                 "roles": {
                     "default": {
                         "tags": ["all"],
-                    }
-                }
-            }
-        },
-        "my-static-hosts": {
-            "someid": {
-                "roles": {
-                    "default": {
-                        "tags": ["all"],
-                        "config": {
-                            "ipToHostnames": {},
-                        },
                     }
                 }
             }
@@ -196,12 +169,35 @@ def create_base_inventory(
             case _:
                 pass
 
-    return inventory
+    instances = {
+        "qperf-new-all": {
+            "module": {"name": "qperf-new", "input": "cvpn-bench"},
+            "roles": {
+                "server": {"tags": {"all": {}}},
+            },
+        },
+        "myadmin-new-all": {
+            "module": {"name": "myadmin-new", "input": "cvpn-bench"},
+            "roles": {
+                "default": {
+                    "tags": {"all": {}},
+                    "settings": {
+                        "allowedKeys": {
+                            key.username: key.ssh_pubkey_txt for key in ssh_keys
+                        },
+                    },
+                }
+            },
+        },
+    }
+
+    return InventoryWrapper(
+        services=inventory,
+        instances=instances,
+    )
 
 
-def setup_machine(
-    clan_dir: Path, tr_machine: TrMachine, machine_num: int, inventory: dict[str, Any]
-) -> None:
+def setup_machine(clan_dir: Path, tr_machine: TrMachine, machine_num: int) -> None:
     """Set up a single machine in the inventory."""
     host_ip = (
         f"[{tr_machine['ipv6']}]"
@@ -267,10 +263,13 @@ def clan_init(
 
     # Set up machines
     for machine_num, tr_machine in enumerate(tr_machines):
-        setup_machine(config.clan_dir, tr_machine, machine_num, inventory)
+        setup_machine(config.clan_dir, tr_machine, machine_num)
 
     # Update inventory and install machines
-    patch_inventory_with(config.clan_dir, "services", inventory)
+    patch_inventory_with(config.clan_dir, "services", inventory.services)
+
+    # Update inventory and install machines
+    patch_inventory_with(config.clan_dir, "instances", inventory.instances)
 
     with AsyncRuntime() as runtime:
         for tr_machine in tr_machines:
