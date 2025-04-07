@@ -1,564 +1,499 @@
-import { Component } from "solid-js";
-import { Echart } from "../Echarts";
+import { Component, Show } from "solid-js";
+/* eslint-disable  @typescript-eslint/no-explicit-any */
 
-// Define interface for percentile data
+
+// Assuming Echart component is correctly imported and works with echarts options
+import { Echart } from "../Echarts";
+import * as echarts from "echarts";
+
+
 interface QperfPercentiles {
   p25: number;
   p50: number;
   p75: number;
 }
 
-// Define interface for qperf benchmark data
-export interface QperfData {
-  total_bandwidth_mbps_percentiles: QperfPercentiles;
-  cpu_usage_percent_percentiles: QperfPercentiles;
-  ttfb_ms_percentiles: QperfPercentiles;
-  conn_time_ms_percentiles: QperfPercentiles;
+// Interface for the full stats of a single metric
+interface QperfMetricStats {
+  min: number;
+  average: number;
+  max: number;
+  percentiles: QperfPercentiles;
 }
 
-// Define interface for each machine's qperf report
+// Interface for the main qperf benchmark data object
+export interface QperfData {
+  total_bandwidth_mbps: QperfMetricStats;
+  cpu_usage_percent: QperfMetricStats;
+  ttfb_ms: QperfMetricStats;
+  conn_time_ms: QperfMetricStats;
+}
+
+// Interface for each machine's qperf report (remains the same)
 export interface QperfReport {
   name: string;
   data: QperfData;
 }
 
-// Define the supported metrics
-type MetricKey = "total_bandwidth" | "cpu_usage" | "ttfb" | "conn_time";
+// --- Utility Types and Functions ---
 
-// Helper function to extract the appropriate percentiles based on the metric key
-const getPercentilesByMetric = (
+// Define the supported metrics using keys from QperfData
+type MetricKey = keyof QperfData; // Use keys directly
+
+// Helper function to extract the appropriate full metric stats object
+const getMetricStats = (
   data: QperfData,
   metric: MetricKey,
-): QperfPercentiles => {
-  switch (metric) {
-    case "total_bandwidth":
-      return data.total_bandwidth_mbps_percentiles;
-    case "cpu_usage":
-      return data.cpu_usage_percent_percentiles;
-    case "ttfb":
-      return data.ttfb_ms_percentiles;
-    case "conn_time":
-      return data.conn_time_ms_percentiles;
-    default:
-      throw new Error("Invalid metric");
+): QperfMetricStats => {
+  // Check if the metric key exists in the data to avoid runtime errors
+  if (!data || !(metric in data)) {
+     console.error(`Metric key "${metric}" not found in qperf data:`, data);
+     // Return a default structure to prevent downstream errors
+      return { min: 0, average: 0, max: 0, percentiles: { p25: 0, p50: 0, p75: 0 } };
   }
+  return data[metric];
 };
 
-// Calculate a five-number summary for the boxplot using the provided percentiles.
-// We use an assumption: min = p25 * 0.9 and max = p75 * 1.1.
-const getBoxplotArray = (perc: QperfPercentiles): number[] => {
-  const min = perc.p25 * 0.9;
-  const max = perc.p75 * 1.1;
-  return [min, perc.p25, perc.p50, perc.p75, max];
+// Calculate a five-number summary array for boxplot using actual min/max
+const getBoxplotArray = (stats: QperfMetricStats): number[] => {
+  // Format: [min, q1 (p25), median (p50), q3 (p75), max]
+  return [
+    stats.min,
+    stats.percentiles.p25,
+    stats.percentiles.p50,
+    stats.percentiles.p75,
+    stats.max,
+  ];
 };
 
-// Process an array of qperf reports into the categories and boxplot data format expected by ECharts.
+// Process data for Boxplot (unchanged logic, uses updated helpers)
 const processDataForQperfBoxplot = (
   reports: QperfReport[],
   metric: MetricKey,
 ) => {
   const categories: string[] = [];
   const boxplotData: number[][] = [];
-
   reports.forEach((report) => {
     categories.push(report.name);
-    const perc = getPercentilesByMetric(report.data, metric);
-    boxplotData.push(getBoxplotArray(perc));
+    const stats = getMetricStats(report.data, metric); // Get full stats
+    boxplotData.push(getBoxplotArray(stats)); // Use actual min/max
   });
-
   return { categories, boxplotData };
 };
 
-// Get color scheme based on metric type
+// Process data for Bar Chart (Modified to use Average)
+const processDataForQperfBarChart = (
+  reports: QperfReport[],
+  metric: MetricKey,
+) => {
+  const categories: string[] = [];
+  const barData: number[] = []; // Will store average values
+   const fullStatsList: QperfMetricStats[] = []; // Store full stats for tooltip
 
-// Define a color palette for machines to ensure consistency across charts
+  reports.forEach((report) => {
+    categories.push(report.name);
+    const stats = getMetricStats(report.data, metric);
+    barData.push(stats.average); // Use the average value for the bar height
+    fullStatsList.push(stats); // Keep stats for later use (tooltip)
+  });
+  return { categories, barData, fullStatsList };
+};
+
+// --- Color Palette and Styling (Unchanged) ---
 const machineColorPalette = [
-  "#3366FF", // blue
-  "#FF5733", // orange/red
-  "#33CC99", // green
-  "#9966FF", // purple
-  "#FFCC33", // yellow
-  "#FF6699", // pink
-  "#00CCCC", // teal
-  "#CC6633", // brown
-  "#6699CC", // slate blue
-  "#99CC33", // lime
+  "#3366FF", "#FF5733", "#33CC99", "#9966FF", "#FFCC33",
+  "#FF6699", "#00CCCC", "#CC6633", "#6699CC", "#99CC33",
 ];
-
-// Get a consistent color for a machine based on its position in the reports array
-const getMachineColor = (machineIndex: number) => {
+const getMachineColor = (machineIndex: number): string => {
   return machineColorPalette[machineIndex % machineColorPalette.length];
 };
+// getMachineColorScheme remains the same
 
-// Get machine-specific color styling
-const getMachineColorScheme = (machineIndex: number) => {
-  const baseColor = getMachineColor(machineIndex);
-  return {
-    color: baseColor,
-    borderColor: baseColor,
-    fillColor: new Function(
-      "params",
-      `return new echarts.graphic.LinearGradient(0, 0, 0, 1, [{offset: 0, color: "${baseColor}70"}, {offset: 1, color: "${baseColor}30"}])`,
-    ),
-    emphasis: {
-      borderColor: baseColor,
-      borderWidth: 2,
-      shadowBlur: 10,
-      shadowColor: `${baseColor}80`,
-      color: new Function(
-        "params",
-        `return new echarts.graphic.LinearGradient(0, 0, 0, 1, [{offset: 0, color: "${baseColor}90"}, {offset: 1, color: "${baseColor}50"}])`,
-      ),
-    },
-  };
-};
 
-// Create the ECharts option object for the boxplot.
-// The tooltip formatter and axis label are customized based on the chosen metric.
+// --- ECharts Option Creation Functions (Updated) ---
+
+// Create ECharts option object for Boxplot (Tooltip Updated)
 const createQperfBoxplotOption = (
   reports: QperfReport[],
   metric: MetricKey,
   title: string,
-) => {
-  const { categories, boxplotData } = processDataForQperfBoxplot(
-    reports,
-    metric,
-  );
+): echarts.EChartsOption | null => { // Return type can be EChartsOption or null
+  if (!reports || reports.length === 0) return null;
+
+  const { categories, boxplotData } = processDataForQperfBoxplot(reports, metric);
+   if (categories.length === 0) return null; // No data to plot
 
   // Define label and tooltip formatting based on the metric being plotted
   let yAxisName = "";
   let unitSymbol = "";
-
-  if (metric === "total_bandwidth") {
-    yAxisName = "Megabits per second (Mbps)";
-    unitSymbol = " Mbps";
-  } else if (metric === "cpu_usage") {
-    yAxisName = "Percentage (%)";
-    unitSymbol = "%";
-  } else if (metric === "ttfb") {
-    yAxisName = "Miliseconds (ms)";
-    unitSymbol = " ms";
-  } else if (metric === "conn_time") {
-    yAxisName = "Milliseconds (ms)";
-    unitSymbol = " ms";
+  // Use a switch for clarity and exhaustiveness check if needed
+  switch (metric) {
+      case "total_bandwidth_mbps":
+          yAxisName = "Megabits per second (Mbps)"; unitSymbol = " Mbps"; break;
+      case "cpu_usage_percent":
+          yAxisName = "Percentage (%)"; unitSymbol = "%"; break;
+      case "ttfb_ms":
+          yAxisName = "Milliseconds (ms)"; unitSymbol = " ms"; break;
+      case "conn_time_ms":
+          yAxisName = "Milliseconds (ms)"; unitSymbol = " ms"; break;
+      default: // Should not happen with MetricKey type
+          yAxisName = ""; unitSymbol = "";
   }
 
-  // Custom tooltip formatter using x-axis categories
-  const tooltipFormatter = function (params: {
-    data: { value: number[] };
-    dataIndex: number;
-  }) {
-    const machineIndex = params.dataIndex;
-    const machineColor = getMachineColor(machineIndex);
+  // Custom tooltip formatter using actual data
+  const tooltipFormatter = (params: any) => { // Use any or define specific ECharts param type
+    if (params.componentType !== 'series' || params.seriesType !== 'boxplot') return '';
+    const dataIndex = params.dataIndex; // Index corresponding to the report/category
+    const categoryName = categories[dataIndex];
+    const machineColor = getMachineColor(dataIndex);
     const colorBox = `<span style="display:inline-block;margin-right:5px;border-radius:10px;width:10px;height:10px;background-color:${machineColor}"></span>`;
-    const data = params.data.value;
+    // params.value should contain the [min, q1, median, q3, max] array
+    const data: number[] = params.value;
+
+    if (!data || data.length !== 5) return 'Data error';
 
     return `<div style="padding: 5px; border-radius: 5px; box-shadow: 0 0 10px rgba(0,0,0,0.1)">
-              <div style="font-weight: bold; border-bottom: 1px solid #eee; padding-bottom: 5px; margin-bottom: 5px">${categories[machineIndex]}</div>
-              <div>${colorBox} Min: <strong>${data[0].toFixed(2)}${unitSymbol}</strong></div>
-              <div>${colorBox} Q1: <strong>${data[1].toFixed(2)}${unitSymbol}</strong></div>
-              <div>${colorBox} Median: <strong>${data[2].toFixed(2)}${unitSymbol}</strong></div>
-              <div>${colorBox} Q3: <strong>${data[3].toFixed(2)}${unitSymbol}</strong></div>
+              <div style="font-weight: bold; border-bottom: 1px solid #eee; padding-bottom: 5px; margin-bottom: 5px">${categoryName}</div>
               <div>${colorBox} Max: <strong>${data[4].toFixed(2)}${unitSymbol}</strong></div>
+              <div>${colorBox} Q3 (P75): <strong>${data[3].toFixed(2)}${unitSymbol}</strong></div>
+              <div>${colorBox} Median (P50): <strong>${data[2].toFixed(2)}${unitSymbol}</strong></div>
+              <div>${colorBox} Q1 (P25): <strong>${data[1].toFixed(2)}${unitSymbol}</strong></div>
+              <div>${colorBox} Min: <strong>${data[0].toFixed(2)}${unitSymbol}</strong></div>
             </div>`;
   };
 
-  // Create one boxplot series with each data item corresponding to a machine.
-  const seriesData = [
+  // Create one boxplot series
+  const seriesData: echarts.BoxplotSeriesOption[] = [
     {
+      name: title, // Add series name for clarity
       type: "boxplot",
-      data: boxplotData.map((data, index) => {
-        const colorScheme = getMachineColorScheme(index);
-        return {
-          value: data,
+      data: boxplotData.map((data, index) => ({
+        value: data,
+        itemStyle: {
+          borderWidth: 1.5,
+          borderColor: getMachineColor(index),
+          // Optional: Add fill color if desired
+          // color: getMachineColor(index) + '33', // Example: Transparent fill
+        },
+        emphasis: {
           itemStyle: {
-            borderWidth: 2,
-            borderColor: colorScheme.borderColor,
-          },
-          emphasis: {
-            itemStyle: colorScheme.emphasis,
-          },
-          boxWidth: [8, 50],
-        };
-      }),
+             borderWidth: 2.5,
+             borderColor: getMachineColor(index),
+             shadowColor: 'rgba(0, 0, 0, 0.3)',
+             shadowBlur: 5
+          }
+        },
+      })),
+      boxWidth: [8, 40], // Min/max box width
       animationDelay: (idx: number) => idx * 50,
     },
   ];
 
-  const result = {
+  return { // Explicitly returning EChartsOption type
     title: {
       text: title,
       left: "center",
-      textStyle: {
-        fontWeight: "bold",
-        fontSize: 16,
-        fontFamily: "Arial, Helvetica, sans-serif",
-      },
-      padding: [10, 0, 20, 0],
+      textStyle: { fontWeight: "normal", fontSize: 16 }, // Adjusted style
+      padding: [10, 0, 10, 0],
     },
     tooltip: {
-      trigger: "item",
+      trigger: "item", // Trigger on the boxplot item
       formatter: tooltipFormatter,
-      backgroundColor: "rgba(255, 255, 255, 0.9)",
+      backgroundColor: "rgba(255, 255, 255, 0.95)", // Slightly less transparent
+      borderColor: '#ccc',
       borderWidth: 1,
-      textStyle: {
-        color: "#333",
-      },
-      extraCssText: "box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);",
+      textStyle: { color: "#333" },
+      extraCssText: "box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);", // Updated shadow
+      confine: true, // Keep tooltip within chart bounds
     },
     animation: true,
     toolbox: {
       feature: {
-        saveAsImage: {},
-        dataView: { show: true, readOnly: false },
+        saveAsImage: { title: 'Save Image' },
+        dataView: { show: true, readOnly: false, title: 'View Data' },
       },
+       orient: 'vertical', right: 10, top: 'center'
     },
     grid: {
-      left: "10%",
-      right: "10%",
-      bottom: "15%",
-      top: "15%",
+      left: "10%", right: "12%", // Adjusted grid
+      bottom: "10%", top: "15%",
       containLabel: true,
     },
     xAxis: {
       type: "category",
       data: categories,
       boundaryGap: true,
-      nameGap: 30,
+      nameGap: 25, // Adjust gap
       axisLabel: {
-        show: true,
-        margin: 15,
-        fontSize: 12,
+          interval: 0, // Show all labels
+          rotate: reports.length > 6 ? 30 : 0, // Rotate if many reports
+          fontSize: 11, // Smaller font size for labels
       },
-      axisTick: {
-        alignWithLabel: true,
-      },
-      splitLine: {
-        show: false,
-      },
+      axisTick: { alignWithLabel: true },
+      splitLine: { show: false },
     },
     yAxis: {
       type: "value",
       name: yAxisName,
-      nameTextStyle: {
-        fontWeight: "bold",
-        padding: [0, 0, 0, 40],
-        fontSize: 13,
-      },
-      min: 0, // Always start from 0 for all metrics
-      max:
-        metric === "ttfb"
-          ? Math.max(...boxplotData.map((item) => item[4])) * 1.1 // Add 10% headroom for TTFB
-          : undefined,
-      splitArea: {
-        show: true,
-        areaStyle: {
-          color: ["rgba(250,250,250,0.3)", "rgba(240,240,240,0.3)"],
-        },
-      },
+      nameLocation: 'middle', // Center name
+      nameGap: 40, // Adjust gap based on label length
+      nameTextStyle: { fontWeight: "bold", fontSize: 13 },
+      min: 0,
+      // Dynamically adjust max based on data, ensuring some headroom
+      max: (value: { max: number }) => value.max + (value.max * 0.1),
+      splitArea: { show: false }, // Cleaner background
+      splitLine: { lineStyle: { type: 'dashed', color: '#eee' } }, // Subtle split lines
       axisLabel: {
-        formatter: (value: number) => value.toFixed(2),
-        fontSize: 12,
+        formatter: (value: number) => value.toFixed(metric === 'cpu_usage_percent' ? 1 : 2), // Less decimals for CPU %
+        fontSize: 11,
       },
     },
     series: seriesData,
   };
-
-  return result;
 };
 
-export interface QperfBoxplotChartProps {
-  // Array of machine reports with qperf benchmark data
-  reports: QperfReport[];
-  // Metric to be plotted – one of total_bandwidth, cpu_usage, ttfb, or conn_time.
-  metric: MetricKey;
-  title: string;
-  height?: number;
-}
 
-// This SolidJS component wraps the Apache ECharts component.
-// It passes in the option generated by createQperfBoxplotOption for the given qperf reports.
-export const QperfBoxplotChart: Component<QperfBoxplotChartProps> = (props) => {
-  const option = createQperfBoxplotOption(
-    props.reports,
-    props.metric,
-    props.title,
-  );
-  return <Echart option={option} height={props.height || 500} />;
-};
-const processDataForQperfBarChart = (
-  reports: QperfReport[],
-  metric: MetricKey,
-) => {
-  const categories: string[] = [];
-  const barData: number[] = [];
-
-  reports.forEach((report) => {
-    categories.push(report.name);
-    const perc = getPercentilesByMetric(report.data, metric);
-    // Use the median (p50) value for the bar chart
-    barData.push(perc.p50);
-  });
-
-  return { categories, barData };
-};
-// Create the ECharts option object for a bar chart
+// Create ECharts option object for Bar Chart (Average & Updated Tooltip)
 const createQperfBarChartOption = (
   reports: QperfReport[],
   metric: MetricKey,
   title: string,
-) => {
-  const { categories } = processDataForQperfBarChart(reports, metric);
+): echarts.EChartsOption | null => {
+   if (!reports || reports.length === 0) return null;
 
-  // Define label and tooltip formatting based on the metric being plotted
+  // Use the updated processing function
+  const { categories, barData, fullStatsList } = processDataForQperfBarChart(reports, metric);
+  if (categories.length === 0) return null;
+
+  // Define label and tooltip formatting
   let yAxisName = "";
   let unitSymbol = "";
+  let chartTitle = title; // Base title
+   switch (metric) {
+      case "total_bandwidth_mbps":
+          yAxisName = "Megabits per second (Mbps)"; unitSymbol = " Mbps"; chartTitle = "Average Total Bandwidth"; break;
+      case "cpu_usage_percent":
+          yAxisName = "Percentage (%)"; unitSymbol = "%"; chartTitle = "Average CPU Usage"; break;
+      // Add other cases if bar charts are used for them
+      default: yAxisName = ""; unitSymbol = "";
+   }
 
-  if (metric === "total_bandwidth") {
-    yAxisName = "Megabits per second (Mbps)";
-    unitSymbol = " Mbps";
-  } else if (metric === "cpu_usage") {
-    yAxisName = "Percentage (%)";
-    unitSymbol = "%";
-  }
-
-  // Custom tooltip formatter that uses the machine-specific color and shows min, median and max
-  const tooltipFormatter = function (params: {
-    dataIndex: number;
-    name: string;
-    value: number;
-    data: { custom: { min: number; median: number; max: number } };
-  }) {
-    const machineIndex = params.dataIndex;
-    const machineColor = getMachineColor(machineIndex);
+  // Custom tooltip formatter showing actual Min, Average, Max
+  const tooltipFormatter = (params: any) => { // Use any or specific ECharts param type
+    if (params.componentType !== 'series' || params.seriesType !== 'bar') return '';
+    const dataIndex = params.dataIndex;
+    const categoryName = categories[dataIndex];
+    const machineColor = getMachineColor(dataIndex);
     const colorBox = `<span style="display:inline-block;margin-right:5px;border-radius:10px;width:10px;height:10px;background-color:${machineColor}"></span>`;
-    const { min, median, max } = params.data.custom;
+    // Get the full stats stored during data processing
+    const stats: QperfMetricStats | undefined = fullStatsList[dataIndex];
+
+    if (!stats) return 'Data error';
 
     return `<div style="padding: 5px; border-radius: 5px; box-shadow: 0 0 10px rgba(0,0,0,0.1)">
-              <div style="font-weight: bold; border-bottom: 1px solid #eee; padding-bottom: 5px; margin-bottom: 5px">${params.name}</div>
-              <div>${colorBox} Min: <strong>${min.toFixed(2)}${unitSymbol}</strong></div>
-              <div>${colorBox} Median: <strong>${median.toFixed(2)}${unitSymbol}</strong></div>
-              <div>${colorBox} Max: <strong>${max.toFixed(2)}${unitSymbol}</strong></div>
+              <div style="font-weight: bold; border-bottom: 1px solid #eee; padding-bottom: 5px; margin-bottom: 5px">${categoryName}</div>
+              <div>${colorBox} Average: <strong>${stats.average.toFixed(2)}${unitSymbol}</strong></div>
+              <div>${colorBox} Min: <small>${stats.min.toFixed(2)}${unitSymbol}</small></div>
+              <div>${colorBox} Max: <small>${stats.max.toFixed(2)}${unitSymbol}</small></div>
+              <div><small>(P25: ${stats.percentiles.p25.toFixed(2)}, P50: ${stats.percentiles.p50.toFixed(2)}, P75: ${stats.percentiles.p75.toFixed(2)})</small></div>
             </div>`;
   };
 
-  const result = {
+  return { // Explicitly returning EChartsOption type
     title: {
-      text: title,
+      text: chartTitle, // Use updated title
       left: "center",
-      textStyle: {
-        fontWeight: "bold",
-        fontSize: 16,
-        fontFamily: "Arial, Helvetica, sans-serif",
-      },
-      padding: [10, 0, 20, 0],
+      textStyle: { fontWeight: "normal", fontSize: 16 },
+      padding: [10, 0, 10, 0],
     },
     tooltip: {
-      trigger: "item",
+      trigger: "item", // Trigger on the bar item
       formatter: tooltipFormatter,
-      backgroundColor: "rgba(255, 255, 255, 0.9)",
+      backgroundColor: "rgba(255, 255, 255, 0.95)",
+      borderColor: '#ccc',
       borderWidth: 1,
-      textStyle: {
-        color: "#333",
-      },
-      extraCssText: "box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);",
+      textStyle: { color: "#333" },
+      extraCssText: "box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);",
+      confine: true,
     },
     animation: true,
-    toolbox: {
+     toolbox: {
       feature: {
-        saveAsImage: {},
-        dataView: { show: true, readOnly: false },
+        saveAsImage: { title: 'Save Image' },
+        dataView: { show: true, readOnly: false, title: 'View Data' },
       },
+       orient: 'vertical', right: 10, top: 'center'
     },
     grid: {
-      left: "10%",
-      right: "10%",
-      bottom: "15%",
-      top: "15%",
+      left: "10%", right: "12%", bottom: "10%", top: "15%",
       containLabel: true,
     },
     xAxis: {
       type: "category",
       data: categories,
       axisLabel: {
-        show: true,
-        interval: 0,
-        rotate: categories.length > 5 ? 45 : 0,
-        margin: 15,
-        fontSize: 12,
+          interval: 0, rotate: reports.length > 6 ? 30 : 0, fontSize: 11
       },
       axisTick: { alignWithLabel: true },
     },
     yAxis: {
       type: "value",
       name: yAxisName,
-      nameTextStyle: {
-        fontWeight: "bold",
-        padding: [0, 0, 0, 40],
-        fontSize: 13,
-      },
-      min: 0, // Always start from 0 for bar charts
-      max: metric === "cpu_usage" ? 100 : undefined, // Set max to 100 for CPU usage
+      nameLocation: 'middle', nameGap: 40,
+      nameTextStyle: { fontWeight: "bold", fontSize: 13 },
+      min: 0,
+      max: metric === "cpu_usage_percent" ? 100 : undefined, // Keep max 100 for CPU
       axisLabel: {
-        formatter: (value: number) => value.toFixed(2),
-        fontSize: 12,
+         formatter: (value: number) => value.toFixed(metric === 'cpu_usage_percent' ? 1 : 2), fontSize: 11
       },
-      splitArea: {
-        show: true,
-        areaStyle: {
-          color: ["rgba(250,250,250,0.3)", "rgba(240,240,240,0.3)"],
-        },
-      },
+      splitLine: { lineStyle: { type: 'dashed', color: '#eee' } },
     },
     series: [
       {
+        name: chartTitle, // Series name matches title
         type: "bar",
-        data: reports.map((report, index) => {
-          const perc = getPercentilesByMetric(report.data, metric);
-          // Calculate min and max with an assumption similar to boxplots
-          const min = perc.p25 * 0.9;
-          const median = perc.p50;
-          const max = perc.p75 * 1.1;
-          return {
-            value: median,
-            custom: { min, median, max },
+        // Data is now the average value
+        data: barData.map((avgValue, index) => ({
+          value: avgValue,
+          itemStyle: {
+            color: getMachineColor(index),
+            borderRadius: [3, 3, 0, 0], // Slight border radius
+          },
+          emphasis: {
             itemStyle: {
-              color: getMachineColor(index),
-              borderRadius: [5, 5, 0, 0],
+              // Use a slightly darker shade on hover
+              color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+                   { offset: 0, color: getMachineColor(index) + 'E0' }, // Darker top
+                   { offset: 1, color: getMachineColor(index) + 'B0' }  // Darker bottom
+               ])
             },
-            emphasis: {
-              itemStyle: {
-                color: getMachineColor(index) + "dd",
-                borderWidth: 1,
-                shadowBlur: 10,
-                shadowColor: getMachineColor(index) + "80",
-              },
-            },
-          };
-        }),
-        barWidth: "50%",
+          },
+        })),
+        barWidth: "40%", // Adjust bar width
         label: {
           show: true,
           position: "top",
-          formatter: (params: { value: number }) => params.value.toFixed(1),
-          color: "#666",
+          formatter: (params: any) => parseFloat(params.value).toFixed(1), // Show average on top
+          color: "#555", // Label color
           fontSize: 10,
         },
       },
     ],
   };
-
-  return result;
 };
 
-// Bar chart component
-export interface QperfBarChartProps {
+// --- SolidJS Components (Wrapper Components Unchanged) ---
+
+export interface QperfBoxplotChartProps {
   reports: QperfReport[];
   metric: MetricKey;
   title: string;
   height?: number;
 }
 
-export const QperfBarChart: Component<QperfBarChartProps> = (props) => {
-  const option = createQperfBarChartOption(
-    props.reports,
-    props.metric,
-    props.title,
+export const QperfBoxplotChart: Component<QperfBoxplotChartProps> = (props) => {
+  // Use reactive computation if props can change, otherwise direct call is fine
+  const option = () => createQperfBoxplotOption(props.reports, props.metric, props.title);
+  // Provide a fallback message if option is null
+  return (
+      <Show when={option()} fallback={<div style={{ height: `${props.height || 500}px`, display: 'flex', 'align-items': 'center', 'justify-content': 'center', color: '#888' }}>Data unavailable for {props.title}.</div>}>
+           {(opt) => <Echart option={opt()} height={props.height || 500} />}
+      </Show>
   );
-  return <Echart option={option} height={props.height || 500} />;
 };
+
+export interface QperfBarChartProps {
+  reports: QperfReport[];
+  metric: MetricKey;
+  title: string; // Base title, will be adjusted in create function
+  height?: number;
+}
+
+export const QperfBarChart: Component<QperfBarChartProps> = (props) => {
+   // Use reactive computation
+  const option = () => createQperfBarChartOption(props.reports, props.metric, props.title);
+   return (
+      <Show when={option()} fallback={<div style={{ height: `${props.height || 500}px`, display: 'flex', 'align-items': 'center', 'justify-content': 'center', color: '#888' }}>Data unavailable for {props.title}.</div>}>
+           {(opt) => <Echart option={opt()} height={props.height || 500} />}
+      </Show>
+  );
+};
+
+// --- Main Dashboard Component (Structure Unchanged, uses updated charts) ---
 
 export interface QperfChartsDashboardProps {
   reports: QperfReport[];
-  height?: {
+  height?: { // Optional height overrides
     totalBandwidth?: number;
     cpuUsage?: number;
     ttfb?: number;
     connTime?: number;
   };
 }
-export const QperfChartsDashboard: Component<QperfChartsDashboardProps> = ({
-  reports,
-  height = {
-    totalBandwidth: 500,
-    cpuUsage: 500,
-    ttfb: 500,
-    connTime: 500,
-  },
-}) => {
+
+export const QperfChartsDashboard: Component<QperfChartsDashboardProps> = (props) => {
+  // Set default heights safely
+  const effectiveHeights = {
+    totalBandwidth: props.height?.totalBandwidth ?? 500,
+    cpuUsage: props.height?.cpuUsage ?? 400, // Adjusted default
+    ttfb: props.height?.ttfb ?? 400,         // Adjusted default
+    connTime: props.height?.connTime ?? 450, // Adjusted default
+  };
+
+  // Basic check for reports
+  if (!props.reports || props.reports.length === 0) {
+      return <div style={{ padding: '20px', color: 'red', 'text-align': 'center' }}>No qperf report data provided.</div>;
+  }
+
   return (
     <div
       style={{
         display: "flex",
         "flex-direction": "column",
-        gap: "30px",
-        padding: "20px",
-        "background-color": "#f9f9f9",
-        "border-radius": "10px",
+        gap: "20px", // Reduced gap slightly
+        padding: "15px", // Reduced padding
+        "background-color": "#f7f7f7", // Slightly lighter background
       }}
     >
-      <div
-        style={{
-          "background-color": "#fff",
-          padding: "15px",
-          "border-radius": "8px",
-          "box-shadow": "0 0 10px rgba(0,0,0,0.05)",
-        }}
-      >
+      {/* Average Total Bandwidth (Bar Chart) */}
+      <div style={{ "background-color": "#fff", padding: "10px", "border-radius": "6px", "box-shadow": "0 1px 3px rgba(0,0,0,0.05)" }}>
         <QperfBarChart
-          reports={reports}
-          metric="total_bandwidth"
-          title="Total Bandwidth"
-          height={height.totalBandwidth}
+          reports={props.reports}
+          metric="total_bandwidth_mbps"
+          title="Total Bandwidth" // Base title, creator adds "Average"
+          height={effectiveHeights.totalBandwidth}
         />
       </div>
-      <div style={{ display: "flex", gap: "30px" }}>
-        <div
-          style={{
-            flex: 1,
-            "background-color": "#fff",
-            padding: "15px",
-            "border-radius": "8px",
-            "box-shadow": "0 0 10px rgba(0,0,0,0.05)",
-          }}
-        >
+
+       {/* Row for CPU (Bar) and TTFB (Boxplot) */}
+      <div style={{ display: "flex", gap: "20px", "flex-wrap": "wrap" }}> {/* Allow wrapping */}
+         {/* Average CPU Usage (Bar Chart) */}
+        <div style={{ flex: "1 1 45%", "min-width": "300px", "background-color": "#fff", padding: "10px", "border-radius": "6px", "box-shadow": "0 1px 3px rgba(0,0,0,0.05)" }}>
           <QperfBarChart
-            reports={reports}
-            metric="cpu_usage"
-            title="CPU Usage"
-            height={height.cpuUsage}
+            reports={props.reports}
+            metric="cpu_usage_percent"
+            title="CPU Usage" // Base title
+            height={effectiveHeights.cpuUsage}
           />
         </div>
-        <div
-          style={{
-            flex: 1,
-            "background-color": "#fff",
-            padding: "15px",
-            "border-radius": "8px",
-            "box-shadow": "0 0 10px rgba(0,0,0,0.05)",
-          }}
-        >
+        {/* TTFB (Boxplot Chart) */}
+        <div style={{ flex: "1 1 45%", "min-width": "300px", "background-color": "#fff", padding: "10px", "border-radius": "6px", "box-shadow": "0 1px 3px rgba(0,0,0,0.05)" }}>
           <QperfBoxplotChart
-            reports={reports}
-            metric="ttfb"
-            title="TTFB"
-            height={height.ttfb}
+            reports={props.reports}
+            metric="ttfb_ms"
+            title="Time to First Byte (TTFB)" // More descriptive title
+            height={effectiveHeights.ttfb}
           />
         </div>
       </div>
-      <div
-        style={{
-          "background-color": "#fff",
-          padding: "15px",
-          "border-radius": "8px",
-          "box-shadow": "0 0 10px rgba(0,0,0,0.05)",
-        }}
-      >
+
+      {/* Connection Time (Boxplot Chart) */}
+      <div style={{ "background-color": "#fff", padding: "10px", "border-radius": "6px", "box-shadow": "0 1px 3px rgba(0,0,0,0.05)" }}>
         <QperfBoxplotChart
-          reports={reports}
-          metric="conn_time"
-          title="Connection Time"
-          height={height.connTime}
+          reports={props.reports}
+          metric="conn_time_ms"
+          title="Connection Establishment Time" // More descriptive title
+          height={effectiveHeights.connTime}
         />
       </div>
     </div>

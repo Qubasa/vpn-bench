@@ -1,23 +1,45 @@
 {
-  "status": "error",
-  "error_type": "CmdOut",
-  "error": {
-    "stdout": "Usage: qperf [options]\n\nOptions:\n  -c target            run as client and connect to target server\n  --cc [reno,cubic]    congestion control algorithm to use (default reno)\n  -e                   measure time for connection establishment and first byte only\n  -g                   enable UDP generic segmentation offload\n  --iw initial-window  initial window to use (default 10)\n  -l log-file          file to log tls secrets\n  -p                   port to listen on/connect to (default 18080)\n  -s  address          listen as server on address\n  -t time (s)          run for X seconds (default 10s)\n  -i num_instances     number of instances to start (default nproc)\n  -h                   print this help\n\n",
-    "stderr": "Warning: Permanently added '116.203.245.100' (ED25519) to the list of known hosts.\r\nqperf: invalid option -- 'm'\n",
-    "cwd": "/home/lhebendanz/Projects/vpn-benchmark-suite/pkgs/vpn-bench",
-    "command_list": [
-      "ssh",
-      "root@116.203.245.100",
-      "-A",
-      "-o",
-      "StrictHostKeyChecking=no",
-      "-o",
-      "UserKnownHostsFile=/dev/null",
-      "-i",
-      "/home/lhebendanz/.local/share/vpn_bench/keys/id_ed25519",
-      "--",
-      "bash -c 'exec \"$@\"' -- qperf -mm -i 1 -g 1 -p 18000 -c vpn.milo"
-    ],
-    "returncode": 1
-  }
+    "status": "success",
+    "data": {
+        "total_bandwidth_mbps": {
+            "min": 770.8,
+            "average": 804.54,
+            "max": 829.4,
+            "percentiles": {
+                "p25": 801.7249999999999,
+                "p50": 807.35,
+                "p75": 809.5000000000001
+            }
+        },
+        "cpu_usage_percent": {
+            "min": 39.29,
+            "average": 50.457,
+            "max": 67.39,
+            "percentiles": {
+                "p25": 47.195,
+                "p50": 47.905,
+                "p75": 55.2825
+            }
+        },
+        "ttfb_ms": {
+            "min": 35.0,
+            "average": 38.0,
+            "max": 41.0,
+            "percentiles": {
+                "p25": 35.25,
+                "p50": 38.0,
+                "p75": 40.75
+            }
+        },
+        "conn_time_ms": {
+            "min": 34.0,
+            "average": 37.0,
+            "max": 40.0,
+            "percentiles": {
+                "p25": 34.25,
+                "p50": 37.0,
+                "p75": 39.75
+            }
+        }
+    }
 }

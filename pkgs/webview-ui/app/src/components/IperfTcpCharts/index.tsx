@@ -2,6 +2,12 @@ import { Echart } from "../Echarts";
 
 // Define interfaces for typing
 export interface IperfTcpReportData {
+  start: {
+    // Added start for completeness, though not used in calc yet
+    test_start: {
+      bidir: number; // To check if the test was bidirectional
+    };
+  };
   end: {
     sum_sent: {
       bits_per_second: number;
@@ -30,6 +36,14 @@ export interface IperfTcpReportData {
       start: number;
       end: number;
       bits_per_second: number;
+      sender: boolean; // Confirming sum relates to sender=true
+    };
+    // Add sum_bidir_reverse for bidirectional tests
+    sum_bidir_reverse?: {
+      start: number;
+      end: number;
+      bits_per_second: number;
+      sender: boolean; // Confirming sum_bidir_reverse relates to sender=false
     };
   }[];
 }
@@ -51,51 +65,73 @@ interface IperfTcpChartsProps {
     maxSendWindow?: number;
   };
 }
-// RTT Boxplot Chart Creator
+// RTT Boxplot Chart Creator - USING ONLY MIN/MEAN/MAX for data
 const createRttOption = (reports: IperfTcpReport[]) => {
-  // Prepare data for boxplot format
   const boxplotData = reports.map((report) => {
     if (report.data.end.streams && report.data.end.streams.length > 0) {
       const stream = report.data.end.streams.find((data) => data.sender.sender);
 
-      if (stream == undefined) {
-        throw new Error("No sender data found in report");
+      if (stream?.sender.mean_rtt != null) {
+        const min = stream.sender.min_rtt;
+        const mean = stream.sender.mean_rtt; // Use the provided mean
+        const max = stream.sender.max_rtt;
+
+        // *** MODIFIED DATA ARRAY ***
+        // Provide data as [min, mean, mean, mean, max]
+        // This places the mean where q1, median, and q3 are expected,
+        // effectively collapsing the 'box' to a line at the mean.
+        // The whiskers will still show min and max correctly.
+        return [min, mean, mean, mean, max];
+        // *** END MODIFIED DATA ARRAY ***
+      } else {
+        console.warn(
+          "Sender stream found but missing RTT data in report:",
+          report.name,
+        );
+        const receiverStream = report.data.end.streams.find(
+          (data) => !data.sender.sender,
+        );
+        if (receiverStream?.sender.mean_rtt != null) {
+          const min = receiverStream.sender.min_rtt;
+          const mean = receiverStream.sender.mean_rtt;
+          const max = receiverStream.sender.max_rtt;
+          return [min, mean, mean, mean, max]; // Apply same logic
+        } else {
+          console.warn(
+            "Receiver stream also missing RTT data in report:",
+            report.name,
+          );
+          return [0, 0, 0, 0, 0];
+        }
       }
-
-      // With only min, mean, and max values available, we need to create
-      // a simplified boxplot representation
-      const min = stream.sender.min_rtt;
-      const mean = stream.sender.mean_rtt;
-      const max = stream.sender.max_rtt;
-
-      // Create artificial quartiles based on available data
-      // Q1 is halfway between min and mean
-      // Q3 is halfway between mean and max
-      const q1 = min + (mean - min) / 2;
-      const q3 = mean + (max - mean) / 2;
-
-      // Return boxplot data in format [min, q1, mean, q3, max]
-      return [min, q1, mean, q3, max];
     }
-    return [0, 0, 0, 0, 0]; // Default if no data
+    console.warn("No streams found in end data for report:", report.name);
+    return [0, 0, 0, 0, 0];
   });
 
   return {
     title: {
-      text: "Round Trip Time (RTT) Distribution",
+      text: "Round Trip Time (RTT)", // Simplified title
     },
     tooltip: {
       trigger: "item",
       formatter: function (params: {
         name: string;
         data: [number, number, number, number, number];
+        marker: string;
       }) {
-        // Format tooltip to show min, mean, max explicitly
-        const data = params.data;
-        return `${params.name}<br/>
-                Min RTT: ${data[0]} ms<br/>
-                Mean RTT: ${data[2]} ms<br/>
-                Max RTT: ${data[4]} ms`;
+        const boxData = params.data;
+        const factor = 1000; // Convert µs to ms
+
+        // Indices still correspond to [min, q1(mean), median(mean), q3(mean), max]
+        const minMs = (boxData[0] / factor).toFixed(2);
+        const meanMs = (boxData[2] / factor).toFixed(2); // Mean is at index 2
+        const maxMs = (boxData[4] / factor).toFixed(2);
+
+        return `${params.marker}${params.name}<br/>
+                Min RTT: ${minMs} µs<br/>
+                Mean RTT: ${meanMs} µs<br/>
+                Max RTT: ${maxMs} µs`;
       },
     },
     grid: {
@@ -115,36 +151,32 @@ const createRttOption = (reports: IperfTcpReport[]) => {
       data: reports.map((report) => report.name),
       boundaryGap: true,
       nameGap: 30,
-      splitArea: {
-        show: false,
-      },
-      axisLabel: {
-        show: true,
-      },
-      splitLine: {
-        show: false,
-      },
+      splitArea: { show: false },
+      axisLabel: { show: true },
+      splitLine: { show: false },
     },
     yAxis: {
       type: "value",
-      name: "RTT (ms)",
-      splitArea: {
-        show: true,
+      name: "RTT (µs)",
+      axisLabel: {
+        // Format axis labels to show ms for better readability
+        formatter: (value: number) => `${(value / 1000).toFixed(1)} µs`,
       },
+      splitArea: { show: true },
     },
     series: [
       {
-        name: "RTT Values",
+        name: "RTT Values (µs)",
         type: "boxplot",
         data: boxplotData,
-        tooltip: { formatter: "{b}: {c}" },
+        // Tooltip formatting is now handled by the main tooltip config above
         itemStyle: {
-          borderColor: "#3498db", // Blue border
+          borderColor: "#3498db",
         },
-        boxWidth: [40, 70], // Width of the box plot
+        boxWidth: [40, 70],
         emphasis: {
           itemStyle: {
-            borderColor: "#1a6fb0", // Darker blue on hover
+            borderColor: "#1a6fb0",
           },
         },
       },
@@ -171,7 +203,7 @@ const createMaxSendWindowOption = (reports: IperfTcpReport[]) => {
 
   return {
     title: {
-      text: "TCP Window Size",
+      text: "Max TCP Window Size",
     },
     tooltip: {
       trigger: "axis",
@@ -283,23 +315,120 @@ export const IperfMaxSendWindowChart = ({
   return <Echart option={createMaxSendWindowOption(reports)} height={height} />;
 };
 
-// Throughput Chart Creator
+// Helper function to calculate Min/Avg/Max throughput from intervals
+const getThroughputStats = (reportData: IperfTcpReportData) => {
+  const avgSentMbps = reportData.end.sum_sent.bits_per_second / 1000000;
+  // Use sum_received for the overall average received rate as reported by iperf
+  const avgRecvMbps = reportData.end.sum_received.bits_per_second / 1000000;
+
+  let minSentMbps = avgSentMbps;
+  let maxSentMbps = avgSentMbps;
+  let minRecvMbps = avgRecvMbps;
+  let maxRecvMbps = avgRecvMbps;
+
+  const isBidir = reportData.start?.test_start?.bidir === 1;
+
+  if (reportData.intervals && reportData.intervals.length > 0) {
+    const sentRates = reportData.intervals.map(
+      (interval) => interval.sum.bits_per_second / 1000000,
+    );
+    minSentMbps = Math.min(...sentRates);
+    maxSentMbps = Math.max(...sentRates);
+
+    // For received rates, use sum_bidir_reverse if available (bidirectional test)
+    // Otherwise, if it was a reverse test (-R flag), the 'sum' would represent received data.
+    // For a standard *non-bidir*, *non-reverse* test, interval received data isn't typically in the client's JSON 'sum'.
+    // We rely on the provided JSON structure having sum_bidir_reverse for the received part in bidir tests.
+    if (isBidir && reportData.intervals.every((i) => i.sum_bidir_reverse)) {
+      const recvRates = reportData.intervals.map((interval) => {
+        if (interval.sum_bidir_reverse) {
+          return interval.sum_bidir_reverse.bits_per_second / 1000000; // Use non-null assertion as we checked
+        } else {
+          throw new Error("sum_bidir_reverse is missing in intervals");
+        }
+      });
+      minRecvMbps = Math.min(...recvRates);
+      maxRecvMbps = Math.max(...recvRates);
+    } else if (!isBidir /* && isReverseTest - need flag info */) {
+      // Handle calculation if it was a reverse-only test if needed
+      // For now, we'll stick to the average if interval data isn't clear for received
+      minRecvMbps = avgRecvMbps;
+      maxRecvMbps = avgRecvMbps;
+    } else {
+      // Default to average if not bidir with sum_bidir_reverse
+      minRecvMbps = avgRecvMbps;
+      maxRecvMbps = avgRecvMbps;
+    }
+  }
+
+  return {
+    avgSentMbps,
+    minSentMbps,
+    maxSentMbps,
+    avgRecvMbps,
+    minRecvMbps,
+    maxRecvMbps,
+  };
+};
+
+// Throughput Chart Creator - MODIFIED
 const createThroughputOption = (reports: IperfTcpReport[]) => {
+  // Pre-calculate stats for easier access in tooltip
+  const throughputStats = reports.map((report) => ({
+    name: report.name,
+    stats: getThroughputStats(report.data),
+  }));
+
   return {
     title: {
-      text: "Total Throughput",
+      text: "Average Throughput", // Updated title
     },
     tooltip: {
       trigger: "axis",
       axisPointer: {
         type: "shadow",
       },
-      formatter: function (params: { name: string; value: number }[]) {
-        return `Sent: ${params[0].value} Mbps<br/>Received: ${params[1].value} Mbps`;
+      formatter: (
+        params: {
+          marker: string;
+          name: string;
+          dataIndex: number;
+          seriesName: string;
+          value: number;
+        }[],
+      ): string => {
+        // Use 'any' for simplicity or define specific ECharts param type
+        if (!params || params.length === 0) {
+          return "";
+        }
+        const reportIndex = params[0].dataIndex;
+        const reportStat = throughputStats[reportIndex];
+        if (!reportStat) return "";
+
+        let tooltipText = `${reportStat.name}<br/>`;
+
+        // Find sent and received data in params based on seriesName
+        const sentParam = params.find((p) => p.seriesName === "Average Sent");
+        const recvParam = params.find(
+          (p) => p.seriesName === "Average Received",
+        );
+
+        if (sentParam) {
+          tooltipText += `${sentParam.marker} Avg Sent: ${reportStat.stats.avgSentMbps.toFixed(1)} Mbps<br/>`;
+          tooltipText += `&nbsp;&nbsp;&nbsp;Min Sent: ${reportStat.stats.minSentMbps.toFixed(1)} Mbps<br/>`;
+          tooltipText += `&nbsp;&nbsp;&nbsp;Max Sent: ${reportStat.stats.maxSentMbps.toFixed(1)} Mbps<br/>`;
+        }
+        if (recvParam) {
+          tooltipText += `${recvParam.marker} Avg Recv: ${reportStat.stats.avgRecvMbps.toFixed(1)} Mbps<br/>`;
+          tooltipText += `&nbsp;&nbsp;&nbsp;Min Recv: ${reportStat.stats.minRecvMbps.toFixed(1)} Mbps<br/>`;
+          tooltipText += `&nbsp;&nbsp;&nbsp;Max Recv: ${reportStat.stats.maxRecvMbps.toFixed(1)} Mbps`;
+        }
+
+        return tooltipText;
       },
     },
     legend: {
-      data: ["Sent", "Received"],
+      data: ["Average Sent", "Average Received"], // Updated legend labels
     },
     grid: {
       left: "3%",
@@ -320,29 +449,30 @@ const createThroughputOption = (reports: IperfTcpReport[]) => {
     yAxis: {
       type: "value",
       name: "Mbps",
+      axisLabel: {
+        formatter: "{value}", // Keep simple number format for Mbps
+      },
     },
     series: [
       {
-        name: "Sent",
+        name: "Average Sent", // Updated series name
         type: "bar",
-        data: reports.map((report) =>
-          (report.data.end.sum_sent.bits_per_second / 1000000).toFixed(1),
-        ),
+        data: throughputStats.map((item) => item.stats.avgSentMbps.toFixed(1)), // Plot average
         color: "#3498db",
         label: {
+          // Label still shows the average value on the bar
           show: true,
           position: "top",
           formatter: "{c} Mbps",
         },
       },
       {
-        name: "Received",
+        name: "Average Received", // Updated series name
         type: "bar",
-        data: reports.map((report) =>
-          (report.data.end.sum_received.bits_per_second / 1000000).toFixed(1),
-        ),
+        data: throughputStats.map((item) => item.stats.avgRecvMbps.toFixed(1)), // Plot average
         color: "#2ecc71",
         label: {
+          // Label still shows the average value on the bar
           show: true,
           position: "top",
           formatter: "{c} Mbps",
@@ -351,12 +481,11 @@ const createThroughputOption = (reports: IperfTcpReport[]) => {
     ],
   };
 };
-
 // CPU Utilization Chart Creator
 const createCpuOption = (reports: IperfTcpReport[]) => {
   return {
     title: {
-      text: "CPU Utilization",
+      text: "Average CPU Utilization",
     },
     tooltip: {
       trigger: "axis",
@@ -423,7 +552,7 @@ const createCpuOption = (reports: IperfTcpReport[]) => {
 const createRetransmitsOption = (reports: IperfTcpReport[]) => {
   return {
     title: {
-      text: "TCP Retransmits",
+      text: "Total TCP Retransmits",
     },
     tooltip: {
       trigger: "axis",
@@ -511,8 +640,8 @@ const createTimeSeriesOption = (reports: IperfTcpReport[]) => {
     });
 
     // Create series data for this report
-    const throughputData = report.data.intervals.map(
-      (interval) => interval.sum.bits_per_second / 1000000,
+    const throughputData = report.data.intervals.map((interval) =>
+      parseFloat((interval.sum.bits_per_second / 1000000).toFixed(1)),
     );
 
     seriesData.push({
@@ -647,28 +776,3 @@ export const IperfTcpCharts = ({
     </div>
   );
 };
-
-// Example usage
-/*
-import luna_tcp_iperf3 from "@/bench/NoVPN/0_luna/tcp_iperf3.json";
-import milo_tcp_iperf3 from "@/bench/NoVPN/1_milo/tcp_iperf3.json";
-
-export const TestComponent = () => {
-  const reports = [
-    { name: "milo", data: milo_tcp_iperf3 },
-    { name: "luna", data: luna_tcp_iperf3 }
-  ];
-  
-  return (
-    <IperfDashboard 
-      reports={reports} 
-      height={{
-        throughput: 500,
-        timeSeries: 700,
-        cpu: 500,
-        retransmits: 500
-      }}
-    />
-  );
-};
-*/
