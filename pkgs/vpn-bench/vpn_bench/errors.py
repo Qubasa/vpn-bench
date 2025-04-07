@@ -5,6 +5,7 @@ from typing import Any, Literal, TypedDict
 
 from clan_cli.api import dataclass_to_dict
 from clan_cli.errors import ClanCmdError, ClanError, CmdOut
+import traceback
 
 
 class VpnBenchError(ClanError):
@@ -48,13 +49,25 @@ def save_bench_report(
         error_data = ErrorDataClass(
             status="error",
             error={
-                "description": data.description,
-                "msg": data.msg,
-                "location": data.location,
+            "description": data.description,
+            "msg": data.msg,
+            "location": traceback.format_exc()
             },
             error_type="ClanError",
         )
         result = dataclass_to_dict(error_data)
+    elif isinstance(data, Exception):
+        error_data = ErrorDataClass(
+            status="error",
+            error={
+            "description": str(data),
+            "msg": "Unexpected general Exception occured",
+            "location": traceback.format_exc()
+            },
+            error_type="ClanError",
+        )
+        result = dataclass_to_dict(error_data)
+
 
     with (result_file).open("w") as f:
         json.dump(result, f, indent=4)

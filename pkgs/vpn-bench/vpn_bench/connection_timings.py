@@ -24,7 +24,6 @@ log = logging.getLogger(__name__)
 def install_connection_timings_conf(
     config: Config, tr_machines: list[TrMachine], bmachines: list[BenchMachine]
 ) -> None:
-    conf = {}
     pub_ips = {f"v4.{machine['name']}": machine["name"] for machine in tr_machines}
     vpn_ips = {
         f"vpn.{bmachine.cmachine.name}": bmachine.cmachine.name
@@ -35,19 +34,22 @@ def install_connection_timings_conf(
         del cpub[f"v4.{bmachine.cmachine.name}"]
         cvpn = vpn_ips.copy()
         del cvpn[f"vpn.{bmachine.cmachine.name}"]
-        conf[f"{bmachine.cmachine.name}_id"] = {
+        conf = {
+            "module": {"name": "my-nginx-new", "input": "cvpn-bench"},
             "roles": {
                 "default": {
-                    "machines": [bmachine.cmachine.name],
-                    "config": {
+                    "machines": {bmachine.cmachine.name: {}},
+                    "settings": {
                         "publicIPs": cpub,
                         "vpnIPs": cvpn,
                     },
                 }
-            }
+            },
         }
 
-    patch_inventory_with(config.clan_dir, "services.my-nginx", conf)
+        patch_inventory_with(
+            config.clan_dir, f"instances.my-nginx-{bmachine.cmachine.name}_id", conf
+        )
 
 
 def download_connection_timings(

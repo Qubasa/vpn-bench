@@ -119,23 +119,7 @@ def create_base_inventory(
                 }
             }
         },
-        "iperf": {
-            "someid": {
-                "roles": {
-                    "server": {"machines": [], "config": {}, "tags": ["all"]},
-                }
-            }
-        },
         "state-version": {
-            "someid": {
-                "roles": {
-                    "default": {
-                        "tags": ["all"],
-                    }
-                }
-            }
-        },
-        "my-trusted-nix-caches": {
             "someid": {
                 "roles": {
                     "default": {
@@ -146,30 +130,21 @@ def create_base_inventory(
         },
     }
 
-    for machine in tr_machines:
-        match machine["provider"]:
-            case Provider.Hetzner:
-                if "hetzner-ips" not in inventory:
-                    inventory["hetzner-ips"] = {}
-                instance_name = f"{machine['name']}_id"
-                inventory["hetzner-ips"][instance_name] = {
-                    "roles": {
-                        "default": {
-                            "machines": [machine["name"]],
-                            "config": {
-                                "ipAddresses": [
-                                    f"{machine['ipv4']}/32",
-                                    f"{machine['ipv6']}/64",
-                                ],
-                            },
-                        }
-                    }
-                }
-
-            case _:
-                pass
-
     instances = {
+        "iperf-new": {
+            "module": {"name": "iperf-new", "input": "cvpn-bench"},
+            "roles": {
+                "server": {"tags": {"all": {}}},
+            },
+        },
+        "my-trusted-nix-caches-new-all": {
+            "module": {"name": "my-trusted-nix-caches-new", "input": "cvpn-bench"},
+            "roles": {
+                "default": {
+                    "tags": {"all": {}},
+                }
+            },
+        },
         "qperf-new-all": {
             "module": {"name": "qperf-new", "input": "cvpn-bench"},
             "roles": {
@@ -190,6 +165,32 @@ def create_base_inventory(
             },
         },
     }
+
+    for machine in tr_machines:
+        match machine["provider"]:
+            case Provider.Hetzner:
+                instance_name = f"hetzner-ips-{machine['name']}_id"
+                ip_addresses = []
+                if machine["ipv4"] is not None:
+                    ip_addresses.append(f"{machine['ipv4']}/32")
+                if machine["internal_ipv6"] is not None:
+                    ip_addresses.append(f"{machine['internal_ipv6']}/64")
+                if machine["ipv6"] is not None:
+                    ip_addresses.append(f"{machine['ipv6']}/64")
+                instances[instance_name] = {
+                    "module": {"name": "hetzner-ips-new", "input": "cvpn-bench"},
+                    "roles": {
+                        "default": {
+                            "machines": {machine["name"]: {}},
+                            "settings": {
+                                "ipAddresses": ip_addresses,
+                            },
+                        }
+                    },
+                }
+
+            case _:
+                pass
 
     return InventoryWrapper(
         services=inventory,

@@ -16,9 +16,9 @@
       };
 
 
-    perInstance = { settings, pkgs, ... }: 
+    perInstance = { settings, ... }: 
     {
-      nixosModule = { config, ... }:
+      nixosModule = { ... }:
       {
         networking.hosts = settings.ipToHostnames;
       };

@@ -12,7 +12,6 @@
     let
       # Usage see: https://docs.clan.lol
       clan = clan-core.lib.buildClan { inherit self; 
-        inventory.modules = self.inputs.cvpn-bench.clan.modules;
       };
     in
     {

@@ -41,11 +41,10 @@
         };
 
         modules = {
-          "iperf" = ./clanModules/iperf;
-          "my-trusted-nix-caches" = ./clanModules/my-trusted-nix-caches;
-          "my-nginx" = ./clanModules/my-nginx;
-          "hetzner-ips" = ./clanModules/hetzner-ips;
-
+          "iperf-new" = ./clanModules/iperf-new;
+          "hetzner-ips-new" = ./clanModules/hetzner-ips-new;
+          "my-trusted-nix-caches-new" = ./clanModules/my-trusted-nix-caches-new;
+          "my-nginx-new" = ./clanModules/my-nginx-new;
           "myadmin-new" = ./clanModules/myadmin-new;
           "qperf-new" = ./clanModules/qperf-new;
           "my-static-hosts-new" = ./clanModules/my-static-hosts-new;

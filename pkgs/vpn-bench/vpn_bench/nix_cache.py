@@ -45,7 +45,7 @@ def install_nix_cache(
         "module": {"name": "my-static-hosts-new", "input": "cvpn-bench"},
         "roles": {
             "default": {
-                "tags": { "all": {} },
+                "tags": {"all": {}},
                 "settings": {
                     "ipToHostnames": ip_to_hostnames,
                 },

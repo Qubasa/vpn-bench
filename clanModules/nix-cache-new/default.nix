@@ -1,10 +1,10 @@
-{lib, ...}:
+{ ...}:
 {
   _class = "clan.service";
   manifest.name = "nix-cache-new";
 
   roles.default = {
-    perInstance = { settings, ... }: 
+    perInstance = { ... }: 
     {
       nixosModule = { config, clan-core, pkgs,... }:
       {
