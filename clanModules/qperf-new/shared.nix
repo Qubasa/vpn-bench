@@ -49,22 +49,24 @@ let
   };
 
   imp = {
-  environment.systemPackages = [ package ];
+    environment.systemPackages = [ package ];
 
-  users.groups.qperf = { };
-  users.users.qperf = {
-    isSystemUser = true;
-    group = "qperf";
-    createHome = true;
-    home = "/var/lib/qperf";
-    homeMode = "0774";
-  };
+    users.groups.qperf = { };
+    users.users.qperf = {
+      isSystemUser = true;
+      group = "qperf";
+      createHome = true;
+      home = "/var/lib/qperf";
+      homeMode = "0774";
+    };
 
     networking.firewall = mkIf cfg.openFirewall {
-      allowedUDPPortRanges = [ {
-        from = cfg.startPort;
-        to = cfg.startPort + cfg.maxNumCores - 1;
-      } ];
+      allowedUDPPortRanges = [
+        {
+          from = cfg.startPort;
+          to = cfg.startPort + cfg.maxNumCores - 1;
+        }
+      ];
     };
 
     systemd.services.qperf = {

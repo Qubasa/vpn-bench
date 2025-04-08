@@ -11,7 +11,8 @@
     { self, clan-core, ... }:
     let
       # Usage see: https://docs.clan.lol
-      clan = clan-core.lib.buildClan { inherit self; 
+      clan = clan-core.lib.buildClan {
+        inherit self;
       };
     in
     {

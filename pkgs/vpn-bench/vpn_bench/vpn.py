@@ -21,7 +21,7 @@ from vpn_bench.connection_timings import (
     install_connection_timings_conf,
     reboot_connection_timings,
 )
-from vpn_bench.data import VPN, BenchMachine, Config, delete_dirs
+from vpn_bench.data import VPN, BenchMachine, Config, Provider, delete_dirs
 from vpn_bench.errors import VpnBenchError
 from vpn_bench.install import can_ssh_login
 from vpn_bench.nix_cache import install_nix_cache
@@ -39,7 +39,6 @@ def install_base_config(config: Config, tr_machines: list[TrMachine]) -> None:
 
 
 def install_zerotier(config: Config, tr_machines: list[TrMachine]) -> None:
-    base = create_base_inventory(tr_machines, config.ssh_keys).services
     conf: dict[str, Any] = {
         "someid": {
             "roles": {
@@ -63,28 +62,38 @@ def install_zerotier(config: Config, tr_machines: list[TrMachine]) -> None:
             log.info(f"Adding {tr_machine['name']} to the zerotier peers")
             conf["someid"]["roles"]["peer"]["machines"].append(tr_machine["name"])
 
-    base["zerotier"] = conf
-    patch_inventory_with(config.clan_dir, "services", base)
+    patch_inventory_with(config.clan_dir, "services.zerotier", conf)
 
 
 def install_mycelium(config: Config, tr_machines: list[TrMachine]) -> None:
-    base = create_base_inventory(tr_machines, config.ssh_keys).services
     conf: dict[str, Any] = {
         "someid": {
             "roles": {
                 "peer": {
-                    "machines": [],
+                    "tags": ["all"],
                     "config": {"openFirewall": True, "addHostedPublicNodes": True},
                 },
             }
         }
     }
-    for _, tr_machine in enumerate(tr_machines):
-        log.info(f"Adding {tr_machine['name']} to the mycelium peers")
-        conf["someid"]["roles"]["peer"]["machines"].append(tr_machine["name"])
+    patch_inventory_with(config.clan_dir, "services.mycelium", conf)
 
-    base["mycelium"] = conf
-    patch_inventory_with(config.clan_dir, "services", base)
+
+def install_hyprspace(config: Config, tr_machines: list[TrMachine]) -> None:
+    if tr_machines[0]["provider"] == Provider.Hetzner:
+        block_addresses = True
+    else:
+        block_addresses = False
+    conf: dict[str, Any] = {
+        "module": {"name": "hyprspace", "input": "cvpn-bench"},
+        "roles": {
+            "server": {
+                "tags": {"all": {}},
+                "settings": {"blockRfc1918Addresses": block_addresses},
+            },
+        },
+    }
+    patch_inventory_with(config.clan_dir, "instances.hyprspace-all", conf)
 
 
 def get_vpn_ips(
@@ -107,6 +116,10 @@ def get_vpn_ips(
                     .value.decode()
                     .strip("\n")
                 )  # TODO: Fix the newline in the var
+            case VPN.Hyprspace:
+                log.error("Getting the VPN IP for Hyprspace is not implemented yet")
+                log.error("Using the ipv4 public IP instead")
+                vpn_ip = machine.target_host.host
             case VPN.External:
                 vpn_ip = "clan.lol"
             case VPN.Internal:
@@ -186,6 +199,8 @@ def install_vpn(
             install_zerotier(config, tr_machines)
         case VPN.Mycelium:
             install_mycelium(config, tr_machines)
+        case VPN.Hyprspace:
+            install_hyprspace(config, tr_machines)
         case VPN.Internal | VPN.External:
             pass
         case _:

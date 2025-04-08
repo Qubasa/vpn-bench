@@ -4,11 +4,11 @@
 {
   perSystem =
     {
-        pkgs,
-        ...
+      pkgs,
+      ...
     }:
 
     {
-      packages.qperf = pkgs.callPackage ./default.nix {  };
+      packages.qperf = pkgs.callPackage ./default.nix { };
     };
 }

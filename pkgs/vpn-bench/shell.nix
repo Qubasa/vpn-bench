@@ -1,11 +1,17 @@
-{ mkShell, mypy, ruff, vpn-bench, custom_treefmt,... }:
-mkShell { 
-  buildInputs =  
-    [ 
-      mypy
-      ruff
-      custom_treefmt
-    ] ++ vpn-bench.propagatedBuildInputs;
+{
+  mkShell,
+  mypy,
+  ruff,
+  vpn-bench,
+  custom_treefmt,
+  ...
+}:
+mkShell {
+  buildInputs = [
+    mypy
+    ruff
+    custom_treefmt
+  ] ++ vpn-bench.propagatedBuildInputs;
 
   shellHook = ''
     export GIT_ROOT="$(git rev-parse --show-toplevel)"

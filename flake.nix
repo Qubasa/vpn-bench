@@ -8,6 +8,9 @@
   inputs.flake-parts.inputs.nixpkgs-lib.follows = "nixpkgs";
   inputs.treefmt-nix.url = "github:numtide/treefmt-nix";
   inputs.treefmt-nix.inputs.nixpkgs.follows = "nixpkgs";
+  inputs.hyprspace.url = "github:hyprspace/hyprspace";
+  inputs.hyprspace.inputs.flake-parts.follows = "flake-parts";
+  inputs.hyprspace.inputs.nixpkgs.follows = "nixpkgs";
 
   outputs =
     inputs@{
@@ -22,15 +25,19 @@
         "x86_64-darwin"
         "aarch64-darwin"
       ];
-      imports = [ 
-        inputs.clan-core.flakeModules.default  
-        ./treefmt.nix 
+      imports = [
+        inputs.clan-core.flakeModules.default
+        ./treefmt.nix
         ./pkgs/vpn-bench/flake-module.nix
         ./pkgs/webview-ui/flake-module.nix
         ./pkgs/qperf/flake-module.nix
       ];
 
       clan = {
+        # specialArgs = {
+        #   inherit inputs;
+        # };
+
         templates = {
           clan = {
             "vpnBenchClan" = {
@@ -41,6 +48,7 @@
         };
 
         modules = {
+          "hyprspace" = import ./clanModules/hyprspace { hyprspace = inputs.hyprspace; };
           "iperf-new" = ./clanModules/iperf-new;
           "hetzner-ips-new" = ./clanModules/hetzner-ips-new;
           "my-trusted-nix-caches-new" = ./clanModules/my-trusted-nix-caches-new;
@@ -50,6 +58,6 @@
           "my-static-hosts-new" = ./clanModules/my-static-hosts-new;
           "nix-cache-new" = ./clanModules/nix-cache-new;
         };
-      };    
+      };
     };
 }

@@ -34,7 +34,6 @@ pkgs.clangStdenv.mkDerivation {
     cp qperf $out/bin/qperf
   '';
 
-
   meta = with pkgs.lib; {
     description = "qperf is a performance measurement tool for QUIC similar to iperf";
     homepage = "https://github.com/rbruenig/qperf";

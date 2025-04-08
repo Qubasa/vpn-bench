@@ -8,6 +8,6 @@
       ...
     }:
     {
-      packages.vpn-bench = pkgs.callPackage ./default.nix {};
+      packages.vpn-bench = pkgs.callPackage ./default.nix { };
     };
 }
