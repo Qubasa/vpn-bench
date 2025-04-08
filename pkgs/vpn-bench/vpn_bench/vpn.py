@@ -96,6 +96,19 @@ def install_hyprspace(config: Config, tr_machines: list[TrMachine]) -> None:
     patch_inventory_with(config.clan_dir, "instances.hyprspace-all", conf)
 
 
+def install_vpncloud(config: Config, tr_machines: list[TrMachine]) -> None:
+    conf: dict[str, Any] = {
+        "module": {"name": "vpncloud", "input": "cvpn-bench"},
+        "roles": {
+            "server": {
+                "tags": {"all": {}},
+                "settings": {},
+            },
+        },
+    }
+    patch_inventory_with(config.clan_dir, "instances.vpncloud-all", conf)
+
+
 def get_vpn_ips(
     config: Config, machines: list[Machine], vpn: VPN
 ) -> list[BenchMachine]:
@@ -117,6 +130,11 @@ def get_vpn_ips(
                     .strip("\n")
                 )  # TODO: Fix the newline in the var
             case VPN.Hyprspace:
+                vpn_ip = (
+                    get_var(str(config.clan_dir), machine.name, "hyprspace/ip")
+                    .value.decode()
+                )
+            case VPN.VpnCloud:
                 log.error("Getting the VPN IP for Hyprspace is not implemented yet")
                 log.error("Using the ipv4 public IP instead")
                 vpn_ip = machine.target_host.host

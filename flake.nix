@@ -16,6 +16,7 @@
     inputs@{
       clan-core,
       flake-parts,
+      self,
       ...
     }:
     flake-parts.lib.mkFlake { inherit inputs; } {
@@ -31,6 +32,8 @@
         ./pkgs/vpn-bench/flake-module.nix
         ./pkgs/webview-ui/flake-module.nix
         ./pkgs/qperf/flake-module.nix
+        ./pkgs/vpncloud/flake-module.nix
+        ./pkgs/hyprspace-pre-generate/flake-module.nix
       ];
 
       clan = {
@@ -48,7 +51,11 @@
         };
 
         modules = {
-          "hyprspace" = import ./clanModules/hyprspace { hyprspace = inputs.hyprspace; };
+          "hyprspace" = import ./clanModules/hyprspace {
+            hyprspace = inputs.hyprspace;
+            packages = self.packages;
+          };
+          "vpncloud" = import ./clanModules/vpncloud { packages = self.packages; };
           "iperf-new" = ./clanModules/iperf-new;
           "hetzner-ips-new" = ./clanModules/hetzner-ips-new;
           "my-trusted-nix-caches-new" = ./clanModules/my-trusted-nix-caches-new;

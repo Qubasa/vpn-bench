@@ -47,6 +47,7 @@ class VPN(Enum):
     Zerotier = "zerotier"
     Mycelium = "mycelium"
     Hyprspace = "hyprspace"
+    VpnCloud = "vpncloud"
 
     @staticmethod
     def from_str(label: str) -> "VPN":

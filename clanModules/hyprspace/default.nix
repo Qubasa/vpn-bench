@@ -1,4 +1,4 @@
-{ hyprspace }:
+{ hyprspace, packages }:
 { lib, ... }:
 {
   _class = "clan.service";
@@ -66,21 +66,36 @@
             networking.firewall.allowedTCPPorts = [ 8001 ];
             networking.firewall.allowedUDPPorts = [ 8001 ];
 
-            clan.core.vars.generators.hyprspace = {
-              files.private-key = { };
-              files.peer-id = {
-                deploy = false;
-                secret = false;
+            clan.core.vars.generators.hyprspace =
+              let
+                hyprspace-pre-generate = packages.${pkgs.hostPlatform.system}.hyprspace-pre-generate;
+              in
+              {
+                files.private-key = { };
+                files.peer-id = {
+                  deploy = false;
+                  secret = false;
+                };
+                files.ip = {
+                  deploy = false;
+                  secret = false;
+                };
+                runtimeInputs = [
+                  hyprspace.packages.${pkgs.hostPlatform.system}.hyprspace
+                  pkgs.jq
+                  hyprspace-pre-generate
+                ];
+                script = ''
+                  set -x
+                  PEER_DATA=$(hyprspace init -c $out/hyprspace.json  | tail -n+3 | jq '.name = "${config.clan.core.settings.machine.name}"')
+                  jq -r '.privateKey' < $out/hyprspace.json > $out/private-key
+
+                  echo -n "$PEER_DATA" > $out/peer-id
+                  PEER_ID=$(echo "$PEER_DATA" | jq '.id' -r)
+                  echo "PEER_ID: $PEER_ID" 
+                  hyprspace-pre-generate "$PEER_ID" > $out/ip
+                '';
               };
-              runtimeInputs = [
-                hyprspace.packages.${pkgs.hostPlatform.system}.hyprspace
-                pkgs.jq
-              ];
-              script = ''
-                hyprspace init -c $out/hyprspace.json  | tail -n+3 | jq '.name = "${config.clan.core.settings.machine.name}"' > $out/peer-id
-                jq -r '.privateKey' < $out/hyprspace.json > $out/private-key
-              '';
-            };
           };
       };
   };
