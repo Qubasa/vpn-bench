@@ -16,6 +16,7 @@ from vpn_bench.assets import get_script_asset
 
 # from clan_cli.ssh.upload import upload
 from vpn_bench.data import VPN, BenchMachine, Config, delete_dirs
+from vpn_bench.errors import save_bench_report
 from vpn_bench.terraform import TrMachine
 
 log = logging.getLogger(__name__)
@@ -245,8 +246,4 @@ def process_timing_files(config: Config, timing_type: str, general_dir: Path) ->
             except Exception as e:
                 log.error(f"Error processing {timing_file}: {e}")
 
-    # Write the summary file
-    summary_file = general_dir / f"{timing_type}.json"
-    with summary_file.open("w") as f:
-        json.dump(all_vpn_timings, f, indent=4)
-    log.info(f"Created summary file: {summary_file}")
+    save_bench_report(general_dir, all_vpn_timings, f"{timing_type}.json")

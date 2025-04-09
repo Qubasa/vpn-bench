@@ -130,10 +130,9 @@ def get_vpn_ips(
                     .strip("\n")
                 )  # TODO: Fix the newline in the var
             case VPN.Hyprspace:
-                vpn_ip = (
-                    get_var(str(config.clan_dir), machine.name, "hyprspace/ip")
-                    .value.decode()
-                )
+                vpn_ip = get_var(
+                    str(config.clan_dir), machine.name, "hyprspace/ip"
+                ).value.decode()
             case VPN.VpnCloud:
                 log.error("Getting the VPN IP for Hyprspace is not implemented yet")
                 log.error("Using the ipv4 public IP instead")

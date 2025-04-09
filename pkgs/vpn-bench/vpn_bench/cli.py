@@ -10,6 +10,7 @@ from clan_cli.dirs import user_cache_dir, user_data_dir
 
 from vpn_bench.bench import benchmark_vpn
 from vpn_bench.data import VPN, Config, Provider, SSHKeyPair, TestType
+from vpn_bench.errors import VpnBenchError
 from vpn_bench.plot import plot_data
 from vpn_bench.setup import AgeOpts, clan_clean, clan_init
 from vpn_bench.ssh import generate_ssh_key, ssh_into_machine
@@ -80,7 +81,9 @@ def create_parser() -> argparse.ArgumentParser:
     bench_parser = subparsers.add_parser("bench", help="Benchmark command")
     bench_parser.add_argument(
         "--vpn",
-        choices=[p.value for p in VPN],
+        action="append",
+        default=[],
+        choices=[p.value for p in VPN] + ["all"],
     )
     bench_parser.add_argument("--debug", action="store_true", help="Enable debug mode")
     bench_parser.add_argument(
@@ -161,9 +164,6 @@ def run_cli() -> None:
     if getattr(args, "provider", False):
         provider = Provider.from_str(args.provider)
 
-    if getattr(args, "vpn", False):
-        vpn = VPN.from_str(args.vpn)
-
     if args.subcommand == "create":
         machines = args.m
         if len(machines) == 0:
@@ -213,10 +213,24 @@ def run_cli() -> None:
                 tests_enum.append(bench_type)
 
         machines = tr_metadata(config)
-        if args.vpn is None:
-            for vpn in VPN:
-                benchmark_vpn(config, vpn, machines, tests_enum, args.skip_con_times)
+
+        vpns: list[str] = args.vpn
+        vpns_enum: list[VPN] = []
+
+        if len(vpns) == 1 and vpns[0] == "all":
+            for tvpn in VPN:
+                vpns_enum.append(tvpn)
         else:
+            for cvpn in vpns:
+                vpn_type = VPN.from_str(cvpn)
+                vpns_enum.append(vpn_type)
+
+        if len(vpns_enum) == 0:
+            msg = "No vpns specified with --vpns, defaulting to none"
+            raise VpnBenchError(msg)
+
+        for vpn in vpns_enum:
+            log.info(f"========== Running benchmark for {vpn} ==========")
             benchmark_vpn(config, vpn, machines, tests_enum, args.skip_con_times)
 
     elif args.subcommand == "plot":

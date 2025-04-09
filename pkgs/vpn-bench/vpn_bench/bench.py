@@ -3,7 +3,6 @@ from collections.abc import Callable
 from pathlib import Path
 from typing import Any, ParamSpec
 
-from clan_cli.errors import ClanError
 from clan_cli.ssh.upload import upload
 
 from vpn_bench.assets import get_iperf_asset
@@ -54,10 +53,10 @@ def run_benchmarks(
 
         def execute_test(
             func: Callable[P, Any], *args: P.args, **kwargs: P.kwargs
-        ) -> dict[str, Any] | ClanError:
+        ) -> dict[str, Any] | Exception:
             try:
                 return func(*args, **kwargs)
-            except ClanError as err:
+            except Exception as err:
                 return err
 
         for test in tests:

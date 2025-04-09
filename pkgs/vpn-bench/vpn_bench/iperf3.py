@@ -48,7 +48,7 @@ def run_iperf_test(
 
     res = host.run(
         nix_command(cmd),
-        RunOpts(log=Log.BOTH, check=False),
+        RunOpts(log=Log.BOTH),
         extra_env={"IPERF3_PASSWORD": creds.password},
     )
 

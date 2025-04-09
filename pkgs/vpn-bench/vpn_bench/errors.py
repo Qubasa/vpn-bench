@@ -32,7 +32,7 @@ class ErrorDataClass:
 
 
 def save_bench_report(
-    result_dir: Path, data: dict[str, Any] | ClanError, filename: str
+    result_dir: Path, data: dict[str, Any] | ClanError | Exception, filename: str
 ) -> None:
     result_dir.mkdir(parents=True, exist_ok=True)
     result_file = result_dir / filename

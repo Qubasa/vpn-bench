@@ -1,5 +1,6 @@
 import { Echart } from "../Echarts";
 import { Show } from "solid-js";
+import { Result, Err, Ok } from "@/src/benchData"; // Assuming Result
 
 export type ConnectionData = Record<string, string>;
 

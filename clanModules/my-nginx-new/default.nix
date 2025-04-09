@@ -82,48 +82,53 @@
                 };
 
                 assertions = [
-                  {
-                    assertion = lib.length config.systemd.services."connection-check".after == 1;
-                    message = "connection-check detected multiple or no VPN services only one is allowed";
-                  }
+                  # {
+                  #   assertion = lib.length config.systemd.services."connection-check".after == 1;
+                  #   message = "connection-check detected multiple or no VPN services only one is allowed";
+                  # }
                   # {
                   #   assertion = (config.clan.service ? my-static-hosts-new) == true;
                   #   message = "The my-nginx module requires the my-static-hosts module to be configured with the hostnames.";
                   # }
                 ];
 
-                systemd.services."connection-check" = {
-                  description = "Check if the connection is up";
-                  wantedBy = [ "multi-user.target" ];
+                systemd.services."connection-check" =
+                  let
 
-                  after =
-                    lib.optional (config.clan ? zerotier) "zerotierone.service"
-                    ++ lib.optional (config.clan ? mycelium) "mycelium.service";
-                  requires =
-                    lib.optional (config.clan ? zerotier) "zerotierone.service"
-                    ++ lib.optional (config.clan ? mycelium) "mycelium.service";
-                  partOf =
-                    lib.optional (config.clan ? zerotier) "zerotierone.service"
-                    ++ lib.optional (config.clan ? mycelium) "mycelium.service";
+                    deps =
+                      lib.optional (config.systemd.services ? "zerotierone.service") "zerotierone.service"
+                      ++ lib.optional (config.systemd.services ? "mycelium.service") "mycelium.service"
+                      ++ lib.optional (config.systemd.services ? "hyprspace.service") "hyprspace.service";
 
-                  environment = {
-                    "VPN_IPS" = builtins.toJSON settings.vpnIPs;
-                    "PUBLIC_IPS" = builtins.toJSON settings.publicIPs;
-                  };
+                  in
+                  {
+                    description = "Check if the connection is up";
+                    wantedBy = [ "multi-user.target" ];
 
-                  serviceConfig =
-                    let
-                      pyscript = pkgs.writers.writePython3Bin "connection_check.py" {
-                        libraries = [ ];
-                        doCheck = false;
-                      } (builtins.readFile ./connection_check.py);
-                    in
-                    {
-                      Type = "oneshot";
-                      WorkingDirectory = "/var/lib/connection-check";
-                      ExecStart = lib.getExe pyscript;
+                    after = deps;
+
+                    requires = deps;
+
+                    partOf = deps;
+
+                    environment = {
+                      "VPN_IPS" = builtins.toJSON settings.vpnIPs;
+                      "PUBLIC_IPS" = builtins.toJSON settings.publicIPs;
                     };
-                };
+
+                    serviceConfig =
+                      let
+                        pyscript = pkgs.writers.writePython3Bin "connection_check.py" {
+                          libraries = [ ];
+                          doCheck = false;
+                        } (builtins.readFile ./connection_check.py);
+                      in
+                      {
+                        Type = "oneshot";
+                        WorkingDirectory = "/var/lib/connection-check";
+                        ExecStart = lib.getExe pyscript;
+                      };
+                  };
               };
           };
       };
