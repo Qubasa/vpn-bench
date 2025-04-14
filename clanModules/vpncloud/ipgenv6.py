@@ -124,7 +124,6 @@ def main():
     # --- Determine ULA Prefix ---
     ula_network = None
     prefix_env_var = args.prefix
-    prefix_source = ""
 
     if prefix_env_var:
         try:
@@ -144,7 +143,7 @@ def main():
                 )
             if ula_network.prefixlen != 64:
                 raise ValueError("Prefix length must be /64.")
-            prefix_source = f"environment variable VPN_ULA_PREFIX ('{prefix_env_var}')"
+
         except (
             ValueError,
             ipaddress.AddressValueError,
@@ -160,7 +159,7 @@ def main():
     if ula_network is None:
         try:
             ula_network = generate_temporary_ula_prefix()
-            prefix_source = f"temporary random generation ('{ula_network}')"
+
             print(
                 "#################################### WARNING ####################################",
                 file=sys.stderr,

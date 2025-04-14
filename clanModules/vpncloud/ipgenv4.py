@@ -134,7 +134,6 @@ def main():
     # --- Determine IPv4 Network (only if generating an IP) ---
     ipv4_network = None
     network_arg = args.network  # Use the value from --network or the env var default
-    network_source = ""
     default_network_str = "10.199.0.0/16"  # Default if nothing else is specified/valid
 
     if network_arg:
@@ -155,17 +154,6 @@ def main():
                 )
 
             ipv4_network = network  # Use the validated network
-            # Determine source for potential debug messages
-            if (
-                args.network == os.environ.get("VPN_IPV4_NETWORK")
-                and args.network is not None
-            ):
-                network_source = (
-                    f"environment variable VPN_IPV4_NETWORK ('{network_arg}')"
-                )
-            elif args.network is not None:
-                network_source = f"command-line argument --network ('{network_arg}')"
-            # else: source remains empty (will fallback or use default)
 
         except (
             ValueError,
@@ -183,7 +171,6 @@ def main():
     if ipv4_network is None:
         try:
             ipv4_network = ipaddress.IPv4Network(default_network_str, strict=False)
-            network_source = f"default ('{default_network_str}')"
             # Print warning only if the user didn't explicitly provide an invalid network
             if not network_arg:
                 print(

@@ -202,7 +202,7 @@ def install_vpn(
     # Initialize and configure machines
     machines = create_machine_obj(config, tr_machines)
 
-    if get_con_times:
+    if get_con_times and vpn != VPN.Internal:
         # Update machine without VPNs to remove any previous VPN configuration
         deploy_machines(machines)
 
@@ -244,17 +244,17 @@ def install_vpn(
     bmachines = get_vpn_ips(config, machines, vpn)
     save_machine_layout(config, vpn, bmachines)
 
-    if get_con_times:
-        # Install VPN connection timing service
-        install_connection_timings_conf(config, tr_machines, bmachines)
-
     # Install Nix cache
     install_nix_cache(config, tr_machines, bmachines)
+
+    if get_con_times and vpn != VPN.Internal:
+        # Install VPN connection timing service
+        install_connection_timings_conf(config, tr_machines, vpn, bmachines)
 
     # Update machine configuration with VPNs
     deploy_machines(machines)
 
-    if get_con_times:
+    if get_con_times and vpn != VPN.Internal:
         download_connection_timings(config, vpn, machines)
         reboot_connection_timings(config, vpn, machines)
 

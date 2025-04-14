@@ -45,6 +45,8 @@
         };
 
         settings.global.excludes = [
+          "**/node_modules/*"
+          "**/__pycache__/*"
           "*.png"
           "*.svg"
           "package-lock.json"

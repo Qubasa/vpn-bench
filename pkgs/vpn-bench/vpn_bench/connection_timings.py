@@ -23,8 +23,17 @@ log = logging.getLogger(__name__)
 
 
 def install_connection_timings_conf(
-    config: Config, tr_machines: list[TrMachine], bmachines: list[BenchMachine]
+    config: Config,
+    tr_machines: list[TrMachine],
+    vpn: VPN,
+    bmachines: list[BenchMachine],
 ) -> None:
+    match vpn:
+        case VPN.Internal:
+            return
+        case _:
+            pass
+
     pub_ips = {f"v4.{machine['name']}": machine["name"] for machine in tr_machines}
     vpn_ips = {
         f"vpn.{bmachine.cmachine.name}": bmachine.cmachine.name
