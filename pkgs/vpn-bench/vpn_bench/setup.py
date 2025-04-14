@@ -17,7 +17,7 @@ from clan_cli.machines.create import CreateOptions as ClanCreateOptions
 from clan_cli.machines.create import create_machine
 from clan_cli.nix import nix_command, nix_shell
 from clan_cli.secrets.key import generate_key
-from clan_cli.secrets.sops import KeyType, maybe_get_admin_public_key
+from clan_cli.secrets.sops import KeyType, SopsKey, maybe_get_admin_public_key
 from clan_cli.secrets.users import add_user
 from clan_cli.ssh.host import Host
 
@@ -254,7 +254,12 @@ def clan_init(
 
     # Setup SOPS and user
     sops_pubkey = setup_sops_key(age_opts)
-    add_user(config.clan_dir, age_opts.username, sops_pubkey, KeyType.AGE, False)
+    add_user(
+        config.clan_dir,
+        age_opts.username,
+        [SopsKey(sops_pubkey, age_opts.username, key_type=KeyType.AGE)],
+        False,
+    )
 
     # Update flake configuration
     update_flake_nix(config.clan_dir, vpnbench_clan)

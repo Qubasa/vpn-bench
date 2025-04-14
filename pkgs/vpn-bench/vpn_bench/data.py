@@ -42,7 +42,6 @@ class TrMachine(TypedDict):
 
 
 class VPN(Enum):
-    External = "external"
     Internal = "internal"
     Zerotier = "zerotier"
     Mycelium = "mycelium"

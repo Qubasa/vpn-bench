@@ -32,19 +32,11 @@ def run_benchmarks(
 
         creds = None
         local_pubkey = None
-        match vpn:
-            case VPN.External:
-                local_pubkey = get_iperf_asset("clan_public.pem")
-                password = get_iperf_asset("clan_password.txt").read_text()
-                creds = IperfCreds(
-                    username="mario", password=password, pubkey=remote_iperf3_pubkey
-                )
-            case _:
-                local_pubkey = get_iperf_asset("vpb_public.pem")
-                password = get_iperf_asset("vpb_password.txt").read_text()
-                creds = IperfCreds(
-                    username="mario", password=password, pubkey=remote_iperf3_pubkey
-                )
+        local_pubkey = get_iperf_asset("vpb_public.pem")
+        password = get_iperf_asset("vpb_password.txt").read_text()
+        creds = IperfCreds(
+            username="mario", password=password, pubkey=remote_iperf3_pubkey
+        )
 
         # Upload iperf3 public key
         upload(host, local_pubkey, remote_iperf3_pubkey)

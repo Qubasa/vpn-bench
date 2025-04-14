@@ -97,12 +97,21 @@ def install_hyprspace(config: Config, tr_machines: list[TrMachine]) -> None:
 
 
 def install_vpncloud(config: Config, tr_machines: list[TrMachine]) -> None:
+    peer_ips = []
+
+    for machine in tr_machines:
+        if machine["ipv4"] is None:
+            msg = "VPNCloud requires public IPv4 addresses"
+            raise VpnBenchError(msg)
+        # FIXME: Hardcoded port 17000, could be improved
+        peer_ips.append(f"{machine['ipv4']}:17000")
+
     conf: dict[str, Any] = {
         "module": {"name": "vpncloud", "input": "cvpn-bench"},
         "roles": {
-            "server": {
+            "peer": {
                 "tags": {"all": {}},
-                "settings": {},
+                "settings": {"peerIps": peer_ips},
             },
         },
     }
@@ -134,11 +143,9 @@ def get_vpn_ips(
                     str(config.clan_dir), machine.name, "hyprspace/ip"
                 ).value.decode()
             case VPN.VpnCloud:
-                log.error("Getting the VPN IP for Hyprspace is not implemented yet")
-                log.error("Using the ipv4 public IP instead")
-                vpn_ip = machine.target_host.host
-            case VPN.External:
-                vpn_ip = "clan.lol"
+                vpn_ip = get_var(
+                    str(config.clan_dir), machine.name, "vpncloud/ip"
+                ).value.decode()
             case VPN.Internal:
                 vpn_ip = machine.target_host.host
             case _:
@@ -218,7 +225,9 @@ def install_vpn(
             install_mycelium(config, tr_machines)
         case VPN.Hyprspace:
             install_hyprspace(config, tr_machines)
-        case VPN.Internal | VPN.External:
+        case VPN.VpnCloud:
+            install_vpncloud(config, tr_machines)
+        case VPN.Internal:
             pass
         case _:
             msg = f"VPN {vpn} not supported"

@@ -57,7 +57,7 @@ def download_connection_timings(
     config: Config, vpn: VPN, machines: list[Machine], reboot: bool = False
 ) -> None:
     match vpn:
-        case VPN.Internal | VPN.External:
+        case VPN.Internal:
             return
         case _:
             pass

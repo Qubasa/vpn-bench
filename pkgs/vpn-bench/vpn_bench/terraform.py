@@ -135,7 +135,8 @@ def tr_create(
                     {
                         "name": machine,
                         "location": location,
-                        "server_type": "ccx23",
+                        # "server_type": "ccx23", # dedicated cpu
+                        "server_type": "cx42",  # shared cpu
                         "ipv4": None,
                         "ipv6": None,
                     }

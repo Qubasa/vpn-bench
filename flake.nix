@@ -2,7 +2,7 @@
   description = "<Put your description here>";
 
   # inputs.clan-core.url = "https://git.clan.lol/clan/clan-core/archive/main.tar.gz";
-  inputs.clan-core.url = "https://git.clan.lol/Qubasa/clan-core/archive/vpb-patches.zip";
+  inputs.clan-core.url = "https://git.clan.lol/Qubasa/clan-core/archive/vpb-patches2.zip";
   inputs.nixpkgs.follows = "clan-core/nixpkgs";
   inputs.flake-parts.url = "github:hercules-ci/flake-parts";
   inputs.flake-parts.inputs.nixpkgs-lib.follows = "nixpkgs";
@@ -19,6 +19,9 @@
       self,
       ...
     }:
+    let
+      lib = inputs.nixpkgs.lib;
+    in
     flake-parts.lib.mkFlake { inherit inputs; } {
       systems = [
         "x86_64-linux"
@@ -51,11 +54,14 @@
         };
 
         modules = {
-          "hyprspace" = import ./clanModules/hyprspace {
-            hyprspace = inputs.hyprspace;
-            packages = self.packages;
-          };
-          "vpncloud" = import ./clanModules/vpncloud { packages = self.packages; };
+          "hyprspace" = (
+            lib.modules.importApply ./clanModules/hyprspace {
+              hyprspace = inputs.hyprspace;
+              packages = self.packages;
+            }
+          );
+          "yggdrasil" = ./clanModules/yggdrasil;
+          "vpncloud" = (lib.modules.importApply ./clanModules/vpncloud { packages = self.packages; });
           "iperf-new" = ./clanModules/iperf-new;
           "hetzner-ips-new" = ./clanModules/hetzner-ips-new;
           "my-trusted-nix-caches-new" = ./clanModules/my-trusted-nix-caches-new;

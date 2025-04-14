@@ -14,12 +14,12 @@
     };
 
     perInstance =
-      { settings, ... }:
+      { extendSettings, ... }:
       {
         nixosModule =
           { config, ... }:
           let
-            finalSettings = settings {
+            finalSettings = extendSettings {
               maxNumCores = lib.mkDefault (
                 builtins.foldl' (acc: cpu: acc + cpu.cores) 0 config.facter.report.hardware.cpu * 2
               );

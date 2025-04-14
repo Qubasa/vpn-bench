@@ -87,13 +87,13 @@
                 ];
                 script = ''
                   set -x
-                  PEER_DATA=$(hyprspace init -c $out/hyprspace.json  | tail -n+3 | jq '.name = "${config.clan.core.settings.machine.name}"')
-                  jq -r '.privateKey' < $out/hyprspace.json > $out/private-key
+                  PEER_DATA=$(hyprspace init -c "$out"/hyprspace.json  | tail -n+3 | jq '.name = "${config.clan.core.settings.machine.name}"')
+                  jq -r '.privateKey' < "$out"/hyprspace.json > "$out"/private-key
 
-                  echo -n "$PEER_DATA" > $out/peer-id
+                  echo -n "$PEER_DATA" > "$out"/peer-id
                   PEER_ID=$(echo "$PEER_DATA" | jq '.id' -r)
                   echo "PEER_ID: $PEER_ID" 
-                  hyprspace-pre-generate "$PEER_ID" > $out/ip
+                  hyprspace-pre-generate "$PEER_ID" > "$out"/ip
                 '';
               };
           };
