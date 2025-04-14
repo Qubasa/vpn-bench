@@ -30,9 +30,8 @@ def run_iperf_test(
         "nixpkgs#iperf3",
         "-c",
         "iperf3",
-        "--bidir",
         "--connect-timeout",
-        "300",  # 5 seconds
+        "600",  # 5 seconds
         "--json",
         "-Z",
         "-c",
@@ -48,7 +47,7 @@ def run_iperf_test(
 
     res = host.run(
         nix_command(cmd),
-        RunOpts(log=Log.BOTH),
+        RunOpts(log=Log.BOTH, timeout=60),  # 60 seconds
         extra_env={"IPERF3_PASSWORD": creds.password},
     )
 

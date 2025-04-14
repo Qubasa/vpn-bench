@@ -28,8 +28,8 @@ def check_ip(
     started: datetime.datetime,
     ip_type: str,
     expected_response: Optional[str] = None,
-    timeout: int = 5,
-    max_retries: int = 600,
+    timeout: int = 1,
+    max_retries: int = 300,
     retry_delay: float = 1.0,
 ) -> Dict[str, Any]:
     """
@@ -144,8 +144,8 @@ def main() -> None:
             started=started,
             ip_type="Public",
             expected_response=public_ips[ip],
-            timeout=5,
-            max_retries=600,  # 10 minutes with 1 second delay
+            timeout=1,
+            max_retries=300,  # 5 minutes with 1 second delay
             retry_delay=1.0,
         )
 
@@ -154,8 +154,8 @@ def main() -> None:
             ip=ip,
             started=started,
             ip_type="VPN",
-            timeout=5,  # Increased from 1 to be consistent with public IP checks
-            max_retries=600,  # 10 minutes with 1 second delay
+            timeout=1,  # Increased from 1 to be consistent with public IP checks
+            max_retries=300,  # 5 minutes with 1 second delay
             retry_delay=1.0,
         )
 

@@ -141,6 +141,7 @@ def reboot_connection_timings(
                 log.info(f"{machine.name} is back online")
                 break
             log.info(f"Waiting for {machine.name} to come online")
+            time.sleep(1)
 
     # Wait for connection-check service to finish
     with ThreadPoolExecutor() as executor:

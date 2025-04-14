@@ -304,7 +304,7 @@ def run_qperf_test(host: Host, target_host: str) -> QperfSummaryDict:
                 "-c",
                 target_host,
             ]
-            future = executor.submit(host.run, cmd, RunOpts(log=Log.BOTH))
+            future = executor.submit(host.run, cmd, RunOpts(log=Log.BOTH, timeout=60))
             futures.append(future)
         done, not_done = concurrent.futures.wait(futures)
         for future in done:

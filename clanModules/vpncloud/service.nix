@@ -23,6 +23,10 @@ let
       type = types.listOf types.str;
       description = "List of trusted pubkeys of other peers.";
     };
+    passwordFile = mkOption {
+      type = types.path;
+      description = "Path to the password file.";
+    };
     ipAddr = mkOption {
       type = types.str;
       description = "IP address of the peer.";
@@ -68,12 +72,14 @@ let
       script = ''
         PRIVATE_KEY=$(cat "${cfg.privateKeyFile}")
         PUBLIC_KEY=$(cat "${cfg.publicKeyFile}")
+        PASSWORD=$(cat "${cfg.passwordFile}")
         vpncloud \
           --private-key "$PRIVATE_KEY" \
           --public-key "$PUBLIC_KEY" \
           --log-file "/var/log/vpncloud.log" \
           --stats-file "/var/log/vpncloud.stats" \
           --pid-file "/run/vpncloud.pid" \
+          --password "$PASSWORD" \
           --listen "${toString cfg.port}" \
           --ip "${cfg.ipAddr}" \
           ${lib.concatMapStrings (k: " --trusted-key " + k) cfg.trustedKeys} \

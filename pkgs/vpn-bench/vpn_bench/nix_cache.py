@@ -114,7 +114,7 @@ def run_nix_cache_test(
         urls,
     ]
 
-    host.run(cmd, RunOpts(log=Log.BOTH))
+    host.run(cmd, RunOpts(log=Log.BOTH, timeout=120))  # 2 minutes
 
     res = host.run(["cat", f"{vpn.value}_nix-cache.json"])
     return json.loads(res.stdout)
