@@ -23,10 +23,6 @@ let
       type = types.listOf types.str;
       description = "List of trusted pubkeys of other peers.";
     };
-    passwordFile = mkOption {
-      type = types.path;
-      description = "Path to the password file.";
-    };
     ipAddr = mkOption {
       type = types.str;
       description = "IP address of the peer.";
@@ -62,6 +58,7 @@ let
     };
 
     # TODO: Make vpncloud multi-instance
+    # FIXME: Private key can be seen with systemctl show
     # https://github.com/dswd/vpncloud/blob/master/assets/vpncloud%40.service
     systemd.services.vpncloud = {
       description = "VpnCloud network";
@@ -72,50 +69,24 @@ let
       script = ''
         PRIVATE_KEY=$(cat "${cfg.privateKeyFile}")
         PUBLIC_KEY=$(cat "${cfg.publicKeyFile}")
-        PASSWORD=$(cat "${cfg.passwordFile}")
+        export RUST_BACKTRACE=1
         vpncloud \
           --private-key "$PRIVATE_KEY" \
           --public-key "$PUBLIC_KEY" \
           --log-file "/var/log/vpncloud.log" \
+          --daemon \
           --stats-file "/var/log/vpncloud.stats" \
           --pid-file "/run/vpncloud.pid" \
-          --password "$PASSWORD" \
           --listen "${toString cfg.port}" \
           --ip "${cfg.ipAddr}" \
           ${lib.concatMapStrings (k: " --trusted-key " + k) cfg.trustedKeys} \
           ${lib.concatMapStrings (k: " --peer " + k) cfg.peers}
       '';
       serviceConfig = {
+        Type = "forking";
         RestartSec = 5;
         Restart = "on-failure";
         TasksMax = 10;
-        # MemoryMax = "50M";
-        # PrivateTmp = "yes";
-        # ProtectHome = "yes";
-        # ProtectSystem = "strict";
-        # ReadWritePaths =
-        #   [
-        #     "/var/log"
-        #     "/run"
-        #     "/nix/store"
-        #   ]
-        #   ++ [
-        #     cfg.privateKeyFile
-        #     cfg.publicKeyFile
-        #   ];
-        # CapabilityBoundingSet = [
-        #   "CAP_NET_ADMIN"
-        #   "CAP_NET_BIND_SERVICE"
-        #   "CAP_NET_RAW"
-        #   "CAP_SETGID"
-        #   "CAP_SETUID"
-        #   "CAP_SYS_CHROOT"
-        # ];
-
-        # DeviceAllow = [
-        #   "/dev/null rw"
-        #   "/dev/net/tun rw"
-        # ];
         PIDFile = "/run/vpncloud.pid";
       };
     };

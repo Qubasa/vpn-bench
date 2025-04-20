@@ -118,6 +118,31 @@ def install_vpncloud(config: Config, tr_machines: list[TrMachine]) -> None:
     patch_inventory_with(config.clan_dir, "instances.vpncloud-all", conf)
 
 
+def install_yggdrasil(config: Config, tr_machines: list[TrMachine]) -> None:
+    peers = {}
+
+    for machine in tr_machines:
+        if machine["ipv4"] is None:
+            msg = "VPNCloud requires public IPv4 addresses"
+            raise VpnBenchError(msg)
+
+        peers[machine["name"]] = {
+            "protocol": "quic",
+            "ip": machine["ipv4"],
+        }
+
+    conf: dict[str, Any] = {
+        "module": {"name": "yggdrasil", "input": "cvpn-bench"},
+        "roles": {
+            "peer": {
+                "tags": {"all": {}},
+                "settings": {"peers": peers},
+            },
+        },
+    }
+    patch_inventory_with(config.clan_dir, "instances.yggdrasil-all", conf)
+
+
 def get_vpn_ips(
     config: Config, machines: list[Machine], vpn: VPN
 ) -> list[BenchMachine]:
@@ -145,6 +170,10 @@ def get_vpn_ips(
             case VPN.VpnCloud:
                 vpn_ip = get_var(
                     str(config.clan_dir), machine.name, "vpncloud/ip"
+                ).value.decode()
+            case VPN.Yggdrasil:
+                vpn_ip = get_var(
+                    str(config.clan_dir), machine.name, "yggdrasil/ip"
                 ).value.decode()
             case VPN.Internal:
                 vpn_ip = machine.target_host.host
@@ -227,6 +256,8 @@ def install_vpn(
             install_hyprspace(config, tr_machines)
         case VPN.VpnCloud:
             install_vpncloud(config, tr_machines)
+        case VPN.Yggdrasil:
+            install_yggdrasil(config, tr_machines)
         case VPN.Internal:
             pass
         case _:

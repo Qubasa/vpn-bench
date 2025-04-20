@@ -80,30 +80,23 @@
               trustedKeys = machinePubVals;
               ipAddr = "${config.clan.core.vars.generators.vpncloud.files.ip.value}/16";
               openFirewall = true;
-              passwordFile = config.clan.core.vars.generators.vpncloud-shared.files.password.path;
               peers = settings.peerIps;
             };
 
-            clan.core.vars.generators.vpncloud-shared = {
+            clan.core.vars.generators.vpncloud-ula = {
               share = true;
               files.network = {
                 secret = false;
                 deploy = false;
               };
-              files.password = {
-                secret = true;
-                deploy = true;
-              };
 
               runtimeInputs = [
                 ipgenv4
                 pkgs.coreutils
-                pkgs.pwgen
               ];
 
               script = ''
                 ipgenv4 --generate-network | tr -d "\n" > "$out"/network
-                pwgen -s 32 1 | tr -d "\n" > "$out"/password
               '';
             };
 
@@ -118,7 +111,7 @@
                 secret = false;
               };
               dependencies = [
-                "vpncloud-shared"
+                "vpncloud-ula"
               ];
               runtimeInputs = [
                 pkgs.coreutils
@@ -132,7 +125,7 @@
                 pubkey=$(echo "$keys" | grep "Public key:" | sed 's/Public key: *//' | tr -d "\n")
                 echo "$keys" | grep "Private key:" | sed 's/Private key: *//' | tr -d "\n" > "$out"/private-key
                 echo -n "$pubkey" > "$out"/public-key
-                ipgenv4 --network "$(cat "$in"/vpncloud-shared/network)" --public-key "$pubkey" | tr -d "\n" > "$out"/ip
+                ipgenv4 --network "$(cat "$in"/vpncloud-ula/network)" --public-key "$pubkey" | tr -d "\n" > "$out"/ip
               '';
             };
           };

@@ -46,6 +46,7 @@ class VPN(Enum):
     Zerotier = "zerotier"
     Mycelium = "mycelium"
     Hyprspace = "hyprspace"
+    Yggdrasil = "yggdrasil"
     VpnCloud = "vpncloud"
 
     @staticmethod

@@ -299,6 +299,8 @@ def run_qperf_test(host: Host, target_host: str) -> QperfSummaryDict:
                 "1",
                 "-g",
                 "1",
+                "-t",
+                "45",  # run 45 seconds
                 "-p",
                 str(18000 + core),
                 "-c",

@@ -5,11 +5,11 @@ import time
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
-from clan_cli.cmd import Log, RunOpts, run
+from clan_cli.cmd import Log, RunOpts
 from clan_cli.inventory import patch_inventory_with
 from clan_cli.machines.machines import Machine
-from clan_cli.nix import nix_shell
 from clan_cli.ssh.deploy_info import is_ssh_reachable
+from clan_cli.ssh.host import Host
 from clan_cli.ssh.upload import upload
 
 from vpn_bench.assets import get_script_asset
@@ -71,10 +71,19 @@ def download_connection_timings(
         case _:
             pass
 
+    def download_save(host: Host, dest: Path) -> None:
+        res = host.run(
+            ["cat", "/var/lib/connection-check/connection_timings.json"],
+            RunOpts(log=Log.BOTH),
+        )
+        res = json.loads(res.stdout)
+
+        with dest.open("w") as f:
+            json.dump(res, f, indent=4)
+
     with ThreadPoolExecutor() as executor:
         futures = []
         for index, machine in enumerate(machines):
-            src = f"{machine.target_host.target}:/var/lib/connection-check/connection_timings.json"
             dest = config.bench_dir / vpn.name / f"{index}_{machine.name}"
             dest.mkdir(parents=True, exist_ok=True)
 
@@ -82,12 +91,12 @@ def download_connection_timings(
                 dest /= "reboot_connection_timings.json"
             else:
                 dest /= "connection_timings.json"
+            host = machine.target_host
 
-            priv_key = str(config.ssh_keys[0].private)
             future = executor.submit(
-                run,
-                nix_shell(["nixpkgs#openssh"], ["scp", "-i", priv_key, src, str(dest)]),
-                RunOpts(log=Log.BOTH),
+                download_save,
+                host,
+                dest,
             )
             futures.append(future)
         done, not_done = concurrent.futures.wait(futures)

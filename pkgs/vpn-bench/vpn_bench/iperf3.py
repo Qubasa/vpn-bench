@@ -30,8 +30,11 @@ def run_iperf_test(
         "nixpkgs#iperf3",
         "-c",
         "iperf3",
+        "--bidir",
         "--connect-timeout",
         "600",  # 5 seconds
+        "--time",
+        "45",  # 45 seconds
         "--json",
         "-Z",
         "-c",
