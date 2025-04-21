@@ -52,6 +52,17 @@
             A list of peers to connect to. The key is the name of the peer.
           '';
         };
+        allowedPubkeys = lib.mkOption {
+          type = lib.types.attrsOf lib.types.str;
+          default = { };
+          example = {
+            "myhome" = "myhome_pubkey";
+          };
+          description = ''
+            A list of allowed public keys for the peer.
+            This is used to verify the identity of the peer.
+          '';
+        };
         listenPort = lib.mkOption {
           type = lib.types.int; # FIXME: vars.generators.validation doesn't support types.port
           default = 6384;
@@ -61,7 +72,7 @@
         };
         enableMulticast = lib.mkOption {
           type = lib.types.bool;
-          default = false;
+          default = true;
           description = ''
             Enable local peer discovery support for yggdrasil.
           '';
@@ -146,6 +157,7 @@
               ];
               validation = {
                 listenPort = settings.listenPort;
+                allowedPubkeys = settings.allowedPubkeys;
               } // settings.peers;
 
               runtimeInputs = [
@@ -155,7 +167,7 @@
 
               script = ''
                 ORIG_CONF=$(cat "$in"/yggdrasil/config)
-                MACHINE_PUB_KEYS='${builtins.toJSON machinePubVals}'
+                MACHINE_PUB_KEYS='${builtins.toJSON (machinePubVals ++ (lib.attrValues settings.allowedPubkeys))}'
                 PEERS='${builtins.toJSON (peersToList settings.peers)}'
                 RES=$(echo "$ORIG_CONF" | jq --argjson pubkeys "$MACHINE_PUB_KEYS" \
                   '.AllowedPublicKeys += $pubkeys')

@@ -48,6 +48,7 @@ class VPN(Enum):
     Hyprspace = "hyprspace"
     Yggdrasil = "yggdrasil"
     VpnCloud = "vpncloud"
+    Wireguard = "wireguard"
 
     @staticmethod
     def from_str(label: str) -> "VPN":

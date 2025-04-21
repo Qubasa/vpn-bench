@@ -60,6 +60,7 @@
               packages = self.packages;
             }
           );
+          "wireguard" = ./clanModules/wireguard;
           "yggdrasil" = ./clanModules/yggdrasil;
           "vpncloud" = (lib.modules.importApply ./clanModules/vpncloud { packages = self.packages; });
           "iperf-new" = ./clanModules/iperf-new;
