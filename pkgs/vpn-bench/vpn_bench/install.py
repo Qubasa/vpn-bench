@@ -3,8 +3,8 @@ import logging
 from pathlib import Path
 
 from clan_cli.api.disk import hw_main_disk_options, set_machine_disk_schema
-from clan_cli.clan_uri import Flake
 from clan_cli.dirs import specific_machine_dir
+from clan_cli.flake import Flake
 
 # Clan TODO: We need to fix this circular import problem in clan_cli!
 from clan_cli.machines.hardware import HardwareConfig

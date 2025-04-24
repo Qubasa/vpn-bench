@@ -4,8 +4,6 @@ from typing import Any
 
 from clan_cli.api import dataclass_to_dict
 from clan_cli.cmd import run
-from clan_cli.facts.generate import generate_facts
-from clan_cli.facts.list import get_all_facts
 from clan_cli.flake import Flake
 from clan_cli.inventory import patch_inventory_with
 from clan_cli.machines.machines import Machine
@@ -177,15 +175,15 @@ def get_vpn_ips(
 ) -> list[BenchMachine]:
     """Query and collect VPN IPs for each machine."""
     bmachines: list[BenchMachine] = []
-    generate_facts(machines)
     generate_vars(machines)
     for idx, machine in enumerate(machines):
         log.info(stringify_all_vars(machine))
-        facts = get_all_facts(machine)["TODO"]
         vpn_ip: str | None = None
         match vpn:
             case VPN.Zerotier:
-                vpn_ip = facts["zerotier-ip"].decode()
+                vpn_ip = get_var(
+                    str(config.clan_dir), machine.name, "zerotier/zerotier-ip"
+                ).value.decode()
             case VPN.Mycelium:
                 vpn_ip = (
                     get_var(str(config.clan_dir), machine.name, "mycelium/ip")

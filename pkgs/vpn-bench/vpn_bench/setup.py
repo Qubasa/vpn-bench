@@ -7,15 +7,16 @@ from typing import Any
 
 import clan_cli.clan.create
 from clan_cli.async_run import AsyncContext, AsyncOpts, AsyncRuntime
-from clan_cli.clan_uri import Flake
 from clan_cli.cmd import RunOpts, run
+from clan_cli.dirs import nixpkgs_flake
+from clan_cli.flake import Flake
 from clan_cli.git import commit_file
 from clan_cli.inventory import patch_inventory_with
 from clan_cli.inventory.classes import Machine as InventoryMachine
 from clan_cli.inventory.classes import MachineDeploy
 from clan_cli.machines.create import CreateOptions as ClanCreateOptions
 from clan_cli.machines.create import create_machine
-from clan_cli.nix import nix_command, nix_shell
+from clan_cli.nix import nix_command
 from clan_cli.secrets.key import generate_key
 from clan_cli.secrets.sops import KeyType, SopsKey, maybe_get_admin_public_key
 from clan_cli.secrets.users import add_user
@@ -223,7 +224,19 @@ def reset_terminal() -> None:
     Reset the terminal to its initial state, similar to 'tput reset'.
     This clears the screen, resets all attributes, and moves cursor to home position.
     """
-    run(nix_shell(["nixpkgs#ncurses"], ["tput", "reset"]))
+    run(
+        nix_command(
+            [
+                "shell",
+                "--inputs-from",
+                f"{nixpkgs_flake()!s}",
+                "nixpkgs#ncurses",
+                "-c",
+                "tput",
+                "reset",
+            ]
+        )
+    )
 
 
 def clan_init(
