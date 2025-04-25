@@ -304,6 +304,12 @@ def install_vpn(
     # from this are super hard to debug
     machines = create_machine_obj(config, tr_machines)
 
+    if vpn == VPN.Zerotier:
+        # Because of facts to vars migration code,
+        # we need to generate the zerotier network-id var
+        # for the controller machine
+        generate_vars([machines[0]], "zerotier")
+
     # Get the VPN IP of each machine
     bmachines = get_vpn_ips(config, machines, vpn)
     save_machine_layout(config, vpn, bmachines)
