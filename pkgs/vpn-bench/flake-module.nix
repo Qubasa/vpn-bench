@@ -24,6 +24,7 @@
         inherit (self'.packages) vpn-bench;
         # treefmt with config defined in ./flake-parts/formatting.nix
         custom_treefmt = config.treefmt.build.wrapper;
+        inherit clan-cli-module;
       };
     };
 }

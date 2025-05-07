@@ -38,7 +38,8 @@ def run_benchmarks(
         )
 
         # Upload iperf3 public key
-        upload(bmachine.cmachine, local_pubkey, remote_iperf3_pubkey)
+        with bmachine.cmachine.target_host() as host:
+            upload(host, local_pubkey, remote_iperf3_pubkey)
 
         P = ParamSpec("P")  # noqa: N806
 

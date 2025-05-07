@@ -285,6 +285,30 @@ def calculate_qperf_summary(parsed_outputs: list[QperfOutputDict]) -> QperfSumma
     }
 
 
+def _qperf_test(
+    machine: Machine,
+    target_host: str,
+    core: int,
+) -> QperfOutputDict:
+    """Run a qperf test and return the parsed output."""
+    with machine.target_host() as host:
+        cmd = [
+            "qperf",
+            "-i",
+            "1",
+            "-g",
+            "1",
+            "-t",
+            "45",  # run 45 seconds
+            "-p",
+            str(18000 + core),
+            "-c",
+            target_host,
+        ]
+        res = host.run(cmd, RunOpts(log=Log.BOTH, timeout=60))
+    return parse_qperf_output(res.stdout)
+
+
 def run_qperf_test(machine: Machine, target_host: str) -> QperfSummaryDict:
     """Run a single qperf test and return the results."""
 
@@ -294,20 +318,7 @@ def run_qperf_test(machine: Machine, target_host: str) -> QperfSummaryDict:
     with ThreadPoolExecutor() as executor:
         futures = []
         for core in range(num_cores):
-            cmd = [
-                "qperf",
-                "-i",
-                "1",
-                "-g",
-                "1",
-                "-t",
-                "45",  # run 45 seconds
-                "-p",
-                str(18000 + core),
-                "-c",
-                target_host,
-            ]
-            future = executor.submit(host.run, cmd, RunOpts(log=Log.BOTH, timeout=60))
+            future = executor.submit(_qperf_test, machine, target_host, core)
             futures.append(future)
         done, not_done = concurrent.futures.wait(futures)
         for future in done:
@@ -315,7 +326,7 @@ def run_qperf_test(machine: Machine, target_host: str) -> QperfSummaryDict:
             if exc is not None:
                 raise exc
             res = future.result()
-            parsed_outputs.append(parse_qperf_output(res.stdout))
+            parsed_outputs.append(res)
 
     return calculate_qperf_summary(parsed_outputs)
 

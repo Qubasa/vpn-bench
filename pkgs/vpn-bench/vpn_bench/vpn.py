@@ -176,6 +176,7 @@ def get_vpn_ips(
     bmachines: list[BenchMachine] = []
     generate_vars(machines)
     for idx, machine in enumerate(machines):
+        machine.flake.invalidate_cache()
         log.info(stringify_all_vars(machine))
         vpn_ip: str | None = None
         match vpn:

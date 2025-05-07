@@ -88,17 +88,20 @@ class Config:
     ssh_keys: list[SSHKeyPair]
 
 
+def _delete_dir(machine: Machine, state_dirs: list[str]) -> None:
+    with machine.target_host() as host:
+        host.run(
+            ["rm", "-rf", *state_dirs],
+            RunOpts(log=Log.BOTH),
+        )
+
+
 def delete_dirs(state_dirs: list[str], machines: list[Machine]) -> None:
     with ThreadPoolExecutor() as executor:
         futures = []
         for _index, machine in enumerate(machines):
-            with machine.target_host() as host:
-                future = executor.submit(
-                    host.run,
-                    ["rm", "-rf", *state_dirs],
-                    RunOpts(log=Log.BOTH),
-                )
-                futures.append(future)
+            future = executor.submit(_delete_dir, machine, state_dirs)
+            futures.append(future)
         concurrent.futures.wait(futures)
 
         done, not_done = concurrent.futures.wait(futures)

@@ -117,17 +117,19 @@ def reboot_connection_timings(
 
     delete_dirs(["/var/lib/connection-check", "/tmp/wait_service.sh"], machines)
 
+    def _reboot(machine: Machine) -> None:
+        with machine.target_host() as host:
+            host.run(
+                ["reboot"],
+                RunOpts(log=Log.BOTH),
+            )
+
     # Reboot machines
     with ThreadPoolExecutor() as executor:
         futures = []
         for machine in machines:
-            with machine.target_host() as host:
-                future = executor.submit(
-                    host.run,
-                    ["reboot"],
-                    RunOpts(log=Log.BOTH),
-                )
-                futures.append(future)
+            future = executor.submit(_reboot, machine)
+            futures.append(future)
 
         done, not_done = concurrent.futures.wait(futures)
 
@@ -138,19 +140,29 @@ def reboot_connection_timings(
 
     # Wait for machines to be offline
     for machine in machines:
-        while is_ssh_reachable(machine):
-            log.info(f"Waiting for {machine.name} to be offline")
-            time.sleep(0.5)
-        log.info(f"{machine.name} is offline")
+        with machine.target_host() as host:
+            while is_ssh_reachable(host):
+                log.info(f"Waiting for {machine.name} to be offline")
+                time.sleep(0.5)
+            log.info(f"{machine.name} is offline")
 
     # Wait for machines to come online
     for machine in machines:
         while True:
-            if is_ssh_reachable(machine):
-                log.info(f"{machine.name} is back online")
-                break
-            log.info(f"Waiting for {machine.name} to come online")
-            time.sleep(1)
+            with machine.target_host() as host:
+                if is_ssh_reachable(host):
+                    log.info(f"{machine.name} is back online")
+                    break
+                log.info(f"Waiting for {machine.name} to come online")
+                time.sleep(1)
+
+    def _wait_service(machine: Machine, wait_service_path: Path) -> None:
+        with machine.target_host() as host:
+            upload(host, script, wait_service_path, file_mode=0o777)
+            host.run(
+                [f"{wait_service_path}", "-s", "connection-check.service"],
+                RunOpts(log=Log.BOTH),
+            )
 
     # Wait for connection-check service to finish
     with ThreadPoolExecutor() as executor:
@@ -158,15 +170,12 @@ def reboot_connection_timings(
         for machine in machines:
             script = get_script_asset("wait_service.sh")
             wait_service_path = Path("/tmp/wait_service.sh")
-            upload(machine, script, wait_service_path, file_mode=0o777)
-
-            with machine.target_host() as host:
-                future = executor.submit(
-                    host.run,
-                    [f"{wait_service_path}", "-s", "connection-check.service"],
-                    RunOpts(log=Log.BOTH),
-                )
-                futures.append(future)
+            future = executor.submit(
+                _wait_service,
+                machine,
+                wait_service_path,
+            )
+            futures.append(future)
 
         done, not_done = concurrent.futures.wait(futures)
 

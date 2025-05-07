@@ -167,7 +167,7 @@ def run_cli() -> None:
     if args.subcommand == "create":
         machines = args.m
         if len(machines) == 0:
-            machines = ["milo", "luna", "yuki"]
+            machines = ["lom", "luna", "yuki"]
         tr_create(config, provider, args.location, args.ssh_pubkey, machines=machines)
 
     elif args.subcommand == "destroy":
