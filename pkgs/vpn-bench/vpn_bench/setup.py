@@ -285,10 +285,10 @@ def clan_init(
         setup_machine(config.clan_dir, tr_machine, machine_num)
 
     # Update inventory and install machines
-    patch_inventory_with(config.clan_dir, "services", inventory.services)
+    patch_inventory_with(Flake(str(config.clan_dir)), "services", inventory.services)
 
     # Update inventory and install machines
-    patch_inventory_with(config.clan_dir, "instances", inventory.instances)
+    patch_inventory_with(Flake(str(config.clan_dir)), "instances", inventory.instances)
 
     with AsyncRuntime() as runtime:
         for tr_machine in tr_machines:

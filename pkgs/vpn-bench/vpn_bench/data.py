@@ -92,13 +92,13 @@ def delete_dirs(state_dirs: list[str], machines: list[Machine]) -> None:
     with ThreadPoolExecutor() as executor:
         futures = []
         for _index, machine in enumerate(machines):
-            host = machine.target_host
-            future = executor.submit(
-                host.run,
-                ["rm", "-rf", *state_dirs],
-                RunOpts(log=Log.BOTH),
-            )
-            futures.append(future)
+            with machine.target_host() as host:
+                future = executor.submit(
+                    host.run,
+                    ["rm", "-rf", *state_dirs],
+                    RunOpts(log=Log.BOTH),
+                )
+                futures.append(future)
         concurrent.futures.wait(futures)
 
         done, not_done = concurrent.futures.wait(futures)

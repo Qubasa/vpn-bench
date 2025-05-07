@@ -4,7 +4,9 @@ from pathlib import Path
 from typing import Any
 
 from clan_cli.cmd import Log, RunOpts
+from clan_cli.flake import Flake
 from clan_cli.inventory import patch_inventory_with
+from clan_cli.machines.machines import Machine
 from clan_cli.nix import nix_command
 from clan_cli.ssh.host import Host
 
@@ -52,7 +54,9 @@ def install_nix_cache(
             }
         },
     }
-    patch_inventory_with(config.clan_dir, "instances.my-static-hosts-new-all", conf)
+    patch_inventory_with(
+        Flake(str(config.clan_dir)), "instances.my-static-hosts-new-all", conf
+    )
 
     conf = {
         "module": {"name": "nix-cache-new", "input": "cvpn-bench"},
@@ -63,10 +67,12 @@ def install_nix_cache(
         },
     }
 
-    patch_inventory_with(config.clan_dir, "instances.nix-cache-new-all", conf)
+    patch_inventory_with(
+        Flake(str(config.clan_dir)), "instances.nix-cache-new-all", conf
+    )
 
 
-def init_nix_cache_path(host: Host, cache_target: Host) -> None:
+def init_nix_cache_path(host: Host, cache_target: Machine) -> None:
     cmd = [
         "copy",
         "--from",
@@ -74,50 +80,53 @@ def init_nix_cache_path(host: Host, cache_target: Host) -> None:
         "/nix/store/jlkypcf54nrh4n6r0l62ryx93z752hb2-firefox-132.0",
     ]
 
-    cache_target.run(nix_command(cmd), RunOpts(log=Log.BOTH))
+    with cache_target.target_host() as cache_host:
+        cache_host.run(nix_command(cmd), RunOpts(log=Log.BOTH))
 
 
 def run_nix_cache_test(
     fetch_machine: BenchMachine, vpn: VPN, cache_target: BenchMachine
 ) -> dict[str, Any]:
-    host = fetch_machine.cmachine.target_host
-    init_nix_cache_path(host, cache_target.cmachine.target_host)
+    with fetch_machine.cmachine.target_host() as host:
+        init_nix_cache_path(host, cache_target.cmachine)
 
-    clear_cache_cmd = "rm -R ~/.cache/nix/binary-cache-*.sqlite*; rm -rf /tmp/cache;"
+        clear_cache_cmd = (
+            "rm -R ~/.cache/nix/binary-cache-*.sqlite*; rm -rf /tmp/cache;"
+        )
 
-    nix_copy_cmd_list = [
-        "nix",
-        "copy",
-        "--from",
-        "{url}",
-        "--to",
-        "file:///tmp/cache?compression=none",
-        "/nix/store/jlkypcf54nrh4n6r0l62ryx93z752hb2-firefox-132.0",
-    ]
+        nix_copy_cmd_list = [
+            "nix",
+            "copy",
+            "--from",
+            "{url}",
+            "--to",
+            "file:///tmp/cache?compression=none",
+            "/nix/store/jlkypcf54nrh4n6r0l62ryx93z752hb2-firefox-132.0",
+        ]
 
-    urls = ",".join([f"http://cache.vpn.{cache_target.cmachine.name}"])
+        urls = ",".join([f"http://cache.vpn.{cache_target.cmachine.name}"])
 
-    cmd = [
-        "hyperfine",
-        "-w",
-        "1",
-        "-r",
-        "4",
-        "--show-output",
-        "--export-json",
-        f"{vpn.value}_nix-cache.json",
-        "--prepare",
-        clear_cache_cmd,
-        " ".join(nix_copy_cmd_list),
-        "-L",
-        "url",
-        urls,
-    ]
+        cmd = [
+            "hyperfine",
+            "-w",
+            "1",
+            "-r",
+            "4",
+            "--show-output",
+            "--export-json",
+            f"{vpn.value}_nix-cache.json",
+            "--prepare",
+            clear_cache_cmd,
+            " ".join(nix_copy_cmd_list),
+            "-L",
+            "url",
+            urls,
+        ]
 
-    host.run(cmd, RunOpts(log=Log.BOTH, timeout=120))  # 2 minutes
+        host.run(cmd, RunOpts(log=Log.BOTH, timeout=120))  # 2 minutes
 
-    res = host.run(["cat", f"{vpn.value}_nix-cache.json"])
-    return json.loads(res.stdout)
+        res = host.run(["cat", f"{vpn.value}_nix-cache.json"])
+        return json.loads(res.stdout)
 
 
 def save_nix_cache_results(result_dir: Path, json_data: dict[str, Any]) -> None:

@@ -2,17 +2,16 @@ import json
 import logging
 from typing import Any
 
-from clan_cli.api import dataclass_to_dict
 from clan_cli.cmd import run
 from clan_cli.flake import Flake
 from clan_cli.inventory import patch_inventory_with
 from clan_cli.machines.machines import Machine
 from clan_cli.machines.update import deploy_machines
-from clan_cli.ssh.host import Host
 from clan_cli.ssh.host_key import HostKeyCheck
 from clan_cli.vars.generate import generate_vars
 from clan_cli.vars.get import get_var
 from clan_cli.vars.list import stringify_all_vars
+from clan_lib.api import dataclass_to_dict
 
 from vpn_bench.connection_timings import (
     download_connection_timings,
@@ -31,9 +30,9 @@ log = logging.getLogger(__name__)
 
 def install_base_config(config: Config, tr_machines: list[TrMachine]) -> None:
     inventory = create_base_inventory(tr_machines, config.ssh_keys)
-    patch_inventory_with(config.clan_dir, "services", inventory.services)
+    patch_inventory_with(Flake(str(config.clan_dir)), "services", inventory.services)
 
-    patch_inventory_with(config.clan_dir, "instances", inventory.instances)
+    patch_inventory_with(Flake(str(config.clan_dir)), "instances", inventory.instances)
 
 
 def install_zerotier(config: Config, tr_machines: list[TrMachine]) -> None:
@@ -60,7 +59,7 @@ def install_zerotier(config: Config, tr_machines: list[TrMachine]) -> None:
             log.info(f"Adding {tr_machine['name']} to the zerotier peers")
             conf["someid"]["roles"]["peer"]["machines"].append(tr_machine["name"])
 
-    patch_inventory_with(config.clan_dir, "services.zerotier", conf)
+    patch_inventory_with(Flake(str(config.clan_dir)), "services.zerotier", conf)
 
 
 def install_mycelium(config: Config, tr_machines: list[TrMachine]) -> None:
@@ -74,7 +73,7 @@ def install_mycelium(config: Config, tr_machines: list[TrMachine]) -> None:
             }
         }
     }
-    patch_inventory_with(config.clan_dir, "services.mycelium", conf)
+    patch_inventory_with(Flake(str(config.clan_dir)), "services.mycelium", conf)
 
 
 def install_wireguard(config: Config, tr_machines: list[TrMachine]) -> None:
@@ -100,7 +99,7 @@ def install_wireguard(config: Config, tr_machines: list[TrMachine]) -> None:
             "mesh": {"machines": machines},
         },
     }
-    patch_inventory_with(config.clan_dir, "instances.wireguard-all", conf)
+    patch_inventory_with(Flake(str(config.clan_dir)), "instances.wireguard-all", conf)
 
 
 def install_hyprspace(config: Config, tr_machines: list[TrMachine]) -> None:
@@ -117,7 +116,7 @@ def install_hyprspace(config: Config, tr_machines: list[TrMachine]) -> None:
             },
         },
     }
-    patch_inventory_with(config.clan_dir, "instances.hyprspace-all", conf)
+    patch_inventory_with(Flake(str(config.clan_dir)), "instances.hyprspace-all", conf)
 
 
 def install_vpncloud(config: Config, tr_machines: list[TrMachine]) -> None:
@@ -139,7 +138,7 @@ def install_vpncloud(config: Config, tr_machines: list[TrMachine]) -> None:
             },
         },
     }
-    patch_inventory_with(config.clan_dir, "instances.vpncloud-all", conf)
+    patch_inventory_with(Flake(str(config.clan_dir)), "instances.vpncloud-all", conf)
 
 
 def install_yggdrasil(config: Config, tr_machines: list[TrMachine]) -> None:
@@ -167,7 +166,7 @@ def install_yggdrasil(config: Config, tr_machines: list[TrMachine]) -> None:
             },
         },
     }
-    patch_inventory_with(config.clan_dir, "instances.yggdrasil-all", conf)
+    patch_inventory_with(Flake(str(config.clan_dir)), "instances.yggdrasil-all", conf)
 
 
 def get_vpn_ips(
@@ -207,7 +206,8 @@ def get_vpn_ips(
                 # We should get it from the var
                 vpn_ip = f"192.168.2.{idx + 1}"
             case VPN.Internal:
-                vpn_ip = machine.target_host.host
+                with machine.target_host() as host:
+                    vpn_ip = host.host
             case _:
                 msg = f"VPN {vpn} not supported"
                 raise VpnBenchError(msg)
@@ -220,9 +220,15 @@ def create_machine_obj(config: Config, tr_machines: list[TrMachine]) -> list[Mac
     """Initialize Machine objects for each terraform machine."""
     clan_dir = Flake(str(config.clan_dir))
 
-    build_host = (
-        "root@localhost" if can_ssh_login(Host(host="localhost", user="root")) else None
+    machine = Machine(
+        name="local-buildhost",
+        flake=clan_dir,
+        host_key_check=HostKeyCheck.NONE,
+        private_key=config.ssh_keys[0].private,
+        override_target_host="root@localhost",
     )
+
+    build_host = "root@localhost" if can_ssh_login(machine) else None
 
     return [
         Machine(

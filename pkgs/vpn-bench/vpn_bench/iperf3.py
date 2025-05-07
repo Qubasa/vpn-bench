@@ -5,8 +5,8 @@ from pathlib import Path
 from typing import Any
 
 from clan_cli.cmd import Log, RunOpts
+from clan_cli.machines.machines import Machine
 from clan_cli.nix import nix_command
-from clan_cli.ssh.host import Host
 
 # from clan_cli.ssh.upload import upload
 
@@ -21,7 +21,7 @@ class IperfCreds:
 
 
 def run_iperf_test(
-    host: Host, target_host: str, creds: IperfCreds, udp_mode: bool = False
+    machine: Machine, target_host: str, creds: IperfCreds, udp_mode: bool = False
 ) -> dict[str, Any]:
     """Run a single iperf3 test and return the results."""
 
@@ -48,10 +48,12 @@ def run_iperf_test(
     if udp_mode:
         cmd.extend(["-u", "--udp-counters-64bit", "-b", "0"])
 
-    res = host.run(
-        nix_command(cmd),
-        RunOpts(log=Log.BOTH, timeout=60),  # 60 seconds
-        extra_env={"IPERF3_PASSWORD": creds.password},
-    )
+    with machine.target_host() as host:
+        # Set the password for the iperf3 server
+        res = host.run(
+            nix_command(cmd),
+            RunOpts(log=Log.BOTH, timeout=60),  # 60 seconds
+            extra_env={"IPERF3_PASSWORD": creds.password},
+        )
 
     return json.loads(res.stdout)

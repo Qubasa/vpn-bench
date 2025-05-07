@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import Literal, TypedDict, TypeVar, cast
 
 from clan_cli.cmd import Log, RunOpts
-from clan_cli.ssh.host import Host
+from clan_cli.machines.machines import Machine
 
 # Define TypeVar for numeric types (int or float)
 T = TypeVar("T", int, float)
@@ -285,11 +285,12 @@ def calculate_qperf_summary(parsed_outputs: list[QperfOutputDict]) -> QperfSumma
     }
 
 
-def run_qperf_test(host: Host, target_host: str) -> QperfSummaryDict:
+def run_qperf_test(machine: Machine, target_host: str) -> QperfSummaryDict:
     """Run a single qperf test and return the results."""
 
     parsed_outputs: list[QperfOutputDict] = []
-    num_cores = int(host.run(["nproc"]).stdout.strip())
+    with machine.target_host() as host:
+        num_cores = int(host.run(["nproc"]).stdout.strip())
     with ThreadPoolExecutor() as executor:
         futures = []
         for core in range(num_cores):

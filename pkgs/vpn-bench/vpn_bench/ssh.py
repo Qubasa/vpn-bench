@@ -5,9 +5,9 @@ import subprocess
 from pathlib import Path
 
 from clan_cli.cmd import Log, RunOpts, run
+from clan_cli.machines.machines import Machine
 
 # Clan TODO: We need to fix this circular import problem in clan_cli!
-from clan_cli.ssh.host import Host
 from clan_cli.ssh.host_key import HostKeyCheck
 
 from vpn_bench.data import SSHKeyPair, TrMachine
@@ -15,20 +15,20 @@ from vpn_bench.data import SSHKeyPair, TrMachine
 log = logging.getLogger(__name__)
 
 
-def can_ssh_login(host: Host) -> bool:
-    host = Host.from_host(host)
-    host.host_key_check = HostKeyCheck.NONE
-    host.ssh_options.update(
-        {
-            "PasswordAuthentication": "no",
-            "BatchMode": "yes",
-        }
-    )
+def can_ssh_login(machine: Machine) -> bool:
+    with machine.target_host() as host:
+        host.host_key_check = HostKeyCheck.NONE
+        host.ssh_options.update(
+            {
+                "PasswordAuthentication": "no",
+                "BatchMode": "yes",
+            }
+        )
 
-    result = host.run(["exit"], RunOpts(check=False, shell=True))
+        result = host.run(["exit"], RunOpts(check=False, shell=True))
 
-    # Check the return code
-    return result.returncode == 0
+        # Check the return code
+        return result.returncode == 0
 
 
 def generate_ssh_key(root_dir: Path) -> SSHKeyPair:

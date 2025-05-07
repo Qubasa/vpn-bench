@@ -26,7 +26,6 @@ def run_benchmarks(
     remote_iperf3_pubkey = Path("/tmp/iperf3.public")
     for pos, bmachine in enumerate(bmachines):
         next_bmachine = bmachines[pos + 1] if pos + 1 < len(bmachines) else bmachines[0]
-        host = bmachine.cmachine.target_host
         log.info(f"Benchmarking {bmachine.cmachine.name} with ip {bmachine.vpn_ip}")
         result_dir = config.bench_dir / vpn.name / f"{pos}_{bmachine.cmachine.name}"
 
@@ -39,7 +38,7 @@ def run_benchmarks(
         )
 
         # Upload iperf3 public key
-        upload(host, local_pubkey, remote_iperf3_pubkey)
+        upload(bmachine.cmachine, local_pubkey, remote_iperf3_pubkey)
 
         P = ParamSpec("P")  # noqa: N806
 
@@ -56,7 +55,7 @@ def run_benchmarks(
                 case TestType.IPERF3:
                     tcp_results = execute_test(
                         run_iperf_test,
-                        host,
+                        bmachine.cmachine,
                         "vpn." + next_bmachine.cmachine.name,
                         creds,
                         udp_mode=False,
@@ -65,7 +64,7 @@ def run_benchmarks(
 
                     udp_results = execute_test(
                         run_iperf_test,
-                        host,
+                        bmachine.cmachine,
                         "vpn." + next_bmachine.cmachine.name,
                         creds,
                         udp_mode=True,
@@ -75,7 +74,7 @@ def run_benchmarks(
                 case TestType.QPERF:
                     quick_result = execute_test(
                         run_qperf_test,
-                        host,
+                        bmachine.cmachine,
                         "vpn." + next_bmachine.cmachine.name,
                     )
                     save_bench_report(result_dir, quick_result, "qperf.json")

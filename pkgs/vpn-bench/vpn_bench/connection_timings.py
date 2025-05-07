@@ -6,10 +6,10 @@ from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 from clan_cli.cmd import Log, RunOpts
+from clan_cli.flake import Flake
 from clan_cli.inventory import patch_inventory_with
 from clan_cli.machines.machines import Machine
 from clan_cli.ssh.deploy_info import is_ssh_reachable
-from clan_cli.ssh.host import Host
 from clan_cli.ssh.upload import upload
 
 from vpn_bench.assets import get_script_asset
@@ -58,7 +58,9 @@ def install_connection_timings_conf(
         }
 
         patch_inventory_with(
-            config.clan_dir, f"instances.my-nginx-{bmachine.cmachine.name}_id", conf
+            Flake(str(config.clan_dir)),
+            f"instances.my-nginx-{bmachine.cmachine.name}_id",
+            conf,
         )
 
 
@@ -71,15 +73,16 @@ def download_connection_timings(
         case _:
             pass
 
-    def download_save(host: Host, dest: Path) -> None:
-        res = host.run(
-            ["cat", "/var/lib/connection-check/connection_timings.json"],
-            RunOpts(log=Log.BOTH),
-        )
-        res = json.loads(res.stdout)
+    def download_save(machine: Machine, dest: Path) -> None:
+        with machine.target_host() as host:
+            res = host.run(
+                ["cat", "/var/lib/connection-check/connection_timings.json"],
+                RunOpts(log=Log.BOTH),
+            )
+            res = json.loads(res.stdout)
 
-        with dest.open("w") as f:
-            json.dump(res, f, indent=4)
+            with dest.open("w") as f:
+                json.dump(res, f, indent=4)
 
     with ThreadPoolExecutor() as executor:
         futures = []
@@ -91,11 +94,10 @@ def download_connection_timings(
                 dest /= "reboot_connection_timings.json"
             else:
                 dest /= "connection_timings.json"
-            host = machine.target_host
 
             future = executor.submit(
                 download_save,
-                host,
+                machine,
                 dest,
             )
             futures.append(future)
@@ -119,13 +121,13 @@ def reboot_connection_timings(
     with ThreadPoolExecutor() as executor:
         futures = []
         for machine in machines:
-            host = machine.target_host
-            future = executor.submit(
-                host.run,
-                ["reboot"],
-                RunOpts(log=Log.BOTH),
-            )
-            futures.append(future)
+            with machine.target_host() as host:
+                future = executor.submit(
+                    host.run,
+                    ["reboot"],
+                    RunOpts(log=Log.BOTH),
+                )
+                futures.append(future)
 
         done, not_done = concurrent.futures.wait(futures)
 
@@ -136,17 +138,15 @@ def reboot_connection_timings(
 
     # Wait for machines to be offline
     for machine in machines:
-        host = machine.target_host
-        while is_ssh_reachable(host):
+        while is_ssh_reachable(machine):
             log.info(f"Waiting for {machine.name} to be offline")
             time.sleep(0.5)
         log.info(f"{machine.name} is offline")
 
     # Wait for machines to come online
     for machine in machines:
-        host = machine.target_host
         while True:
-            if is_ssh_reachable(host):
+            if is_ssh_reachable(machine):
                 log.info(f"{machine.name} is back online")
                 break
             log.info(f"Waiting for {machine.name} to come online")
@@ -156,16 +156,17 @@ def reboot_connection_timings(
     with ThreadPoolExecutor() as executor:
         futures = []
         for machine in machines:
-            host = machine.target_host
             script = get_script_asset("wait_service.sh")
             wait_service_path = Path("/tmp/wait_service.sh")
-            upload(host, script, wait_service_path, file_mode=0o777)
-            future = executor.submit(
-                host.run,
-                [f"{wait_service_path}", "-s", "connection-check.service"],
-                RunOpts(log=Log.BOTH),
-            )
-            futures.append(future)
+            upload(machine, script, wait_service_path, file_mode=0o777)
+
+            with machine.target_host() as host:
+                future = executor.submit(
+                    host.run,
+                    [f"{wait_service_path}", "-s", "connection-check.service"],
+                    RunOpts(log=Log.BOTH),
+                )
+                futures.append(future)
 
         done, not_done = concurrent.futures.wait(futures)
 
