@@ -5,8 +5,8 @@ from enum import Enum
 from pathlib import Path
 from typing import TypedDict
 
-from clan_cli.cmd import Log, RunOpts
-from clan_cli.machines.machines import Machine
+from clan_lib.cmd import Log, RunOpts
+from clan_lib.machines.machines import Machine
 
 
 @dataclass
@@ -89,8 +89,9 @@ class Config:
 
 
 def _delete_dir(machine: Machine, state_dirs: list[str]) -> None:
-    with machine.target_host() as host:
-        host.run(
+    host = machine.target_host()
+    with host.host_connection() as ssh:
+        ssh.run(
             ["rm", "-rf", *state_dirs],
             RunOpts(log=Log.BOTH),
         )

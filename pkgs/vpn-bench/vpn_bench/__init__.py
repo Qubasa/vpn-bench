@@ -1,6 +1,6 @@
 import logging
 
-from clan_cli.errors import ClanError
+from clan_lib.errors import ClanError
 
 from vpn_bench import cli
 from vpn_bench.errors import VpnBenchError

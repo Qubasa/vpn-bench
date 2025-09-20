@@ -158,7 +158,8 @@
               validation = {
                 listenPort = settings.listenPort;
                 allowedPubkeys = settings.allowedPubkeys;
-              } // settings.peers;
+              }
+              // settings.peers;
 
               runtimeInputs = [
                 pkgs.coreutils

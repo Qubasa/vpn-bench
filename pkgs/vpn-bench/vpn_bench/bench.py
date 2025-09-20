@@ -3,7 +3,7 @@ from collections.abc import Callable
 from pathlib import Path
 from typing import Any, ParamSpec
 
-from clan_cli.ssh.upload import upload
+from clan_lib.ssh.upload import upload
 
 from vpn_bench.assets import get_iperf_asset
 from vpn_bench.data import VPN, BenchMachine, Config, TestType
@@ -36,10 +36,9 @@ def run_benchmarks(
         creds = IperfCreds(
             username="mario", password=password, pubkey=remote_iperf3_pubkey
         )
-
+        host = bmachine.cmachine.target_host()
         # Upload iperf3 public key
-        with bmachine.cmachine.target_host() as host:
-            upload(host, local_pubkey, remote_iperf3_pubkey)
+        upload(host, local_pubkey, remote_iperf3_pubkey)
 
         P = ParamSpec("P")  # noqa: N806
 

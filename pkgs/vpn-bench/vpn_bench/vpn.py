@@ -2,23 +2,23 @@ import json
 import logging
 from typing import Any
 
-from clan_cli.cmd import run
-from clan_cli.flake import Flake
-from clan_cli.inventory import patch_inventory_with
-from clan_cli.machines.machines import Machine
-from clan_cli.machines.update import deploy_machines
-from clan_cli.ssh.host_key import HostKeyCheck
-from clan_cli.vars.generate import generate_vars
-from clan_cli.vars.get import get_var
+from clan_cli.vars.get import get_machine_var
 from clan_cli.vars.list import stringify_all_vars
 from clan_lib.api import dataclass_to_dict
+from clan_lib.cmd import run
+from clan_lib.flake import Flake
+from clan_lib.machines.machines import Machine
+from clan_lib.machines.update import run_machine_update
+from clan_lib.persist.inventory_store import InventoryStore, set_value_by_path
+from clan_lib.ssh.remote import Remote
+from clan_lib.vars.generate import run_generators
 
 from vpn_bench.connection_timings import (
     download_connection_timings,
     install_connection_timings_conf,
     reboot_connection_timings,
 )
-from vpn_bench.data import VPN, BenchMachine, Config, Provider, delete_dirs
+from vpn_bench.data import VPN, BenchMachine, Config, Provider, SSHKeyPair, delete_dirs
 from vpn_bench.errors import VpnBenchError
 from vpn_bench.install import can_ssh_login
 from vpn_bench.nix_cache import install_nix_cache
@@ -29,13 +29,18 @@ log = logging.getLogger(__name__)
 
 
 def install_base_config(config: Config, tr_machines: list[TrMachine]) -> None:
-    inventory = create_base_inventory(tr_machines, config.ssh_keys)
-    patch_inventory_with(Flake(str(config.clan_dir)), "services", inventory.services)
+    inventory_wrap = create_base_inventory(tr_machines, config.ssh_keys)
+    inventory_store = InventoryStore(Flake(str(config.clan_dir)))
+    inventory = inventory_store.read()
+    set_value_by_path(inventory, "services", inventory_wrap.services)
 
-    patch_inventory_with(Flake(str(config.clan_dir)), "instances", inventory.instances)
+    set_value_by_path(inventory, "instances", inventory_wrap.instances)
+    inventory_store.write(inventory, message="Add base configuration")
 
 
 def install_zerotier(config: Config, tr_machines: list[TrMachine]) -> None:
+    inventory_store = InventoryStore(Flake(str(config.clan_dir)))
+    inventory = inventory_store.read()
     conf: dict[str, Any] = {
         "someid": {
             "roles": {
@@ -59,10 +64,13 @@ def install_zerotier(config: Config, tr_machines: list[TrMachine]) -> None:
             log.info(f"Adding {tr_machine['name']} to the zerotier peers")
             conf["someid"]["roles"]["peer"]["machines"].append(tr_machine["name"])
 
-    patch_inventory_with(Flake(str(config.clan_dir)), "services.zerotier", conf)
+    set_value_by_path(inventory, "services.zerotier", conf)
+    inventory_store.write(inventory, message="Add zerotier configuration")
 
 
 def install_mycelium(config: Config, tr_machines: list[TrMachine]) -> None:
+    inventory_store = InventoryStore(Flake(str(config.clan_dir)))
+    inventory = inventory_store.read()
     conf: dict[str, Any] = {
         "someid": {
             "roles": {
@@ -73,10 +81,14 @@ def install_mycelium(config: Config, tr_machines: list[TrMachine]) -> None:
             }
         }
     }
-    patch_inventory_with(Flake(str(config.clan_dir)), "services.mycelium", conf)
+    set_value_by_path(Flake(str(config.clan_dir)), "services.mycelium", conf)
+    inventory_store.write(inventory, message="Add mycelium configuration")
 
 
 def install_wireguard(config: Config, tr_machines: list[TrMachine]) -> None:
+    inventory_store = InventoryStore(Flake(str(config.clan_dir)))
+    inventory = inventory_store.read()
+
     machines = {}
 
     for num, machine in enumerate(tr_machines):
@@ -99,10 +111,13 @@ def install_wireguard(config: Config, tr_machines: list[TrMachine]) -> None:
             "mesh": {"machines": machines},
         },
     }
-    patch_inventory_with(Flake(str(config.clan_dir)), "instances.wireguard-all", conf)
+    set_value_by_path(inventory, "instances.wireguard-all", conf)
+    inventory_store.write(inventory, message="Add wireguard configuration")
 
 
 def install_hyprspace(config: Config, tr_machines: list[TrMachine]) -> None:
+    inventory_store = InventoryStore(Flake(str(config.clan_dir)))
+    inventory = inventory_store.read()
     if tr_machines[0]["provider"] == Provider.Hetzner:
         block_addresses = True
     else:
@@ -116,10 +131,16 @@ def install_hyprspace(config: Config, tr_machines: list[TrMachine]) -> None:
             },
         },
     }
-    patch_inventory_with(Flake(str(config.clan_dir)), "instances.hyprspace-all", conf)
+    set_value_by_path(inventory, "instances.hyprspace-all", conf)
+    inventory_store.write(
+        inventory,
+        message="Add hyprspace configuration",
+    )
 
 
 def install_vpncloud(config: Config, tr_machines: list[TrMachine]) -> None:
+    inventory_store = InventoryStore(Flake(str(config.clan_dir)))
+    inventory = inventory_store.read()
     peer_ips = []
 
     for machine in tr_machines:
@@ -138,10 +159,13 @@ def install_vpncloud(config: Config, tr_machines: list[TrMachine]) -> None:
             },
         },
     }
-    patch_inventory_with(Flake(str(config.clan_dir)), "instances.vpncloud-all", conf)
+    set_value_by_path(inventory, "instances.vpncloud-all", conf)
+    inventory_store.write(inventory, message="Add vpncloud configuration")
 
 
 def install_yggdrasil(config: Config, tr_machines: list[TrMachine]) -> None:
+    inventory_store = InventoryStore(Flake(str(config.clan_dir)))
+    inventory = inventory_store.read()
     peers = {}
     enable_mulicast = True
     if tr_machines[0]["provider"] == Provider.Hetzner:
@@ -166,7 +190,8 @@ def install_yggdrasil(config: Config, tr_machines: list[TrMachine]) -> None:
             },
         },
     }
-    patch_inventory_with(Flake(str(config.clan_dir)), "instances.yggdrasil-all", conf)
+    set_value_by_path(inventory, "instances.yggdrasil-all", conf)
+    inventory_store.write(inventory, message="Add yggdrasil configuration")
 
 
 def get_vpn_ips(
@@ -174,73 +199,41 @@ def get_vpn_ips(
 ) -> list[BenchMachine]:
     """Query and collect VPN IPs for each machine."""
     bmachines: list[BenchMachine] = []
-    generate_vars(machines)
+    # Invalidate cache for all machines
+    for machine in machines:
+        machine.flake.invalidate_cache()
+
+    run_generators(machines=machines)
     for idx, machine in enumerate(machines):
         machine.flake.invalidate_cache()
         log.info(stringify_all_vars(machine))
         vpn_ip: str | None = None
         match vpn:
             case VPN.Zerotier:
-                vpn_ip = get_var(
-                    str(config.clan_dir), machine.name, "zerotier/zerotier-ip"
-                ).value.decode()
+                vpn_ip = get_machine_var(machine, "zerotier/zerotier-ip").value.decode()
             case VPN.Mycelium:
                 vpn_ip = (
-                    get_var(str(config.clan_dir), machine.name, "mycelium/ip")
-                    .value.decode()
-                    .strip("\n")
+                    get_machine_var(machine, "mycelium/ip").value.decode().strip("\n")
                 )  # TODO: Fix the newline in the var
             case VPN.Hyprspace:
-                vpn_ip = get_var(
-                    str(config.clan_dir), machine.name, "hyprspace/ip"
-                ).value.decode()
+                vpn_ip = get_machine_var(machine, "hyprspace/ip").value.decode()
             case VPN.VpnCloud:
-                vpn_ip = get_var(
-                    str(config.clan_dir), machine.name, "vpncloud/ip"
-                ).value.decode()
+                vpn_ip = get_machine_var(machine, "vpncloud/ip").value.decode()
             case VPN.Yggdrasil:
-                vpn_ip = get_var(
-                    str(config.clan_dir), machine.name, "yggdrasil/ip"
-                ).value.decode()
+                vpn_ip = get_machine_var(machine, "yggdrasil/ip").value.decode()
             case VPN.Wireguard:
                 # TODO: We hardcode the IP address here
                 # We should get it from the var
                 vpn_ip = f"192.168.2.{idx + 1}"
             case VPN.Internal:
-                with machine.target_host() as host:
-                    vpn_ip = host.host
+                host = machine.target_host()
+                vpn_ip = host.address
             case _:
                 msg = f"VPN {vpn} not supported"
                 raise VpnBenchError(msg)
         assert vpn_ip is not None
         bmachines.append(BenchMachine(cmachine=machine, vpn_ip=vpn_ip))
     return bmachines
-
-
-def create_machine_obj(config: Config, tr_machines: list[TrMachine]) -> list[Machine]:
-    """Initialize Machine objects for each terraform machine."""
-    clan_dir = Flake(str(config.clan_dir))
-
-    machine = Machine(
-        name="local-buildhost",
-        flake=clan_dir,
-        host_key_check=HostKeyCheck.NONE,
-        private_key=config.ssh_keys[0].private,
-        override_target_host="root@localhost",
-    )
-
-    build_host = "root@localhost" if can_ssh_login(machine) else None
-
-    return [
-        Machine(
-            name=tr_machine["name"],
-            flake=clan_dir,
-            host_key_check=HostKeyCheck.NONE,
-            override_build_host=build_host,
-            private_key=config.ssh_keys[0].private,
-        )
-        for tr_machine in tr_machines
-    ]
 
 
 def save_machine_layout(
@@ -255,6 +248,18 @@ def save_machine_layout(
         json.dump(layout, f, indent=4)
 
 
+def deploy_machines(
+    machines: list[Machine], build_host: Remote | None, ssh_key: SSHKeyPair
+) -> None:
+    for machine in machines:
+        target_host = machine.target_host().override(
+            host_key_check="none",
+            private_key=ssh_key.private,
+            address="root@localhost",
+        )
+        run_machine_update(machine, target_host=target_host, build_host=build_host)
+
+
 def install_vpn(
     config: Config,
     vpn: VPN,
@@ -267,11 +272,29 @@ def install_vpn(
     install_base_config(config, tr_machines)
 
     # Initialize and configure machines
-    machines = create_machine_obj(config, tr_machines)
+
+    clan_dir = Flake(str(config.clan_dir))
+    machines = [
+        Machine(
+            name=tr_machine["name"],
+            flake=clan_dir,
+        )
+        for tr_machine in tr_machines
+    ]
+
+    build_machine = Machine(
+        name="local-buildhost",
+        flake=clan_dir,
+    )
+    build_host = None
+    if can_ssh_login(build_machine):
+        build_host = build_machine.target_host().override(
+            address="root@localhost", host_key_check="none"
+        )
 
     if get_con_times and vpn != VPN.Internal:
         # Update machine without VPNs to remove any previous VPN configuration
-        deploy_machines(machines)
+        deploy_machines(machines, build_host=build_host, ssh_key=config.ssh_keys[0])
 
         state_dirs = [
             "/root/qperf",
@@ -304,18 +327,14 @@ def install_vpn(
             msg = f"VPN {vpn} not supported"
             raise VpnBenchError(msg)
 
-    # Recreate machine objects, else the Flake object will point to
-    # an old version of the Flake
-    # FIXME: machine.flake.prefetch() does not work, but should invalidate the cache
-    # TODO: Find should find a automated way to reset the Flake object as bugs that arise
-    # from this are super hard to debug
-    machines = create_machine_obj(config, tr_machines)
+    for machine in machines:
+        machine.flake.invalidate_cache()
 
     if vpn == VPN.Zerotier:
         # Because of facts to vars migration code,
         # we need to generate the zerotier network-id var
         # for the controller machine
-        generate_vars([machines[0]], "zerotier")
+        run_generators([machines[0]], "zerotier")
 
     # Get the VPN IP of each machine
     bmachines = get_vpn_ips(config, machines, vpn)
@@ -328,8 +347,12 @@ def install_vpn(
         # Install VPN connection timing service
         install_connection_timings_conf(config, tr_machines, vpn, bmachines)
 
+    # Invalidate cache for all machines
+    for machine in machines:
+        machine.flake.invalidate_cache()
+
     # Update machine configuration with VPNs
-    deploy_machines(machines)
+    deploy_machines(machines, build_host=build_host, ssh_key=config.ssh_keys[0])
 
     if get_con_times and vpn != VPN.Internal:
         download_connection_timings(config, vpn, machines)

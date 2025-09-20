@@ -20,7 +20,7 @@
       { settings, ... }:
       {
         nixosModule =
-          { config, ... }:
+          { ... }:
           {
             users.users.root.openssh.authorizedKeys.keys = builtins.attrValues settings.allowedKeys;
             nixpkgs.config.allowUnfree = true;

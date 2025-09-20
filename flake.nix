@@ -1,8 +1,8 @@
 {
-  description = "<Put your description here>";
+  description = "A Nix flake for benchmarking mesh VPNs with Clan";
 
   #inputs.clan-core.url = "https://git.clan.lol/clan/clan-core/archive/main.tar.gz";
-  inputs.clan-core.url = "https://git.clan.lol/Qubasa/clan-core/archive/replace_machine_name_with_machine_obj2.zip";
+  inputs.clan-core.url = "https://git.clan.lol/Qubasa/clan-core/archive/api_fixes.tar.gz";
   inputs.nixpkgs.follows = "clan-core/nixpkgs";
   inputs.flake-parts.url = "github:hercules-ci/flake-parts";
   inputs.flake-parts.inputs.nixpkgs-lib.follows = "nixpkgs";
@@ -14,7 +14,6 @@
 
   outputs =
     inputs@{
-      clan-core,
       flake-parts,
       self,
       ...

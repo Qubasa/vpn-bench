@@ -4,8 +4,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Literal, TypedDict
 
-from clan_cli.errors import ClanCmdError, ClanError, CmdOut
 from clan_lib.api import dataclass_to_dict
+from clan_lib.errors import ClanCmdError, ClanError, CmdOut
 
 
 class VpnBenchError(ClanError):

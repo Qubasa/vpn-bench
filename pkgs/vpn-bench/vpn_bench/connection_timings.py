@@ -1,20 +1,21 @@
 import concurrent
+import contextlib
 import json
 import logging
 import time
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
-from clan_cli.cmd import Log, RunOpts
-from clan_cli.flake import Flake
-from clan_cli.inventory import patch_inventory_with
-from clan_cli.machines.machines import Machine
-from clan_cli.ssh.deploy_info import is_ssh_reachable
-from clan_cli.ssh.upload import upload
+from clan_lib.cmd import Log, RunOpts
+from clan_lib.errors import ClanError  # Assuming these are available
+from clan_lib.flake import Flake
+from clan_lib.machines.machines import Machine
+from clan_lib.persist.inventory_store import InventoryStore, set_value_by_path
+from clan_lib.ssh.upload import upload
 
 from vpn_bench.assets import get_script_asset
 
-# from clan_cli.ssh.upload import upload
+# from clan_lib.ssh.upload import upload
 from vpn_bench.data import VPN, BenchMachine, Config, delete_dirs
 from vpn_bench.errors import save_bench_report
 from vpn_bench.terraform import TrMachine
@@ -57,10 +58,14 @@ def install_connection_timings_conf(
             },
         }
 
-        patch_inventory_with(
-            Flake(str(config.clan_dir)),
-            f"instances.my-nginx-{bmachine.cmachine.name}_id",
-            conf,
+        inventory_store = InventoryStore(Flake(str(config.clan_dir)))
+        inventory = inventory_store.read()
+        set_value_by_path(
+            inventory, f"instances.my-nginx-{bmachine.cmachine.name}_id", conf
+        )
+        inventory_store.write(
+            inventory,
+            message=f"Add connection timings conf for {bmachine.cmachine.name}",
         )
 
 
@@ -74,8 +79,9 @@ def download_connection_timings(
             pass
 
     def download_save(machine: Machine, dest: Path) -> None:
-        with machine.target_host() as host:
-            res = host.run(
+        host = machine.target_host()
+        with host.host_connection() as ssh:
+            res = ssh.run(
                 ["cat", "/var/lib/connection-check/connection_timings.json"],
                 RunOpts(log=Log.BOTH),
             )
@@ -118,8 +124,9 @@ def reboot_connection_timings(
     delete_dirs(["/var/lib/connection-check", "/tmp/wait_service.sh"], machines)
 
     def _reboot(machine: Machine) -> None:
-        with machine.target_host() as host:
-            host.run(
+        host = machine.target_host()
+        with host.host_connection() as ssh:
+            ssh.run(
                 ["reboot"],
                 RunOpts(log=Log.BOTH),
             )
@@ -140,26 +147,29 @@ def reboot_connection_timings(
 
     # Wait for machines to be offline
     for machine in machines:
-        with machine.target_host() as host:
-            while is_ssh_reachable(host):
-                log.info(f"Waiting for {machine.name} to be offline")
-                time.sleep(0.5)
-            log.info(f"{machine.name} is offline")
+        host = machine.target_host()
+        with contextlib.suppress(ClanError):
+            host.check_machine_ssh_reachable()
+            log.info(f"Waiting for {machine.name} to be offline")
+            time.sleep(0.5)
+        log.info(f"{machine.name} is offline")
 
     # Wait for machines to come online
     for machine in machines:
         while True:
-            with machine.target_host() as host:
-                if is_ssh_reachable(host):
-                    log.info(f"{machine.name} is back online")
-                    break
-                log.info(f"Waiting for {machine.name} to come online")
-                time.sleep(1)
+            host = machine.target_host()
+            with contextlib.suppress(ClanError):
+                host.check_machine_ssh_reachable()
+                log.info(f"{machine.name} is back online")
+                break
+            log.info(f"Waiting for {machine.name} to come online")
+            time.sleep(1)
 
     def _wait_service(machine: Machine, wait_service_path: Path) -> None:
-        with machine.target_host() as host:
-            upload(host, script, wait_service_path, file_mode=0o777)
-            host.run(
+        host = machine.target_host()
+        upload(host, script, wait_service_path, file_mode=0o777)
+        with host.host_connection() as ssh:
+            ssh.run(
                 [f"{wait_service_path}", "-s", "connection-check.service"],
                 RunOpts(log=Log.BOTH),
             )

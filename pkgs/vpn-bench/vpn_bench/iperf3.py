@@ -4,11 +4,11 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from clan_cli.cmd import Log, RunOpts
-from clan_cli.machines.machines import Machine
-from clan_cli.nix import nix_command
+from clan_lib.cmd import Log, RunOpts
+from clan_lib.machines.machines import Machine
+from clan_lib.nix import nix_command
 
-# from clan_cli.ssh.upload import upload
+# from clan_lib.ssh.upload import upload
 
 log = logging.getLogger(__name__)
 
@@ -48,9 +48,10 @@ def run_iperf_test(
     if udp_mode:
         cmd.extend(["-u", "--udp-counters-64bit", "-b", "0"])
 
-    with machine.target_host() as host:
+    host = machine.target_host()
+    with host.host_connection() as ssh:
         # Set the password for the iperf3 server
-        res = host.run(
+        res = ssh.run(
             nix_command(cmd),
             RunOpts(log=Log.BOTH, timeout=60),  # 60 seconds
             extra_env={"IPERF3_PASSWORD": creds.password},

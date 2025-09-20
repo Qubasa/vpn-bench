@@ -7,8 +7,8 @@ from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from typing import Literal, TypedDict, TypeVar, cast
 
-from clan_cli.cmd import Log, RunOpts
-from clan_cli.machines.machines import Machine
+from clan_lib.cmd import Log, RunOpts
+from clan_lib.machines.machines import Machine
 
 # Define TypeVar for numeric types (int or float)
 T = TypeVar("T", int, float)
@@ -291,7 +291,8 @@ def _qperf_test(
     core: int,
 ) -> QperfOutputDict:
     """Run a qperf test and return the parsed output."""
-    with machine.target_host() as host:
+    host = machine.target_host()
+    with host.host_connection() as ssh:
         cmd = [
             "qperf",
             "-i",
@@ -305,7 +306,7 @@ def _qperf_test(
             "-c",
             target_host,
         ]
-        res = host.run(cmd, RunOpts(log=Log.BOTH, timeout=60))
+        res = ssh.run(cmd, RunOpts(log=Log.BOTH, timeout=60))
     return parse_qperf_output(res.stdout)
 
 
@@ -313,8 +314,9 @@ def run_qperf_test(machine: Machine, target_host: str) -> QperfSummaryDict:
     """Run a single qperf test and return the results."""
 
     parsed_outputs: list[QperfOutputDict] = []
-    with machine.target_host() as host:
-        num_cores = int(host.run(["nproc"]).stdout.strip())
+    host = machine.target_host()
+    with host.host_connection() as ssh:
+        num_cores = int(ssh.run(["nproc"]).stdout.strip())
     with ThreadPoolExecutor() as executor:
         futures = []
         for core in range(num_cores):
@@ -331,7 +333,7 @@ def run_qperf_test(machine: Machine, target_host: str) -> QperfSummaryDict:
     return calculate_qperf_summary(parsed_outputs)
 
 
-def calculate_percentiles(values: list[T]) -> dict[str, float]:
+def calculate_percentiles[T: (int, float)](values: list[T]) -> dict[str, float]:
     """
     Calculate percentiles more precisely using the statistics module.
     For even-length lists, this uses interpolation between the two middle values.

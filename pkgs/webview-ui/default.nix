@@ -16,13 +16,12 @@ buildNpmPackage {
   npmDeps = importNpmLock { npmRoot = ./app; };
   npmConfigHook = importNpmLock.npmConfigHook;
 
-  preBuild =
-    ''
-      cp -r ${fonts} ".fonts"
-    ''
-    + lib.optionalString (benchDir != null) ''
-      rm -rf bench
-      cp -r ${benchDir} bench
-      ls -la bench
-    '';
+  preBuild = ''
+    cp -r ${fonts} ".fonts"
+  ''
+  + lib.optionalString (benchDir != null) ''
+    rm -rf bench
+    cp -r ${benchDir} bench
+    ls -la bench
+  '';
 }

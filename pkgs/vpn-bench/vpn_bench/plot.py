@@ -6,8 +6,8 @@ from http.server import HTTPServer, SimpleHTTPRequestHandler
 from pathlib import Path
 from typing import Any
 
-from clan_cli.cmd import run
-from clan_cli.nix import nix_build, nix_config
+from clan_lib.cmd import run
+from clan_lib.nix import nix_build, nix_config
 
 from vpn_bench.connection_timings import analyse_connection_timings
 from vpn_bench.data import Config

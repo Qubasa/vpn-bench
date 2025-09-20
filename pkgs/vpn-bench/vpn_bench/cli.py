@@ -5,8 +5,8 @@ import logging
 import os
 from pathlib import Path
 
-from clan_cli.custom_logger import setup_logging
-from clan_cli.dirs import user_cache_dir, user_data_dir
+from clan_lib.custom_logger import setup_logging
+from clan_lib.dirs import user_cache_dir, user_data_dir
 
 from vpn_bench.bench import benchmark_vpn
 from vpn_bench.data import VPN, Config, Provider, SSHKeyPair, TestType
@@ -154,10 +154,8 @@ def run_cli() -> None:
 
     if config.debug:
         setup_logging(logging.DEBUG)
-        setup_logging(logging.DEBUG, root_log_name=__name__.split(".")[0])
     else:
         setup_logging(logging.INFO)
-        setup_logging(logging.INFO, root_log_name=__name__.split(".")[0])
 
     log.debug("Debug mode enabled")
 

@@ -11,7 +11,8 @@ mkShell {
     mypy
     ruff
     custom_treefmt
-  ] ++ vpn-bench.propagatedBuildInputs;
+  ]
+  ++ vpn-bench.propagatedBuildInputs;
 
   shellHook = ''
     export GIT_ROOT="$(git rev-parse --show-toplevel)"

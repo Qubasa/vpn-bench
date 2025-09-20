@@ -5,7 +5,7 @@
 
   roles.default = {
     perInstance =
-      { settings, ... }:
+      { ... }:
       {
         nixosModule =
           { ... }:

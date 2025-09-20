@@ -77,7 +77,8 @@
             directory = "pkgs/vpn-bench";
             extraPythonPackages = [
               (pkgs.python3.pkgs.toPythonModule inputs'.clan-core.packages.clan-cli)
-            ] ++ self'.packages.vpn-bench.propagatedBuildInputs;
+            ]
+            ++ self'.packages.vpn-bench.propagatedBuildInputs;
           };
 
         };

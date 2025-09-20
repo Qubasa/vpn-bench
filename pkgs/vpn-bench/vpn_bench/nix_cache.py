@@ -3,12 +3,12 @@ import logging
 from pathlib import Path
 from typing import Any
 
-from clan_cli.cmd import Log, RunOpts
-from clan_cli.flake import Flake
-from clan_cli.inventory import patch_inventory_with
-from clan_cli.machines.machines import Machine
-from clan_cli.nix import nix_command
-from clan_cli.ssh.host import Host
+from clan_lib.cmd import Log, RunOpts
+from clan_lib.flake import Flake
+from clan_lib.machines.machines import Machine
+from clan_lib.nix import nix_command
+from clan_lib.persist.inventory_store import InventoryStore, set_value_by_path
+from clan_lib.ssh.remote import Remote
 
 from vpn_bench.data import VPN, BenchMachine, Config
 from vpn_bench.terraform import TrMachine
@@ -54,9 +54,9 @@ def install_nix_cache(
             }
         },
     }
-    patch_inventory_with(
-        Flake(str(config.clan_dir)), "instances.my-static-hosts-new-all", conf
-    )
+    inventory_store = InventoryStore(Flake(str(config.clan_dir)))
+    inventory = inventory_store.read()
+    set_value_by_path(inventory, "instances.my-static-hosts-new-all", conf)
 
     conf = {
         "module": {"name": "nix-cache-new", "input": "cvpn-bench"},
@@ -66,13 +66,14 @@ def install_nix_cache(
             }
         },
     }
-
-    patch_inventory_with(
-        Flake(str(config.clan_dir)), "instances.nix-cache-new-all", conf
+    set_value_by_path(inventory, "instances.nix-cache-new-all", conf)
+    inventory_store.write(
+        inventory,
+        message="Add nix-cache configuration for vpn and internal ips",
     )
 
 
-def init_nix_cache_path(host: Host, cache_target: Machine) -> None:
+def init_nix_cache_path(host: Remote, cache_target: Machine) -> None:
     cmd = [
         "copy",
         "--from",
@@ -80,14 +81,15 @@ def init_nix_cache_path(host: Host, cache_target: Machine) -> None:
         "/nix/store/jlkypcf54nrh4n6r0l62ryx93z752hb2-firefox-132.0",
     ]
 
-    with cache_target.target_host() as cache_host:
-        cache_host.run(nix_command(cmd), RunOpts(log=Log.BOTH))
+    with host.host_connection() as ssh:
+        ssh.run(nix_command(cmd), RunOpts(log=Log.BOTH))
 
 
 def run_nix_cache_test(
     fetch_machine: BenchMachine, vpn: VPN, cache_target: BenchMachine
 ) -> dict[str, Any]:
-    with fetch_machine.cmachine.target_host() as host:
+    host = fetch_machine.cmachine.target_host()
+    with host.host_connection() as ssh:
         init_nix_cache_path(host, cache_target.cmachine)
 
         clear_cache_cmd = (
@@ -123,9 +125,9 @@ def run_nix_cache_test(
             urls,
         ]
 
-        host.run(cmd, RunOpts(log=Log.BOTH, timeout=120))  # 2 minutes
+        ssh.run(cmd, RunOpts(log=Log.BOTH, timeout=120))  # 2 minutes
 
-        res = host.run(["cat", f"{vpn.value}_nix-cache.json"])
+        res = ssh.run(["cat", f"{vpn.value}_nix-cache.json"])
         return json.loads(res.stdout)
 
 

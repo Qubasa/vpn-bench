@@ -6,21 +6,20 @@ from pathlib import Path
 from typing import Any
 
 import clan_cli.clan.create
-from clan_cli.async_run import AsyncContext, AsyncOpts, AsyncRuntime
-from clan_cli.cmd import RunOpts, run
-from clan_cli.dirs import nixpkgs_flake
-from clan_cli.flake import Flake
-from clan_cli.git import commit_file
-from clan_cli.inventory import patch_inventory_with
-from clan_cli.inventory.classes import Machine as InventoryMachine
-from clan_cli.inventory.classes import MachineDeploy
 from clan_cli.machines.create import CreateOptions as ClanCreateOptions
 from clan_cli.machines.create import create_machine
-from clan_cli.nix import nix_command
 from clan_cli.secrets.key import generate_key
-from clan_cli.secrets.sops import KeyType, SopsKey, maybe_get_admin_public_key
+from clan_cli.secrets.sops import KeyType, SopsKey, maybe_get_admin_public_keys
 from clan_cli.secrets.users import add_user
-from clan_cli.ssh.host import Host
+from clan_lib.async_run import AsyncContext, AsyncOpts, AsyncRuntime
+from clan_lib.cmd import RunOpts, run
+from clan_lib.dirs import nixpkgs_flake
+from clan_lib.flake import Flake
+from clan_lib.git import commit_file
+from clan_lib.nix import nix_command
+from clan_lib.nix_models.clan import InventoryMachine, InventoryMachineDeploy
+from clan_lib.persist.inventory_store import InventoryStore, set_value_by_path
+from clan_lib.ssh.remote import Remote
 
 from vpn_bench.data import Config, Provider, SSHKeyPair
 from vpn_bench.errors import VpnBenchError
@@ -60,15 +59,18 @@ def setup_sops_key(age_opts: AgeOpts) -> str:
     if age_opts.pubkey is not None:
         return age_opts.pubkey.read_text()
 
-    sops_key = maybe_get_admin_public_key()
-    if sops_key is None:
+    sops_keys = maybe_get_admin_public_keys()
+    if not sops_keys:
         res = input("No sops key found. Do you want to generate one? [y/N] ")
         if res.lower() != "y":
             msg = "No sops key found, please generate one."
             raise VpnBenchError(msg)
         sops_key = generate_key()
+        return sops_key.pubkey
 
-    return sops_key.pubkey
+    if len(sops_keys) > 1:
+        log.warning("Multiple sops keys found, using the first one.")
+    return sops_keys[0].pubkey
 
 
 def update_flake_nix(clan_dir: Path, vpnbench_clan: Path) -> None:
@@ -207,14 +209,14 @@ def setup_machine(clan_dir: Path, tr_machine: TrMachine, machine_num: int) -> No
         else tr_machine["ipv4"]
     )
     assert host_ip is not None
-    host = Host(user=tr_machine["name"], host=host_ip)
+    host = Remote(user="root", address=host_ip, command_prefix=tr_machine["name"])
 
     inv_machine = InventoryMachine(
-        name=tr_machine["name"], deploy=MachineDeploy(targetHost=host.host)
+        name=tr_machine["name"], deploy=InventoryMachineDeploy(targetHost=host.target)
     )
 
     create_machine(
-        ClanCreateOptions(Flake(str(clan_dir)), inv_machine, target_host=host.host)
+        ClanCreateOptions(Flake(str(clan_dir)), inv_machine, target_host=host.target)
     )
 
 
@@ -259,7 +261,7 @@ def clan_init(
     clan_cli.clan.create.create_clan(
         clan_cli.clan.create.CreateOptions(
             src_flake=Flake(str(vpnbench_clan)),
-            template_name="vpnBenchClan",
+            template="vpnBenchClan",
             dest=config.clan_dir,
             update_clan=False,
         )
@@ -270,7 +272,14 @@ def clan_init(
     add_user(
         config.clan_dir,
         age_opts.username,
-        [SopsKey(sops_pubkey, age_opts.username, key_type=KeyType.AGE)],
+        [
+            SopsKey(
+                source="sops_file",
+                pubkey=sops_pubkey,
+                username=age_opts.username,
+                key_type=KeyType.AGE,
+            )
+        ],
         False,
     )
 
@@ -278,17 +287,20 @@ def clan_init(
     update_flake_nix(config.clan_dir, vpnbench_clan)
 
     # Create and configure inventory
-    inventory = create_base_inventory(tr_machines, config.ssh_keys)
+    inventory_inst = create_base_inventory(tr_machines, config.ssh_keys)
 
     # Set up machines
     for machine_num, tr_machine in enumerate(tr_machines):
         setup_machine(config.clan_dir, tr_machine, machine_num)
 
-    # Update inventory and install machines
-    patch_inventory_with(Flake(str(config.clan_dir)), "services", inventory.services)
+    inventory_store = InventoryStore(Flake(str(config.clan_dir)))
+    inventory = inventory_store.read()
 
     # Update inventory and install machines
-    patch_inventory_with(Flake(str(config.clan_dir)), "instances", inventory.instances)
+    set_value_by_path(inventory, "services", inventory_inst.services)
+
+    # Update inventory and install machines
+    set_value_by_path(inventory, "instances", inventory_inst.instances)
 
     with AsyncRuntime() as runtime:
         for tr_machine in tr_machines:
