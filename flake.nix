@@ -3,6 +3,7 @@
 
   #inputs.clan-core.url = "https://git.clan.lol/clan/clan-core/archive/main.tar.gz";
   inputs.clan-core.url = "https://git.clan.lol/Qubasa/clan-core/archive/api_fixes.tar.gz";
+  inputs.old-nixpkgs.url = "github:NixOS/nixpkgs/23.05";
   inputs.nixpkgs.follows = "clan-core/nixpkgs";
   inputs.flake-parts.url = "github:hercules-ci/flake-parts";
   inputs.flake-parts.inputs.nixpkgs-lib.follows = "nixpkgs";

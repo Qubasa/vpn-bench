@@ -37,8 +37,10 @@ def run_benchmarks(
             username="mario", password=password, pubkey=remote_iperf3_pubkey
         )
         host = bmachine.cmachine.target_host().override(host_key_check="none")
-        # Upload iperf3 public key
-        upload(host, local_pubkey, remote_iperf3_pubkey)
+
+        with host.host_connection() as ssh:
+            # Upload iperf3 public key
+            upload(ssh, local_pubkey, remote_iperf3_pubkey)
 
         P = ParamSpec("P")  # noqa: N806
 

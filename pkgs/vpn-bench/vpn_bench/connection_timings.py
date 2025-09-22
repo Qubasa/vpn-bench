@@ -47,30 +47,32 @@ def install_connection_timings_conf(
         del cpub[f"v4.{bmachine.cmachine.name}"]
         cvpn = vpn_ips.copy()
         del cvpn[f"vpn.{bmachine.cmachine.name}"]
-        conf: InventoryInstance = {
-            "module": {"name": "my-nginx-new", "input": "cvpn-bench"},
-            "roles": {
-                "default": {
-                    "machines": {bmachine.cmachine.name: {}},
-                    "settings": cast(
-                        Unknown,
-                        {
-                            "publicIPs": cpub,
-                            "vpnIPs": cvpn,
-                        },
-                    ),
-                }
-            },
-        }
-
         inventory_store = InventoryStore(Flake(str(config.clan_dir)))
-        inventory = inventory_store.read()
-        inventory["instances"][f"my-nginx-{bmachine.cmachine.name}"] = conf
 
-        inventory_store.write(
-            inventory,
-            message=f"Add connection timings conf for {bmachine.cmachine.name}",
-        )
+        # BUG: Instead of using inventory_store, we use to directly modify the file
+        # issue: https://git.clan.lol/clan/clan-core/issues/5236
+        with inventory_store.inventory_file.open("r") as f:
+            inventory = json.loads(f.read())
+
+            conf: InventoryInstance = {
+                "module": {"name": "my-nginx-new", "input": "cvpn-bench"},
+                "roles": {
+                    "default": {
+                        "machines": {bmachine.cmachine.name: {}},
+                        "settings": cast(
+                            Unknown,
+                            {
+                                "publicIPs": cpub,
+                                "vpnIPs": cvpn,
+                            },
+                        ),
+                    }
+                },
+            }
+
+            inventory["instances"][f"my-nginx-{bmachine.cmachine.name}"] = conf
+        with inventory_store.inventory_file.open("w") as f:
+            f.write(json.dumps(inventory, indent=4))
 
 
 def download_connection_timings(
@@ -171,8 +173,8 @@ def reboot_connection_timings(
 
     def _wait_service(machine: Machine, wait_service_path: Path) -> None:
         host = machine.target_host().override(host_key_check="none")
-        upload(host, script, wait_service_path, file_mode=0o777)
         with host.host_connection() as ssh:
+            upload(ssh, script, wait_service_path, file_mode=0o777)
             ssh.run(
                 [f"{wait_service_path}", "-s", "connection-check.service"],
                 RunOpts(log=Log.BOTH),

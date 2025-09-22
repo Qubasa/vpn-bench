@@ -1,13 +1,12 @@
 import json
 import logging
 from pathlib import Path
-from typing import Any, cast
+from typing import Any
 
 from clan_lib.cmd import Log, RunOpts
 from clan_lib.flake import Flake
 from clan_lib.machines.machines import Machine
 from clan_lib.nix import nix_command
-from clan_lib.nix_models.clan import InventoryInstance, Unknown
 from clan_lib.persist.inventory_store import InventoryStore
 from clan_lib.ssh.remote import Remote
 
@@ -44,38 +43,37 @@ def install_nix_cache(
             f"cache.vpn.{machine['name']}",
         ]
 
-    jls_extract_var = cast(
-        Unknown,
-        {
-            "ipToHostnames": ip_to_hostnames,
-        },
-    )
-    conf: InventoryInstance = {
+    conf = {
         "module": {"name": "my-static-hosts-new", "input": "cvpn-bench"},
         "roles": {
             "default": {
                 "tags": {"all": {}},
-                "settings": jls_extract_var,
+                "settings": {
+                    "ipToHostnames": ip_to_hostnames,
+                },
             }
         },
     }
+    inventory_store = InventoryStore(Flake(str(config.clan_dir)))
+
     # BUG: Instead of using inventory_store, we use to directly modify the file
     # issue: https://git.clan.lol/clan/clan-core/issues/5236
-    inventory_store = InventoryStore(Flake(str(config.clan_dir)))
-    inventory = inventory_store.read()
+    with inventory_store.inventory_file.open("r") as f:
+        data = json.loads(f.read())
 
-    inventory["instances"]["my-static-hosts-new-all"] = conf
+    with inventory_store.inventory_file.open("w") as f:
+        data["instances"]["my-static-hosts-new-all"] = conf
 
-    conf = {
-        "module": {"name": "nix-cache-new", "input": "cvpn-bench"},
-        "roles": {
-            "default": {
-                "tags": {"all": {}},
-            }
-        },
-    }
-    inventory["instances"]["nix-cache-new-all"] = conf
-    inventory_store.write(inventory, message="Add nix-cache instance")
+        conf = {
+            "module": {"name": "nix-cache-new", "input": "cvpn-bench"},
+            "roles": {
+                "default": {
+                    "tags": {"all": {}},
+                }
+            },
+        }
+        data["instances"]["nix-cache-new-all"] = conf
+        f.write(json.dumps(data, indent=4))
 
 
 def init_nix_cache_path(host: Remote, cache_target: Machine) -> None:

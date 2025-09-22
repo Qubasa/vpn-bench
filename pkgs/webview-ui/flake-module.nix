@@ -1,10 +1,11 @@
-{ ... }:
+{ inputs, ... }:
 {
   perSystem =
     {
       pkgs,
       config,
       self',
+      system,
       ...
     }:
     {
@@ -34,6 +35,9 @@
         '';
       packages.webview-ui = pkgs.callPackage ./default.nix {
         fonts = self'.packages.fonts;
+
+        # TODO: Switch to latest nodejs once we fix the css dependency issue
+        nodejs_18 = inputs.old-nixpkgs.legacyPackages.${system}.nodejs_18;
       };
       devShells.webview-ui = pkgs.mkShell {
         inputsFrom = [
