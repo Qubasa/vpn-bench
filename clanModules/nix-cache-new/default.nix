@@ -10,14 +10,13 @@
         nixosModule =
           {
             config,
-            clan-core,
             pkgs,
             ...
           }:
           {
 
             imports = [
-              clan-core.clanModules.nginx
+              ../nginx
             ];
             services.harmonia.enable = true;
 

@@ -30,13 +30,12 @@
         nixosModule =
           {
             config,
-            clan-core,
             pkgs,
             ...
           }:
           {
             imports = [
-              clan-core.clanModules.nginx
+              ../nginx
             ];
 
             config =

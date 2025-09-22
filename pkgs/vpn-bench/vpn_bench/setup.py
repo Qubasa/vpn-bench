@@ -111,16 +111,16 @@ def create_base_inventory(config: Config, tr_machines: list[TrMachine]) -> None:
 
     """Create the base inventory structure."""
 
-    inventory_store = InventoryStore(Flake(str(config.clan_dir)))
+    flake = Flake(str(config.clan_dir))
+    inventory_store = InventoryStore(flake)
 
     # Delete all existing instances and services?
     with inventory_store.inventory_file.open("r") as f:
         data = json.loads(f.read())
         data["instances"] = {}
-        data["services"] = {}
     with inventory_store.inventory_file.open("w") as f:
         f.write(json.dumps(data, indent=4))
-
+    flake.prefetch()
     inventory = inventory_store.read()
     set_value_by_path(
         inventory,
