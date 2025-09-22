@@ -36,7 +36,7 @@ def run_benchmarks(
         creds = IperfCreds(
             username="mario", password=password, pubkey=remote_iperf3_pubkey
         )
-        host = bmachine.cmachine.target_host()
+        host = bmachine.cmachine.target_host().override(host_key_check="none")
         # Upload iperf3 public key
         upload(host, local_pubkey, remote_iperf3_pubkey)
 

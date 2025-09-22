@@ -1,3 +1,4 @@
+import json
 import logging
 import os
 import shutil
@@ -21,7 +22,7 @@ from clan_lib.nix_models.clan import InventoryMachine, InventoryMachineDeploy
 from clan_lib.persist.inventory_store import InventoryStore, set_value_by_path
 from clan_lib.ssh.remote import Remote
 
-from vpn_bench.data import Config, Provider, SSHKeyPair
+from vpn_bench.data import Config, Provider
 from vpn_bench.errors import VpnBenchError
 from vpn_bench.install import install_single_machine
 from vpn_bench.terraform import TrMachine
@@ -101,46 +102,41 @@ class InventoryWrapper:
     services: dict[str, Any]
 
 
-def create_base_inventory(
-    tr_machines: list[TrMachine], ssh_keys_pairs: list[SSHKeyPair]
-) -> InventoryWrapper:
+def create_base_inventory(config: Config, tr_machines: list[TrMachine]) -> None:
     ssh_keys = [
-        InvSSHKeyEntry("nixos-anywhere", ssh_keys_pairs[0].public.read_text()),
+        InvSSHKeyEntry("nixos-anywhere", config.ssh_keys[0].public.read_text()),
     ]
-    for num, ssh_key in enumerate(ssh_keys_pairs[1:]):
+    for num, ssh_key in enumerate(config.ssh_keys[1:]):
         ssh_keys.append(InvSSHKeyEntry(f"user_{num}", ssh_key.public.read_text()))
 
     """Create the base inventory structure."""
-    inventory: dict[str, Any] = {
-        "sshd": {
-            "someid": {
-                "roles": {
-                    "server": {
-                        "tags": ["all"],
-                        "config": {},
-                    }
-                }
-            }
-        },
-        "state-version": {
-            "someid": {
-                "roles": {
-                    "default": {
-                        "tags": ["all"],
-                    }
-                }
-            }
-        },
-    }
 
-    instances = {
-        "iperf-new": {
+    inventory_store = InventoryStore(Flake(str(config.clan_dir)))
+
+    # Delete all existing instances and services?
+    with inventory_store.inventory_file.open("r") as f:
+        data = json.loads(f.read())
+        data["instances"] = {}
+        data["services"] = {}
+    with inventory_store.inventory_file.open("w") as f:
+        f.write(json.dumps(data, indent=4))
+
+    inventory = inventory_store.read()
+    set_value_by_path(
+        inventory,
+        "instances.iperf-new",
+        {
             "module": {"name": "iperf-new", "input": "cvpn-bench"},
             "roles": {
                 "server": {"tags": {"all": {}}},
             },
         },
-        "my-trusted-nix-caches-new-all": {
+    )
+
+    set_value_by_path(
+        inventory,
+        "instances.my-trusted-nix-caches-new",
+        {
             "module": {"name": "my-trusted-nix-caches-new", "input": "cvpn-bench"},
             "roles": {
                 "default": {
@@ -148,14 +144,23 @@ def create_base_inventory(
                 }
             },
         },
-        "qperf-new-all": {
+    )
+    set_value_by_path(
+        inventory,
+        "instances.qperf-new",
+        {
             "module": {"name": "qperf-new", "input": "cvpn-bench"},
             "roles": {
                 "server": {"tags": {"all": {}}},
             },
         },
-        "myadmin-new-all": {
-            "module": {"name": "myadmin-new", "input": "cvpn-bench"},
+    )
+
+    set_value_by_path(
+        inventory,
+        "instances.admin",
+        {
+            # "module": {"name": "myadmin-new", "input": "cvpn-bench"},
             "roles": {
                 "default": {
                     "tags": {"all": {}},
@@ -167,7 +172,7 @@ def create_base_inventory(
                 }
             },
         },
-    }
+    )
 
     for machine in tr_machines:
         match machine["provider"]:
@@ -180,25 +185,26 @@ def create_base_inventory(
                     ip_addresses.append(f"{machine['internal_ipv6']}/64")
                 if machine["ipv6"] is not None:
                     ip_addresses.append(f"{machine['ipv6']}/64")
-                instances[instance_name] = {
-                    "module": {"name": "hetzner-ips-new", "input": "cvpn-bench"},
-                    "roles": {
-                        "default": {
-                            "machines": {machine["name"]: {}},
-                            "settings": {
-                                "ipAddresses": ip_addresses,
-                            },
-                        }
+                set_value_by_path(
+                    inventory,
+                    f"instances.{instance_name}",
+                    {
+                        "module": {"name": "hetzner-ips-new", "input": "cvpn-bench"},
+                        "roles": {
+                            "default": {
+                                "machines": {machine["name"]: {}},
+                                "settings": {
+                                    "ipAddresses": ip_addresses,
+                                },
+                            }
+                        },
                     },
-                }
+                )
 
             case _:
                 pass
 
-    return InventoryWrapper(
-        services=inventory,
-        instances=instances,
-    )
+    inventory_store.write(inventory, message="Add base configuration")
 
 
 def setup_machine(clan_dir: Path, tr_machine: TrMachine, machine_num: int) -> None:
@@ -261,7 +267,7 @@ def clan_init(
     clan_cli.clan.create.create_clan(
         clan_cli.clan.create.CreateOptions(
             src_flake=Flake(str(vpnbench_clan)),
-            template="vpnBenchClan",
+            template="#vpnBenchClan",
             dest=config.clan_dir,
             update_clan=False,
         )
@@ -287,20 +293,11 @@ def clan_init(
     update_flake_nix(config.clan_dir, vpnbench_clan)
 
     # Create and configure inventory
-    inventory_inst = create_base_inventory(tr_machines, config.ssh_keys)
+    create_base_inventory(config, tr_machines)
 
     # Set up machines
     for machine_num, tr_machine in enumerate(tr_machines):
         setup_machine(config.clan_dir, tr_machine, machine_num)
-
-    inventory_store = InventoryStore(Flake(str(config.clan_dir)))
-    inventory = inventory_store.read()
-
-    # Update inventory and install machines
-    set_value_by_path(inventory, "services", inventory_inst.services)
-
-    # Update inventory and install machines
-    set_value_by_path(inventory, "instances", inventory_inst.instances)
 
     with AsyncRuntime() as runtime:
         for tr_machine in tr_machines:

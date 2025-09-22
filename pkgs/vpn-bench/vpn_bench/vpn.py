@@ -5,7 +5,9 @@ from typing import Any
 from clan_cli.vars.get import get_machine_var
 from clan_cli.vars.list import stringify_all_vars
 from clan_lib.api import dataclass_to_dict
+from clan_lib.async_run import AsyncContext, AsyncOpts, AsyncRuntime
 from clan_lib.cmd import run
+from clan_lib.errors import ClanError
 from clan_lib.flake import Flake
 from clan_lib.machines.machines import Machine
 from clan_lib.machines.update import run_machine_update
@@ -20,7 +22,6 @@ from vpn_bench.connection_timings import (
 )
 from vpn_bench.data import VPN, BenchMachine, Config, Provider, SSHKeyPair, delete_dirs
 from vpn_bench.errors import VpnBenchError
-from vpn_bench.install import can_ssh_login
 from vpn_bench.nix_cache import install_nix_cache
 from vpn_bench.setup import create_base_inventory
 from vpn_bench.terraform import TrMachine
@@ -28,43 +29,28 @@ from vpn_bench.terraform import TrMachine
 log = logging.getLogger(__name__)
 
 
-def install_base_config(config: Config, tr_machines: list[TrMachine]) -> None:
-    inventory_wrap = create_base_inventory(tr_machines, config.ssh_keys)
-    inventory_store = InventoryStore(Flake(str(config.clan_dir)))
-    inventory = inventory_store.read()
-    set_value_by_path(inventory, "services", inventory_wrap.services)
-
-    set_value_by_path(inventory, "instances", inventory_wrap.instances)
-    inventory_store.write(inventory, message="Add base configuration")
-
-
 def install_zerotier(config: Config, tr_machines: list[TrMachine]) -> None:
     inventory_store = InventoryStore(Flake(str(config.clan_dir)))
     inventory = inventory_store.read()
     conf: dict[str, Any] = {
-        "someid": {
-            "roles": {
-                "controller": {
-                    "machines": [],
-                    "config": {},
-                },
-                "peer": {
-                    "machines": [],
-                    "config": {},
-                },
-            }
+        "roles": {
+            "controller": {
+                "machines": {},
+            },
+            "peer": {
+                "machines": {},
+            },
         }
     }
     for machine_num, tr_machine in enumerate(tr_machines):
         # Configure ZeroTier role
         if machine_num == 0:
             log.info(f"Setting up {tr_machine['name']} as the zerotier controller")
-            conf["someid"]["roles"]["controller"]["machines"].append(tr_machine["name"])
+            conf["roles"]["controller"]["machines"][tr_machine["name"]] = {}
         else:
             log.info(f"Adding {tr_machine['name']} to the zerotier peers")
-            conf["someid"]["roles"]["peer"]["machines"].append(tr_machine["name"])
-
-    set_value_by_path(inventory, "services.zerotier", conf)
+            conf["roles"]["peer"]["machines"][tr_machine["name"]] = {}
+    set_value_by_path(inventory, "instances.zerotier", conf)
     inventory_store.write(inventory, message="Add zerotier configuration")
 
 
@@ -72,16 +58,14 @@ def install_mycelium(config: Config, tr_machines: list[TrMachine]) -> None:
     inventory_store = InventoryStore(Flake(str(config.clan_dir)))
     inventory = inventory_store.read()
     conf: dict[str, Any] = {
-        "someid": {
-            "roles": {
-                "peer": {
-                    "tags": ["all"],
-                    "config": {"openFirewall": True, "addHostedPublicNodes": True},
-                },
-            }
+        "roles": {
+            "peer": {
+                "tags": {"all": {}},
+                "settings": {"openFirewall": True, "addHostedPublicNodes": True},
+            },
         }
     }
-    set_value_by_path(Flake(str(config.clan_dir)), "services.mycelium", conf)
+    set_value_by_path(Flake(str(config.clan_dir)), "instances.mycelium", conf)
     inventory_store.write(inventory, message="Add mycelium configuration")
 
 
@@ -226,7 +210,7 @@ def get_vpn_ips(
                 # We should get it from the var
                 vpn_ip = f"192.168.2.{idx + 1}"
             case VPN.Internal:
-                host = machine.target_host()
+                host = machine.target_host().override(host_key_check="none")
                 vpn_ip = host.address
             case _:
                 msg = f"VPN {vpn} not supported"
@@ -251,13 +235,28 @@ def save_machine_layout(
 def deploy_machines(
     machines: list[Machine], build_host: Remote | None, ssh_key: SSHKeyPair
 ) -> None:
-    for machine in machines:
-        target_host = machine.target_host().override(
-            host_key_check="none",
-            private_key=ssh_key.private,
-            address="root@localhost",
-        )
-        run_machine_update(machine, target_host=target_host, build_host=build_host)
+    with AsyncRuntime() as runtime:
+        for machine in machines:
+            # Re-create machine / flake instance to avoid thread safety issues
+            new_inst_machine = Machine(
+                name=machine.name, flake=Flake(str(machine.flake.path))
+            )
+            target_host = new_inst_machine.target_host().override(
+                host_key_check="none",
+                private_key=ssh_key.private,
+            )
+            runtime.async_run(
+                AsyncOpts(
+                    tid=new_inst_machine.name,
+                    async_ctx=AsyncContext(prefix=new_inst_machine.name),
+                ),
+                run_machine_update,
+                new_inst_machine,
+                target_host=target_host,
+                build_host=build_host,
+            )
+        runtime.join_all()
+        runtime.check_all()
 
 
 def install_vpn(
@@ -269,7 +268,7 @@ def install_vpn(
     # Update cvpn-bench flake input, else error because of mismatched input
     run(["nix", "flake", "update", "cvpn-bench", "--flake", str(config.clan_dir)])
 
-    install_base_config(config, tr_machines)
+    create_base_inventory(config, tr_machines)
 
     # Initialize and configure machines
 
@@ -282,15 +281,16 @@ def install_vpn(
         for tr_machine in tr_machines
     ]
 
-    build_machine = Machine(
-        name="local-buildhost",
-        flake=clan_dir,
+    build_host: Remote | None = Remote(
+        address="localhost",
+        command_prefix="local-buildhost",
+        host_key_check="none",
     )
-    build_host = None
-    if can_ssh_login(build_machine):
-        build_host = build_machine.target_host().override(
-            address="root@localhost", host_key_check="none"
-        )
+    assert build_host is not None
+    try:
+        build_host.check_machine_ssh_login()
+    except ClanError:
+        build_host = None
 
     if get_con_times and vpn != VPN.Internal:
         # Update machine without VPNs to remove any previous VPN configuration

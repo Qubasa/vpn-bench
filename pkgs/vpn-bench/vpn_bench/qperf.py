@@ -291,7 +291,7 @@ def _qperf_test(
     core: int,
 ) -> QperfOutputDict:
     """Run a qperf test and return the parsed output."""
-    host = machine.target_host()
+    host = machine.target_host().override(host_key_check="none")
     with host.host_connection() as ssh:
         cmd = [
             "qperf",
@@ -314,7 +314,7 @@ def run_qperf_test(machine: Machine, target_host: str) -> QperfSummaryDict:
     """Run a single qperf test and return the results."""
 
     parsed_outputs: list[QperfOutputDict] = []
-    host = machine.target_host()
+    host = machine.target_host().override(host_key_check="none")
     with host.host_connection() as ssh:
         num_cores = int(ssh.run(["nproc"]).stdout.strip())
     with ThreadPoolExecutor() as executor:

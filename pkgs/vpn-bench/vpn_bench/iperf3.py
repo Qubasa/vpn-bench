@@ -48,7 +48,7 @@ def run_iperf_test(
     if udp_mode:
         cmd.extend(["-u", "--udp-counters-64bit", "-b", "0"])
 
-    host = machine.target_host()
+    host = machine.target_host().override(host_key_check="none")
     with host.host_connection() as ssh:
         # Set the password for the iperf3 server
         res = ssh.run(

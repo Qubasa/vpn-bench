@@ -24,7 +24,7 @@ pkgs.clangStdenv.mkDerivation {
     llvmPackages.bintools
     llvmPackages.lld
     pkg-config
-    openssl_3_4.dev
+    openssl_3_5.dev
     libev
     perl
   ];

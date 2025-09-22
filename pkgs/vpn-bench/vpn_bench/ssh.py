@@ -6,33 +6,10 @@ from pathlib import Path
 
 # Clan TODO: We need to fix this circular import problem in clan_cli!
 from clan_lib.cmd import Log, RunOpts, run
-from clan_lib.machines.machines import Machine
-from clan_lib.ssh.remote import Remote
 
 from vpn_bench.data import SSHKeyPair, TrMachine
 
 log = logging.getLogger(__name__)
-
-
-def can_ssh_login(machine: Machine) -> bool:
-    host2 = machine.target_host()
-
-    host = Remote.from_ssh_uri(
-        machine_name=machine.name, address=host2.address
-    ).override(host_key_check="none", private_key=host2.private_key)
-
-    host2.ssh_options.update(
-        {
-            "PasswordAuthentication": "no",
-            "BatchMode": "yes",
-        }
-    )
-
-    with host.host_connection() as ssh:
-        result = ssh.run(["exit"], RunOpts(check=False, shell=True))
-
-    # Check the return code
-    return result.returncode == 0
 
 
 def generate_ssh_key(root_dir: Path) -> SSHKeyPair:

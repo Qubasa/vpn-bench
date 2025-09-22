@@ -88,7 +88,7 @@ def init_nix_cache_path(host: Remote, cache_target: Machine) -> None:
 def run_nix_cache_test(
     fetch_machine: BenchMachine, vpn: VPN, cache_target: BenchMachine
 ) -> dict[str, Any]:
-    host = fetch_machine.cmachine.target_host()
+    host = fetch_machine.cmachine.target_host().override(host_key_check="none")
     with host.host_connection() as ssh:
         init_nix_cache_path(host, cache_target.cmachine)
 

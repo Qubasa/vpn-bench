@@ -5,16 +5,42 @@ from pathlib import Path
 # Clan TODO: We need to fix this circular import problem in clan_cli!
 from clan_cli.machines.hardware import HardwareConfig
 from clan_lib.dirs import specific_machine_dir
+from clan_lib.errors import ClanError
 from clan_lib.flake import Flake
 from clan_lib.machines.install import InstallOptions, run_machine_install
 from clan_lib.machines.machines import Machine
 from clan_lib.templates.disk import hw_main_disk_options, set_machine_disk_schema
+from clan_lib.vars.generate import get_generators, run_generators
 
 from vpn_bench.data import Config, Provider, TrMachine
 from vpn_bench.errors import VpnBenchError
-from vpn_bench.ssh import can_ssh_login
 
 log = logging.getLogger(__name__)
+
+
+def automate_prompts(machine: Machine) -> None:
+    """
+    Sets up automated responses for machine installation prompts.
+    Currently, it only handles root-password prompt by setting it to 'terraform'.
+    """
+    generators = get_generators(machines=[machine], full_closure=True)
+    collected_prompt_values = {}
+    for generator in generators:
+        prompt_values = {}
+        for prompt in generator.prompts:
+            var_id = f"{generator.name}/{prompt.name}"
+            if generator.name == "root-password" and prompt.name == "password":
+                prompt_values[prompt.name] = "terraform"
+            else:
+                msg = f"Prompt {var_id} not handled in test, please fix it"
+                raise ClanError(msg)
+        collected_prompt_values[generator.name] = prompt_values
+
+    run_generators(
+        machines=[machine],
+        generators=[gen.name for gen in generators],
+        prompt_values=collected_prompt_values,
+    )
 
 
 def install_single_machine(
@@ -39,23 +65,33 @@ def install_single_machine(
 
     match tr_machine["provider"]:
         case Provider.Chameleon:
-            if not can_ssh_login(machine):
+            try:
+                host.check_machine_ssh_login()
+            except ClanError:
                 host = host.override(user="cc")
 
-            if not can_ssh_login(machine):
+            try:
+                host.check_machine_ssh_login()
+            except ClanError as e:
                 msg = f"Could not login to machine {tr_machine['name']} with cc or root"
-                raise VpnBenchError(msg)
+                raise VpnBenchError(msg) from e
 
         case _:
-            if not can_ssh_login(machine):
+            try:
+                host.check_machine_ssh_login()
+            except ClanError:
                 log.info("Could not login with machine name user, trying root user")
                 host = host.override(user="root")
 
-            if not can_ssh_login(machine):
+            try:
+                host.check_machine_ssh_login()
+            except ClanError as e:
                 msg = (
                     f"Could not login to machine {tr_machine['name']} with user or root"
                 )
-                raise VpnBenchError(msg)
+                raise VpnBenchError(msg) from e
+
+    automate_prompts(machine)
 
     run_machine_install(
         InstallOptions(

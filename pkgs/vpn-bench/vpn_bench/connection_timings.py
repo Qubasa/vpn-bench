@@ -79,7 +79,7 @@ def download_connection_timings(
             pass
 
     def download_save(machine: Machine, dest: Path) -> None:
-        host = machine.target_host()
+        host = machine.target_host().override(host_key_check="none")
         with host.host_connection() as ssh:
             res = ssh.run(
                 ["cat", "/var/lib/connection-check/connection_timings.json"],
@@ -124,7 +124,7 @@ def reboot_connection_timings(
     delete_dirs(["/var/lib/connection-check", "/tmp/wait_service.sh"], machines)
 
     def _reboot(machine: Machine) -> None:
-        host = machine.target_host()
+        host = machine.target_host().override(host_key_check="none")
         with host.host_connection() as ssh:
             ssh.run(
                 ["reboot"],
@@ -147,7 +147,7 @@ def reboot_connection_timings(
 
     # Wait for machines to be offline
     for machine in machines:
-        host = machine.target_host()
+        host = machine.target_host().override(host_key_check="none")
         with contextlib.suppress(ClanError):
             host.check_machine_ssh_reachable()
             log.info(f"Waiting for {machine.name} to be offline")
@@ -157,7 +157,7 @@ def reboot_connection_timings(
     # Wait for machines to come online
     for machine in machines:
         while True:
-            host = machine.target_host()
+            host = machine.target_host().override(host_key_check="none")
             with contextlib.suppress(ClanError):
                 host.check_machine_ssh_reachable()
                 log.info(f"{machine.name} is back online")
@@ -166,7 +166,7 @@ def reboot_connection_timings(
             time.sleep(1)
 
     def _wait_service(machine: Machine, wait_service_path: Path) -> None:
-        host = machine.target_host()
+        host = machine.target_host().override(host_key_check="none")
         upload(host, script, wait_service_path, file_mode=0o777)
         with host.host_connection() as ssh:
             ssh.run(

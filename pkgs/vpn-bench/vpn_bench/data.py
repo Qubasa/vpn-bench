@@ -89,7 +89,7 @@ class Config:
 
 
 def _delete_dir(machine: Machine, state_dirs: list[str]) -> None:
-    host = machine.target_host()
+    host = machine.target_host().override(host_key_check="none")
     with host.host_connection() as ssh:
         ssh.run(
             ["rm", "-rf", *state_dirs],
