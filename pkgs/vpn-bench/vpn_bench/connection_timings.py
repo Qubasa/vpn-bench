@@ -5,12 +5,14 @@ import logging
 import time
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
+from typing import cast
 
 from clan_lib.cmd import Log, RunOpts
 from clan_lib.errors import ClanError  # Assuming these are available
 from clan_lib.flake import Flake
 from clan_lib.machines.machines import Machine
-from clan_lib.persist.inventory_store import InventoryStore, set_value_by_path
+from clan_lib.nix_models.clan import InventoryInstance, Unknown
+from clan_lib.persist.inventory_store import InventoryStore
 from clan_lib.ssh.upload import upload
 
 from vpn_bench.assets import get_script_asset
@@ -45,24 +47,26 @@ def install_connection_timings_conf(
         del cpub[f"v4.{bmachine.cmachine.name}"]
         cvpn = vpn_ips.copy()
         del cvpn[f"vpn.{bmachine.cmachine.name}"]
-        conf = {
+        conf: InventoryInstance = {
             "module": {"name": "my-nginx-new", "input": "cvpn-bench"},
             "roles": {
                 "default": {
                     "machines": {bmachine.cmachine.name: {}},
-                    "settings": {
-                        "publicIPs": cpub,
-                        "vpnIPs": cvpn,
-                    },
+                    "settings": cast(
+                        Unknown,
+                        {
+                            "publicIPs": cpub,
+                            "vpnIPs": cvpn,
+                        },
+                    ),
                 }
             },
         }
 
         inventory_store = InventoryStore(Flake(str(config.clan_dir)))
         inventory = inventory_store.read()
-        set_value_by_path(
-            inventory, f"instances.my-nginx-{bmachine.cmachine.name}_id", conf
-        )
+        inventory["instances"][f"my-nginx-{bmachine.cmachine.name}"] = conf
+
         inventory_store.write(
             inventory,
             message=f"Add connection timings conf for {bmachine.cmachine.name}",

@@ -1,4 +1,3 @@
-import json
 import logging
 import os
 import shutil
@@ -115,11 +114,10 @@ def create_base_inventory(config: Config, tr_machines: list[TrMachine]) -> None:
     inventory_store = InventoryStore(flake)
 
     # Delete all existing instances and services?
-    with inventory_store.inventory_file.open("r") as f:
-        data = json.loads(f.read())
-        data["instances"] = {}
-    with inventory_store.inventory_file.open("w") as f:
-        f.write(json.dumps(data, indent=4))
+    inventory = inventory_store.read()
+    inventory["instances"] = {}
+    inventory_store.write(inventory, message="Clear existing inventory")
+
     flake.prefetch()
     inventory = inventory_store.read()
     set_value_by_path(

@@ -1,13 +1,14 @@
 import json
 import logging
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 from clan_lib.cmd import Log, RunOpts
 from clan_lib.flake import Flake
 from clan_lib.machines.machines import Machine
 from clan_lib.nix import nix_command
-from clan_lib.persist.inventory_store import InventoryStore, set_value_by_path
+from clan_lib.nix_models.clan import InventoryInstance, Unknown
+from clan_lib.persist.inventory_store import InventoryStore
 from clan_lib.ssh.remote import Remote
 
 from vpn_bench.data import VPN, BenchMachine, Config
@@ -43,20 +44,27 @@ def install_nix_cache(
             f"cache.vpn.{machine['name']}",
         ]
 
-    conf = {
+    jls_extract_var = cast(
+        Unknown,
+        {
+            "ipToHostnames": ip_to_hostnames,
+        },
+    )
+    conf: InventoryInstance = {
         "module": {"name": "my-static-hosts-new", "input": "cvpn-bench"},
         "roles": {
             "default": {
                 "tags": {"all": {}},
-                "settings": {
-                    "ipToHostnames": ip_to_hostnames,
-                },
+                "settings": jls_extract_var,
             }
         },
     }
+    # BUG: Instead of using inventory_store, we use to directly modify the file
+    # issue: https://git.clan.lol/clan/clan-core/issues/5236
     inventory_store = InventoryStore(Flake(str(config.clan_dir)))
     inventory = inventory_store.read()
-    set_value_by_path(inventory, "instances.my-static-hosts-new-all", conf)
+
+    inventory["instances"]["my-static-hosts-new-all"] = conf
 
     conf = {
         "module": {"name": "nix-cache-new", "input": "cvpn-bench"},
@@ -66,11 +74,8 @@ def install_nix_cache(
             }
         },
     }
-    set_value_by_path(inventory, "instances.nix-cache-new-all", conf)
-    inventory_store.write(
-        inventory,
-        message="Add nix-cache configuration for vpn and internal ips",
-    )
+    inventory["instances"]["nix-cache-new-all"] = conf
+    inventory_store.write(inventory, message="Add nix-cache instance")
 
 
 def init_nix_cache_path(host: Remote, cache_target: Machine) -> None:
