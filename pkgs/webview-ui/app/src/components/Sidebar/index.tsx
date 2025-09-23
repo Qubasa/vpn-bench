@@ -44,7 +44,7 @@ export const Sidebar = (props: RouteSectionProps) => {
     <div class="sidebar opacity-95">
       <SidebarHeader clanName={"VPN Benchmarks"} />
 
-      <div class="sidebar__body max-h-[calc(100vh-4rem)] overflow-scroll">
+      <div class="sidebar__body max-h-[calc(100vh-4rem)] overflow-auto">
         <For each={routes.filter((r) => !r.hidden)}>
           {(route: AppRoute) => (
             <Show

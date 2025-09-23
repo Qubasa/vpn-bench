@@ -77,11 +77,12 @@ def install_nix_cache(
 
 
 def init_nix_cache_path(host: Remote, cache_target: Machine) -> None:
+    # TODO: We need to eval the firefox path from the flake
     cmd = [
         "copy",
         "--from",
         "https://hetzner-cache.numtide.com/",
-        "/nix/store/jlkypcf54nrh4n6r0l62ryx93z752hb2-firefox-132.0",
+        "/nix/store/d1w1drvckpxb80gxg100jfc0axv8nhmx-firefox-142.0.1",
     ]
 
     with host.host_connection() as ssh:
@@ -106,7 +107,7 @@ def run_nix_cache_test(
             "{url}",
             "--to",
             "file:///tmp/cache?compression=none",
-            "/nix/store/jlkypcf54nrh4n6r0l62ryx93z752hb2-firefox-132.0",
+            "/nix/store/d1w1drvckpxb80gxg100jfc0axv8nhmx-firefox-142.0.1",
         ]
 
         urls = ",".join([f"http://cache.vpn.{cache_target.cmachine.name}"])
