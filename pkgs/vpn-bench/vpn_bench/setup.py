@@ -18,7 +18,7 @@ from clan_lib.flake import Flake
 from clan_lib.git import commit_file
 from clan_lib.nix import nix_command
 from clan_lib.nix_models.clan import InventoryMachine, InventoryMachineDeploy
-from clan_lib.persist.inventory_store import InventoryStore, set_value_by_path
+from clan_lib.persist.inventory_store import InventoryStore, set_value_by_path_tuple
 from clan_lib.ssh.remote import Remote
 
 from vpn_bench.data import Config, Provider
@@ -120,9 +120,9 @@ def create_base_inventory(config: Config, tr_machines: list[TrMachine]) -> None:
 
     flake.prefetch()
     inventory = inventory_store.read()
-    set_value_by_path(
+    set_value_by_path_tuple(
         inventory,
-        "instances.iperf-new",
+        ("instances", "iperf-new"),
         {
             "module": {"name": "iperf-new", "input": "cvpn-bench"},
             "roles": {
@@ -131,9 +131,9 @@ def create_base_inventory(config: Config, tr_machines: list[TrMachine]) -> None:
         },
     )
 
-    set_value_by_path(
+    set_value_by_path_tuple(
         inventory,
-        "instances.my-trusted-nix-caches-new",
+        ("instances", "my-trusted-nix-caches-new"),
         {
             "module": {"name": "my-trusted-nix-caches-new", "input": "cvpn-bench"},
             "roles": {
@@ -143,9 +143,9 @@ def create_base_inventory(config: Config, tr_machines: list[TrMachine]) -> None:
             },
         },
     )
-    set_value_by_path(
+    set_value_by_path_tuple(
         inventory,
-        "instances.qperf-new",
+        ("instances", "qperf-new"),
         {
             "module": {"name": "qperf-new", "input": "cvpn-bench"},
             "roles": {
@@ -154,9 +154,9 @@ def create_base_inventory(config: Config, tr_machines: list[TrMachine]) -> None:
         },
     )
 
-    set_value_by_path(
+    set_value_by_path_tuple(
         inventory,
-        "instances.admin",
+        ("instances", "admin"),
         {
             # "module": {"name": "myadmin-new", "input": "cvpn-bench"},
             "roles": {
@@ -183,9 +183,9 @@ def create_base_inventory(config: Config, tr_machines: list[TrMachine]) -> None:
                     ip_addresses.append(f"{machine['internal_ipv6']}/64")
                 if machine["ipv6"] is not None:
                     ip_addresses.append(f"{machine['ipv6']}/64")
-                set_value_by_path(
+                set_value_by_path_tuple(
                     inventory,
-                    f"instances.{instance_name}",
+                    ("instances", f"{instance_name}"),
                     {
                         "module": {"name": "hetzner-ips-new", "input": "cvpn-bench"},
                         "roles": {

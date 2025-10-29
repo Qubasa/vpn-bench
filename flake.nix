@@ -1,8 +1,8 @@
 {
   description = "A Nix flake for benchmarking mesh VPNs with Clan";
 
-  #inputs.clan-core.url = "https://git.clan.lol/clan/clan-core/archive/main.tar.gz";
-  inputs.clan-core.url = "https://git.clan.lol/Qubasa/clan-core/archive/api_fixes.tar.gz";
+  inputs.clan-core.url = "https://git.clan.lol/clan/clan-core/archive/main.tar.gz";
+  #inputs.clan-core.url = "https://git.clan.lol/Qubasa/clan-core/archive/api_fixes.tar.gz";
   inputs.old-nixpkgs.url = "github:NixOS/nixpkgs/23.05";
   inputs.nixpkgs.follows = "clan-core/nixpkgs";
   inputs.flake-parts.url = "github:hercules-ci/flake-parts";
@@ -12,6 +12,7 @@
   inputs.hyprspace.url = "github:hyprspace/hyprspace";
   inputs.hyprspace.inputs.flake-parts.follows = "flake-parts";
   inputs.hyprspace.inputs.nixpkgs.follows = "nixpkgs";
+  inputs.easytier.url = "github:EasyTier/EasyTier";
 
   outputs =
     inputs@{
@@ -58,6 +59,11 @@
             lib.modules.importApply ./clanModules/hyprspace {
               hyprspace = inputs.hyprspace;
               packages = self.packages;
+            }
+          );
+          "easytier" = (
+            lib.modules.importApply ./clanModules/easytier {
+              easytier-src = inputs.easytier;
             }
           );
           "wireguard" = ./clanModules/wireguard;

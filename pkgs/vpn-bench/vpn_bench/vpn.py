@@ -11,7 +11,7 @@ from clan_lib.errors import ClanError
 from clan_lib.flake import Flake
 from clan_lib.machines.machines import Machine
 from clan_lib.machines.update import run_machine_update
-from clan_lib.persist.inventory_store import InventoryStore, set_value_by_path
+from clan_lib.persist.inventory_store import InventoryStore, set_value_by_path_tuple
 from clan_lib.ssh.remote import Remote
 from clan_lib.vars.generate import run_generators
 
@@ -50,8 +50,26 @@ def install_zerotier(config: Config, tr_machines: list[TrMachine]) -> None:
         else:
             log.info(f"Adding {tr_machine['name']} to the zerotier peers")
             conf["roles"]["peer"]["machines"][tr_machine["name"]] = {}
-    set_value_by_path(inventory, "instances.zerotier", conf)
+    set_value_by_path_tuple(inventory, ("instances", "zerotier"), conf)
     inventory_store.write(inventory, message="Add zerotier configuration")
+
+
+def install_easytier(config: Config, tr_machines: list[TrMachine]) -> None:
+    inventory_store = InventoryStore(Flake(str(config.clan_dir)))
+    inventory = inventory_store.read()
+    conf: dict[str, Any] = {
+        "module": {"name": "easytier", "input": "cvpn-bench"},
+        "roles": {
+            "peer": {
+                "machines": {},
+            },
+        },
+    }
+    for tr_machine in tr_machines:
+        log.info(f"Adding {tr_machine['name']} to the easytier peers")
+        conf["roles"]["peer"]["machines"][tr_machine["name"]] = {}
+    set_value_by_path_tuple(inventory, ("instances", "easytier"), conf)
+    inventory_store.write(inventory, message="Add easytier configuration")
 
 
 def install_mycelium(config: Config, tr_machines: list[TrMachine]) -> None:
@@ -65,7 +83,7 @@ def install_mycelium(config: Config, tr_machines: list[TrMachine]) -> None:
             },
         }
     }
-    set_value_by_path(Flake(str(config.clan_dir)), "instances.mycelium", conf)
+    set_value_by_path_tuple(inventory, ("instances", "mycelium"), conf)
     inventory_store.write(inventory, message="Add mycelium configuration")
 
 
@@ -95,7 +113,7 @@ def install_wireguard(config: Config, tr_machines: list[TrMachine]) -> None:
             "mesh": {"machines": machines},
         },
     }
-    set_value_by_path(inventory, "instances.wireguard-all", conf)
+    set_value_by_path_tuple(inventory, ("instances", "wireguard-all"), conf)
     inventory_store.write(inventory, message="Add wireguard configuration")
 
 
@@ -115,7 +133,7 @@ def install_hyprspace(config: Config, tr_machines: list[TrMachine]) -> None:
             },
         },
     }
-    set_value_by_path(inventory, "instances.hyprspace-all", conf)
+    set_value_by_path_tuple(inventory, ("instances", "hyprspace-all"), conf)
     inventory_store.write(
         inventory,
         message="Add hyprspace configuration",
@@ -143,7 +161,7 @@ def install_vpncloud(config: Config, tr_machines: list[TrMachine]) -> None:
             },
         },
     }
-    set_value_by_path(inventory, "instances.vpncloud-all", conf)
+    set_value_by_path_tuple(inventory, ("instances", "vpncloud-all"), conf)
     inventory_store.write(inventory, message="Add vpncloud configuration")
 
 
@@ -174,7 +192,7 @@ def install_yggdrasil(config: Config, tr_machines: list[TrMachine]) -> None:
             },
         },
     }
-    set_value_by_path(inventory, "instances.yggdrasil-all", conf)
+    set_value_by_path_tuple(inventory, ("instances", "yggdrasil-all"), conf)
     inventory_store.write(inventory, message="Add yggdrasil configuration")
 
 
@@ -205,6 +223,8 @@ def get_vpn_ips(
                 vpn_ip = get_machine_var(machine, "vpncloud/ip").value.decode()
             case VPN.Yggdrasil:
                 vpn_ip = get_machine_var(machine, "yggdrasil/ip").value.decode()
+            case VPN.Easytier:
+                vpn_ip = get_machine_var(machine, "easytier-easytier/ip").value.decode()
             case VPN.Wireguard:
                 # TODO: We hardcode the IP address here
                 # We should get it from the var
@@ -321,6 +341,8 @@ def install_vpn(
             install_yggdrasil(config, tr_machines)
         case VPN.Wireguard:
             install_wireguard(config, tr_machines)
+        case VPN.Easytier:
+            install_easytier(config, tr_machines)
         case VPN.Internal:
             pass
         case _:
