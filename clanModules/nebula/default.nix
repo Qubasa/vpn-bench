@@ -1,3 +1,4 @@
+{ nebula-src }:
 { lib, ... }:
 
 {
@@ -41,7 +42,7 @@
           in
           {
             imports = [
-              (lib.module.importApply ./shared.nix {
+              (lib.modules.importApply ./shared.nix {
                 inherit
                   instanceName
                   settings
@@ -50,12 +51,13 @@
                   lib
                   interface
                   config
+                  nebula-src
                   ;
               })
             ];
 
             services.nebula.networks."${interface}" = {
-              staticHostMap = {};
+              staticHostMap = { };
             };
           };
       };
@@ -83,7 +85,6 @@
       {
         instanceName,
         settings,
-        roles,
         ...
       }:
       {
@@ -104,7 +105,7 @@
           in
           {
             imports = [
-              (lib.module.importApply ./shared.nix {
+              (lib.modules.importApply ./shared.nix {
                 inherit
                   instanceName
                   settings
@@ -113,60 +114,24 @@
                   lib
                   interface
                   config
+                  nebula-src
                   ;
               })
             ];
 
-            clan.core.vars.generators."nebula-${instanceName}-ca" = {
-              files.ca-key = {
-                secret = true;
-                deploy = false;
-              };
-              files.ca-crt = {
-                secret = true;
-                deploy = false;
-              };
-              share = true;
-              runtimeInputs = [
-                pkgs.nebula
-              ];
-              script = ''
-                nebula-cert ca -name "${instanceName}"
-                  -out-crt "$out"/ca-crt
-                  -out-key "$out"/ca-key
-                  -duration 867240h # 99 years
-              '';
-            };
-
-            exports.nebula =
-              let
-                ipPath =
-                  name: "${config.clan.core.settings.directory}/vars/per-machine/${name}/nebula-${instanceName}/ip/value";
-              in
-              {
-                lighthouses = lib.mapAttrs (name: _: {
-                  vpnAddress =
-                    if builtins.pathExists (ipPath name) then builtins.readFile (ipPath name) name else null;
-                  pubAddress = settings.publicAddress;
-                  port = 4242;
-                }) (roles.lighthouse.machines or { });
-              };
-
-            clan.core.vars.generators."nebula-${instanceName}-ula" = {
-              files.network = {
-                secret = false;
-                deploy = false;
-              };
-              share = true;
-              runtimeInputs = [
-                ipgenv6
-                pkgs.coreutils
-              ];
-
-              script = ''
-                ipgenv6 --generate-prefix | tr -d "\n" > "$out"/network
-              '';
-            };
+            # exports.nebula =
+            #   let
+            #     ipPath =
+            #       name: "${config.clan.core.settings.directory}/vars/per-machine/${name}/nebula-${instanceName}/ip/value";
+            #   in
+            #   {
+            #     lighthouses = lib.mapAttrs (name: _: {
+            #       vpnAddress =
+            #         if builtins.pathExists (ipPath name) then builtins.readFile (ipPath name) name else null;
+            #       pubAddress = settings.publicAddress;
+            #       port = 4242;
+            #     }) (roles.lighthouse.machines or { });
+            #   };
 
             services.nebula.networks."${interface}" = {
               isLighthouse = true;

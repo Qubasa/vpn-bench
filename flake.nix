@@ -13,6 +13,10 @@
   inputs.hyprspace.inputs.flake-parts.follows = "flake-parts";
   inputs.hyprspace.inputs.nixpkgs.follows = "nixpkgs";
   inputs.easytier.url = "github:EasyTier/EasyTier";
+  inputs.nebula = {
+    url = "github:slackhq/nebula";
+    flake = false;
+  };
 
   outputs =
     inputs@{
@@ -64,6 +68,11 @@
           "easytier" = (
             lib.modules.importApply ./clanModules/easytier {
               easytier-src = inputs.easytier;
+            }
+          );
+          "nebula" = (
+            lib.modules.importApply ./clanModules/nebula {
+              nebula-src = inputs.nebula;
             }
           );
           "wireguard" = ./clanModules/wireguard;
