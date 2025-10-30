@@ -1,9 +1,8 @@
 { easytier-src }:
-{ lib,...}:
+{ lib, ... }:
 
 let
   inherit (lib)
-    mkOption
     substring
     ;
 
@@ -18,19 +17,6 @@ in
   manifest.categories = [ "Utility" ];
 
   roles.peer = {
-
-    interface.options = {
-      foreignHostNames = mkOption {
-        type = lib.types.listOf lib.types.str;
-        default = [ ];
-        description = ''
-          This allows to set up a VPN across clans.
-          Make sure to use the same `shared-secret` on both instances.
-          By adding the other hostNames here, their IPs will be added to the /etc/hosts file for all hosts in this EasyTier instance.
-        '';
-      };
-    };
-
     perInstance =
       {
         instanceName,
