@@ -13,14 +13,27 @@ let
   nebulaPkg = pkgs.callPackage ./package.nix { inherit nebula-src; };
 in
 {
-
   services.nebula.networks."${interface}" = {
     enable = true;
-    isLighthouse = true;
     package = nebulaPkg;
     key = config.clan.core.vars.generators."nebula-${instanceName}".files.node-key.path;
     cert = config.clan.core.vars.generators."nebula-${instanceName}".files.node-crt.path;
     ca = config.clan.core.vars.generators."nebula-${instanceName}-ca".files.ca-crt.path;
+
+    firewall.inbound = [
+      {
+        host = "any";
+        port = "any";
+        proto = "any";
+      }
+    ];
+    firewall.outbound = [
+      {
+        host = "any";
+        port = "any";
+        proto = "any";
+      }
+    ];
   };
   clan.core.vars.generators."nebula-${instanceName}-ca" = {
     files.ca-key = {

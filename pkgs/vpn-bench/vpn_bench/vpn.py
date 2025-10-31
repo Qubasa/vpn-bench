@@ -60,9 +60,7 @@ def install_nebula(config: Config, tr_machines: list[TrMachine]) -> None:
     conf: dict[str, Any] = {
         "module": {"name": "nebula", "input": "cvpn-bench"},
         "roles": {
-            "lighthouse": {
-                "machines": {},
-            },
+            "lighthouse": {"machines": {}, "settings": {}},
             "peer": {
                 "machines": {},
             },
@@ -72,6 +70,9 @@ def install_nebula(config: Config, tr_machines: list[TrMachine]) -> None:
         if machine_num == 0:
             log.info(f"Setting up {tr_machine['name']} as a nebula lighthouse")
             conf["roles"]["lighthouse"]["machines"][tr_machine["name"]] = {}
+            conf["roles"]["lighthouse"]["settings"]["publicAddress"] = tr_machine[
+                "ipv4"
+            ]
         else:
             log.info(f"Adding {tr_machine['name']} to the nebula peers")
             conf["roles"]["peer"]["machines"][tr_machine["name"]] = {}
@@ -251,7 +252,7 @@ def get_vpn_ips(
             case VPN.Easytier:
                 vpn_ip = get_machine_var(machine, "easytier-easytier/ip").value.decode()
             case VPN.Nebula:
-                vpn_ip = get_machine_var(machine, "nebula/ip").value.decode()
+                vpn_ip = get_machine_var(machine, "nebula-nebula/ip").value.decode()
             case VPN.Wireguard:
                 # TODO: We hardcode the IP address here
                 # We should get it from the var
