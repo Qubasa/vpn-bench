@@ -80,6 +80,32 @@ def install_nebula(config: Config, tr_machines: list[TrMachine]) -> None:
     inventory_store.write(inventory, message="Add nebula configuration")
 
 
+def install_tinc(config: Config, tr_machines: list[TrMachine]) -> None:
+    inventory_store = InventoryStore(Flake(str(config.clan_dir)))
+    inventory = inventory_store.read()
+    conf: dict[str, Any] = {
+        "module": {"name": "tinc", "input": "cvpn-bench"},
+        "roles": {
+            "bootstrap": {"machines": {}},
+            "peer": {
+                "machines": {},
+            },
+        },
+    }
+    for machine_num, tr_machine in enumerate(tr_machines):
+        if machine_num == 0:
+            log.info(f"Setting up {tr_machine['name']} as a tinc bootstrap node")
+            conf["roles"]["bootstrap"]["machines"][tr_machine["name"]] = {}
+            conf["roles"]["bootstrap"]["settings"]["publicAddress"][
+                tr_machine["name"]
+            ] = {}
+        else:
+            log.info(f"Adding {tr_machine['name']} to the tinc peers")
+            conf["roles"]["peer"]["machines"][tr_machine["name"]] = {}
+    set_value_by_path_tuple(inventory, ("instances", "tinc"), conf)
+    inventory_store.write(inventory, message="Add tinc configuration")
+
+
 def install_easytier(config: Config, tr_machines: list[TrMachine]) -> None:
     inventory_store = InventoryStore(Flake(str(config.clan_dir)))
     inventory = inventory_store.read()
@@ -253,6 +279,8 @@ def get_vpn_ips(
                 vpn_ip = get_machine_var(machine, "easytier-easytier/ip").value.decode()
             case VPN.Nebula:
                 vpn_ip = get_machine_var(machine, "nebula-nebula/ip").value.decode()
+            case VPN.Tinc:
+                vpn_ip = get_machine_var(machine, "tinc-tinc/ip").value.decode()
             case VPN.Wireguard:
                 # TODO: We hardcode the IP address here
                 # We should get it from the var
@@ -373,6 +401,8 @@ def install_vpn(
             install_easytier(config, tr_machines)
         case VPN.Nebula:
             install_nebula(config, tr_machines)
+        case VPN.Tinc:
+            install_tinc(config, tr_machines)
         case VPN.Internal:
             pass
         case _:

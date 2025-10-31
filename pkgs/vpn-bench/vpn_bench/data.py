@@ -51,6 +51,7 @@ class VPN(Enum):
     Wireguard = "wireguard"
     Easytier = "easytier"
     Nebula = "nebula"
+    Tinc = "tinc"
 
     @staticmethod
     def from_str(label: str) -> "VPN":

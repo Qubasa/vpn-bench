@@ -49,10 +49,11 @@
             lighthouses = lib.mapAttrs (name: machine: {
               vpnAddress = if builtins.pathExists (ipPath name) then builtins.readFile (ipPath name) else "";
               pubAddress =
-                if machine.settings.publicAddress == null then
+                if !lib.hasAttr "publicAddress" machine.settings then
                   throw "Machine '${name}' does not have a 'publicAddress' set in ${instanceName}'s lighthouse role settings."
                 else
                   machine.settings.publicAddress;
+
               port = 4242;
             }) (roles.lighthouse.machines or { });
 
@@ -105,8 +106,7 @@
       };
       # TODO: We should get this from the internet networking module
       publicAddress = lib.mkOption {
-        type = lib.types.nullOr lib.types.str;
-        default = null;
+        type = lib.types.str;
         description = ''
           The public IP address or domain name that other peers will use to connect to this lighthouse.
         '';

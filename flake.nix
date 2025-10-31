@@ -75,6 +75,7 @@
               nebula-src = inputs.nebula;
             }
           );
+          "tinc" = ./clanModules/tinc;
           "wireguard" = ./clanModules/wireguard;
           "yggdrasil" = ./clanModules/yggdrasil;
           "vpncloud" = (lib.modules.importApply ./clanModules/vpncloud { packages = self.packages; });
