@@ -76,7 +76,7 @@ in
       }/128" dev $INTERFACE
       ip -6 route add ${
         config.clan.core.vars.generators."tinc-${interface}-ula".files.network.value
-      }/64 dev $INTERFACE
+      } dev $INTERFACE
     '';
 
     "tinc/${interface}/tinc-down".source = pkgs.writeScript "tinc-down" ''
