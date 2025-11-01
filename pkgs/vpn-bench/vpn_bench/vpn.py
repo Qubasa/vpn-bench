@@ -86,7 +86,7 @@ def install_tinc(config: Config, tr_machines: list[TrMachine]) -> None:
     conf: dict[str, Any] = {
         "module": {"name": "tinc", "input": "cvpn-bench"},
         "roles": {
-            "bootstrap": {"machines": {}},
+            "bootstrap": {"machines": {}, "settings": {"publicAddress": {}}},
             "peer": {
                 "machines": {},
             },
@@ -96,9 +96,7 @@ def install_tinc(config: Config, tr_machines: list[TrMachine]) -> None:
         if machine_num == 0:
             log.info(f"Setting up {tr_machine['name']} as a tinc bootstrap node")
             conf["roles"]["bootstrap"]["machines"][tr_machine["name"]] = {}
-            conf["roles"]["bootstrap"]["settings"]["publicAddress"][
-                tr_machine["name"]
-            ] = {}
+            conf["roles"]["bootstrap"]["settings"]["publicAddress"] = tr_machine["ipv4"]
         else:
             log.info(f"Adding {tr_machine['name']} to the tinc peers")
             conf["roles"]["peer"]["machines"][tr_machine["name"]] = {}
@@ -376,6 +374,7 @@ def install_vpn(
             "/root/qperf",
             "/var/lib/qperf/qperf",
             "/etc/zerotier",
+            "/etc/tinc",
             "/var/lib/zerotier-one",
             "/var/lib/mycelium",
             "/var/lib/private/mycelium/",

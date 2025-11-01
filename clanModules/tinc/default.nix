@@ -1,4 +1,3 @@
-{ }:
 { lib, ... }:
 
 {
@@ -15,39 +14,45 @@
         description = ''
           The public IP address or domain name that other peers will use to connect to this bootstrap node.
         '';
-        port = lib.mkOption {
-          type = lib.types.nullOr lib.types.int;
-          default = null;
-          description = ''
-            The port that other peers will use to connect to this bootstrap node, 
-            if no port is defined the default port is used.
-          '';
-        };
+      };
+      port = lib.mkOption {
+        type = lib.types.nullOr lib.types.int;
+        default = null;
+        description = ''
+          The port that other peers will use to connect to this bootstrap node, 
+          if no port is defined the default port is used.
+        '';
       };
     };
 
-    nixosModule =
+    perInstance =
       {
         instanceName,
-        config,
-        pkgs,
+        roles,
         ...
       }:
-      let
-        getInterface = instanceName: lib.substring 0 15 instanceName;
-        interface = getInterface instanceName;
-
-      in
       {
-        imports = [
-          (lib.modules.importApply ./shared.nix {
-            inherit
-              pkgs
-              interface
-              config
-              ;
-          })
-        ];
+        nixosModule =
+          {
+            pkgs,
+            lib,
+            config,
+            ...
+          }:
+
+          {
+            imports = [
+              (lib.modules.importApply ./shared.nix {
+                inherit
+                  lib
+                  pkgs
+                  instanceName
+                  roles
+                  config
+                  ;
+              })
+            ];
+          };
       };
   };
 
@@ -63,43 +68,25 @@
       {
         nixosModule =
           {
-            config,
             pkgs,
+            lib,
+            config,
             ...
           }:
 
-          let
-            getInterface = instanceName: lib.substring 0 15 instanceName;
-            interface = getInterface instanceName;
-
-          in
           {
             imports = [
               (lib.modules.importApply ./shared.nix {
                 inherit
+                  lib
                   pkgs
-                  interface
+                  instanceName
+                  roles
                   config
                   ;
               })
             ];
 
-            assertions = [
-              {
-                assertion = lib.length (builtins.attrNames (roles.bootstrap.machines or { })) != 0;
-                message = "The Tinc service instance '${instanceName}' requires at least one machine with the 'bootstrap' role.";
-              }
-            ];
-
-            services.tinc.networks."${interface}" = {
-              hostSettings = {
-                # structure is: [ { adress, port  } ]
-                addresses = lib.mapAttrsToList (_name: machine: {
-                  address = machine.settings.publicAddress;
-                  port = machine.settings.port;
-                }) (roles.bootstrap.machines or { });
-              };
-            };
           };
       };
   };

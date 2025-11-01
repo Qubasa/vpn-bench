@@ -78,6 +78,7 @@ in
       secret = true;
       owner = "nebula-${instanceName}";
       group = "nebula-${instanceName}";
+      restartUnits = [ "nebula@${interface}.service" ];
     };
     files.node-crt = {
       secret = true;
@@ -87,6 +88,7 @@ in
     files.ip = {
       deploy = false;
       secret = false;
+      restartUnits = [ "nebula@${interface}.service" ];
     };
     runtimeInputs = [
       nebulaPkg
@@ -99,6 +101,7 @@ in
       "nebula-${instanceName}-ca"
       "nebula-${instanceName}-ula"
     ];
+
     script = ''
       ipgenv6 --prefix "$(cat $in/nebula-${instanceName}-ula/network)" | tr -d "\n" > "$out"/ip
       nebula-cert sign -name "${instanceName}" \
