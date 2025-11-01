@@ -74,9 +74,9 @@ in
       ${pkgs.iproute2}/bin/ip a add "${
         config.clan.core.vars.generators."tinc-${interface}".files.ip.value
       }/128" dev $INTERFACE
-      ip -6 route add ${
+      ${pkgs.iproute2}/bin/ip -6 route add "${
         config.clan.core.vars.generators."tinc-${interface}-ula".files.network.value
-      } dev $INTERFACE
+      }" dev $INTERFACE
     '';
 
     "tinc/${interface}/tinc-down".source = pkgs.writeScript "tinc-down" ''
