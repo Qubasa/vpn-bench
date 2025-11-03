@@ -9,7 +9,15 @@ from clan_lib.custom_logger import setup_logging
 from clan_lib.dirs import user_cache_dir, user_data_dir
 
 from vpn_bench.bench import benchmark_vpn
-from vpn_bench.data import VPN, Config, Provider, SSHKeyPair, TestType
+from vpn_bench.data import (
+    VPN,
+    Config,
+    Provider,
+    SSHKeyPair,
+    TCProfile,
+    TestType,
+    get_benchmark_runs,
+)
 from vpn_bench.errors import VpnBenchError
 from vpn_bench.plot import plot_data
 from vpn_bench.setup import AgeOpts, clan_clean, clan_init
@@ -96,6 +104,13 @@ def create_parser() -> argparse.ArgumentParser:
         help="Tests to run, default is none",
         action="append",
         choices=[t.value for t in TestType] + ["all"],
+        default=[],
+    )
+    bench_parser.add_argument(
+        "--tc-profile",
+        help="TC profiles to run (baseline, low, medium, high), default is baseline only",
+        action="append",
+        choices=[t.value for t in TCProfile] + ["all"],
         default=[],
     )
 
@@ -227,9 +242,29 @@ def run_cli() -> None:
             msg = "No vpns specified with --vpns, defaulting to none"
             raise VpnBenchError(msg)
 
+        # Parse TC profiles
+        tc_profiles: list[str] = args.tc_profile
+        tc_profiles_enum: list[TCProfile] = []
+
+        if len(tc_profiles) == 0:
+            log.info("No TC profiles specified, defaulting to baseline only")
+            tc_profiles_enum.append(TCProfile.BASELINE)
+        elif len(tc_profiles) == 1 and tc_profiles[0] == "all":
+            for tc_profile in TCProfile:
+                tc_profiles_enum.append(tc_profile)
+        else:
+            for profile_str in tc_profiles:
+                tc_profile = TCProfile.from_str(profile_str)
+                tc_profiles_enum.append(tc_profile)
+
+        # Convert TC profiles to benchmark runs
+        benchmark_runs = get_benchmark_runs(tc_profiles_enum)
+
         for vpn in vpns_enum:
             log.info(f"========== Running benchmark for {vpn} ==========")
-            benchmark_vpn(config, vpn, machines, tests_enum, args.skip_con_times)
+            benchmark_vpn(
+                config, vpn, machines, tests_enum, benchmark_runs, args.skip_con_times
+            )
 
     elif args.subcommand == "plot":
         machines = tr_metadata(config)

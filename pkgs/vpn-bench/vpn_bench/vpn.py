@@ -338,6 +338,7 @@ def install_vpn(
     vpn: VPN,
     tr_machines: list[TrMachine],
     get_con_times: bool = True,
+    benchmark_run_alias: str = "default",
 ) -> list[BenchMachine]:
     # Update cvpn-bench flake input, else error because of mismatched input
     run(["nix", "flake", "update", "cvpn-bench", "--flake", str(config.clan_dir)])
@@ -436,7 +437,11 @@ def install_vpn(
     deploy_machines(machines, build_host=build_host, ssh_key=config.ssh_keys[0])
 
     if get_con_times and vpn != VPN.Internal:
-        download_connection_timings(config, vpn, machines)
-        reboot_connection_timings(config, vpn, machines)
+        download_connection_timings(
+            config, vpn, machines, benchmark_run_alias=benchmark_run_alias
+        )
+        reboot_connection_timings(
+            config, vpn, machines, benchmark_run_alias=benchmark_run_alias
+        )
 
     return bmachines

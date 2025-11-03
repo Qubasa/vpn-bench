@@ -92,3 +92,61 @@ html {
 .accordeon__body {
   padding: theme(padding.2) 0 theme(padding.1);
 }
+
+/* TC Profile Tabs */
+.tc-profile-tabs {
+  width: 100%;
+  margin-bottom: 1rem;
+  border-bottom: 2px solid hsl(240 5% 90%);
+}
+
+.tc-profile-tabs__list {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background-color: white;
+  border-radius: 8px 8px 0 0;
+}
+
+.tc-profile-tabs__trigger {
+  display: inline-block;
+  padding: 0.625rem 1.5rem;
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: hsl(240 5% 45%);
+  background-color: hsl(0 0% 97%);
+  border: 1px solid hsl(240 5% 88%);
+  border-radius: 6px;
+  cursor: pointer;
+  outline: none;
+  transition: all 200ms;
+  text-transform: capitalize;
+}
+
+.tc-profile-tabs__trigger:hover {
+  background-color: hsl(240 5% 92%);
+  color: hsl(240 5% 20%);
+  border-color: hsl(240 5% 80%);
+}
+
+.tc-profile-tabs__trigger[data-selected] {
+  background-color: hsl(200 98% 39%);
+  color: white;
+  font-weight: 600;
+  border-color: hsl(200 98% 39%);
+  box-shadow: 0 2px 4px rgba(0, 123, 200, 0.2);
+}
+
+.tc-profile-tabs__trigger:focus-visible {
+  box-shadow: 0 0 0 3px hsl(200 98% 39% / 0.3);
+}
+
+.tc-profile-tabs__indicator {
+  position: absolute;
+  bottom: -2px;
+  height: 2px;
+  background-color: hsl(200 98% 39%);
+  transition: all 250ms;
+}

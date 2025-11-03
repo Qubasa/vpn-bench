@@ -76,7 +76,11 @@ def install_connection_timings_conf(
 
 
 def download_connection_timings(
-    config: Config, vpn: VPN, machines: list[Machine], reboot: bool = False
+    config: Config,
+    vpn: VPN,
+    machines: list[Machine],
+    reboot: bool = False,
+    benchmark_run_alias: str = "default",
 ) -> None:
     match vpn:
         case VPN.Internal:
@@ -99,7 +103,12 @@ def download_connection_timings(
     with ThreadPoolExecutor() as executor:
         futures = []
         for index, machine in enumerate(machines):
-            dest = config.bench_dir / vpn.name / f"{index}_{machine.name}"
+            dest = (
+                config.bench_dir
+                / vpn.name
+                / benchmark_run_alias
+                / f"{index}_{machine.name}"
+            )
             dest.mkdir(parents=True, exist_ok=True)
 
             if reboot:
@@ -122,7 +131,10 @@ def download_connection_timings(
 
 
 def reboot_connection_timings(
-    config: Config, vpn: VPN, machines: list[Machine]
+    config: Config,
+    vpn: VPN,
+    machines: list[Machine],
+    benchmark_run_alias: str = "default",
 ) -> None:
     """Reboot machines to get connection timings."""
     log.info("Rebooting machines to get connection timings")
@@ -200,7 +212,9 @@ def reboot_connection_timings(
             if exc is not None:
                 raise exc
 
-    download_connection_timings(config, vpn, machines, reboot=True)
+    download_connection_timings(
+        config, vpn, machines, reboot=True, benchmark_run_alias=benchmark_run_alias
+    )
 
 
 def analyse_connection_timings(config: Config, tr_machines: list[TrMachine]) -> None:
@@ -242,53 +256,65 @@ def process_timing_files(config: Config, timing_type: str, general_dir: Path) ->
     ]
 
     # Dictionary to store the summary of all connection timings
-    all_vpn_timings: dict[str, dict[str, str]] = {}
+    # Structure: {vpn_name: {run_alias: {machine_name: timing}}}
+    all_vpn_timings: dict[str, dict[str, dict[str, str]]] = {}
 
     for vpn_dir in vpn_dirs:
         vpn_name = vpn_dir.name
         log.info(f"Processing VPN: {vpn_name}")
 
-        vpn_timings: dict[str, str] = {}
+        vpn_timings: dict[str, dict[str, str]] = {}
         all_vpn_timings[vpn_name] = vpn_timings
 
-        # Process each machine directory
-        for machine_dir in vpn_dir.iterdir():
-            if (
-                not machine_dir.is_dir()
-                or machine_dir.name.startswith(".")
-                or machine_dir.name == "layout.json"
-            ):
+        # Process each benchmark run directory
+        for run_dir in vpn_dir.iterdir():
+            if not run_dir.is_dir() or run_dir.name.startswith("."):
                 continue
 
-            machine_name = machine_dir.name
-            timing_file = machine_dir / f"{timing_type}.json"
+            run_alias = run_dir.name
+            log.info(f"  Processing run: {run_alias}")
 
-            if not timing_file.exists():
-                log.warning(
-                    f"No {timing_type}.json found for {vpn_name}/{machine_name}"
-                )
-                continue
+            run_timings: dict[str, str] = {}
+            vpn_timings[run_alias] = run_timings
 
-            try:
-                with timing_file.open("r") as f:
-                    data = json.load(f)
+            # Process each machine directory within the run
+            for machine_dir in run_dir.iterdir():
+                if (
+                    not machine_dir.is_dir()
+                    or machine_dir.name.startswith(".")
+                    or machine_dir.name == "layout.json"
+                ):
+                    continue
 
-                # Extract connection time from VPN results
-                # Find the first successful connection in vpn_results
-                connection_time = None
-                for _ip, result in data.get("vpn_results", {}).items():
-                    if result.get("status") == "success":
-                        connection_time = result.get("time_took")
-                        break
+                machine_name = machine_dir.name
+                timing_file = machine_dir / f"{timing_type}.json"
 
-                if connection_time:
-                    vpn_timings[machine_name] = connection_time
-                    log.info(f"  {machine_name}: {connection_time}")
-                else:
+                if not timing_file.exists():
                     log.warning(
-                        f"No successful VPN connection found for {vpn_name}/{machine_name} in {timing_type}"
+                        f"No {timing_type}.json found for {vpn_name}/{run_alias}/{machine_name}"
                     )
-            except Exception as e:
-                log.error(f"Error processing {timing_file}: {e}")
+                    continue
+
+                try:
+                    with timing_file.open("r") as f:
+                        data = json.load(f)
+
+                    # Extract connection time from VPN results
+                    # Find the first successful connection in vpn_results
+                    connection_time = None
+                    for _ip, result in data.get("vpn_results", {}).items():
+                        if result.get("status") == "success":
+                            connection_time = result.get("time_took")
+                            break
+
+                    if connection_time:
+                        run_timings[machine_name] = connection_time
+                        log.info(f"    {machine_name}: {connection_time}")
+                    else:
+                        log.warning(
+                            f"No successful VPN connection found for {vpn_name}/{run_alias}/{machine_name} in {timing_type}"
+                        )
+                except Exception as e:
+                    log.error(f"Error processing {timing_file}: {e}")
 
     save_bench_report(general_dir, all_vpn_timings, f"{timing_type}.json")

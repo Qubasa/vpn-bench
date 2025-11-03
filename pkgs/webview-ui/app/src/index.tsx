@@ -1,5 +1,7 @@
 import { Portal, render } from "solid-js/web";
 import { Navigate, RouteDefinition, Router } from "@solidjs/router";
+import { createSignal, For } from "solid-js";
+import { Tabs } from "@kobalte/core/tabs";
 
 import "./index.css";
 import { QueryClient, QueryClientProvider } from "@tanstack/solid-query";
@@ -30,8 +32,59 @@ import { GeneralDashboard } from "./components/GeneralDashboard";
 import { QperfData, QperfReport } from "./components/QperfCharts";
 import { HyperfineData, HyperfineReport } from "./components/HyperfineCharts";
 import { PingData, PingReport } from "./components/PingCharts";
+import { TCSettingsData } from "./benchData";
 
 export const client = new QueryClient();
+
+// TC Settings Display Component
+function TCSettingsDisplay(props: { tcSettings: TCSettingsData | null }) {
+  return (
+    <div class="mb-6 rounded-lg border-2 border-secondary-200 bg-secondary-50 p-4">
+      <h3 class="mb-2 text-lg font-semibold text-secondary-900">
+        Network Conditions
+      </h3>
+      <p class="text-base text-secondary-700">
+        {props.tcSettings?.description || "No network impairment applied"}
+      </p>
+      {props.tcSettings?.settings && (
+        <div class="mt-3 grid grid-cols-2 gap-3 text-sm md:grid-cols-4">
+          {props.tcSettings.settings.latency_ms !== null && (
+            <div class="rounded bg-white p-2">
+              <div class="font-medium text-secondary-600">Latency</div>
+              <div class="text-lg font-semibold text-secondary-900">
+                {props.tcSettings.settings.latency_ms}ms
+              </div>
+            </div>
+          )}
+          {props.tcSettings.settings.jitter_ms !== null && (
+            <div class="rounded bg-white p-2">
+              <div class="font-medium text-secondary-600">Jitter</div>
+              <div class="text-lg font-semibold text-secondary-900">
+                {props.tcSettings.settings.jitter_ms}ms
+              </div>
+            </div>
+          )}
+          {props.tcSettings.settings.packet_loss_percent !== null && (
+            <div class="rounded bg-white p-2">
+              <div class="font-medium text-secondary-600">Packet Loss</div>
+              <div class="text-lg font-semibold text-secondary-900">
+                {props.tcSettings.settings.packet_loss_percent}%
+              </div>
+            </div>
+          )}
+          {props.tcSettings.settings.bandwidth_mbit !== null && (
+            <div class="rounded bg-white p-2">
+              <div class="font-medium text-secondary-600">Bandwidth</div>
+              <div class="text-lg font-semibold text-secondary-900">
+                {props.tcSettings.settings.bandwidth_mbit} Mbit/s
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
 
 const root = document.getElementById("app");
 
@@ -94,75 +147,107 @@ function processCategoryReports<TData, TReport>(
   return { ok: true, value: successData };
 }
 
+// Wrapper component that handles TC profile selection
+function VpnDashboardWithProfiles(props: { category: BenchData[0] }) {
+  // Get the list of TC profile aliases
+  const runAliases = Object.keys(props.category.runs);
+
+  // Default to first run alias
+  const [selectedRun, setSelectedRun] = createSignal(
+    runAliases[0] || "baseline",
+  );
+
+  // Get machines and TC settings for the currently selected run
+  const getCurrentRun = () => props.category.runs[selectedRun()];
+  const getCurrentMachines = () => getCurrentRun()?.machines || [];
+  const getCurrentTCSettings = () => getCurrentRun()?.tcSettings || null;
+
+  // Process reports for the selected run's machines
+  const getReportsForCurrentRun = () => {
+    const machines = getCurrentMachines();
+
+    return {
+      tcp: processCategoryReports<IperfTcpReportData, IperfTcpReport>(
+        machines,
+        (m) => m.iperf3.tcp,
+        (name, data) => ({ name, data }),
+      ),
+      udp: processCategoryReports<IperfUdpReportData, IperfUdpReport>(
+        machines,
+        (m) => m.iperf3.udp,
+        (name, data) => ({ name, data }),
+      ),
+      qperf: processCategoryReports<QperfData, QperfReport>(
+        machines,
+        (m) => m.qperf,
+        (name, data) => ({ name, data }),
+      ),
+      nixCache: processCategoryReports<HyperfineData, HyperfineReport>(
+        machines,
+        (m) => m.nixCache,
+        (name, data) => ({ name, data }),
+      ),
+      ping: processCategoryReports<PingData, PingReport>(
+        machines,
+        (m) => m.ping,
+        (name, data) => ({ name, data }),
+      ),
+    };
+  };
+
+  return (
+    <div>
+      {/* TC Profile Tabs - only show if there are multiple profiles */}
+      {runAliases.length > 1 ? (
+        <Tabs
+          value={selectedRun()}
+          onChange={setSelectedRun}
+          class="tc-profile-tabs"
+        >
+          <Tabs.List class="tc-profile-tabs__list">
+            <For each={runAliases}>
+              {(alias) => (
+                <Tabs.Trigger class="tc-profile-tabs__trigger" value={alias}>
+                  {alias
+                    .replace(/_/g, " ")
+                    .replace(/\b\w/g, (l) => l.toUpperCase())}
+                </Tabs.Trigger>
+              )}
+            </For>
+            <Tabs.Indicator class="tc-profile-tabs__indicator" />
+          </Tabs.List>
+        </Tabs>
+      ) : null}
+
+      {/* Display TC settings for current profile */}
+      <TCSettingsDisplay tcSettings={getCurrentTCSettings()} />
+
+      {/* Render VpnDashboard with reports from selected run */}
+      <VpnDashboard
+        tcpReports={getReportsForCurrentRun().tcp}
+        udpReports={getReportsForCurrentRun().udp}
+        qperfReports={getReportsForCurrentRun().qperf}
+        nixCacheReports={getReportsForCurrentRun().nixCache}
+        pingReports={getReportsForCurrentRun().ping}
+      />
+    </div>
+  );
+}
+
 // Function to generate routes from benchData, passing aggregated Results
 function generateRoutesFromBenchData(data: BenchData): AppRoute[] {
   return data.map((category) => {
     const path = `/${category.name.toLowerCase().replace(/\s+/g, "_")}`;
 
-    // Process TCP reports for the category
-    const aggregatedTcpResult = processCategoryReports<
-      IperfTcpReportData,
-      IperfTcpReport
-    >(
-      category.machines,
-      (m) => m.iperf3.tcp,
-      (name, data) => ({ name, data }), // Assuming IperfTcpReport = { name: string, data: IperfTcpReportData }
-    );
-
-    // Process UDP reports
-    const aggregatedUdpResult = processCategoryReports<
-      IperfUdpReportData,
-      IperfUdpReport
-    >(
-      category.machines,
-      (m) => m.iperf3.udp,
-      (name, data) => ({ name, data }), // Assuming IperfUdpReport = { name: string, data: IperfUdpReportData }
-    );
-
-    // Process Qperf reports
-    const aggregatedQperfResult = processCategoryReports<
-      QperfData,
-      QperfReport
-    >(
-      category.machines,
-      (m) => m.qperf,
-      (name, data) => ({ name, data }), // Assuming QperfReport = { name: string, data: QperfData }
-    );
-
-    // Process Nix Cache reports
-    const aggregatedNixCacheResult = processCategoryReports<
-      HyperfineData,
-      HyperfineReport
-    >(
-      category.machines,
-      (m) => m.nixCache,
-      (name, data) => ({ name, data }), // Assuming HyperfineReport = { name: string, data: HyperfineData }
-    );
-
-    // Process Ping reports
-    const aggregatedPingResult = processCategoryReports<PingData, PingReport>(
-      category.machines,
-      (m) => m.ping,
-      (name, data) => ({ name, data }), // Assuming PingReport = { name: string, data: PingData }
-    );
+    // Check if category has any runs
+    const hasRuns = Object.keys(category.runs).length > 0;
 
     return {
       path,
       label: category.name,
-      component: () => (
-        <VpnDashboard
-          // Pass the aggregated Result objects (or null) directly
-          tcpReports={aggregatedTcpResult}
-          udpReports={aggregatedUdpResult}
-          qperfReports={aggregatedQperfResult}
-          nixCacheReports={aggregatedNixCacheResult}
-          pingReports={aggregatedPingResult}
-        />
-      ),
-      // Hide route if category has no machines (or potentially if *all* results are null?)
-      hidden: category.machines.length === 0,
-      // Example: Only show route if at least one benchmark type has *some* data (not null result)
-      // hidden: !aggregatedTcpResult && !aggregatedUdpResult && !aggregatedQperfResult && !aggregatedNixCacheResult,
+      component: () => <VpnDashboardWithProfiles category={category} />,
+      // Hide route if category has no runs
+      hidden: !hasRuns,
     };
   });
 }

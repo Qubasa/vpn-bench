@@ -16,10 +16,7 @@ import {
   HyperfineCharts,
   HyperfineReport, // Assuming HyperfineReport is the type within the Result array
 } from "../HyperfineCharts"; // Ensure this path is correct
-import {
-  PingCharts,
-  PingReport,
-} from "@/src/components/PingCharts";
+import { PingCharts, PingReport } from "@/src/components/PingCharts";
 import { For, JSX, Show } from "solid-js";
 import { Result, Err, Ok } from "@/src/benchData"; // Assuming Result and BenchmarkRunError are here
 // Using the name from your import - ensure this component accepts BenchmarkRunError

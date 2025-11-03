@@ -191,7 +191,9 @@ const createPacketLossOption = (reports: PingReport[]) => {
       axisPointer: {
         type: "shadow",
       },
-      formatter: function (params: { name: string; value: string; marker: string }[]) {
+      formatter: function (
+        params: { name: string; value: string; marker: string }[],
+      ) {
         const point = params[0];
         return `${point.marker}${point.name}<br/>Packet Loss: ${point.value}%`;
       },

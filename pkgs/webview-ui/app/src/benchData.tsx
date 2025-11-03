@@ -78,10 +78,25 @@ export interface Machine {
   ping: Result<PingData> | null;
 }
 
-// --- Existing BenchCategory and BenchData Types ---
+// --- TC Settings Interface ---
+export interface TCSettingsData {
+  alias: string;
+  description: string;
+  settings: {
+    bandwidth_mbit: number | null;
+    latency_ms: number | null;
+    jitter_ms: number | null;
+    packet_loss_percent: number | null;
+  } | null;
+}
+
+// --- Updated BenchCategory and BenchData Types ---
 export interface BenchCategory {
-  name: string;
-  machines: Machine[];
+  name: string; // VPN name (e.g., "Tinc", "Wireguard")
+  runs: Record<
+    string,
+    { machines: Machine[]; tcSettings: TCSettingsData | null }
+  >; // TC profile alias -> machines and TC settings
 }
 export type BenchData = BenchCategory[];
 
@@ -99,18 +114,58 @@ if (Object.keys(benchFiles).length === 0) {
   console.warn("No benchmark JSON files found in '@/bench/**'.");
 }
 
+// Helper to load TC settings for a specific VPN/run combination
+function loadTCSettings(
+  benchFiles: Record<string, unknown>,
+  vpnName: string,
+  runAlias: string,
+): TCSettingsData | null {
+  const tcSettingsPath = `@/bench/${vpnName}/${runAlias}/tc_settings.json`;
+
+  // Search for the tc_settings.json file in benchFiles
+  for (const [path, rawModule] of Object.entries(benchFiles)) {
+    if (path.includes(`/${vpnName}/${runAlias}/tc_settings.json`)) {
+      if (rawModule && typeof rawModule === "object" && "alias" in rawModule) {
+        return rawModule as TCSettingsData;
+      }
+    }
+  }
+
+  console.warn(`TC settings not found for ${vpnName}/${runAlias}`);
+  return null;
+}
+
 export function generateBenchData(): BenchData {
   const categories: Record<string, BenchCategory> = {};
 
   Object.entries(benchFiles).forEach(([path, rawModule]) => {
     const pathParts = path.split("/");
-    if (pathParts.length < 5) {
+
+    // New structure: @/bench/<VPN>/<RUN_ALIAS>/<MACHINE>/<FILE>
+    // Old structure: @/bench/<VPN>/<MACHINE>/<FILE>
+    // We support both for backward compatibility
+
+    let categoryName: string;
+    let benchRunAlias: string;
+    let machineName: string;
+    let fileName: string;
+
+    if (pathParts.length >= 6) {
+      // New structure with 4-level depth
+      categoryName = pathParts[pathParts.length - 4];
+      benchRunAlias = pathParts[pathParts.length - 3];
+      machineName = pathParts[pathParts.length - 2];
+      fileName = pathParts[pathParts.length - 1];
+    } else if (pathParts.length >= 5) {
+      // Old structure with 3-level depth (backward compatibility)
+      categoryName = pathParts[pathParts.length - 3];
+      benchRunAlias = "default"; // Use default alias for old structure
+      machineName = pathParts[pathParts.length - 2];
+      fileName = pathParts[pathParts.length - 1];
+    } else {
       console.warn(`Skipping file with unexpected path structure: ${path}`);
       return;
     }
-    const categoryName = pathParts[pathParts.length - 3];
-    const machineName = pathParts[pathParts.length - 2];
-    const fileName = pathParts[pathParts.length - 1];
 
     if (categoryName === "General") {
       return;
@@ -163,11 +218,28 @@ export function generateBenchData(): BenchData {
       return; // Skip if status is neither 'success' nor 'error'
     }
 
-    // --- Find or Create Machine ---
+    // --- Find or Create Category (VPN), Run, and Machine ---
+    // Group by VPN name first
     if (!categories[categoryName]) {
-      categories[categoryName] = { name: categoryName, machines: [] };
+      categories[categoryName] = { name: categoryName, runs: {} };
     }
-    let machine = categories[categoryName].machines.find(
+
+    // Ensure the run alias exists
+    if (!categories[categoryName].runs[benchRunAlias]) {
+      // Load TC settings for this run (will be loaded once per VPN/run combination)
+      const tcSettings = loadTCSettings(
+        benchFiles,
+        categoryName,
+        benchRunAlias,
+      );
+      categories[categoryName].runs[benchRunAlias] = {
+        machines: [],
+        tcSettings,
+      };
+    }
+
+    // Find or create machine within this run
+    let machine = categories[categoryName].runs[benchRunAlias].machines.find(
       (m) => m.name === machineName,
     );
     if (!machine) {
@@ -179,7 +251,7 @@ export function generateBenchData(): BenchData {
         nixCache: null,
         ping: null,
       };
-      categories[categoryName].machines.push(machine);
+      categories[categoryName].runs[benchRunAlias].machines.push(machine);
     }
 
     // --- Assign the generated Result to the correct machine field ---

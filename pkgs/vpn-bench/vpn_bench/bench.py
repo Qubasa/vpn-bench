@@ -6,7 +6,7 @@ from typing import Any, ParamSpec
 from clan_lib.ssh.upload import upload
 
 from vpn_bench.assets import get_iperf_asset
-from vpn_bench.data import VPN, BenchMachine, Config, TestType
+from vpn_bench.data import VPN, BenchMachine, BenchmarkRun, Config, TCSettings, TestType
 from vpn_bench.errors import save_bench_report
 from vpn_bench.iperf3 import IperfCreds, run_iperf_test
 from vpn_bench.nix_cache import run_nix_cache_test
@@ -19,16 +19,42 @@ log = logging.getLogger(__name__)
 
 
 def run_benchmarks(
-    config: Config, vpn: VPN, bmachines: list[BenchMachine], tests: list[TestType]
+    config: Config,
+    vpn: VPN,
+    bmachines: list[BenchMachine],
+    tests: list[TestType],
+    benchmark_run_alias: str = "default",
+    tc_settings: TCSettings | None = None,
 ) -> None:
     """Run TCP and UDP benchmarks for each machine."""
+    import json
+
+    # Save TC settings JSON file once per benchmark run
+    tc_settings_dir = config.bench_dir / vpn.name / benchmark_run_alias
+    tc_settings_dir.mkdir(parents=True, exist_ok=True)
+    tc_settings_file = tc_settings_dir / "tc_settings.json"
+
+    tc_data = {
+        "alias": benchmark_run_alias,
+        "description": tc_settings.get_description()
+        if tc_settings
+        else "No network impairment applied",
+        "settings": tc_settings.to_dict() if tc_settings else None,
+    }
+    tc_settings_file.write_text(json.dumps(tc_data, indent=2))
+    log.info(f"Saved TC settings to {tc_settings_file}")
 
     # Upload iperf3 public key
     remote_iperf3_pubkey = Path("/tmp/iperf3.public")
     for pos, bmachine in enumerate(bmachines):
         next_bmachine = bmachines[pos + 1] if pos + 1 < len(bmachines) else bmachines[0]
         log.info(f"Benchmarking {bmachine.cmachine.name} with ip {bmachine.vpn_ip}")
-        result_dir = config.bench_dir / vpn.name / f"{pos}_{bmachine.cmachine.name}"
+        result_dir = (
+            config.bench_dir
+            / vpn.name
+            / benchmark_run_alias
+            / f"{pos}_{bmachine.cmachine.name}"
+        )
 
         creds = None
         local_pubkey = None
@@ -106,15 +132,44 @@ def benchmark_vpn(
     vpn: VPN,
     tr_machines: list[TrMachine],
     tests: list[TestType],
+    benchmark_runs: list[BenchmarkRun],
     skip_reboot_timings: bool = False,
 ) -> None:
-    """Main function to coordinate VPN benchmarking."""
-    log.info(f"Benchmarking VPN {vpn}")
+    """
+    Run VPN benchmarks with multiple TC configurations.
 
-    # Install VPN
-    bmachines = install_vpn(
-        config, vpn, tr_machines, get_con_times=not skip_reboot_timings
+    Args:
+        config: Configuration object
+        vpn: VPN to benchmark
+        tr_machines: List of terraform machines
+        tests: List of tests to run
+        benchmark_runs: List of benchmark run configurations with TC settings
+        skip_reboot_timings: Whether to skip reboot timing measurements
+    """
+    from vpn_bench.tc import apply_tc_settings
+
+    log.info(
+        f"Benchmarking VPN {vpn} with {len(benchmark_runs)} different configurations"
     )
 
-    # Run benchmarks
-    run_benchmarks(config, vpn, bmachines, tests)
+    # Install VPN once (connection timings collected for baseline if enabled)
+    bmachines = install_vpn(
+        config,
+        vpn,
+        tr_machines,
+        get_con_times=not skip_reboot_timings,
+        benchmark_run_alias=benchmark_runs[0].alias if benchmark_runs else "default",
+    )
+
+    # Get list of machines for TC application
+    machines = [bm.cmachine for bm in bmachines]
+
+    for run_config in benchmark_runs:
+        log.info(f"========== Running benchmark: {run_config.alias} ==========")
+
+        # Use context manager to apply TC settings and automatically clean up
+        with apply_tc_settings(machines, run_config.tc_settings):
+            # Run benchmarks with this configuration
+            run_benchmarks(
+                config, vpn, bmachines, tests, run_config.alias, run_config.tc_settings
+            )
