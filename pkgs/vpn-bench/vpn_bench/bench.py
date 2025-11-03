@@ -10,6 +10,7 @@ from vpn_bench.data import VPN, BenchMachine, Config, TestType
 from vpn_bench.errors import save_bench_report
 from vpn_bench.iperf3 import IperfCreds, run_iperf_test
 from vpn_bench.nix_cache import run_nix_cache_test
+from vpn_bench.ping import run_ping_test
 from vpn_bench.qperf import run_qperf_test
 from vpn_bench.terraform import TrMachine
 from vpn_bench.vpn import install_vpn
@@ -80,6 +81,14 @@ def run_benchmarks(
                         "vpn." + next_bmachine.cmachine.name,
                     )
                     save_bench_report(result_dir, quick_result, "qperf.json")
+
+                case TestType.PING:
+                    ping_result = execute_test(
+                        run_ping_test,
+                        bmachine.cmachine,
+                        "vpn." + next_bmachine.cmachine.name,
+                    )
+                    save_bench_report(result_dir, ping_result, "ping.json")
 
                 case TestType.NIX_CACHE:
                     nix_cache_result = execute_test(

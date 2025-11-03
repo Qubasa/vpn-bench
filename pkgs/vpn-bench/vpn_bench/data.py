@@ -65,6 +65,7 @@ class TestType(Enum):
     IPERF3 = "iperf3"
     QPERF = "qperf"
     NIX_CACHE = "nix-cache"
+    PING = "ping"
 
     @staticmethod
     def from_str(label: str) -> "TestType":

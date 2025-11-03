@@ -16,6 +16,10 @@ import {
   HyperfineCharts,
   HyperfineReport, // Assuming HyperfineReport is the type within the Result array
 } from "../HyperfineCharts"; // Ensure this path is correct
+import {
+  PingCharts,
+  PingReport,
+} from "@/src/components/PingCharts";
 import { For, JSX, Show } from "solid-js";
 import { Result, Err, Ok } from "@/src/benchData"; // Assuming Result and BenchmarkRunError are here
 // Using the name from your import - ensure this component accepts BenchmarkRunError
@@ -28,6 +32,7 @@ interface VpnDashboardProps {
   udpReports: Result<IperfUdpReport[]> | null;
   nixCacheReports: Result<HyperfineReport[]> | null;
   qperfReports: Result<QperfReport[]> | null;
+  pingReports: Result<PingReport[]> | null;
   tcpHeight?: {
     throughput?: number;
     timeSeries?: number;
@@ -41,12 +46,19 @@ interface VpnDashboardProps {
     jitter?: number;
     cpu?: number;
   };
-  defaultTab?: "tcp_iperf" | "udp_iperf" | "qperf" | "nix-cache"; // Added missing types
+  pingHeight?: {
+    rttBoxplot?: number;
+    rttMetrics?: number;
+    packetLoss?: number;
+    jitter?: number;
+  };
+  defaultTab?: "tcp_iperf" | "udp_iperf" | "qperf" | "nix-cache" | "ping"; // Added missing types
   tabLabels?: {
     tcp?: string;
     udp?: string;
     qperf?: string;
     nixCache?: string; // Added nixCache label
+    ping?: string;
   };
   className?: string;
 }
@@ -83,11 +95,17 @@ export const VpnDashboard = (props: VpnDashboardProps) => {
     {
       /* ... defaults ... */
     };
+  const pingHeight =
+    props.pingHeight ||
+    {
+      /* ... defaults ... */
+    };
   const tabLabels = {
     tcp: props.tabLabels?.tcp || "TCP Performance",
     udp: props.tabLabels?.udp || "UDP Performance",
     qperf: props.tabLabels?.qperf || "HTTP3 Performance",
     nixCache: props.tabLabels?.nixCache || "Nix Cache", // Default label for nix-cache
+    ping: props.tabLabels?.ping || "Ping Latency",
   };
   const defaultTab = props.defaultTab || "tcp_iperf";
 
@@ -159,6 +177,22 @@ export const VpnDashboard = (props: VpnDashboardProps) => {
     </Show>
   );
 
+  const renderPingContent = () => (
+    <Show when={props.pingReports} fallback={<FallbackMessage />}>
+      {(reportResult) => (
+        <Show
+          when={reportResult().ok}
+          fallback={<DisplayClanError error={(reportResult() as Err).error} />}
+        >
+          <PingCharts
+            reports={(reportResult() as Ok<PingReport[]>).value}
+            height={pingHeight}
+          />
+        </Show>
+      )}
+    </Show>
+  );
+
   // Removed the `tabs` array as content is now handled directly in <Tabs.Content>
 
   return (
@@ -183,6 +217,9 @@ export const VpnDashboard = (props: VpnDashboardProps) => {
         <Tabs.Trigger class="tabs__trigger" value="nix-cache">
           {tabLabels.nixCache}
         </Tabs.Trigger>
+        <Tabs.Trigger class="tabs__trigger" value="ping">
+          {tabLabels.ping}
+        </Tabs.Trigger>
         {/* You might conditionally render triggers if a whole category could be missing */}
         {/* e.g., <Show when={props.tcpReports || props.udpReports}><Tabs.Trigger ...></Show> */}
         <Tabs.Indicator class="tabs__indicator" />
@@ -203,6 +240,10 @@ export const VpnDashboard = (props: VpnDashboardProps) => {
 
       <Tabs.Content class="tabs__content" value="nix-cache">
         {renderNixCacheContent()}
+      </Tabs.Content>
+
+      <Tabs.Content class="tabs__content" value="ping">
+        {renderPingContent()}
       </Tabs.Content>
     </Tabs>
   );

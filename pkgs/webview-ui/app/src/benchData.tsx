@@ -4,6 +4,7 @@ import { IperfUdpReportData } from "./components/IperfUdpCharts"; // Assuming pa
 import { ConnectionTimings } from "./components/GeneralDashboard"; // Assuming path relative to benchData.ts
 import { QperfData } from "./components/QperfCharts"; // Assuming path relative to benchData.ts
 import { HyperfineData } from "./components/HyperfineCharts"; // Assuming path relative to benchData.ts
+import { PingData } from "./components/PingCharts"; // Import ping data type
 
 // --- Interfaces for raw JSON structure ---
 
@@ -74,6 +75,7 @@ export interface Machine {
   };
   qperf: Result<QperfData> | null;
   nixCache: Result<HyperfineData> | null;
+  ping: Result<PingData> | null;
 }
 
 // --- Existing BenchCategory and BenchData Types ---
@@ -175,6 +177,7 @@ export function generateBenchData(): BenchData {
         iperf3: { tcp: null, udp: null },
         qperf: null,
         nixCache: null,
+        ping: null,
       };
       categories[categoryName].machines.push(machine);
     }
@@ -189,6 +192,8 @@ export function generateBenchData(): BenchData {
       machine.qperf = generatedResult as Result<QperfData>;
     } else if (fileName === "nix_cache.json") {
       machine.nixCache = generatedResult as Result<HyperfineData>;
+    } else if (fileName === "ping.json") {
+      machine.ping = generatedResult as Result<PingData>;
     }
     // Add more else if blocks for other potential benchmark file types
   });

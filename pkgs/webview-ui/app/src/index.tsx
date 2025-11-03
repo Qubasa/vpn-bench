@@ -29,6 +29,7 @@ import {
 import { GeneralDashboard } from "./components/GeneralDashboard";
 import { QperfData, QperfReport } from "./components/QperfCharts";
 import { HyperfineData, HyperfineReport } from "./components/HyperfineCharts";
+import { PingData, PingReport } from "./components/PingCharts";
 
 export const client = new QueryClient();
 
@@ -138,6 +139,13 @@ function generateRoutesFromBenchData(data: BenchData): AppRoute[] {
       (name, data) => ({ name, data }), // Assuming HyperfineReport = { name: string, data: HyperfineData }
     );
 
+    // Process Ping reports
+    const aggregatedPingResult = processCategoryReports<PingData, PingReport>(
+      category.machines,
+      (m) => m.ping,
+      (name, data) => ({ name, data }), // Assuming PingReport = { name: string, data: PingData }
+    );
+
     return {
       path,
       label: category.name,
@@ -148,6 +156,7 @@ function generateRoutesFromBenchData(data: BenchData): AppRoute[] {
           udpReports={aggregatedUdpResult}
           qperfReports={aggregatedQperfResult}
           nixCacheReports={aggregatedNixCacheResult}
+          pingReports={aggregatedPingResult}
         />
       ),
       // Hide route if category has no machines (or potentially if *all* results are null?)
