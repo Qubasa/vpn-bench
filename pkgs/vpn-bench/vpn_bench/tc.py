@@ -54,6 +54,12 @@ def _apply_tc_to_machine(machine: Machine, settings: TCSettings) -> None:
         if settings.packet_loss_percent is not None:
             tc_cmd.extend(["loss", f"{settings.packet_loss_percent}%"])
 
+        if settings.reorder_percent is not None:
+            tc_cmd.extend(["reorder", f"{settings.reorder_percent}%"])
+            # Add correlation if specified
+            if settings.reorder_correlation is not None:
+                tc_cmd.append(f"{settings.reorder_correlation}%")
+
         # Apply netem settings if any were specified
         if len(tc_cmd) > 7:  # More than just the base command
             ssh.run(tc_cmd, RunOpts(log=Log.BOTH))

@@ -72,6 +72,14 @@ function TCSettingsDisplay(props: { tcSettings: TCSettingsData | null }) {
               </div>
             </div>
           )}
+          {props.tcSettings.settings.reorder_percent !== null && (
+            <div class="rounded bg-white p-2">
+              <div class="font-medium text-secondary-600">Reordering</div>
+              <div class="text-lg font-semibold text-secondary-900">
+                {props.tcSettings.settings.reorder_percent}%
+              </div>
+            </div>
+          )}
           {props.tcSettings.settings.bandwidth_mbit !== null && (
             <div class="rounded bg-white p-2">
               <div class="font-medium text-secondary-600">Bandwidth</div>

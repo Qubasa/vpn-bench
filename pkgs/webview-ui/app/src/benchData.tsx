@@ -87,6 +87,8 @@ export interface TCSettingsData {
     latency_ms: number | null;
     jitter_ms: number | null;
     packet_loss_percent: number | null;
+    reorder_percent: number | null;
+    reorder_correlation: number | null;
   } | null;
 }
 

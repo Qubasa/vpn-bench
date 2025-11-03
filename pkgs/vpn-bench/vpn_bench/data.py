@@ -83,6 +83,10 @@ class TCSettings:
     latency_ms: int | None = None  # Added latency in milliseconds
     jitter_ms: int | None = None  # Jitter (variation) in milliseconds
     packet_loss_percent: float | None = None  # Packet loss percentage (0-100)
+    reorder_percent: float | None = None  # Packet reordering percentage (0-100)
+    reorder_correlation: float | None = (
+        None  # Reordering correlation percentage (0-100)
+    )
 
     def __str__(self) -> str:
         """Generate a human-readable description of TC settings."""
@@ -95,6 +99,8 @@ class TCSettings:
             parts.append(f"jit{self.jitter_ms}ms")
         if self.packet_loss_percent is not None:
             parts.append(f"loss{self.packet_loss_percent}pct")
+        if self.reorder_percent is not None:
+            parts.append(f"reorder{self.reorder_percent}pct")
         return "_".join(parts) if parts else "baseline"
 
     def to_dict(self) -> dict[str, int | float | None]:
@@ -104,6 +110,8 @@ class TCSettings:
             "latency_ms": self.latency_ms,
             "jitter_ms": self.jitter_ms,
             "packet_loss_percent": self.packet_loss_percent,
+            "reorder_percent": self.reorder_percent,
+            "reorder_correlation": self.reorder_correlation,
         }
 
     def get_description(self) -> str:
@@ -114,6 +122,7 @@ class TCSettings:
                 self.latency_ms,
                 self.jitter_ms,
                 self.packet_loss_percent,
+                self.reorder_percent,
             ]
         ):
             return "No network impairment applied"
@@ -125,6 +134,8 @@ class TCSettings:
             parts.append(f"{self.jitter_ms}ms jitter")
         if self.packet_loss_percent is not None:
             parts.append(f"{self.packet_loss_percent}% packet loss")
+        if self.reorder_percent is not None:
+            parts.append(f"{self.reorder_percent}% packet reordering")
         if self.bandwidth_mbit is not None:
             parts.append(f"{self.bandwidth_mbit}Mbit/s bandwidth limit")
 
@@ -147,6 +158,7 @@ class TCProfile(Enum):
     LOW = "low"
     MEDIUM = "medium"
     HIGH = "high"
+    EXTREME = "extreme"
 
     @staticmethod
     def from_str(label: str) -> "TCProfile":
@@ -167,6 +179,8 @@ class TCProfile(Enum):
                         latency_ms=20,
                         jitter_ms=5,
                         packet_loss_percent=0.5,
+                        reorder_percent=1.0,
+                        reorder_correlation=25.0,
                     ),
                 )
             case TCProfile.MEDIUM:
@@ -176,6 +190,8 @@ class TCProfile(Enum):
                         latency_ms=50,
                         jitter_ms=15,
                         packet_loss_percent=2.0,
+                        reorder_percent=5.0,
+                        reorder_correlation=50.0,
                     ),
                 )
             case TCProfile.HIGH:
@@ -185,6 +201,19 @@ class TCProfile(Enum):
                         latency_ms=100,
                         jitter_ms=30,
                         packet_loss_percent=5.0,
+                        reorder_percent=10.0,
+                        reorder_correlation=50.0,
+                    ),
+                )
+            case TCProfile.EXTREME:
+                return BenchmarkRun(
+                    alias="extreme_impairment",
+                    tc_settings=TCSettings(
+                        latency_ms=200,
+                        jitter_ms=50,
+                        packet_loss_percent=10.0,
+                        reorder_percent=25.0,
+                        reorder_correlation=75.0,
                     ),
                 )
 
