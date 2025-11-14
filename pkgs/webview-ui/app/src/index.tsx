@@ -1,6 +1,6 @@
 import { Portal, render } from "solid-js/web";
-import { Navigate, RouteDefinition, Router } from "@solidjs/router";
-import { createSignal, For } from "solid-js";
+import { Navigate, RouteDefinition, Router, useSearchParams } from "@solidjs/router";
+import { createSignal, For, createMemo } from "solid-js";
 import { Tabs } from "@kobalte/core/tabs";
 
 import "./index.css";
@@ -32,6 +32,7 @@ import { GeneralDashboard } from "./components/GeneralDashboard";
 import { QperfData, QperfReport } from "./components/QperfCharts";
 import { HyperfineData, HyperfineReport } from "./components/HyperfineCharts";
 import { PingData, PingReport } from "./components/PingCharts";
+import { SrtData, SrtReport } from "./components/SrtStreamCharts";
 import { TCSettingsData } from "./benchData";
 
 export const client = new QueryClient();
@@ -48,7 +49,7 @@ function TCSettingsDisplay(props: { tcSettings: TCSettingsData | null }) {
       </p>
       {props.tcSettings?.settings && (
         <div class="mt-3 grid grid-cols-2 gap-3 text-sm md:grid-cols-4">
-          {props.tcSettings.settings.latency_ms !== null && (
+          {props.tcSettings?.settings?.latency_ms !== null && (
             <div class="rounded bg-white p-2">
               <div class="font-medium text-secondary-600">Latency</div>
               <div class="text-lg font-semibold text-secondary-900">
@@ -56,7 +57,7 @@ function TCSettingsDisplay(props: { tcSettings: TCSettingsData | null }) {
               </div>
             </div>
           )}
-          {props.tcSettings.settings.jitter_ms !== null && (
+          {props.tcSettings?.settings?.jitter_ms !== null && (
             <div class="rounded bg-white p-2">
               <div class="font-medium text-secondary-600">Jitter</div>
               <div class="text-lg font-semibold text-secondary-900">
@@ -64,7 +65,7 @@ function TCSettingsDisplay(props: { tcSettings: TCSettingsData | null }) {
               </div>
             </div>
           )}
-          {props.tcSettings.settings.packet_loss_percent !== null && (
+          {props.tcSettings?.settings?.packet_loss_percent !== null && (
             <div class="rounded bg-white p-2">
               <div class="font-medium text-secondary-600">Packet Loss</div>
               <div class="text-lg font-semibold text-secondary-900">
@@ -72,7 +73,7 @@ function TCSettingsDisplay(props: { tcSettings: TCSettingsData | null }) {
               </div>
             </div>
           )}
-          {props.tcSettings.settings.reorder_percent !== null && (
+          {props.tcSettings?.settings?.reorder_percent !== null && (
             <div class="rounded bg-white p-2">
               <div class="font-medium text-secondary-600">Reordering</div>
               <div class="text-lg font-semibold text-secondary-900">
@@ -80,7 +81,7 @@ function TCSettingsDisplay(props: { tcSettings: TCSettingsData | null }) {
               </div>
             </div>
           )}
-          {props.tcSettings.settings.bandwidth_mbit !== null && (
+          {props.tcSettings?.settings?.bandwidth_mbit !== null && (
             <div class="rounded bg-white p-2">
               <div class="font-medium text-secondary-600">Bandwidth</div>
               <div class="text-lg font-semibold text-secondary-900">
@@ -160,18 +161,30 @@ function VpnDashboardWithProfiles(props: { category: BenchData[0] }) {
   // Get the list of TC profile aliases
   const runAliases = Object.keys(props.category.runs);
 
-  // Default to first run alias
-  const [selectedRun, setSelectedRun] = createSignal(
-    runAliases[0] || "baseline",
-  );
+  // Get URL search params for state sync
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  // Initialize from URL or fallback to first run
+  const initialRun =
+    searchParams.profile && runAliases.includes(searchParams.profile)
+      ? searchParams.profile
+      : runAliases[0] || "baseline";
+
+  const [selectedRun, setSelectedRun] = createSignal(initialRun);
+
+  // Handler that updates both local state AND URL
+  const handleRunChange = (newRun: string) => {
+    setSelectedRun(newRun);
+    setSearchParams({ profile: newRun }); // Updates URL without reload
+  };
 
   // Get machines and TC settings for the currently selected run
   const getCurrentRun = () => props.category.runs[selectedRun()];
   const getCurrentMachines = () => getCurrentRun()?.machines || [];
   const getCurrentTCSettings = () => getCurrentRun()?.tcSettings || null;
 
-  // Process reports for the selected run's machines
-  const getReportsForCurrentRun = () => {
+  // Process reports for the selected run's machines (memoized for reactivity)
+  const reportsForCurrentRun = createMemo(() => {
     const machines = getCurrentMachines();
 
     return {
@@ -200,8 +213,13 @@ function VpnDashboardWithProfiles(props: { category: BenchData[0] }) {
         (m) => m.ping,
         (name, data) => ({ name, data }),
       ),
+      srtStream: processCategoryReports<SrtData, SrtReport>(
+        machines,
+        (m) => m.srtStream,
+        (name, data) => ({ name, data }),
+      ),
     };
-  };
+  });
 
   return (
     <div>
@@ -209,7 +227,7 @@ function VpnDashboardWithProfiles(props: { category: BenchData[0] }) {
       {runAliases.length > 1 ? (
         <Tabs
           value={selectedRun()}
-          onChange={setSelectedRun}
+          onChange={handleRunChange}
           class="tc-profile-tabs"
         >
           <Tabs.List class="tc-profile-tabs__list">
@@ -232,11 +250,22 @@ function VpnDashboardWithProfiles(props: { category: BenchData[0] }) {
 
       {/* Render VpnDashboard with reports from selected run */}
       <VpnDashboard
-        tcpReports={getReportsForCurrentRun().tcp}
-        udpReports={getReportsForCurrentRun().udp}
-        qperfReports={getReportsForCurrentRun().qperf}
-        nixCacheReports={getReportsForCurrentRun().nixCache}
-        pingReports={getReportsForCurrentRun().ping}
+        tcpReports={reportsForCurrentRun().tcp}
+        udpReports={reportsForCurrentRun().udp}
+        qperfReports={reportsForCurrentRun().qperf}
+        nixCacheReports={reportsForCurrentRun().nixCache}
+        pingReports={reportsForCurrentRun().ping}
+        srtStreamReports={reportsForCurrentRun().srtStream}
+        defaultTab={
+          searchParams.tab as
+            | "tcp_iperf"
+            | "udp_iperf"
+            | "qperf"
+            | "nix-cache"
+            | "ping"
+            | "srt-stream"
+            | undefined
+        }
       />
     </div>
   );

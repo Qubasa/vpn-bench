@@ -95,6 +95,9 @@ def run_nix_cache_test(
     host = fetch_machine.cmachine.target_host().override(host_key_check="none")
     firefox = fetch_machine.cmachine.select("pkgs.firefox.outPath")
     with host.host_connection() as ssh:
+        # Restart harmonia service before running the test
+        ssh.run(["systemctl", "restart", "harmonia.service"], RunOpts(log=Log.BOTH))
+
         init_nix_cache_path(host, cache_target.cmachine)
 
         clear_cache_cmd = (

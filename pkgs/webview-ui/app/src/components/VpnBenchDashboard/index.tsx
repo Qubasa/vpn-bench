@@ -17,10 +17,15 @@ import {
   HyperfineReport, // Assuming HyperfineReport is the type within the Result array
 } from "../HyperfineCharts"; // Ensure this path is correct
 import { PingCharts, PingReport } from "@/src/components/PingCharts";
-import { For, JSX, Show } from "solid-js";
+import {
+  SrtChartsDashboard,
+  SrtReport,
+} from "@/src/components/SrtStreamCharts";
+import { For, JSX, Show, createSignal, createEffect } from "solid-js";
 import { Result, Err, Ok } from "@/src/benchData"; // Assuming Result and BenchmarkRunError are here
 // Using the name from your import - ensure this component accepts BenchmarkRunError
 import { DisplayClanError } from "@/src/components/ClanError"; // *** USE THE CORRECT COMPONENT NAME AND PATH ***
+import { useSearchParams } from "@solidjs/router";
 
 // Define props for the dashboard component
 interface VpnDashboardProps {
@@ -30,6 +35,7 @@ interface VpnDashboardProps {
   nixCacheReports: Result<HyperfineReport[]> | null;
   qperfReports: Result<QperfReport[]> | null;
   pingReports: Result<PingReport[]> | null;
+  srtStreamReports: Result<SrtReport[]> | null;
   tcpHeight?: {
     throughput?: number;
     timeSeries?: number;
@@ -49,13 +55,19 @@ interface VpnDashboardProps {
     packetLoss?: number;
     jitter?: number;
   };
-  defaultTab?: "tcp_iperf" | "udp_iperf" | "qperf" | "nix-cache" | "ping"; // Added missing types
+  srtStreamHeight?: {
+    bitrate?: number;
+    fps?: number;
+    droppedFrames?: number;
+  };
+  defaultTab?: "tcp_iperf" | "udp_iperf" | "qperf" | "nix-cache" | "ping" | "srt-stream";
   tabLabels?: {
     tcp?: string;
     udp?: string;
     qperf?: string;
-    nixCache?: string; // Added nixCache label
+    nixCache?: string;
     ping?: string;
+    srtStream?: string;
   };
   className?: string;
 }
@@ -81,6 +93,43 @@ const FallbackMessage = () => (
 );
 
 export const VpnDashboard = (props: VpnDashboardProps) => {
+  // Get URL search params for state sync
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  // Valid tab values
+  const validTabs = [
+    "tcp_iperf",
+    "udp_iperf",
+    "qperf",
+    "nix-cache",
+    "ping",
+    "srt-stream",
+  ] as const;
+
+  type ValidTab = (typeof validTabs)[number];
+
+  // Initialize from URL or prop or default
+  const initialTab =
+    searchParams.tab && validTabs.includes(searchParams.tab as ValidTab)
+      ? searchParams.tab
+      : props.defaultTab || "tcp_iperf";
+
+  const [selectedTab, setSelectedTab] = createSignal(initialTab);
+
+  // Handler that updates both local state AND URL
+  const handleTabChange = (newTab: string) => {
+    setSelectedTab(newTab);
+    setSearchParams({ tab: newTab }); // Updates URL without reload
+  };
+
+  // Sync with URL changes (e.g., browser back/forward)
+  createEffect(() => {
+    const urlTab = searchParams.tab;
+    if (urlTab && validTabs.includes(urlTab as ValidTab)) {
+      setSelectedTab(urlTab);
+    }
+  });
+
   // Default values remain mostly the same
   const tcpHeight =
     props.tcpHeight ||
@@ -97,106 +146,26 @@ export const VpnDashboard = (props: VpnDashboardProps) => {
     {
       /* ... defaults ... */
     };
+  const srtStreamHeight =
+    props.srtStreamHeight ||
+    {
+      /* ... defaults ... */
+    };
   const tabLabels = {
     tcp: props.tabLabels?.tcp || "TCP Performance",
     udp: props.tabLabels?.udp || "UDP Performance",
     qperf: props.tabLabels?.qperf || "HTTP3 Performance",
-    nixCache: props.tabLabels?.nixCache || "Nix Cache", // Default label for nix-cache
+    nixCache: props.tabLabels?.nixCache || "Nix Cache",
     ping: props.tabLabels?.ping || "Ping Latency",
+    srtStream: props.tabLabels?.srtStream || "Video Streaming",
   };
-  const defaultTab = props.defaultTab || "tcp_iperf";
-
-  // --- Content Rendering Logic ---
-  // We'll use functions or direct JSX with <Show> for clarity
-
-  const renderTcpContent = () => (
-    <Show when={props.tcpReports} fallback={<FallbackMessage />}>
-      {(
-        reportResult, // reportResult is guaranteed non-null Result here
-      ) => (
-        <Show
-          when={reportResult().ok}
-          fallback={<DisplayClanError error={(reportResult() as Err).error} />} // Render error on failure
-        >
-          {/* Render chart on success, passing the actual data array */}
-          <IperfTcpCharts
-            reports={(reportResult() as Ok<IperfTcpReport[]>).value}
-            height={tcpHeight}
-          />
-        </Show>
-      )}
-    </Show>
-  );
-
-  const renderUdpContent = () => (
-    <Show when={props.udpReports} fallback={<FallbackMessage />}>
-      {(reportResult) => (
-        <Show
-          when={reportResult().ok}
-          fallback={<DisplayClanError error={(reportResult() as Err).error} />}
-        >
-          <IperfUdpCharts
-            reports={(reportResult() as Ok<IperfUdpReport[]>).value}
-            height={udpHeight}
-          />
-        </Show>
-      )}
-    </Show>
-  );
-
-  const renderQperfContent = () => (
-    <Show when={props.qperfReports} fallback={<FallbackMessage />}>
-      {(reportResult) => (
-        <Show
-          when={reportResult().ok}
-          fallback={<DisplayClanError error={(reportResult() as Err).error} />}
-        >
-          <QperfChartsDashboard
-            reports={(reportResult() as Ok<QperfReport[]>).value}
-          />
-        </Show>
-      )}
-    </Show>
-  );
-
-  const renderNixCacheContent = () => (
-    <Show when={props.nixCacheReports} fallback={<FallbackMessage />}>
-      {(reportResult) => (
-        <Show
-          when={reportResult().ok}
-          fallback={<DisplayClanError error={(reportResult() as Err).error} />}
-        >
-          <HyperfineCharts
-            reports={(reportResult() as Ok<HyperfineReport[]>).value}
-          />
-        </Show>
-      )}
-    </Show>
-  );
-
-  const renderPingContent = () => (
-    <Show when={props.pingReports} fallback={<FallbackMessage />}>
-      {(reportResult) => (
-        <Show
-          when={reportResult().ok}
-          fallback={<DisplayClanError error={(reportResult() as Err).error} />}
-        >
-          <PingCharts
-            reports={(reportResult() as Ok<PingReport[]>).value}
-            height={pingHeight}
-          />
-        </Show>
-      )}
-    </Show>
-  );
-
-  // Removed the `tabs` array as content is now handled directly in <Tabs.Content>
 
   return (
     <Tabs
       aria-label="Network Performance Tests"
       class={props.className || "tabs"} // Apply custom or default class
-      defaultValue={defaultTab}
+      value={selectedTab()}
+      onChange={handleTabChange}
     >
       <Tabs.List class="tabs__list">
         {/* Conditionally render triggers if the corresponding report prop might be null
@@ -217,30 +186,107 @@ export const VpnDashboard = (props: VpnDashboardProps) => {
         <Tabs.Trigger class="tabs__trigger" value="ping">
           {tabLabels.ping}
         </Tabs.Trigger>
+        <Tabs.Trigger class="tabs__trigger" value="srt-stream">
+          {tabLabels.srtStream}
+        </Tabs.Trigger>
         {/* You might conditionally render triggers if a whole category could be missing */}
         {/* e.g., <Show when={props.tcpReports || props.udpReports}><Tabs.Trigger ...></Show> */}
         <Tabs.Indicator class="tabs__indicator" />
       </Tabs.List>
 
-      {/* Use the render functions or inline logic within Tabs.Content */}
+      {/* Direct JSX in Tabs.Content for proper reactivity */}
       <Tabs.Content class="tabs__content" value="tcp_iperf">
-        {renderTcpContent()}
+        <Show when={props.tcpReports} fallback={<FallbackMessage />}>
+          {(reportResult) => (
+            <Show
+              when={reportResult().ok}
+              fallback={<DisplayClanError error={(reportResult() as Err).error} />}
+            >
+              <IperfTcpCharts
+                reports={(reportResult() as Ok<IperfTcpReport[]>).value}
+                height={tcpHeight}
+              />
+            </Show>
+          )}
+        </Show>
       </Tabs.Content>
 
       <Tabs.Content class="tabs__content" value="udp_iperf">
-        {renderUdpContent()}
+        <Show when={props.udpReports} fallback={<FallbackMessage />}>
+          {(reportResult) => (
+            <Show
+              when={reportResult().ok}
+              fallback={<DisplayClanError error={(reportResult() as Err).error} />}
+            >
+              <IperfUdpCharts
+                reports={(reportResult() as Ok<IperfUdpReport[]>).value}
+                height={udpHeight}
+              />
+            </Show>
+          )}
+        </Show>
       </Tabs.Content>
 
       <Tabs.Content class="tabs__content" value="qperf">
-        {renderQperfContent()}
+        <Show when={props.qperfReports} fallback={<FallbackMessage />}>
+          {(reportResult) => (
+            <Show
+              when={reportResult().ok}
+              fallback={<DisplayClanError error={(reportResult() as Err).error} />}
+            >
+              <QperfChartsDashboard
+                reports={(reportResult() as Ok<QperfReport[]>).value}
+              />
+            </Show>
+          )}
+        </Show>
       </Tabs.Content>
 
       <Tabs.Content class="tabs__content" value="nix-cache">
-        {renderNixCacheContent()}
+        <Show when={props.nixCacheReports} fallback={<FallbackMessage />}>
+          {(reportResult) => (
+            <Show
+              when={reportResult().ok}
+              fallback={<DisplayClanError error={(reportResult() as Err).error} />}
+            >
+              <HyperfineCharts
+                reports={(reportResult() as Ok<HyperfineReport[]>).value}
+              />
+            </Show>
+          )}
+        </Show>
       </Tabs.Content>
 
       <Tabs.Content class="tabs__content" value="ping">
-        {renderPingContent()}
+        <Show when={props.pingReports} fallback={<FallbackMessage />}>
+          {(reportResult) => (
+            <Show
+              when={reportResult().ok}
+              fallback={<DisplayClanError error={(reportResult() as Err).error} />}
+            >
+              <PingCharts
+                reports={(reportResult() as Ok<PingReport[]>).value}
+                height={pingHeight}
+              />
+            </Show>
+          )}
+        </Show>
+      </Tabs.Content>
+
+      <Tabs.Content class="tabs__content" value="srt-stream">
+        <Show when={props.srtStreamReports} fallback={<FallbackMessage />}>
+          {(reportResult) => (
+            <Show
+              when={reportResult().ok}
+              fallback={<DisplayClanError error={(reportResult() as Err).error} />}
+            >
+              <SrtChartsDashboard
+                reports={(reportResult() as Ok<SrtReport[]>).value}
+                height={srtStreamHeight}
+              />
+            </Show>
+          )}
+        </Show>
       </Tabs.Content>
     </Tabs>
   );

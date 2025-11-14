@@ -25,7 +25,7 @@ def run_iperf_test(
 ) -> dict[str, Any]:
     """Run a single iperf3 test and return the results."""
 
-    cmd = [
+    bench_cmd = [
         "shell",
         "nixpkgs#iperf3",
         "-c",
@@ -46,13 +46,15 @@ def run_iperf_test(
     ]
 
     if udp_mode:
-        cmd.extend(["-u", "--udp-counters-64bit", "-b", "0"])
+        bench_cmd.extend(["-u", "--udp-counters-64bit", "-b", "0"])
 
     host = machine.target_host().override(host_key_check="none")
     with host.host_connection() as ssh:
+        # Restart iperf3 service before running the test
+        ssh.run(["systemctl", "restart", "iperf3.service"], RunOpts(log=Log.BOTH))
         # Set the password for the iperf3 server
         res = ssh.run(
-            nix_command(cmd),
+            nix_command(bench_cmd),
             RunOpts(log=Log.BOTH, timeout=60),  # 60 seconds
             extra_env={"IPERF3_PASSWORD": creds.password},
         )

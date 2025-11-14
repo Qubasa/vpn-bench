@@ -1,5 +1,5 @@
 import * as echarts from "echarts";
-import { createEffect, createSignal } from "solid-js";
+import { createEffect, onCleanup, on } from "solid-js";
 import { EChartsCoreOption, ResizeOpts } from "echarts";
 import { JSX } from "solid-js";
 
@@ -15,20 +15,42 @@ export interface EChartsProps {
 
 export const Echart = (props: EChartsProps) => {
   let chartRef: HTMLDivElement | undefined;
-  const [perfChart, setPerfChart] = createSignal<echarts.ECharts | null>(null);
+  let chartInstance: echarts.ECharts | null = null;
 
-  createEffect(() => {
-    setPerfChart(
-      echarts.init(chartRef, props.theme, {
-        width: props.width,
-        height: props.height,
-        ...props.resize,
-      }),
-    );
-  });
+  // Single effect with explicit dependency tracking using on()
+  createEffect(
+    on(
+      // Explicitly track only props.option changes
+      () => props.option,
+      (option) => {
+        // Initialize chart on first run if not exists
+        if (!chartInstance && chartRef) {
+          chartInstance = echarts.init(chartRef, props.theme, {
+            width: props.width,
+            height: props.height,
+            ...props.resize,
+          });
+        }
 
-  createEffect(() => {
-    perfChart()?.setOption(props.option);
+        // Update chart with new option (runs on first and subsequent updates)
+        if (chartInstance) {
+          chartInstance.setOption(option, {
+            notMerge: true,
+            lazyUpdate: false,
+          });
+        }
+      },
+      // Don't defer - we want this to run on mount
+      { defer: false }
+    )
+  );
+
+  // Cleanup on unmount
+  onCleanup(() => {
+    if (chartInstance) {
+      chartInstance.dispose();
+      chartInstance = null;
+    }
   });
 
   return <div ref={chartRef}></div>;
