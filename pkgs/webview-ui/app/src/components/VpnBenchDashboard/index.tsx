@@ -18,9 +18,9 @@ import {
 } from "../HyperfineCharts"; // Ensure this path is correct
 import { PingCharts, PingReport } from "@/src/components/PingCharts";
 import {
-  SrtChartsDashboard,
-  SrtReport,
-} from "@/src/components/SrtStreamCharts";
+  RistChartsDashboard,
+  RistReport,
+} from "@/src/components/RistStreamCharts";
 import { For, JSX, Show, createSignal, createEffect } from "solid-js";
 import { Result, Err, Ok } from "@/src/benchData"; // Assuming Result and BenchmarkRunError are here
 // Using the name from your import - ensure this component accepts BenchmarkRunError
@@ -35,7 +35,7 @@ interface VpnDashboardProps {
   nixCacheReports: Result<HyperfineReport[]> | null;
   qperfReports: Result<QperfReport[]> | null;
   pingReports: Result<PingReport[]> | null;
-  srtStreamReports: Result<SrtReport[]> | null;
+  ristStreamReports: Result<RistReport[]> | null;
   tcpHeight?: {
     throughput?: number;
     timeSeries?: number;
@@ -55,19 +55,25 @@ interface VpnDashboardProps {
     packetLoss?: number;
     jitter?: number;
   };
-  srtStreamHeight?: {
+  ristStreamHeight?: {
     bitrate?: number;
     fps?: number;
     droppedFrames?: number;
   };
-  defaultTab?: "tcp_iperf" | "udp_iperf" | "qperf" | "nix-cache" | "ping" | "srt-stream";
+  defaultTab?:
+    | "tcp_iperf"
+    | "udp_iperf"
+    | "qperf"
+    | "nix-cache"
+    | "ping"
+    | "rist-stream";
   tabLabels?: {
     tcp?: string;
     udp?: string;
     qperf?: string;
     nixCache?: string;
     ping?: string;
-    srtStream?: string;
+    ristStream?: string;
   };
   className?: string;
 }
@@ -103,7 +109,7 @@ export const VpnDashboard = (props: VpnDashboardProps) => {
     "qperf",
     "nix-cache",
     "ping",
-    "srt-stream",
+    "rist-stream",
   ] as const;
 
   type ValidTab = (typeof validTabs)[number];
@@ -146,8 +152,8 @@ export const VpnDashboard = (props: VpnDashboardProps) => {
     {
       /* ... defaults ... */
     };
-  const srtStreamHeight =
-    props.srtStreamHeight ||
+  const ristStreamHeight =
+    props.ristStreamHeight ||
     {
       /* ... defaults ... */
     };
@@ -157,7 +163,7 @@ export const VpnDashboard = (props: VpnDashboardProps) => {
     qperf: props.tabLabels?.qperf || "HTTP3 Performance",
     nixCache: props.tabLabels?.nixCache || "Nix Cache",
     ping: props.tabLabels?.ping || "Ping Latency",
-    srtStream: props.tabLabels?.srtStream || "Video Streaming",
+    ristStream: props.tabLabels?.ristStream || "Video Streaming",
   };
 
   return (
@@ -186,8 +192,8 @@ export const VpnDashboard = (props: VpnDashboardProps) => {
         <Tabs.Trigger class="tabs__trigger" value="ping">
           {tabLabels.ping}
         </Tabs.Trigger>
-        <Tabs.Trigger class="tabs__trigger" value="srt-stream">
-          {tabLabels.srtStream}
+        <Tabs.Trigger class="tabs__trigger" value="rist-stream">
+          {tabLabels.ristStream}
         </Tabs.Trigger>
         {/* You might conditionally render triggers if a whole category could be missing */}
         {/* e.g., <Show when={props.tcpReports || props.udpReports}><Tabs.Trigger ...></Show> */}
@@ -200,7 +206,9 @@ export const VpnDashboard = (props: VpnDashboardProps) => {
           {(reportResult) => (
             <Show
               when={reportResult().ok}
-              fallback={<DisplayClanError error={(reportResult() as Err).error} />}
+              fallback={
+                <DisplayClanError error={(reportResult() as Err).error} />
+              }
             >
               <IperfTcpCharts
                 reports={(reportResult() as Ok<IperfTcpReport[]>).value}
@@ -216,7 +224,9 @@ export const VpnDashboard = (props: VpnDashboardProps) => {
           {(reportResult) => (
             <Show
               when={reportResult().ok}
-              fallback={<DisplayClanError error={(reportResult() as Err).error} />}
+              fallback={
+                <DisplayClanError error={(reportResult() as Err).error} />
+              }
             >
               <IperfUdpCharts
                 reports={(reportResult() as Ok<IperfUdpReport[]>).value}
@@ -232,7 +242,9 @@ export const VpnDashboard = (props: VpnDashboardProps) => {
           {(reportResult) => (
             <Show
               when={reportResult().ok}
-              fallback={<DisplayClanError error={(reportResult() as Err).error} />}
+              fallback={
+                <DisplayClanError error={(reportResult() as Err).error} />
+              }
             >
               <QperfChartsDashboard
                 reports={(reportResult() as Ok<QperfReport[]>).value}
@@ -247,7 +259,9 @@ export const VpnDashboard = (props: VpnDashboardProps) => {
           {(reportResult) => (
             <Show
               when={reportResult().ok}
-              fallback={<DisplayClanError error={(reportResult() as Err).error} />}
+              fallback={
+                <DisplayClanError error={(reportResult() as Err).error} />
+              }
             >
               <HyperfineCharts
                 reports={(reportResult() as Ok<HyperfineReport[]>).value}
@@ -262,7 +276,9 @@ export const VpnDashboard = (props: VpnDashboardProps) => {
           {(reportResult) => (
             <Show
               when={reportResult().ok}
-              fallback={<DisplayClanError error={(reportResult() as Err).error} />}
+              fallback={
+                <DisplayClanError error={(reportResult() as Err).error} />
+              }
             >
               <PingCharts
                 reports={(reportResult() as Ok<PingReport[]>).value}
@@ -273,16 +289,18 @@ export const VpnDashboard = (props: VpnDashboardProps) => {
         </Show>
       </Tabs.Content>
 
-      <Tabs.Content class="tabs__content" value="srt-stream">
-        <Show when={props.srtStreamReports} fallback={<FallbackMessage />}>
+      <Tabs.Content class="tabs__content" value="rist-stream">
+        <Show when={props.ristStreamReports} fallback={<FallbackMessage />}>
           {(reportResult) => (
             <Show
               when={reportResult().ok}
-              fallback={<DisplayClanError error={(reportResult() as Err).error} />}
+              fallback={
+                <DisplayClanError error={(reportResult() as Err).error} />
+              }
             >
               <SrtChartsDashboard
                 reports={(reportResult() as Ok<SrtReport[]>).value}
-                height={srtStreamHeight}
+                height={ristStreamHeight}
               />
             </Show>
           )}

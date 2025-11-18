@@ -4,35 +4,35 @@ import { Component, Show } from "solid-js";
 import { Echart } from "../Echarts";
 import * as echarts from "echarts";
 
-interface SrtPercentiles {
+interface RistPercentiles {
   p25: number;
   p50: number;
   p75: number;
 }
 
-interface SrtMetricStats {
+interface RistMetricStats {
   min: number;
   average: number;
   max: number;
-  percentiles: SrtPercentiles;
+  percentiles: RistPercentiles;
 }
 
-export interface SrtData {
-  bitrate_kbps: SrtMetricStats;
-  fps: SrtMetricStats;
-  dropped_frames: SrtMetricStats;
+export interface RistData {
+  bitrate_kbps: RistMetricStats;
+  fps: RistMetricStats;
+  dropped_frames: RistMetricStats;
 }
 
-export interface SrtReport {
+export interface RistReport {
   name: string;
-  data: SrtData;
+  data: RistData;
 }
 
-type MetricKey = keyof SrtData;
+type MetricKey = keyof RistData;
 
-const getMetricStats = (data: SrtData, metric: MetricKey): SrtMetricStats => {
+const getMetricStats = (data: RistData, metric: MetricKey): RistMetricStats => {
   if (!data || !(metric in data)) {
-    console.error(`Metric key "${metric}" not found in SRT data:`, data);
+    console.error(`Metric key "${metric}" not found in RIST data:`, data);
     return {
       min: 0,
       average: 0,
@@ -43,7 +43,7 @@ const getMetricStats = (data: SrtData, metric: MetricKey): SrtMetricStats => {
   return data[metric];
 };
 
-const getBoxplotArray = (stats: SrtMetricStats): number[] => {
+const getBoxplotArray = (stats: RistMetricStats): number[] => {
   return [
     stats.min,
     stats.percentiles.p25,
@@ -53,10 +53,7 @@ const getBoxplotArray = (stats: SrtMetricStats): number[] => {
   ];
 };
 
-const processDataForSrtBoxplot = (
-  reports: SrtReport[],
-  metric: MetricKey,
-) => {
+const processDataForRistBoxplot = (reports: RistReport[], metric: MetricKey) => {
   const categories: string[] = [];
   const boxplotData: number[][] = [];
   reports.forEach((report) => {
@@ -67,13 +64,10 @@ const processDataForSrtBoxplot = (
   return { categories, boxplotData };
 };
 
-const processDataForSrtBarChart = (
-  reports: SrtReport[],
-  metric: MetricKey,
-) => {
+const processDataForRistBarChart = (reports: RistReport[], metric: MetricKey) => {
   const categories: string[] = [];
   const barData: number[] = [];
-  const fullStatsList: SrtMetricStats[] = [];
+  const fullStatsList: RistMetricStats[] = [];
 
   reports.forEach((report) => {
     categories.push(report.name);
@@ -101,14 +95,14 @@ const getMachineColor = (machineIndex: number): string => {
   return machineColorPalette[machineIndex % machineColorPalette.length];
 };
 
-const createSrtBoxplotOption = (
-  reports: SrtReport[],
+const createRistBoxplotOption = (
+  reports: RistReport[],
   metric: MetricKey,
   title: string,
 ): echarts.EChartsOption | null => {
   if (!reports || reports.length === 0) return null;
 
-  const { categories, boxplotData } = processDataForSrtBoxplot(reports, metric);
+  const { categories, boxplotData } = processDataForRistBoxplot(reports, metric);
   if (categories.length === 0) return null;
 
   let yAxisName = "";
@@ -242,14 +236,14 @@ const createSrtBoxplotOption = (
   };
 };
 
-const createSrtBarChartOption = (
-  reports: SrtReport[],
+const createRistBarChartOption = (
+  reports: RistReport[],
   metric: MetricKey,
   title: string,
 ): echarts.EChartsOption | null => {
   if (!reports || reports.length === 0) return null;
 
-  const { categories, barData, fullStatsList } = processDataForSrtBarChart(
+  const { categories, barData, fullStatsList } = processDataForRistBarChart(
     reports,
     metric,
   );
@@ -281,7 +275,7 @@ const createSrtBarChartOption = (
     const categoryName = categories[dataIndex];
     const machineColor = getMachineColor(dataIndex);
     const colorBox = `<span style="display:inline-block;margin-right:5px;border-radius:10px;width:10px;height:10px;background-color:${machineColor}"></span>`;
-    const stats: SrtMetricStats | undefined = fullStatsList[dataIndex];
+    const stats: RistMetricStats | undefined = fullStatsList[dataIndex];
 
     if (!stats) return "Data error";
 
@@ -383,16 +377,16 @@ const createSrtBarChartOption = (
   };
 };
 
-export interface SrtBoxplotChartProps {
-  reports: SrtReport[];
+export interface RistBoxplotChartProps {
+  reports: RistReport[];
   metric: MetricKey;
   title: string;
   height?: number;
 }
 
-export const SrtBoxplotChart: Component<SrtBoxplotChartProps> = (props) => {
+export const RistBoxplotChart: Component<RistBoxplotChartProps> = (props) => {
   const option = () =>
-    createSrtBoxplotOption(props.reports, props.metric, props.title);
+    createRistBoxplotOption(props.reports, props.metric, props.title);
   return (
     <Show
       when={option()}
@@ -415,16 +409,16 @@ export const SrtBoxplotChart: Component<SrtBoxplotChartProps> = (props) => {
   );
 };
 
-export interface SrtBarChartProps {
-  reports: SrtReport[];
+export interface RistBarChartProps {
+  reports: RistReport[];
   metric: MetricKey;
   title: string;
   height?: number;
 }
 
-export const SrtBarChart: Component<SrtBarChartProps> = (props) => {
+export const RistBarChart: Component<RistBarChartProps> = (props) => {
   const option = () =>
-    createSrtBarChartOption(props.reports, props.metric, props.title);
+    createRistBarChartOption(props.reports, props.metric, props.title);
   return (
     <Show
       when={option()}
@@ -447,8 +441,8 @@ export const SrtBarChart: Component<SrtBarChartProps> = (props) => {
   );
 };
 
-export interface SrtChartsDashboardProps {
-  reports: SrtReport[];
+export interface RistChartsDashboardProps {
+  reports: RistReport[];
   height?: {
     bitrate?: number;
     fps?: number;
@@ -456,7 +450,7 @@ export interface SrtChartsDashboardProps {
   };
 }
 
-export const SrtChartsDashboard: Component<SrtChartsDashboardProps> = (
+export const RistChartsDashboard: Component<RistChartsDashboardProps> = (
   props,
 ) => {
   const effectiveHeights = {
@@ -468,7 +462,7 @@ export const SrtChartsDashboard: Component<SrtChartsDashboardProps> = (
   if (!props.reports || props.reports.length === 0) {
     return (
       <div style={{ padding: "20px", color: "red", "text-align": "center" }}>
-        No SRT streaming report data provided.
+        No RIST streaming report data provided.
       </div>
     );
   }
@@ -492,7 +486,7 @@ export const SrtChartsDashboard: Component<SrtChartsDashboardProps> = (
           "box-shadow": "0 1px 3px rgba(0,0,0,0.05)",
         }}
       >
-        <SrtBarChart
+        <RistBarChart
           reports={props.reports}
           metric="bitrate_kbps"
           title="Streaming Bitrate"
@@ -513,7 +507,7 @@ export const SrtChartsDashboard: Component<SrtChartsDashboardProps> = (
             "box-shadow": "0 1px 3px rgba(0,0,0,0.05)",
           }}
         >
-          <SrtBarChart
+          <RistBarChart
             reports={props.reports}
             metric="fps"
             title="Frame Rate"
@@ -531,7 +525,7 @@ export const SrtChartsDashboard: Component<SrtChartsDashboardProps> = (
             "box-shadow": "0 1px 3px rgba(0,0,0,0.05)",
           }}
         >
-          <SrtBoxplotChart
+          <RistBoxplotChart
             reports={props.reports}
             metric="dropped_frames"
             title="Dropped Frames"
@@ -543,4 +537,4 @@ export const SrtChartsDashboard: Component<SrtChartsDashboardProps> = (
   );
 };
 
-export default SrtChartsDashboard;
+export default RistChartsDashboard;

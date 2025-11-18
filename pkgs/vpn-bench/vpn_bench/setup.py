@@ -172,6 +172,17 @@ def create_base_inventory(config: Config, tr_machines: list[TrMachine]) -> None:
         },
     )
 
+    set_value_by_path_tuple(
+        inventory,
+        ("instances", "rist-stream"),
+        {
+            "module": {"name": "rist-stream", "input": "cvpn-bench"},
+            "roles": {
+                "server": {"tags": {"all": {}}},
+            },
+        },
+    )
+
     for machine in tr_machines:
         match machine["provider"]:
             case Provider.Hetzner:

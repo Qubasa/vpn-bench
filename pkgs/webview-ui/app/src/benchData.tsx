@@ -5,7 +5,7 @@ import { ConnectionTimings } from "./components/GeneralDashboard"; // Assuming p
 import { QperfData } from "./components/QperfCharts"; // Assuming path relative to benchData.ts
 import { HyperfineData } from "./components/HyperfineCharts"; // Assuming path relative to benchData.ts
 import { PingData } from "./components/PingCharts"; // Import ping data type
-import { SrtData } from "./components/SrtStreamCharts"; // Import SRT data type
+import { RistData } from "./components/RistStreamCharts"; // Import RIST data type
 
 // --- Interfaces for raw JSON structure ---
 
@@ -77,7 +77,7 @@ export interface Machine {
   qperf: Result<QperfData> | null;
   nixCache: Result<HyperfineData> | null;
   ping: Result<PingData> | null;
-  srtStream: Result<SrtData> | null;
+  ristStream: Result<RistData> | null;
 }
 
 // --- TC Settings Interface ---
@@ -254,7 +254,7 @@ export function generateBenchData(): BenchData {
         qperf: null,
         nixCache: null,
         ping: null,
-        srtStream: null,
+        ristStream: null,
       };
       categories[categoryName].runs[benchRunAlias].machines.push(machine);
     }
@@ -271,8 +271,8 @@ export function generateBenchData(): BenchData {
       machine.nixCache = generatedResult as Result<HyperfineData>;
     } else if (fileName === "ping.json") {
       machine.ping = generatedResult as Result<PingData>;
-    } else if (fileName === "srt_stream.json") {
-      machine.srtStream = generatedResult as Result<SrtData>;
+    } else if (fileName === "rist_stream.json") {
+      machine.ristStream = generatedResult as Result<RistData>;
     }
     // Add more else if blocks for other potential benchmark file types
   });

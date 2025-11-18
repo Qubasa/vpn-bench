@@ -41,8 +41,8 @@ export const Echart = (props: EChartsProps) => {
         }
       },
       // Don't defer - we want this to run on mount
-      { defer: false }
-    )
+      { defer: false },
+    ),
   );
 
   // Cleanup on unmount

@@ -1,5 +1,10 @@
 import { Portal, render } from "solid-js/web";
-import { Navigate, RouteDefinition, Router, useSearchParams } from "@solidjs/router";
+import {
+  Navigate,
+  RouteDefinition,
+  Router,
+  useSearchParams,
+} from "@solidjs/router";
 import { createSignal, For, createMemo } from "solid-js";
 import { Tabs } from "@kobalte/core/tabs";
 
@@ -32,7 +37,7 @@ import { GeneralDashboard } from "./components/GeneralDashboard";
 import { QperfData, QperfReport } from "./components/QperfCharts";
 import { HyperfineData, HyperfineReport } from "./components/HyperfineCharts";
 import { PingData, PingReport } from "./components/PingCharts";
-import { SrtData, SrtReport } from "./components/SrtStreamCharts";
+import { RistData, RistReport } from "./components/RistStreamCharts";
 import { TCSettingsData } from "./benchData";
 
 export const client = new QueryClient();
@@ -213,9 +218,9 @@ function VpnDashboardWithProfiles(props: { category: BenchData[0] }) {
         (m) => m.ping,
         (name, data) => ({ name, data }),
       ),
-      srtStream: processCategoryReports<SrtData, SrtReport>(
+      ristStream: processCategoryReports<RistData, RistReport>(
         machines,
-        (m) => m.srtStream,
+        (m) => m.ristStream,
         (name, data) => ({ name, data }),
       ),
     };
@@ -255,7 +260,7 @@ function VpnDashboardWithProfiles(props: { category: BenchData[0] }) {
         qperfReports={reportsForCurrentRun().qperf}
         nixCacheReports={reportsForCurrentRun().nixCache}
         pingReports={reportsForCurrentRun().ping}
-        srtStreamReports={reportsForCurrentRun().srtStream}
+        ristStreamReports={reportsForCurrentRun().ristStream}
         defaultTab={
           searchParams.tab as
             | "tcp_iperf"
@@ -263,7 +268,7 @@ function VpnDashboardWithProfiles(props: { category: BenchData[0] }) {
             | "qperf"
             | "nix-cache"
             | "ping"
-            | "srt-stream"
+            | "rist-stream"
             | undefined
         }
       />

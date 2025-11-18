@@ -75,6 +75,7 @@
               nebula-src = inputs.nebula;
             }
           );
+          "rist-stream" = ./clanModules/rist-stream;
           "tinc" = ./clanModules/tinc;
           "wireguard" = ./clanModules/wireguard;
           "yggdrasil" = ./clanModules/yggdrasil;

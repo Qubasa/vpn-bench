@@ -1,7 +1,7 @@
 { lib, ... }:
 {
   _class = "clan.service";
-  manifest.name = "srt-stream";
+  manifest.name = "rist-stream";
 
   roles.server = {
     interface = {
@@ -9,12 +9,17 @@
         port = lib.mkOption {
           type = lib.types.port;
           default = 40052;
-          description = "UDP port to listen on for SRT streams";
+          description = "UDP port to listen on for RIST streams";
         };
-        latency = lib.mkOption {
+        buffer = lib.mkOption {
           type = lib.types.int;
           default = 400;
-          description = "SRT latency in milliseconds";
+          description = "RIST buffer size in milliseconds";
+        };
+        profile = lib.mkOption {
+          type = lib.types.enum [ "simple" "main" "advanced" ];
+          default = "main";
+          description = "RIST profile (simple, main, advanced)";
         };
       };
     };
@@ -27,16 +32,18 @@
           let
             finalSettings = extendSettings {
               port = lib.mkDefault 40052;
-              latency = lib.mkDefault 400;
+              buffer = lib.mkDefault 400;
+              profile = lib.mkDefault "main";
             };
           in
           {
             imports = [ ./shared.nix ];
 
-            services.srt-stream = {
+            services.rist-stream = {
               enable = true;
               port = finalSettings.port;
-              latency = finalSettings.latency;
+              buffer = finalSettings.buffer;
+              profile = finalSettings.profile;
               openFirewall = true;
             };
           };

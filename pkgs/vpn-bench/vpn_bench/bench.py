@@ -12,7 +12,7 @@ from vpn_bench.iperf3 import IperfCreds, run_iperf_test
 from vpn_bench.nix_cache import run_nix_cache_test
 from vpn_bench.ping import run_ping_test
 from vpn_bench.qperf import run_qperf_test
-from vpn_bench.srt_stream import run_srt_test
+from vpn_bench.rist_stream import run_rist_test
 from vpn_bench.terraform import TrMachine
 from vpn_bench.vpn import install_vpn
 
@@ -123,14 +123,14 @@ def run_benchmarks(
                     )
                     save_bench_report(result_dir, nix_cache_result, "nix_cache.json")
 
-                case TestType.SRT_STREAM:
-                    srt_result = execute_test(
-                        run_srt_test,
+                case TestType.RIST_STREAM:
+                    rist_result = execute_test(
+                        run_rist_test,
                         bmachine.cmachine,
                         "vpn." + next_bmachine.cmachine.name,
                         duration=45,
                     )
-                    save_bench_report(result_dir, srt_result, "srt_stream.json")
+                    save_bench_report(result_dir, rist_result, "rist_stream.json")
 
                 case _:
                     msg = f"Unknown BenchType: {test}"

@@ -66,7 +66,7 @@ class TestType(Enum):
     QPERF = "qperf"
     NIX_CACHE = "nix-cache"
     PING = "ping"
-    SRT_STREAM = "srt-stream"
+    RIST_STREAM = "rist-stream"
 
     @staticmethod
     def from_str(label: str) -> "TestType":

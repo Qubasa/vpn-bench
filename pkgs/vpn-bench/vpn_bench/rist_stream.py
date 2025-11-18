@@ -2,6 +2,7 @@ import json
 import logging
 import re
 import statistics
+from collections.abc import Sequence
 from pathlib import Path
 from typing import TypedDict
 
@@ -13,15 +14,16 @@ log = logging.getLogger(__name__)
 # --- TypedDict Definitions ---
 
 
-class SrtConfigDict(TypedDict):
+class RistConfigDict(TypedDict):
     host: str
     port: int
     duration: int
-    latency_ms: int
+    buffer_ms: int
     bitrate_mbps: float
+    profile: str
 
 
-class SrtPerSecondStatsDict(TypedDict):
+class RistPerSecondStatsDict(TypedDict):
     second: int
     fps: float
     bitrate_kbps: float
@@ -29,9 +31,9 @@ class SrtPerSecondStatsDict(TypedDict):
     time_sec: float
 
 
-class SrtOutputDict(TypedDict):
-    config: SrtConfigDict
-    per_second_stats: list[SrtPerSecondStatsDict]
+class RistOutputDict(TypedDict):
+    config: RistConfigDict
+    per_second_stats: list[RistPerSecondStatsDict]
     total_frames: int
     dropped_frames: int
     avg_bitrate_kbps: float
@@ -45,7 +47,7 @@ class MetricStatsDict(TypedDict):
     percentiles: dict[str, float]
 
 
-class SrtSummaryDict(TypedDict):
+class RistSummaryDict(TypedDict):
     bitrate_kbps: MetricStatsDict
     fps: MetricStatsDict
     dropped_frames: MetricStatsDict
@@ -54,7 +56,9 @@ class SrtSummaryDict(TypedDict):
 # --- Parsing Function ---
 
 
-def parse_ffmpeg_stats(output_text: str, target_host: str, duration: int) -> SrtOutputDict:
+def parse_ffmpeg_stats(
+    output_text: str, target_host: str, duration: int, profile: str = "main"
+) -> RistOutputDict:
     """
     Parse ffmpeg progress output to extract streaming statistics.
 
@@ -63,13 +67,14 @@ def parse_ffmpeg_stats(output_text: str, target_host: str, duration: int) -> Srt
     """
     lines = output_text.strip().split("\n")
 
-    result: SrtOutputDict = {
+    result: RistOutputDict = {
         "config": {
             "host": target_host,
             "port": 40052,
             "duration": duration,
-            "latency_ms": 400,
+            "buffer_ms": 400,
             "bitrate_mbps": 5.0,
+            "profile": profile,
         },
         "per_second_stats": [],
         "total_frames": 0,
@@ -143,9 +148,9 @@ def parse_ffmpeg_stats(output_text: str, target_host: str, duration: int) -> Srt
 # --- Helper Function to Calculate All Stats for a Metric ---
 
 
-def calculate_metric_stats(values: list[int | float]) -> MetricStatsDict:
+def calculate_metric_stats(values: Sequence[int | float]) -> MetricStatsDict:
     """
-    Calculate min, average, max, and percentiles for a list of numeric values.
+    Calculate min, average, max, and percentiles for a sequence of numeric values.
     """
     if not values:
         return {
@@ -191,18 +196,18 @@ def calculate_metric_stats(values: list[int | float]) -> MetricStatsDict:
 # --- Main Summary Calculation Function ---
 
 
-def calculate_srt_summary(parsed_outputs: list[SrtOutputDict]) -> SrtSummaryDict:
+def calculate_rist_summary(parsed_outputs: list[RistOutputDict]) -> RistSummaryDict:
     """
-    Calculate summary statistics from a list of SrtOutputDict objects.
+    Calculate summary statistics from a list of RistOutputDict objects.
 
     Args:
-        parsed_outputs: List of SrtOutputDict objects from multiple runs.
+        parsed_outputs: List of RistOutputDict objects from multiple runs.
 
     Returns:
         Dictionary containing summary statistics for each key metric.
     """
     if not parsed_outputs:
-        log.warning("No parsed SRT outputs provided for summary calculation.")
+        log.warning("No parsed RIST outputs provided for summary calculation.")
         zero_stats = calculate_metric_stats([])
         return {
             "bitrate_kbps": zero_stats,
@@ -235,29 +240,31 @@ def calculate_srt_summary(parsed_outputs: list[SrtOutputDict]) -> SrtSummaryDict
 # --- Main Test Function ---
 
 
-def run_srt_test(
+def run_rist_test(
     machine: Machine,
     target_host: str,
     duration: int = 45,
     bitrate: str = "5M",
-) -> SrtOutputDict:
+    profile: str = "main",
+) -> RistOutputDict:
     """
-    Run an SRT video streaming test and return the results.
+    Run a RIST video streaming test and return the results.
 
     Args:
         machine: The machine to run the test from (sender/client)
         target_host: The target host to stream to (receiver/server)
         duration: Test duration in seconds
         bitrate: Target bitrate (e.g., "5M" for 5 Mbps)
+        profile: RIST profile (simple, main, or advanced)
 
     Returns:
-        Parsed SRT streaming statistics
+        Parsed RIST streaming statistics
     """
     host = machine.target_host().override(host_key_check="none")
 
-    # Restart the SRT receiver service on the target
+    # Restart the RIST receiver service on the target
     with host.host_connection() as ssh:
-        ssh.run(["systemctl", "restart", "srt-stream.service"], RunOpts(log=Log.BOTH))
+        ssh.run(["systemctl", "restart", "rist-stream.service"], RunOpts(log=Log.BOTH))
 
     # Build the ffmpeg command to stream test pattern
     # Generate 1080p@30fps test pattern with H.264 encoding
@@ -301,29 +308,32 @@ def run_srt_test(
         "-stats",
         "-stats_period",
         "1",
-        f"srt://{target_host}:40052?mode=caller&latency=400000",
+        f"rist://{target_host}:40052?mode=caller&profile={profile}&buffer=400",
     ]
 
     with host.host_connection() as ssh:
+        breakpoint()
         res = ssh.run(
             cmd,
             RunOpts(log=Log.BOTH, timeout=duration + 30),  # Add buffer to duration
         )
 
     # Parse the stderr output (ffmpeg writes stats to stderr)
-    return parse_ffmpeg_stats(res.stderr, target_host, duration)
+    return parse_ffmpeg_stats(res.stderr, target_host, duration, profile)
 
 
 # --- Save Results Function ---
 
 
-def save_srt_results(result_dir: Path, json_data: SrtSummaryDict | SrtOutputDict) -> None:
-    """Save SRT test results to a file."""
+def save_rist_results(
+    result_dir: Path, json_data: RistSummaryDict | RistOutputDict
+) -> None:
+    """Save RIST test results to a file."""
     result_dir.mkdir(parents=True, exist_ok=True)
 
-    crash_file = result_dir / "srt_stream_crash.json"
+    crash_file = result_dir / "rist_stream_crash.json"
     if crash_file.exists():
         crash_file.unlink()
 
-    with (result_dir / "srt_stream.json").open("w") as f:
+    with (result_dir / "rist_stream.json").open("w") as f:
         json.dump(json_data, f, indent=4)
