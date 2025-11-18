@@ -19,7 +19,7 @@ let
 
     address = mkOption {
       type = types.str;
-      default = "0.0.0.0";
+      default = "[::]";
       description = "Server address to listen on for RIST streams. Default is all interfaces (IPv4 and IPv6).";
     };
 
@@ -82,7 +82,7 @@ let
             -loglevel info \
             -stats \
             -stats_period 1 \
-            -i 'rist://${cfg.address}:${toString cfg.port}?mode=listener&profile=${cfg.profile}&buffer=${toString cfg.buffer}&bandwidth=${toString cfg.maxBandwidth}' \
+            -i 'rist://@${cfg.address}:${toString cfg.port}' \
             -f null -
         '';
 

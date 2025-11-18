@@ -298,8 +298,8 @@ export const VpnDashboard = (props: VpnDashboardProps) => {
                 <DisplayClanError error={(reportResult() as Err).error} />
               }
             >
-              <SrtChartsDashboard
-                reports={(reportResult() as Ok<SrtReport[]>).value}
+              <RistChartsDashboard
+                reports={(reportResult() as Ok<RistReport[]>).value}
                 height={ristStreamHeight}
               />
             </Show>

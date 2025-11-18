@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import TypedDict
 
 from clan_lib.cmd import Log, RunOpts
+from clan_lib.errors import ClanCmdError
 from clan_lib.machines.machines import Machine
 
 log = logging.getLogger(__name__)
@@ -64,8 +65,11 @@ def parse_ffmpeg_stats(
 
     FFmpeg outputs progress information like:
     frame=   45 fps=30.0 q=-1.0 size=     256kB time=00:00:01.50 bitrate=1396.8kbits/s speed=   1x
+
+    Note: ffmpeg uses \r to overwrite progress lines, so we need to split by both \r and \n
     """
-    lines = output_text.strip().split("\n")
+    # Split by both \n and \r to capture all progress updates
+    lines = output_text.replace("\r", "\n").strip().split("\n")
 
     result: RistOutputDict = {
         "config": {
@@ -84,9 +88,10 @@ def parse_ffmpeg_stats(
     }
 
     # Regex to parse ffmpeg progress output
-    # Example: frame=   90 fps= 30 q=28.0 size=     512kB time=00:00:03.00 bitrate=1396.8kbits/s speed=   1x
+    # Example: frame=   90 fps= 30 q=28.0 size=     512KiB time=00:00:03.00 bitrate=1396.8kbits/s speed=   1x
+    # Note: size can be either "kB" or "KiB" depending on ffmpeg version
     pattern = re.compile(
-        r"frame=\s*(\d+)\s+fps=\s*([\d.]+)\s+q=[\d.-]+\s+size=\s*(\d+)kB\s+time=([\d:.]+)\s+bitrate=\s*([\d.]+)kbits/s"
+        r"frame=\s*(\d+)\s+fps=\s*([\d.]+)\s+q=[\d.-]+\s+size=\s*(\d+)KiB\s+time=([\d:.]+)\s+bitrate=\s*([\d.]+)kbits/s"
     )
 
     last_second = -1
@@ -246,9 +251,9 @@ def run_rist_test(
     duration: int = 45,
     bitrate: str = "5M",
     profile: str = "main",
-) -> RistOutputDict:
+) -> RistSummaryDict:
     """
-    Run a RIST video streaming test and return the results.
+    Run a RIST video streaming test and return summary statistics.
 
     Args:
         machine: The machine to run the test from (sender/client)
@@ -258,7 +263,7 @@ def run_rist_test(
         profile: RIST profile (simple, main, or advanced)
 
     Returns:
-        Parsed RIST streaming statistics
+        Summary statistics with min/avg/max/percentiles for bitrate, fps, and dropped frames
     """
     host = machine.target_host().override(host_key_check="none")
 
@@ -268,72 +273,46 @@ def run_rist_test(
 
     # Build the ffmpeg command to stream test pattern
     # Generate 1080p@30fps test pattern with H.264 encoding
+    ffmpeg_cmd = (
+        f"ffmpeg -re -f lavfi -i testsrc=size=1920x1080:rate=30:duration={duration} "
+        f"-f lavfi -i sine=frequency=1000:duration={duration} "
+        f"-c:v libx264 -preset ultrafast -tune zerolatency "
+        f"-b:v {bitrate} -maxrate {bitrate} -bufsize 2M -g 50 -pix_fmt yuv420p "
+        f"-c:a aac -b:a 128k "
+        f"-f mpegts -stats -stats_period 1 "
+        f"rist://{target_host}:40052"
+    )
+
     cmd = [
         "nix",
         "shell",
         "nixpkgs#ffmpeg-full",
         "-c",
-        "ffmpeg",
-        "-re",  # Read input at native frame rate
-        "-f",
-        "lavfi",
-        "-i",
-        f"testsrc=size=1920x1080:rate=30:duration={duration}",
-        "-f",
-        "lavfi",
-        "-i",
-        "sine=frequency=1000:duration=" + str(duration),
-        "-c:v",
-        "libx264",
-        "-preset",
-        "ultrafast",
-        "-tune",
-        "zerolatency",
-        "-b:v",
-        bitrate,
-        "-maxrate",
-        bitrate,
-        "-bufsize",
-        "2M",
-        "-g",
-        "50",  # GOP size
-        "-pix_fmt",
-        "yuv420p",
-        "-c:a",
-        "aac",
-        "-b:a",
-        "128k",
-        "-f",
-        "mpegts",
-        "-stats",
-        "-stats_period",
-        "1",
-        f"rist://{target_host}:40052?mode=caller&profile={profile}&buffer=400",
+        "bash",
+        "-c",
+        ffmpeg_cmd,
     ]
 
     with host.host_connection() as ssh:
-        breakpoint()
-        res = ssh.run(
-            cmd,
-            RunOpts(log=Log.BOTH, timeout=duration + 30),  # Add buffer to duration
-        )
+        try:
+            res = ssh.run(
+                cmd,
+                RunOpts(log=Log.BOTH, timeout=duration + 30),  # Add buffer to duration
+            )
+            stderr = res.stderr
+        except ClanCmdError as e:
+            # RIST often fails on close even after successful transmission
+            # Capture stderr from the exception to parse stats
+            log.warning(
+                f"ffmpeg exited with error code {e.cmd.returncode} (likely RIST close timeout)"
+            )
+            stderr = e.cmd.stderr
+            if not stderr:
+                raise
 
     # Parse the stderr output (ffmpeg writes stats to stderr)
-    return parse_ffmpeg_stats(res.stderr, target_host, duration, profile)
+    parsed_output = parse_ffmpeg_stats(stderr, target_host, duration, profile)
 
-
-# --- Save Results Function ---
-
-
-def save_rist_results(
-    result_dir: Path, json_data: RistSummaryDict | RistOutputDict
-) -> None:
-    """Save RIST test results to a file."""
-    result_dir.mkdir(parents=True, exist_ok=True)
-
-    crash_file = result_dir / "rist_stream_crash.json"
-    if crash_file.exists():
-        crash_file.unlink()
-
-    with (result_dir / "rist_stream.json").open("w") as f:
-        json.dump(json_data, f, indent=4)
+    # Calculate summary statistics from the single run
+    # (following the pattern used by ping and qperf benchmarks)
+    return calculate_rist_summary([parsed_output])
