@@ -26,8 +26,10 @@ import { IconVariant } from "./components/icon";
 import {
   benchData,
   generalData,
+  comparisonData,
   GeneralData,
   BenchData,
+  ComparisonData,
   Err,
   Machine,
   Ok,
@@ -298,18 +300,21 @@ function generateRoutesFromBenchData(data: BenchData): AppRoute[] {
 
 function generateAppRouteFromGeneralData(
   data: GeneralData | undefined,
+  comparison: ComparisonData,
 ): AppRoute[] {
-  if (!data) {
+  if (!data && Object.keys(comparison).length === 0) {
     return [];
   }
+
   return [
     {
       path: "/general",
       label: "General",
       component: () => (
         <GeneralDashboard
-          bootstrap_connection_timings={data.connection_timings}
-          reboot_connection_timings={data.reboot_connection_timings}
+          bootstrap_connection_timings={data?.connection_timings}
+          reboot_connection_timings={data?.reboot_connection_timings}
+          comparisonData={comparison}
         />
       ),
     },
@@ -331,7 +336,7 @@ export const routes: AppRoute[] =
           ),
         },
         ...generateRoutesFromBenchData(benchData),
-        ...generateAppRouteFromGeneralData(generalData),
+        ...generateAppRouteFromGeneralData(generalData, comparisonData),
       ]
     : [];
 

@@ -1,9 +1,7 @@
-import json
 import logging
 import re
 import statistics
 from collections.abc import Sequence
-from pathlib import Path
 from typing import TypedDict
 
 from clan_lib.cmd import Log, RunOpts

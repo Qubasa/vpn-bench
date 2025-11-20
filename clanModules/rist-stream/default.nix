@@ -17,7 +17,11 @@
           description = "RIST buffer size in milliseconds";
         };
         profile = lib.mkOption {
-          type = lib.types.enum [ "simple" "main" "advanced" ];
+          type = lib.types.enum [
+            "simple"
+            "main"
+            "advanced"
+          ];
           default = "main";
           description = "RIST profile (simple, main, advanced)";
         };

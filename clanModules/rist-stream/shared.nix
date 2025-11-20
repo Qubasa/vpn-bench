@@ -30,7 +30,11 @@ let
     };
 
     profile = mkOption {
-      type = types.enum [ "simple" "main" "advanced" ];
+      type = types.enum [
+        "simple"
+        "main"
+        "advanced"
+      ];
       default = "main";
       description = "RIST profile: simple (no retransmission), main (ARQ retransmission), advanced (bonding and tunneling)";
     };
@@ -45,7 +49,7 @@ let
       type = types.bool;
       default = false;
       description = "Open UDP port in the firewall for RIST.";
-    };  
+    };
   };
 
   imp = {

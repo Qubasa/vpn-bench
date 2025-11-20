@@ -299,14 +299,24 @@ export const IperfRttChart = (props: {
   reports: IperfTcpReport[];
   height?: number;
 }) => {
-  return <Echart option={createRttOption(props.reports)} height={props.height || 500} />;
+  return (
+    <Echart
+      option={createRttOption(props.reports)}
+      height={props.height || 500}
+    />
+  );
 };
 
 export const IperfMaxSendWindowChart = (props: {
   reports: IperfTcpReport[];
   height?: number;
 }) => {
-  return <Echart option={createMaxSendWindowOption(props.reports)} height={props.height || 500} />;
+  return (
+    <Echart
+      option={createMaxSendWindowOption(props.reports)}
+      height={props.height || 500}
+    />
+  );
 };
 
 // Helper function to calculate Min/Avg/Max throughput from intervals
@@ -691,28 +701,48 @@ export const IperfThroughputChart = (props: {
   reports: IperfTcpReport[];
   height?: number;
 }) => {
-  return <Echart option={createThroughputOption(props.reports)} height={props.height || 500} />;
+  return (
+    <Echart
+      option={createThroughputOption(props.reports)}
+      height={props.height || 500}
+    />
+  );
 };
 
 export const IperfTimeSeriesChart = (props: {
   reports: IperfTcpReport[];
   height?: number;
 }) => {
-  return <Echart option={createTimeSeriesOption(props.reports)} height={props.height || 700} />;
+  return (
+    <Echart
+      option={createTimeSeriesOption(props.reports)}
+      height={props.height || 700}
+    />
+  );
 };
 
 export const IperfCpuChart = (props: {
   reports: IperfTcpReport[];
   height?: number;
 }) => {
-  return <Echart option={createCpuOption(props.reports)} height={props.height || 500} />;
+  return (
+    <Echart
+      option={createCpuOption(props.reports)}
+      height={props.height || 500}
+    />
+  );
 };
 
 export const IperfRetransmitsChart = (props: {
   reports: IperfTcpReport[];
   height?: number;
 }) => {
-  return <Echart option={createRetransmitsOption(props.reports)} height={props.height || 500} />;
+  return (
+    <Echart
+      option={createRetransmitsOption(props.reports)}
+      height={props.height || 500}
+    />
+  );
 };
 
 // Combined dashboard component - using props pattern for SolidJS reactivity
@@ -729,8 +759,14 @@ export const IperfTcpCharts = (props: IperfTcpChartsProps) => {
 
   return (
     <div style={{ display: "flex", "flex-direction": "column", gap: "20px" }}>
-      <IperfThroughputChart reports={props.reports} height={height().throughput} />
-      <IperfTimeSeriesChart reports={props.reports} height={height().timeSeries} />
+      <IperfThroughputChart
+        reports={props.reports}
+        height={height().throughput}
+      />
+      <IperfTimeSeriesChart
+        reports={props.reports}
+        height={height().timeSeries}
+      />
 
       <div style={{ display: "flex", gap: "20px" }}>
         <div style={{ flex: 1 }}>

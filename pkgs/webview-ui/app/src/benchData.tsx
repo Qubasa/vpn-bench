@@ -110,6 +110,67 @@ export interface GeneralData {
   reboot_connection_timings?: ConnectionTimings;
 }
 
+// --- Comparison Data Interfaces ---
+
+export interface MetricStats {
+  min: number;
+  average: number;
+  max: number;
+  percentiles: {
+    p25: number;
+    p50: number;
+    p75: number;
+  };
+}
+
+export interface PingComparisonData {
+  rtt_min_ms: MetricStats;
+  rtt_avg_ms: MetricStats;
+  rtt_max_ms: MetricStats;
+  rtt_mdev_ms: MetricStats;
+  packet_loss_percent: MetricStats;
+}
+
+export interface QperfComparisonData {
+  total_bandwidth_mbps: MetricStats;
+  cpu_usage_percent: MetricStats;
+  ttfb_ms: MetricStats;
+  conn_time_ms: MetricStats;
+}
+
+export interface VideoStreamingComparisonData {
+  bitrate_kbps: MetricStats;
+  fps: MetricStats;
+  dropped_frames: MetricStats;
+}
+
+export interface TcpIperfComparisonData {
+  sender_throughput_mbps: MetricStats;
+  receiver_throughput_mbps: MetricStats;
+  retransmits: MetricStats;
+}
+
+export interface UdpIperfComparisonData {
+  sender_throughput_mbps: MetricStats;
+  receiver_throughput_mbps: MetricStats;
+  jitter_ms: MetricStats;
+  lost_percent: MetricStats;
+}
+
+// Maps VPN name to its comparison data
+export type VpnComparisonMap<T> = Record<string, T>;
+
+export interface ComparisonRunData {
+  ping?: VpnComparisonMap<PingComparisonData>;
+  qperf?: VpnComparisonMap<QperfComparisonData>;
+  videoStreaming?: VpnComparisonMap<VideoStreamingComparisonData>;
+  tcpIperf?: VpnComparisonMap<TcpIperfComparisonData>;
+  udpIperf?: VpnComparisonMap<UdpIperfComparisonData>;
+}
+
+// Maps run alias (TC profile) to comparison data
+export type ComparisonData = Record<string, ComparisonRunData>;
+
 // --- Data Generation Logic ---
 
 const benchFiles = import.meta.glob("@/bench/**/*.json", { eager: true });
@@ -345,3 +406,73 @@ export function generateGeneralData(): GeneralData | undefined {
 
 export const generalData = generateGeneralData();
 console.log("General data:", generalData);
+
+// --- Comparison Data Loading ---
+
+const comparisonFiles = import.meta.glob(
+  "@/bench/General/comparison/**/*.json",
+  {
+    eager: true,
+  },
+);
+
+export function generateComparisonData(): ComparisonData {
+  const result: ComparisonData = {};
+
+  Object.entries(comparisonFiles).forEach(([path, rawModule]) => {
+    // Path format: @/bench/General/comparison/<run_alias>/<benchmark>.json
+    const pathParts = path.split("/");
+    if (pathParts.length < 6) {
+      console.warn(`Skipping comparison file with unexpected path: ${path}`);
+      return;
+    }
+
+    const runAlias = pathParts[pathParts.length - 2];
+    const fileName = pathParts[pathParts.length - 1];
+
+    if (
+      !rawModule ||
+      typeof rawModule !== "object" ||
+      !("status" in rawModule)
+    ) {
+      console.warn(`Skipping comparison file with unexpected format: ${path}`);
+      return;
+    }
+
+    /* eslint-disable-next-line "@typescript-eslint/no-explicit-any" */
+    const moduleData = rawModule as { status: string; data?: any };
+
+    if (moduleData.status !== "success" || !moduleData.data) {
+      console.warn(`Comparison data retrieval failed for ${path}`);
+      return;
+    }
+
+    // Initialize run alias if needed
+    if (!result[runAlias]) {
+      result[runAlias] = {};
+    }
+
+    // Assign data based on file name
+    if (fileName === "ping.json") {
+      result[runAlias].ping =
+        moduleData.data as VpnComparisonMap<PingComparisonData>;
+    } else if (fileName === "qperf.json") {
+      result[runAlias].qperf =
+        moduleData.data as VpnComparisonMap<QperfComparisonData>;
+    } else if (fileName === "video_streaming.json") {
+      result[runAlias].videoStreaming =
+        moduleData.data as VpnComparisonMap<VideoStreamingComparisonData>;
+    } else if (fileName === "tcp_iperf3.json") {
+      result[runAlias].tcpIperf =
+        moduleData.data as VpnComparisonMap<TcpIperfComparisonData>;
+    } else if (fileName === "udp_iperf3.json") {
+      result[runAlias].udpIperf =
+        moduleData.data as VpnComparisonMap<UdpIperfComparisonData>;
+    }
+  });
+
+  return result;
+}
+
+export const comparisonData = generateComparisonData();
+console.log("Comparison data:", comparisonData);

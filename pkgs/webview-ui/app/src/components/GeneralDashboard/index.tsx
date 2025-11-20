@@ -1,6 +1,16 @@
 import { Echart } from "../Echarts";
-import { Show } from "solid-js";
-import { Result, Err, Ok } from "@/src/benchData"; // Assuming Result
+import { Show, createSignal, createEffect, createMemo, For } from "solid-js";
+import { ComparisonData } from "@/src/benchData";
+import { Tabs } from "@kobalte/core/tabs";
+import {
+  TcpComparisonSection,
+  UdpComparisonSection,
+  PingComparisonSection,
+  QperfComparisonSection,
+  VideoStreamingComparisonSection,
+} from "../ComparisonCharts";
+import { useSearchParams } from "@solidjs/router";
+import "../VpnBenchDashboard/style.css";
 
 export type ConnectionData = Record<string, string>;
 
@@ -210,19 +220,15 @@ const createConnectionTimingsOption = (
   };
 };
 
-export const ConnectionTimingsChart = ({
-  report,
-  height = 700,
-  title,
-}: {
+export const ConnectionTimingsChart = (props: {
   report: ConnectionTimings;
   height?: number;
   title: string;
 }) => {
   return (
     <Echart
-      option={createConnectionTimingsOption(report, title)}
-      height={height}
+      option={createConnectionTimingsOption(props.report, props.title)}
+      height={props.height ?? 700}
     />
   );
 };
@@ -230,32 +236,228 @@ export const ConnectionTimingsChart = ({
 interface GeneralDashboardProps {
   bootstrap_connection_timings: ConnectionTimings | undefined;
   reboot_connection_timings: ConnectionTimings | undefined;
+  comparisonData?: ComparisonData;
 }
 
-export const GeneralDashboard = ({
-  bootstrap_connection_timings,
-  reboot_connection_timings,
-}: GeneralDashboardProps) => {
+// Helper component for consistent "No Data" message
+const FallbackMessage = (props: { message?: string }) => (
+  <div
+    style={{
+      background: "#f9f9f9",
+      border: "1px solid #e0e0e0",
+      "border-radius": "8px",
+      padding: "20px",
+      "text-align": "center",
+      color: "#555",
+      "font-size": "16px",
+      margin: "1rem 0",
+    }}
+  >
+    <p style={{ margin: 0 }}>
+      {props.message ||
+        "No comparison data available. Run 'vpn-bench compare' to generate comparison data."}
+    </p>
+  </div>
+);
+
+export const GeneralDashboard = (props: GeneralDashboardProps) => {
+  // Get URL search params for state sync
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  // Get TC profile aliases from comparison data
+  const runAliases = createMemo(() =>
+    props.comparisonData ? Object.keys(props.comparisonData) : [],
+  );
+
+  // Initialize profile from URL or fallback to "baseline"
+  const initialProfile =
+    searchParams.profile && runAliases().includes(searchParams.profile)
+      ? searchParams.profile
+      : runAliases().includes("baseline")
+        ? "baseline"
+        : runAliases()[0] || "";
+
+  const [selectedProfile, setSelectedProfile] = createSignal(initialProfile);
+
+  // Handler for profile change
+  const handleProfileChange = (newProfile: string) => {
+    setSelectedProfile(newProfile);
+    setSearchParams({ profile: newProfile, tab: searchParams.tab });
+  };
+
+  // Get current profile's data (memoized)
+  const currentProfileData = createMemo(() =>
+    props.comparisonData && selectedProfile()
+      ? props.comparisonData[selectedProfile()]
+      : undefined,
+  );
+
+  // Valid tab values
+  const validTabs = [
+    "connection-times",
+    "tcp-comparison",
+    "udp-comparison",
+    "ping-comparison",
+    "qperf-comparison",
+    "video-comparison",
+  ] as const;
+
+  type ValidTab = (typeof validTabs)[number];
+
+  // Initialize from URL or default
+  const initialTab =
+    searchParams.tab && validTabs.includes(searchParams.tab as ValidTab)
+      ? searchParams.tab
+      : "connection-times";
+
+  const [selectedTab, setSelectedTab] = createSignal(initialTab);
+
+  // Handler that updates both local state AND URL
+  const handleTabChange = (newTab: string) => {
+    setSelectedTab(newTab);
+    setSearchParams({ profile: searchParams.profile, tab: newTab });
+  };
+
+  // Sync with URL changes (e.g., browser back/forward)
+  createEffect(() => {
+    const urlTab = searchParams.tab;
+    if (urlTab && validTabs.includes(urlTab as ValidTab)) {
+      setSelectedTab(urlTab);
+    }
+    const urlProfile = searchParams.profile;
+    if (urlProfile && runAliases().includes(urlProfile)) {
+      setSelectedProfile(urlProfile);
+    }
+  });
+
   return (
-    <div style={{ display: "flex", "flex-direction": "column", gap: "20px" }}>
-      <Show when={bootstrap_connection_timings}>
-        {(timings) => (
-          <ConnectionTimingsChart
-            report={timings()}
-            height={700}
-            title="Bootstrap Connection Times"
-          />
-        )}
+    <div>
+      {/* TC Profile Selector */}
+      <Show when={runAliases().length > 1}>
+        <Tabs
+          value={selectedProfile()}
+          onChange={handleProfileChange}
+          class="tc-profile-tabs"
+        >
+          <Tabs.List class="tc-profile-tabs__list">
+            <For each={runAliases()}>
+              {(alias) => (
+                <Tabs.Trigger class="tc-profile-tabs__trigger" value={alias}>
+                  {alias
+                    .replace(/_/g, " ")
+                    .replace(/\b\w/g, (l) => l.toUpperCase())}
+                </Tabs.Trigger>
+              )}
+            </For>
+            <Tabs.Indicator class="tc-profile-tabs__indicator" />
+          </Tabs.List>
+        </Tabs>
       </Show>
-      <Show when={reboot_connection_timings}>
-        {(timings) => (
-          <ConnectionTimingsChart
-            report={timings()}
-            height={700}
-            title="Reboot Connection Times"
-          />
-        )}
-      </Show>
+
+      {/* Benchmark Type Tabs */}
+      <Tabs
+        aria-label="VPN Comparison Dashboard"
+        class="tabs"
+        value={selectedTab()}
+        onChange={handleTabChange}
+      >
+        <Tabs.List class="tabs__list">
+          <Tabs.Trigger class="tabs__trigger" value="connection-times">
+            Connection Times
+          </Tabs.Trigger>
+          <Tabs.Trigger class="tabs__trigger" value="tcp-comparison">
+            TCP Performance
+          </Tabs.Trigger>
+          <Tabs.Trigger class="tabs__trigger" value="udp-comparison">
+            UDP Performance
+          </Tabs.Trigger>
+          <Tabs.Trigger class="tabs__trigger" value="ping-comparison">
+            Ping Latency
+          </Tabs.Trigger>
+          <Tabs.Trigger class="tabs__trigger" value="qperf-comparison">
+            QUIC Performance
+          </Tabs.Trigger>
+          <Tabs.Trigger class="tabs__trigger" value="video-comparison">
+            Video Streaming
+          </Tabs.Trigger>
+          <Tabs.Indicator class="tabs__indicator" />
+        </Tabs.List>
+
+        <Tabs.Content class="tabs__content" value="connection-times">
+          <div
+            style={{ display: "flex", "flex-direction": "column", gap: "20px" }}
+          >
+            <Show
+              when={props.bootstrap_connection_timings}
+              fallback={
+                <FallbackMessage message="No bootstrap connection timing data available." />
+              }
+            >
+              {(timings) => (
+                <ConnectionTimingsChart
+                  report={timings()}
+                  height={700}
+                  title="Bootstrap Connection Times"
+                />
+              )}
+            </Show>
+            <Show when={props.reboot_connection_timings}>
+              {(timings) => (
+                <ConnectionTimingsChart
+                  report={timings()}
+                  height={700}
+                  title="Reboot Connection Times"
+                />
+              )}
+            </Show>
+          </div>
+        </Tabs.Content>
+
+        <Tabs.Content class="tabs__content" value="tcp-comparison">
+          <Show
+            when={currentProfileData()?.tcpIperf}
+            fallback={<FallbackMessage />}
+          >
+            {(data) => <TcpComparisonSection data={data()} />}
+          </Show>
+        </Tabs.Content>
+
+        <Tabs.Content class="tabs__content" value="udp-comparison">
+          <Show
+            when={currentProfileData()?.udpIperf}
+            fallback={<FallbackMessage />}
+          >
+            {(data) => <UdpComparisonSection data={data()} />}
+          </Show>
+        </Tabs.Content>
+
+        <Tabs.Content class="tabs__content" value="ping-comparison">
+          <Show
+            when={currentProfileData()?.ping}
+            fallback={<FallbackMessage />}
+          >
+            {(data) => <PingComparisonSection data={data()} />}
+          </Show>
+        </Tabs.Content>
+
+        <Tabs.Content class="tabs__content" value="qperf-comparison">
+          <Show
+            when={currentProfileData()?.qperf}
+            fallback={<FallbackMessage />}
+          >
+            {(data) => <QperfComparisonSection data={data()} />}
+          </Show>
+        </Tabs.Content>
+
+        <Tabs.Content class="tabs__content" value="video-comparison">
+          <Show
+            when={currentProfileData()?.videoStreaming}
+            fallback={<FallbackMessage />}
+          >
+            {(data) => <VideoStreamingComparisonSection data={data()} />}
+          </Show>
+        </Tabs.Content>
+      </Tabs>
     </div>
   );
 };

@@ -53,7 +53,10 @@ const getBoxplotArray = (stats: RistMetricStats): number[] => {
   ];
 };
 
-const processDataForRistBoxplot = (reports: RistReport[], metric: MetricKey) => {
+const processDataForRistBoxplot = (
+  reports: RistReport[],
+  metric: MetricKey,
+) => {
   const categories: string[] = [];
   const boxplotData: number[][] = [];
   reports.forEach((report) => {
@@ -64,7 +67,10 @@ const processDataForRistBoxplot = (reports: RistReport[], metric: MetricKey) => 
   return { categories, boxplotData };
 };
 
-const processDataForRistBarChart = (reports: RistReport[], metric: MetricKey) => {
+const processDataForRistBarChart = (
+  reports: RistReport[],
+  metric: MetricKey,
+) => {
   const categories: string[] = [];
   const barData: number[] = [];
   const fullStatsList: RistMetricStats[] = [];
@@ -102,7 +108,10 @@ const createRistBoxplotOption = (
 ): echarts.EChartsOption | null => {
   if (!reports || reports.length === 0) return null;
 
-  const { categories, boxplotData } = processDataForRistBoxplot(reports, metric);
+  const { categories, boxplotData } = processDataForRistBoxplot(
+    reports,
+    metric,
+  );
   if (categories.length === 0) return null;
 
   let yAxisName = "";

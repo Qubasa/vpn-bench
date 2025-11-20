@@ -245,9 +245,7 @@ const VpnInfoDisplay = (props: { vpnInfo: VpnInfoData }) => (
           }}
         >
           <For each={props.vpnInfo.features}>
-            {(feature) => (
-              <li style={{ "margin-bottom": "4px" }}>{feature}</li>
-            )}
+            {(feature) => <li style={{ "margin-bottom": "4px" }}>{feature}</li>}
           </For>
         </ul>
       </div>
@@ -274,9 +272,7 @@ const VpnInfoDisplay = (props: { vpnInfo: VpnInfoData }) => (
           }}
         >
           <For each={props.vpnInfo.useCases}>
-            {(useCase) => (
-              <li style={{ "margin-bottom": "4px" }}>{useCase}</li>
-            )}
+            {(useCase) => <li style={{ "margin-bottom": "4px" }}>{useCase}</li>}
           </For>
         </ul>
       </div>
@@ -308,7 +304,8 @@ export const VpnDashboard = (props: VpnDashboardProps) => {
       : props.defaultTab || "info";
 
   // Get VPN info
-  const vpnInfo = () => getVpnInfo(props.vpnName) || getDefaultVpnInfo(props.vpnName);
+  const vpnInfo = () =>
+    getVpnInfo(props.vpnName) || getDefaultVpnInfo(props.vpnName);
 
   const [selectedTab, setSelectedTab] = createSignal(initialTab);
 

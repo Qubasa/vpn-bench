@@ -9,6 +9,7 @@ from clan_lib.custom_logger import setup_logging
 from clan_lib.dirs import user_cache_dir, user_data_dir
 
 from vpn_bench.bench import benchmark_vpn
+from vpn_bench.comparison import generate_comparison_data
 from vpn_bench.data import (
     VPN,
     Config,
@@ -116,6 +117,13 @@ def create_parser() -> argparse.ArgumentParser:
 
     plot_parser = subparsers.add_parser("plot", help="Plot the data from benchmark")
     plot_parser.add_argument("--debug", action="store_true", help="Enable debug mode")
+
+    compare_parser = subparsers.add_parser(
+        "compare", help="Generate cross-VPN comparison data"
+    )
+    compare_parser.add_argument(
+        "--debug", action="store_true", help="Enable debug mode"
+    )
 
     return parser
 
@@ -269,6 +277,9 @@ def run_cli() -> None:
     elif args.subcommand == "plot":
         machines = tr_metadata(config)
         plot_data(config, machines)
+
+    elif args.subcommand == "compare":
+        generate_comparison_data(config.bench_dir)
 
     elif args.subcommand == "ssh":
         machines = tr_metadata(config)

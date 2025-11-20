@@ -196,7 +196,10 @@ export function getVpnInfo(vpnName: string): VpnInfoData | null {
     if (
       normalizedName.includes(key) ||
       key.includes(normalizedName) ||
-      info.name.toLowerCase().replace(/[\s_-]/g, "").includes(normalizedName)
+      info.name
+        .toLowerCase()
+        .replace(/[\s_-]/g, "")
+        .includes(normalizedName)
     ) {
       return info;
     }
