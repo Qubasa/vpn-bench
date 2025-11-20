@@ -255,6 +255,7 @@ function VpnDashboardWithProfiles(props: { category: BenchData[0] }) {
 
       {/* Render VpnDashboard with reports from selected run */}
       <VpnDashboard
+        vpnName={props.category.name}
         tcpReports={reportsForCurrentRun().tcp}
         udpReports={reportsForCurrentRun().udp}
         qperfReports={reportsForCurrentRun().qperf}
@@ -263,6 +264,7 @@ function VpnDashboardWithProfiles(props: { category: BenchData[0] }) {
         ristStreamReports={reportsForCurrentRun().ristStream}
         defaultTab={
           searchParams.tab as
+            | "info"
             | "tcp_iperf"
             | "udp_iperf"
             | "qperf"

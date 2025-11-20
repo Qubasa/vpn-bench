@@ -294,25 +294,19 @@ const createMaxSendWindowOption = (reports: IperfTcpReport[]) => {
   };
 };
 
-// Individual chart components remain the same
-export const IperfRttChart = ({
-  reports,
-  height = 500,
-}: {
+// Individual chart components - using props pattern for SolidJS reactivity
+export const IperfRttChart = (props: {
   reports: IperfTcpReport[];
   height?: number;
 }) => {
-  return <Echart option={createRttOption(reports)} height={height} />;
+  return <Echart option={createRttOption(props.reports)} height={props.height || 500} />;
 };
 
-export const IperfMaxSendWindowChart = ({
-  reports,
-  height = 500,
-}: {
+export const IperfMaxSendWindowChart = (props: {
   reports: IperfTcpReport[];
   height?: number;
 }) => {
-  return <Echart option={createMaxSendWindowOption(reports)} height={height} />;
+  return <Echart option={createMaxSendWindowOption(props.reports)} height={props.height || 500} />;
 };
 
 // Helper function to calculate Min/Avg/Max throughput from intervals
@@ -692,84 +686,72 @@ const createTimeSeriesOption = (reports: IperfTcpReport[]) => {
   };
 };
 
-// Individual chart components
-export const IperfThroughputChart = ({
-  reports,
-  height = 500,
-}: {
+// Individual chart components - using props pattern for SolidJS reactivity
+export const IperfThroughputChart = (props: {
   reports: IperfTcpReport[];
   height?: number;
 }) => {
-  return <Echart option={createThroughputOption(reports)} height={height} />;
+  return <Echart option={createThroughputOption(props.reports)} height={props.height || 500} />;
 };
 
-export const IperfTimeSeriesChart = ({
-  reports,
-  height = 700,
-}: {
+export const IperfTimeSeriesChart = (props: {
   reports: IperfTcpReport[];
   height?: number;
 }) => {
-  return <Echart option={createTimeSeriesOption(reports)} height={height} />;
+  return <Echart option={createTimeSeriesOption(props.reports)} height={props.height || 700} />;
 };
 
-export const IperfCpuChart = ({
-  reports,
-  height = 500,
-}: {
+export const IperfCpuChart = (props: {
   reports: IperfTcpReport[];
   height?: number;
 }) => {
-  return <Echart option={createCpuOption(reports)} height={height} />;
+  return <Echart option={createCpuOption(props.reports)} height={props.height || 500} />;
 };
 
-export const IperfRetransmitsChart = ({
-  reports,
-  height = 500,
-}: {
+export const IperfRetransmitsChart = (props: {
   reports: IperfTcpReport[];
   height?: number;
 }) => {
-  return <Echart option={createRetransmitsOption(reports)} height={height} />;
+  return <Echart option={createRetransmitsOption(props.reports)} height={props.height || 500} />;
 };
 
-// Combined dashboard component
-export const IperfTcpCharts = ({
-  reports,
-  height = {
-    throughput: 500,
-    timeSeries: 700,
-    cpu: 500,
-    retransmits: 500,
-    rtt: 500,
-    maxSendWindow: 500,
-  },
-}: IperfTcpChartsProps) => {
+// Combined dashboard component - using props pattern for SolidJS reactivity
+export const IperfTcpCharts = (props: IperfTcpChartsProps) => {
+  // Create reactive getters for height values with defaults
+  const height = () => ({
+    throughput: props.height?.throughput || 500,
+    timeSeries: props.height?.timeSeries || 700,
+    cpu: props.height?.cpu || 500,
+    retransmits: props.height?.retransmits || 500,
+    rtt: props.height?.rtt || 500,
+    maxSendWindow: props.height?.maxSendWindow || 500,
+  });
+
   return (
     <div style={{ display: "flex", "flex-direction": "column", gap: "20px" }}>
-      <IperfThroughputChart reports={reports} height={height.throughput} />
-      <IperfTimeSeriesChart reports={reports} height={height.timeSeries} />
+      <IperfThroughputChart reports={props.reports} height={height().throughput} />
+      <IperfTimeSeriesChart reports={props.reports} height={height().timeSeries} />
 
       <div style={{ display: "flex", gap: "20px" }}>
         <div style={{ flex: 1 }}>
-          <IperfCpuChart reports={reports} height={height.cpu} />
+          <IperfCpuChart reports={props.reports} height={height().cpu} />
         </div>
         <div style={{ flex: 1 }}>
           <IperfRetransmitsChart
-            reports={reports}
-            height={height.retransmits}
+            reports={props.reports}
+            height={height().retransmits}
           />
         </div>
       </div>
 
       <div style={{ display: "flex", gap: "20px" }}>
         <div style={{ flex: 1 }}>
-          <IperfRttChart reports={reports} height={height.rtt} />
+          <IperfRttChart reports={props.reports} height={height().rtt} />
         </div>
         <div style={{ flex: 1 }}>
           <IperfMaxSendWindowChart
-            reports={reports}
-            height={height.maxSendWindow}
+            reports={props.reports}
+            height={height().maxSendWindow}
           />
         </div>
       </div>

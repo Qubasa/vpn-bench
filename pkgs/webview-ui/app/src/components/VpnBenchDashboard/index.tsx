@@ -26,9 +26,12 @@ import { Result, Err, Ok } from "@/src/benchData"; // Assuming Result and Benchm
 // Using the name from your import - ensure this component accepts BenchmarkRunError
 import { DisplayClanError } from "@/src/components/ClanError"; // *** USE THE CORRECT COMPONENT NAME AND PATH ***
 import { useSearchParams } from "@solidjs/router";
+import { getVpnInfo, getDefaultVpnInfo, VpnInfoData } from "@/src/vpnInfo";
 
 // Define props for the dashboard component
 interface VpnDashboardProps {
+  // VPN name for displaying info
+  vpnName: string;
   // Ensure the generic type T in Result<T> matches what the Chart expects
   tcpReports: Result<IperfTcpReport[]> | null;
   udpReports: Result<IperfUdpReport[]> | null;
@@ -61,6 +64,7 @@ interface VpnDashboardProps {
     droppedFrames?: number;
   };
   defaultTab?:
+    | "info"
     | "tcp_iperf"
     | "udp_iperf"
     | "qperf"
@@ -68,6 +72,7 @@ interface VpnDashboardProps {
     | "ping"
     | "rist-stream";
   tabLabels?: {
+    info?: string;
     tcp?: string;
     udp?: string;
     qperf?: string;
@@ -98,12 +103,194 @@ const FallbackMessage = () => (
   </div>
 );
 
+// VPN Info Display Component
+const VpnInfoDisplay = (props: { vpnInfo: VpnInfoData }) => (
+  <div
+    style={{
+      background: "#ffffff",
+      "border-radius": "12px",
+      padding: "24px",
+      margin: "1rem 0",
+    }}
+  >
+    <h2
+      style={{
+        margin: "0 0 16px 0",
+        "font-size": "28px",
+        "font-weight": "700",
+        color: "#1a1a1a",
+      }}
+    >
+      {props.vpnInfo.name}
+    </h2>
+
+    <p
+      style={{
+        color: "#4a4a4a",
+        "line-height": "1.6",
+        "font-size": "16px",
+        margin: "0 0 24px 0",
+      }}
+    >
+      {props.vpnInfo.description}
+    </p>
+
+    <div
+      style={{
+        display: "grid",
+        "grid-template-columns": "repeat(auto-fit, minmax(200px, 1fr))",
+        gap: "16px",
+        "margin-bottom": "24px",
+      }}
+    >
+      <Show when={props.vpnInfo.website}>
+        <div
+          style={{
+            background: "#f5f5f5",
+            padding: "12px 16px",
+            "border-radius": "8px",
+          }}
+        >
+          <div
+            style={{
+              "font-size": "12px",
+              "font-weight": "600",
+              color: "#666",
+              "text-transform": "uppercase",
+              "margin-bottom": "4px",
+            }}
+          >
+            Website
+          </div>
+          <a
+            href={props.vpnInfo.website}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{
+              color: "#0066cc",
+              "text-decoration": "none",
+              "font-size": "14px",
+            }}
+          >
+            {props.vpnInfo.website}
+          </a>
+        </div>
+      </Show>
+
+      <div
+        style={{
+          background: "#f5f5f5",
+          padding: "12px 16px",
+          "border-radius": "8px",
+        }}
+      >
+        <div
+          style={{
+            "font-size": "12px",
+            "font-weight": "600",
+            color: "#666",
+            "text-transform": "uppercase",
+            "margin-bottom": "4px",
+          }}
+        >
+          Protocol
+        </div>
+        <div style={{ "font-size": "14px", color: "#333" }}>
+          {props.vpnInfo.protocol}
+        </div>
+      </div>
+
+      <div
+        style={{
+          background: "#f5f5f5",
+          padding: "12px 16px",
+          "border-radius": "8px",
+        }}
+      >
+        <div
+          style={{
+            "font-size": "12px",
+            "font-weight": "600",
+            color: "#666",
+            "text-transform": "uppercase",
+            "margin-bottom": "4px",
+          }}
+        >
+          Encryption
+        </div>
+        <div style={{ "font-size": "14px", color: "#333" }}>
+          {props.vpnInfo.encryption}
+        </div>
+      </div>
+    </div>
+
+    <Show when={props.vpnInfo.features.length > 0}>
+      <div style={{ "margin-bottom": "24px" }}>
+        <h3
+          style={{
+            "font-size": "18px",
+            "font-weight": "600",
+            color: "#1a1a1a",
+            margin: "0 0 12px 0",
+          }}
+        >
+          Key Features
+        </h3>
+        <ul
+          style={{
+            margin: "0",
+            padding: "0 0 0 20px",
+            color: "#4a4a4a",
+            "line-height": "1.8",
+          }}
+        >
+          <For each={props.vpnInfo.features}>
+            {(feature) => (
+              <li style={{ "margin-bottom": "4px" }}>{feature}</li>
+            )}
+          </For>
+        </ul>
+      </div>
+    </Show>
+
+    <Show when={props.vpnInfo.useCases.length > 0}>
+      <div>
+        <h3
+          style={{
+            "font-size": "18px",
+            "font-weight": "600",
+            color: "#1a1a1a",
+            margin: "0 0 12px 0",
+          }}
+        >
+          Common Use Cases
+        </h3>
+        <ul
+          style={{
+            margin: "0",
+            padding: "0 0 0 20px",
+            color: "#4a4a4a",
+            "line-height": "1.8",
+          }}
+        >
+          <For each={props.vpnInfo.useCases}>
+            {(useCase) => (
+              <li style={{ "margin-bottom": "4px" }}>{useCase}</li>
+            )}
+          </For>
+        </ul>
+      </div>
+    </Show>
+  </div>
+);
+
 export const VpnDashboard = (props: VpnDashboardProps) => {
   // Get URL search params for state sync
   const [searchParams, setSearchParams] = useSearchParams();
 
   // Valid tab values
   const validTabs = [
+    "info",
     "tcp_iperf",
     "udp_iperf",
     "qperf",
@@ -118,7 +305,10 @@ export const VpnDashboard = (props: VpnDashboardProps) => {
   const initialTab =
     searchParams.tab && validTabs.includes(searchParams.tab as ValidTab)
       ? searchParams.tab
-      : props.defaultTab || "tcp_iperf";
+      : props.defaultTab || "info";
+
+  // Get VPN info
+  const vpnInfo = () => getVpnInfo(props.vpnName) || getDefaultVpnInfo(props.vpnName);
 
   const [selectedTab, setSelectedTab] = createSignal(initialTab);
 
@@ -158,6 +348,7 @@ export const VpnDashboard = (props: VpnDashboardProps) => {
       /* ... defaults ... */
     };
   const tabLabels = {
+    info: props.tabLabels?.info || "Overview",
     tcp: props.tabLabels?.tcp || "TCP Performance",
     udp: props.tabLabels?.udp || "UDP Performance",
     qperf: props.tabLabels?.qperf || "HTTP3 Performance",
@@ -177,6 +368,9 @@ export const VpnDashboard = (props: VpnDashboardProps) => {
         {/* Conditionally render triggers if the corresponding report prop might be null
             or always render them and let the content handle the null/error state */}
         {/* Option 1: Always render triggers */}
+        <Tabs.Trigger class="tabs__trigger" value="info">
+          {tabLabels.info}
+        </Tabs.Trigger>
         <Tabs.Trigger class="tabs__trigger" value="tcp_iperf">
           {tabLabels.tcp}
         </Tabs.Trigger>
@@ -201,6 +395,10 @@ export const VpnDashboard = (props: VpnDashboardProps) => {
       </Tabs.List>
 
       {/* Direct JSX in Tabs.Content for proper reactivity */}
+      <Tabs.Content class="tabs__content" value="info">
+        <VpnInfoDisplay vpnInfo={vpnInfo()} />
+      </Tabs.Content>
+
       <Tabs.Content class="tabs__content" value="tcp_iperf">
         <Show when={props.tcpReports} fallback={<FallbackMessage />}>
           {(reportResult) => (
