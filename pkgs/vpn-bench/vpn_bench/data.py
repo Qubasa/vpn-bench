@@ -116,7 +116,12 @@ class TCSettings:
         }
 
     def get_description(self) -> str:
-        """Get a human-readable description of the TC settings."""
+        """Get a human-readable description of the TC settings.
+
+        Note: Values are doubled for display because TC is applied to egress
+        on all machines, so the effective end-to-end impairment is 2x the
+        configured value (data path + ACK path both get impaired).
+        """
         if not any(
             [
                 self.bandwidth_mbit,
@@ -130,14 +135,19 @@ class TCSettings:
 
         parts = []
         if self.latency_ms is not None:
-            parts.append(f"{self.latency_ms}ms latency")
+            # Effective latency is 2x (applied on both ends)
+            parts.append(f"{self.latency_ms * 2}ms latency")
         if self.jitter_ms is not None:
-            parts.append(f"{self.jitter_ms}ms jitter")
+            # Effective jitter is approximately 2x
+            parts.append(f"{self.jitter_ms * 2}ms jitter")
         if self.packet_loss_percent is not None:
-            parts.append(f"{self.packet_loss_percent}% packet loss")
+            # Effective loss is approximately 2x (compounds on both ends)
+            parts.append(f"{self.packet_loss_percent * 2}% packet loss")
         if self.reorder_percent is not None:
-            parts.append(f"{self.reorder_percent}% packet reordering")
+            # Effective reordering is approximately 2x
+            parts.append(f"{self.reorder_percent * 2}% packet reordering")
         if self.bandwidth_mbit is not None:
+            # Bandwidth limit is not doubled - it's a cap per direction
             parts.append(f"{self.bandwidth_mbit}Mbit/s bandwidth limit")
 
         return ", ".join(parts)
@@ -177,10 +187,10 @@ class TCProfile(Enum):
                 return BenchmarkRun(
                     alias="low_impairment",
                     tc_settings=TCSettings(
-                        latency_ms=20,
-                        jitter_ms=5,
-                        packet_loss_percent=0.5,
-                        reorder_percent=1.0,
+                        latency_ms=10,
+                        jitter_ms=2,
+                        packet_loss_percent=0.25,
+                        reorder_percent=0.5,
                         reorder_correlation=25.0,
                     ),
                 )
@@ -188,10 +198,10 @@ class TCProfile(Enum):
                 return BenchmarkRun(
                     alias="medium_impairment",
                     tc_settings=TCSettings(
-                        latency_ms=50,
-                        jitter_ms=15,
-                        packet_loss_percent=2.0,
-                        reorder_percent=5.0,
+                        latency_ms=25,
+                        jitter_ms=7,
+                        packet_loss_percent=1.0,
+                        reorder_percent=2.5,
                         reorder_correlation=50.0,
                     ),
                 )
@@ -199,10 +209,10 @@ class TCProfile(Enum):
                 return BenchmarkRun(
                     alias="high_impairment",
                     tc_settings=TCSettings(
-                        latency_ms=100,
-                        jitter_ms=30,
-                        packet_loss_percent=5.0,
-                        reorder_percent=10.0,
+                        latency_ms=50,
+                        jitter_ms=15,
+                        packet_loss_percent=2.5,
+                        reorder_percent=5.0,
                         reorder_correlation=50.0,
                     ),
                 )
@@ -210,10 +220,10 @@ class TCProfile(Enum):
                 return BenchmarkRun(
                     alias="extreme_impairment",
                     tc_settings=TCSettings(
-                        latency_ms=200,
-                        jitter_ms=50,
-                        packet_loss_percent=10.0,
-                        reorder_percent=25.0,
+                        latency_ms=100,
+                        jitter_ms=25,
+                        packet_loss_percent=5.0,
+                        reorder_percent=12.5,
                         reorder_correlation=75.0,
                     ),
                 )
