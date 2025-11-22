@@ -20,9 +20,13 @@ from vpn_bench.assets import get_script_asset
 # from clan_lib.ssh.upload import upload
 from vpn_bench.data import VPN, BenchMachine, Config, delete_dirs
 from vpn_bench.errors import save_bench_report
+from vpn_bench.retry import MaxRetriesExceededError, retry_operation
 from vpn_bench.terraform import TrMachine
 
 log = logging.getLogger(__name__)
+
+# Maximum time to wait for a machine to come back online after reboot (in seconds)
+MAX_MACHINE_ONLINE_WAIT = 300  # 5 minutes
 
 
 def install_connection_timings_conf(
@@ -132,6 +136,7 @@ def download_connection_timings(
 
 def wait_for_vpn_connectivity(
     machines: list[Machine],
+    max_retries: int = 3,
 ) -> None:
     """
     Wait for VPN connectivity between machines after a VPN service restart.
@@ -141,6 +146,7 @@ def wait_for_vpn_connectivity(
 
     Args:
         machines: List of machines to wait for connectivity
+        max_retries: Maximum number of retry attempts for the entire operation
     """
     log.info("Waiting for VPN connectivity between machines")
 
@@ -149,12 +155,20 @@ def wait_for_vpn_connectivity(
 
     # Recreate the directory (needed for WorkingDirectory in connection-check.service)
     def _mkdir(machine: Machine) -> None:
-        host = machine.target_host().override(host_key_check="none")
-        with host.host_connection() as ssh:
-            ssh.run(
-                ["mkdir", "-p", "/var/lib/connection-check"],
-                RunOpts(log=Log.BOTH),
-            )
+        def _do_mkdir() -> None:
+            host = machine.target_host().override(host_key_check="none")
+            with host.host_connection() as ssh:
+                ssh.run(
+                    ["mkdir", "-p", "/var/lib/connection-check"],
+                    RunOpts(log=Log.BOTH),
+                )
+
+        retry_operation(
+            _do_mkdir,
+            max_retries=2,
+            initial_delay=1.0,
+            operation_name=f"mkdir on {machine.name}",
+        )
 
     with ThreadPoolExecutor() as executor:
         futures = [executor.submit(_mkdir, m) for m in machines]
@@ -165,12 +179,20 @@ def wait_for_vpn_connectivity(
                 raise exc
 
     def _restart_connection_check(machine: Machine) -> None:
-        host = machine.target_host().override(host_key_check="none")
-        with host.host_connection() as ssh:
-            ssh.run(
-                ["systemctl", "restart", "connection-check.service"],
-                RunOpts(log=Log.BOTH),
-            )
+        def _do_restart() -> None:
+            host = machine.target_host().override(host_key_check="none")
+            with host.host_connection() as ssh:
+                ssh.run(
+                    ["systemctl", "restart", "connection-check.service"],
+                    RunOpts(log=Log.BOTH),
+                )
+
+        retry_operation(
+            _do_restart,
+            max_retries=2,
+            initial_delay=2.0,
+            operation_name=f"restart connection-check on {machine.name}",
+        )
 
     # Restart connection-check service on all machines
     with ThreadPoolExecutor() as executor:
@@ -187,13 +209,22 @@ def wait_for_vpn_connectivity(
                 raise exc
 
     def _wait_service(machine: Machine, wait_service_path: Path) -> None:
-        host = machine.target_host().override(host_key_check="none")
-        with host.host_connection() as ssh:
-            upload(ssh, script, wait_service_path, file_mode=0o777)
-            ssh.run(
-                [f"{wait_service_path}", "-s", "connection-check.service"],
-                RunOpts(log=Log.BOTH),
-            )
+        def _do_wait() -> None:
+            host = machine.target_host().override(host_key_check="none")
+            with host.host_connection() as ssh:
+                upload(ssh, script, wait_service_path, file_mode=0o777)
+                ssh.run(
+                    [f"{wait_service_path}", "-s", "connection-check.service"],
+                    RunOpts(log=Log.BOTH, timeout=120),  # Add 2 minute timeout
+                )
+
+        retry_operation(
+            _do_wait,
+            max_retries=max_retries,
+            initial_delay=5.0,
+            max_delay=30.0,
+            operation_name=f"wait for connection-check on {machine.name}",
+        )
 
     # Wait for connection-check service to finish on all machines
     with ThreadPoolExecutor() as executor:
@@ -260,16 +291,26 @@ def reboot_connection_timings(
             time.sleep(0.5)
         log.info(f"{machine.name} is offline")
 
-    # Wait for machines to come online
+    # Wait for machines to come online with timeout
     for machine in machines:
+        start_time = time.time()
         while True:
             host = machine.target_host().override(host_key_check="none")
             with contextlib.suppress(ClanError):
                 host.check_machine_ssh_reachable()
                 log.info(f"{machine.name} is back online")
                 break
-            log.info(f"Waiting for {machine.name} to come online")
-            time.sleep(1)
+
+            elapsed = time.time() - start_time
+            if elapsed > MAX_MACHINE_ONLINE_WAIT:
+                msg = f"{machine.name} did not come online within {MAX_MACHINE_ONLINE_WAIT} seconds"
+                log.error(msg)
+                raise MaxRetriesExceededError(msg)
+
+            log.info(
+                f"Waiting for {machine.name} to come online ({int(elapsed)}s elapsed)"
+            )
+            time.sleep(2)
 
     def _wait_service(machine: Machine, wait_service_path: Path) -> None:
         host = machine.target_host().override(host_key_check="none")

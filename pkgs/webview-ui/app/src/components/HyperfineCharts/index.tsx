@@ -209,60 +209,57 @@ const createTimeSeriesOption = (reports: HyperfineReport[], title?: string) => {
   };
 };
 
-// Individual chart components
-export const HyperfineMeanTimeChart = ({
-  reports,
-  title,
-  height = 400,
-}: {
+// Individual chart components - using props pattern for SolidJS reactivity
+export const HyperfineMeanTimeChart = (props: {
   reports: HyperfineReport[];
   title?: string;
   height?: number;
 }) => {
   return (
-    <Echart option={createMeanTimeOption(reports, title)} height={height} />
+    <Echart
+      option={createMeanTimeOption(props.reports, props.title)}
+      height={props.height || 400}
+    />
   );
 };
 
-export const HyperfineTimeSeriesChart = ({
-  reports,
-  title,
-  height = 400,
-}: {
+export const HyperfineTimeSeriesChart = (props: {
   reports: HyperfineReport[];
   title?: string;
   height?: number;
 }) => {
   return (
-    <Echart option={createTimeSeriesOption(reports, title)} height={height} />
+    <Echart
+      option={createTimeSeriesOption(props.reports, props.title)}
+      height={props.height || 400}
+    />
   );
 };
 
-// Combined dashboard component
-export const HyperfineCharts = ({
-  reports,
-  title,
-  height = {
-    meanTime: 400,
-    distribution: 400,
-    timeSeries: 500,
-    cpuUsage: 400,
-  },
-}: HyperfineChartsProps) => {
+// Combined dashboard component - using props pattern for SolidJS reactivity
+export const HyperfineCharts = (props: HyperfineChartsProps) => {
+  // Create reactive getters for height values with defaults
+  const height = () => ({
+    meanTime: props.height?.meanTime || 400,
+    distribution: props.height?.distribution || 400,
+    timeSeries: props.height?.timeSeries || 500,
+    cpuUsage: props.height?.cpuUsage || 400,
+  });
+
   return (
     <div style={{ display: "flex", "flex-direction": "column", gap: "20px" }}>
       <div style={{ flex: 1 }}>
         <HyperfineMeanTimeChart
-          reports={reports}
-          title={title}
-          height={height.meanTime}
+          reports={props.reports}
+          title={props.title}
+          height={height().meanTime}
         />
       </div>
       <div style={{ flex: 1 }}>
         <HyperfineTimeSeriesChart
-          reports={reports}
-          title={title}
-          height={height.timeSeries}
+          reports={props.reports}
+          title={props.title}
+          height={height().timeSeries}
         />
       </div>
     </div>

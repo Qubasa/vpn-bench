@@ -7,6 +7,7 @@ from typing import TypedDict
 from clan_lib.cmd import Log, RunOpts
 from clan_lib.errors import ClanCmdError
 from clan_lib.machines.machines import Machine
+from clan_lib.ssh.remote import Remote
 
 log = logging.getLogger(__name__)
 
@@ -263,11 +264,12 @@ def run_rist_test(
     Returns:
         Summary statistics with min/avg/max/percentiles for bitrate, fps, and dropped frames
     """
-    host = machine.target_host().override(host_key_check="none")
-
     # Restart the RIST receiver service on the target
-    with host.host_connection() as ssh:
+    target = Remote(target_host).override(host_key_check="none")
+    with target.host_connection() as ssh:
         ssh.run(["systemctl", "restart", "rist-stream.service"], RunOpts(log=Log.BOTH))
+
+    host = machine.target_host().override(host_key_check="none")
 
     # Build the ffmpeg command to stream test pattern
     # Generate 1080p@30fps test pattern with H.264 encoding

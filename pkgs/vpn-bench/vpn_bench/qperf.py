@@ -9,6 +9,7 @@ from typing import Literal, TypedDict, TypeVar, cast
 
 from clan_lib.cmd import Log, RunOpts
 from clan_lib.machines.machines import Machine
+from clan_lib.ssh.remote import Remote
 
 # Define TypeVar for numeric types (int or float)
 T = TypeVar("T", int, float)
@@ -306,7 +307,7 @@ def _qperf_test(
             "-c",
             target_host,
         ]
-        res = ssh.run(cmd, RunOpts(log=Log.BOTH, timeout=60))
+        res = ssh.run(cmd, RunOpts(log=Log.BOTH, timeout=250))
     return parse_qperf_output(res.stdout)
 
 
@@ -314,9 +315,15 @@ def run_qperf_test(machine: Machine, target_host: str) -> QperfSummaryDict:
     """Run a single qperf test and return the results."""
 
     parsed_outputs: list[QperfOutputDict] = []
+
+    # Restart qperf service on target (server) before running the test
+    target = Remote(target_host).override(host_key_check="none")
+    with target.host_connection() as ssh:
+        ssh.run(["systemctl", "restart", "qperf.service"], RunOpts(log=Log.BOTH))
+
+    # Get number of cores from source machine
     host = machine.target_host().override(host_key_check="none")
     with host.host_connection() as ssh:
-        ssh.run(["systemctl", "restart", "qperf.service"], RunOpts(log=Log.BOTH))
         num_cores = int(ssh.run(["nproc"]).stdout.strip())
     with ThreadPoolExecutor() as executor:
         futures = []

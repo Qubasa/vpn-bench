@@ -7,6 +7,7 @@ from typing import Any
 from clan_lib.cmd import Log, RunOpts
 from clan_lib.machines.machines import Machine
 from clan_lib.nix import nix_command
+from clan_lib.ssh.remote import Remote
 
 # from clan_lib.ssh.upload import upload
 
@@ -48,14 +49,18 @@ def run_iperf_test(
     if udp_mode:
         bench_cmd.extend(["-u", "--udp-counters-64bit", "-b", "0"])
 
+    # Restart iperf3 service on target (server) before running the test
+    target = Remote(target_host).override(host_key_check="none")
+    with target.host_connection() as ssh:
+        ssh.run(["systemctl", "restart", "iperf3.service"], RunOpts(log=Log.BOTH))
+
+    # Run iperf3 client on source machine
     host = machine.target_host().override(host_key_check="none")
     with host.host_connection() as ssh:
-        # Restart iperf3 service before running the test
-        ssh.run(["systemctl", "restart", "iperf3.service"], RunOpts(log=Log.BOTH))
         # Set the password for the iperf3 server
         res = ssh.run(
             nix_command(bench_cmd),
-            RunOpts(log=Log.BOTH, timeout=60),  # 60 seconds
+            RunOpts(log=Log.BOTH, timeout=250),
             extra_env={"IPERF3_PASSWORD": creds.password},
         )
 

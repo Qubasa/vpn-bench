@@ -23,6 +23,7 @@ from vpn_bench.connection_timings import (
 from vpn_bench.data import VPN, BenchMachine, Config, Provider, SSHKeyPair, delete_dirs
 from vpn_bench.errors import VpnBenchError
 from vpn_bench.nix_cache import install_nix_cache
+from vpn_bench.retry import retry_operation
 from vpn_bench.setup import create_base_inventory
 from vpn_bench.terraform import TrMachine
 
@@ -307,30 +308,52 @@ def save_machine_layout(
 
 
 def deploy_machines(
-    machines: list[Machine], build_host: Remote | None, ssh_key: SSHKeyPair
+    machines: list[Machine],
+    build_host: Remote | None,
+    ssh_key: SSHKeyPair,
+    max_retries: int = 2,
 ) -> None:
-    with AsyncRuntime() as runtime:
-        for machine in machines:
-            # Re-create machine / flake instance to avoid thread safety issues
-            new_inst_machine = Machine(
-                name=machine.name, flake=Flake(str(machine.flake.path))
-            )
-            target_host = new_inst_machine.target_host().override(
-                host_key_check="none",
-                private_key=ssh_key.private,
-            )
-            runtime.async_run(
-                AsyncOpts(
-                    tid=new_inst_machine.name,
-                    async_ctx=AsyncContext(prefix=new_inst_machine.name),
-                ),
-                run_machine_update,
-                new_inst_machine,
-                target_host=target_host,
-                build_host=build_host,
-            )
-        runtime.join_all()
-        runtime.check_all()
+    """
+    Deploy machines with retry logic for robustness.
+
+    Args:
+        machines: List of machines to deploy
+        build_host: Optional remote build host
+        ssh_key: SSH key pair for authentication
+        max_retries: Maximum number of retry attempts for the entire deployment
+    """
+
+    def _do_deploy() -> None:
+        with AsyncRuntime() as runtime:
+            for machine in machines:
+                # Re-create machine / flake instance to avoid thread safety issues
+                new_inst_machine = Machine(
+                    name=machine.name, flake=Flake(str(machine.flake.path))
+                )
+                target_host = new_inst_machine.target_host().override(
+                    host_key_check="none",
+                    private_key=ssh_key.private,
+                )
+                runtime.async_run(
+                    AsyncOpts(
+                        tid=new_inst_machine.name,
+                        async_ctx=AsyncContext(prefix=new_inst_machine.name),
+                    ),
+                    run_machine_update,
+                    new_inst_machine,
+                    target_host=target_host,
+                    build_host=build_host,
+                )
+            runtime.join_all()
+            runtime.check_all()
+
+    retry_operation(
+        _do_deploy,
+        max_retries=max_retries,
+        initial_delay=10.0,
+        max_delay=60.0,
+        operation_name="deploy machines",
+    )
 
 
 def install_vpn(

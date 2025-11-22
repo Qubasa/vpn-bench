@@ -92,12 +92,14 @@ def init_nix_cache_path(host: Remote, cache_target: Machine) -> None:
 def run_nix_cache_test(
     fetch_machine: BenchMachine, vpn: VPN, cache_target: BenchMachine
 ) -> dict[str, Any]:
+    # Restart harmonia service on cache_target (server) before running the test
+    cache_host = cache_target.cmachine.target_host().override(host_key_check="none")
+    with cache_host.host_connection() as ssh:
+        ssh.run(["systemctl", "restart", "harmonia.service"], RunOpts(log=Log.BOTH))
+
     host = fetch_machine.cmachine.target_host().override(host_key_check="none")
     firefox = fetch_machine.cmachine.select("pkgs.firefox.outPath")
     with host.host_connection() as ssh:
-        # Restart harmonia service before running the test
-        ssh.run(["systemctl", "restart", "harmonia.service"], RunOpts(log=Log.BOTH))
-
         init_nix_cache_path(host, cache_target.cmachine)
 
         clear_cache_cmd = (

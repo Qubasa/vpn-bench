@@ -15,6 +15,7 @@ from vpn_bench.iperf3 import IperfCreds, run_iperf_test
 from vpn_bench.nix_cache import run_nix_cache_test
 from vpn_bench.ping import run_ping_test
 from vpn_bench.qperf import run_qperf_test
+from vpn_bench.retry import retry_operation
 from vpn_bench.rist_stream import run_rist_test
 from vpn_bench.terraform import TrMachine
 from vpn_bench.vpn import install_vpn
@@ -55,13 +56,25 @@ def restart_vpn_service(bmachines: list[BenchMachine], vpn: VPN) -> None:
     service_name = get_vpn_service_name(vpn)
     log.info(f"Restarting VPN service {service_name} on all machines")
 
+    def restart_service_on_machine(bmachine: BenchMachine) -> None:
+        def _restart() -> None:
+            host = bmachine.cmachine.target_host().override(host_key_check="none")
+            with host.host_connection() as ssh:
+                ssh.run(
+                    ["systemctl", "restart", service_name],
+                    RunOpts(log=Log.BOTH),
+                )
+
+        retry_operation(
+            _restart,
+            max_retries=3,
+            initial_delay=2.0,
+            operation_name=f"restart {service_name} on {bmachine.cmachine.name}",
+        )
+
     for bmachine in bmachines:
-        host = bmachine.cmachine.target_host().override(host_key_check="none")
-        with host.host_connection() as ssh:
-            ssh.run(
-                ["systemctl", "restart", service_name],
-                RunOpts(log=Log.BOTH),
-            )
+        restart_service_on_machine(bmachine)
+
     log.info(f"VPN service {service_name} restarted on all machines")
 
     # Wait for VPN connectivity to be re-established
@@ -234,9 +247,8 @@ def benchmark_vpn(
             log.info("TC settings applied, waiting 30 seconds for stabilization")
             # Run benchmarks with this configuration
             run_benchmarks(
-               config, vpn, bmachines, tests, run_config.alias, run_config.tc_settings
+                config, vpn, bmachines, tests, run_config.alias, run_config.tc_settings
             )
-
 
     # Regenerate comparison data after benchmarks complete
     log.info("Regenerating comparison data...")
