@@ -3,12 +3,21 @@
 import logging
 import time
 from collections.abc import Callable
+from dataclasses import dataclass
 from functools import wraps
 from typing import ParamSpec
 
 log = logging.getLogger(__name__)
 
 P = ParamSpec("P")
+
+
+@dataclass
+class RetryResult[R]:
+    """Result of a retry operation with metadata."""
+
+    result: R
+    attempts: int  # Total number of attempts (1 = success on first try)
 
 
 def retry_with_backoff[R](
@@ -116,3 +125,55 @@ def retry_operation[R](
 
 class MaxRetriesExceededError(Exception):
     """Raised when maximum number of retries is exceeded."""
+
+
+def retry_operation_with_info[R](
+    operation: Callable[[], R],
+    max_retries: int = 3,
+    initial_delay: float = 1.0,
+    max_delay: float = 30.0,
+    backoff_factor: float = 2.0,
+    exceptions: tuple[type[Exception], ...] = (Exception,),
+    operation_name: str = "operation",
+) -> RetryResult[R]:
+    """
+    Execute an operation with retry logic and return metadata about attempts.
+
+    Args:
+        operation: Callable to execute
+        max_retries: Maximum number of retry attempts
+        initial_delay: Initial delay between retries in seconds
+        max_delay: Maximum delay between retries in seconds
+        backoff_factor: Multiplier for delay after each retry
+        exceptions: Tuple of exception types to catch and retry
+        operation_name: Name for logging purposes
+
+    Returns:
+        RetryResult containing the result and number of attempts
+
+    Raises:
+        The last exception if all retries fail
+    """
+    delay = initial_delay
+    last_exception: Exception | None = None
+
+    for attempt in range(max_retries + 1):
+        try:
+            result = operation()
+            return RetryResult(result=result, attempts=attempt + 1)
+        except exceptions as e:
+            last_exception = e
+            if attempt < max_retries:
+                log.warning(
+                    f"{operation_name} failed (attempt {attempt + 1}/{max_retries + 1}): {e}. "
+                    f"Retrying in {delay:.1f}s..."
+                )
+                time.sleep(delay)
+                delay = min(delay * backoff_factor, max_delay)
+            else:
+                log.error(
+                    f"{operation_name} failed after {max_retries + 1} attempts: {e}"
+                )
+
+    assert last_exception is not None
+    raise last_exception

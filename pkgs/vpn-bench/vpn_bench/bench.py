@@ -1,4 +1,5 @@
 import logging
+import time
 from collections.abc import Callable
 from pathlib import Path
 from typing import Any, ParamSpec
@@ -10,12 +11,12 @@ from vpn_bench.assets import get_iperf_asset
 from vpn_bench.comparison import generate_comparison_data
 from vpn_bench.connection_timings import wait_for_vpn_connectivity
 from vpn_bench.data import VPN, BenchMachine, BenchmarkRun, Config, TCSettings, TestType
-from vpn_bench.errors import save_bench_report
+from vpn_bench.errors import TestMetadataDict, save_bench_report
 from vpn_bench.iperf3 import IperfCreds, run_iperf_test
 from vpn_bench.nix_cache import run_nix_cache_test
 from vpn_bench.ping import run_ping_test
 from vpn_bench.qperf import run_qperf_test
-from vpn_bench.retry import retry_operation
+from vpn_bench.retry import retry_operation_with_info
 from vpn_bench.rist_stream import run_rist_test
 from vpn_bench.terraform import TrMachine
 from vpn_bench.vpn import install_vpn
@@ -47,16 +48,22 @@ def get_vpn_service_name(vpn: VPN) -> str:
             raise ValueError(msg)
 
 
-def restart_vpn_service(bmachines: list[BenchMachine], vpn: VPN) -> None:
-    """Restart the VPN service on all benchmark machines and wait for connectivity."""
+def restart_vpn_service(bmachines: list[BenchMachine], vpn: VPN) -> int:
+    """Restart the VPN service on all benchmark machines and wait for connectivity.
+
+    Returns:
+        Number of retries needed (0 = all succeeded on first try)
+    """
     if vpn == VPN.Internal or vpn == VPN.Wireguard:
         # No VPN service to restart for internal tests
-        return
+        return 0
 
     service_name = get_vpn_service_name(vpn)
     log.info(f"Restarting VPN service {service_name} on all machines")
 
-    def restart_service_on_machine(bmachine: BenchMachine) -> None:
+    total_retries = 0
+
+    def restart_service_on_machine(bmachine: BenchMachine) -> int:
         def _restart() -> None:
             host = bmachine.cmachine.target_host().override(host_key_check="none")
             with host.host_connection() as ssh:
@@ -65,21 +72,26 @@ def restart_vpn_service(bmachines: list[BenchMachine], vpn: VPN) -> None:
                     RunOpts(log=Log.BOTH),
                 )
 
-        retry_operation(
+        result = retry_operation_with_info(
             _restart,
             max_retries=3,
             initial_delay=2.0,
             operation_name=f"restart {service_name} on {bmachine.cmachine.name}",
         )
+        # Return retries (attempts - 1, since 1 attempt = success on first try)
+        return result.attempts - 1
 
     for bmachine in bmachines:
-        restart_service_on_machine(bmachine)
+        retries = restart_service_on_machine(bmachine)
+        total_retries += retries
 
     log.info(f"VPN service {service_name} restarted on all machines")
 
     # Wait for VPN connectivity to be re-established
     machines = [bm.cmachine for bm in bmachines]
     wait_for_vpn_connectivity(machines)
+
+    return total_retries
 
 
 def run_benchmarks(
@@ -100,9 +112,6 @@ def run_benchmarks(
 
     tc_data = {
         "alias": benchmark_run_alias,
-        "description": tc_settings.get_description()
-        if tc_settings
-        else "No network impairment applied",
         "settings": tc_settings.to_dict() if tc_settings else None,
     }
     tc_settings_file.write_text(json.dumps(tc_data, indent=2))
@@ -135,72 +144,154 @@ def run_benchmarks(
 
         P = ParamSpec("P")  # noqa: N806
 
+        def execute_test_with_retry(
+            func: Callable[P, Any], *args: P.args, **kwargs: P.kwargs
+        ) -> tuple[dict[str, Any] | Exception, int]:
+            """Execute a test with retry logic and return result plus attempt count."""
+            result = retry_operation_with_info(
+                lambda: func(*args, **kwargs),
+                max_retries=2,
+                initial_delay=5.0,
+                operation_name=f"{func.__name__}",
+            )
+            return result.result, result.attempts
+
         def execute_test(
             func: Callable[P, Any], *args: P.args, **kwargs: P.kwargs
-        ) -> dict[str, Any] | Exception:
+        ) -> tuple[dict[str, Any] | Exception, int]:
+            """Execute a test and return result plus attempt count (1 on success, 1 on error)."""
             try:
-                return func(*args, **kwargs)
+                result, attempts = execute_test_with_retry(func, *args, **kwargs)
             except Exception as err:
-                return err
+                # Return the exception with attempt count of max retries + 1
+                return err, 3
+            else:
+                return result, attempts
 
         for test in tests:
+            start_time = time.time()
+            test_attempts = 0
+            vpn_restart_attempts = 0
+
             match test:
                 case TestType.IPERF3:
-                    tcp_results = execute_test(
+                    tcp_results, tcp_attempts = execute_test(
                         run_iperf_test,
                         bmachine.cmachine,
                         "vpn." + next_bmachine.cmachine.name,
                         creds,
                         udp_mode=False,
+                        target_machine=next_bmachine.cmachine,
                     )
-                    save_bench_report(result_dir, tcp_results, "tcp_iperf3.json")
+                    tcp_duration = time.time() - start_time
 
-                    udp_results = execute_test(
+                    udp_start = time.time()
+                    udp_results, udp_attempts = execute_test(
                         run_iperf_test,
                         bmachine.cmachine,
                         "vpn." + next_bmachine.cmachine.name,
                         creds,
                         udp_mode=True,
+                        target_machine=next_bmachine.cmachine,
                     )
-                    save_bench_report(result_dir, udp_results, "udp_iperf3.json")
+                    udp_duration = time.time() - udp_start
+
+                    # Restart VPN and track attempts
+                    vpn_restart_attempts = restart_vpn_service(bmachines, vpn)
+
+                    # Save TCP results with metadata
+                    tcp_metadata: TestMetadataDict = {
+                        "duration_seconds": tcp_duration,
+                        "test_attempts": tcp_attempts,
+                        "vpn_restart_attempts": vpn_restart_attempts,
+                    }
+                    save_bench_report(
+                        result_dir, tcp_results, "tcp_iperf3.json", tcp_metadata
+                    )
+
+                    # Save UDP results with metadata
+                    udp_metadata: TestMetadataDict = {
+                        "duration_seconds": udp_duration,
+                        "test_attempts": udp_attempts,
+                        "vpn_restart_attempts": 0,  # Already counted in TCP
+                    }
+                    save_bench_report(
+                        result_dir, udp_results, "udp_iperf3.json", udp_metadata
+                    )
+                    continue  # Skip the restart at the end since we already did it
 
                 case TestType.QPERF:
-                    quick_result = execute_test(
+                    quick_result, test_attempts = execute_test(
                         run_qperf_test,
                         bmachine.cmachine,
                         "vpn." + next_bmachine.cmachine.name,
+                        next_bmachine.cmachine,
                     )
-                    save_bench_report(result_dir, quick_result, "qperf.json")
+                    duration = time.time() - start_time
+                    vpn_restart_attempts = restart_vpn_service(bmachines, vpn)
+                    metadata: TestMetadataDict = {
+                        "duration_seconds": duration,
+                        "test_attempts": test_attempts,
+                        "vpn_restart_attempts": vpn_restart_attempts,
+                    }
+                    save_bench_report(result_dir, quick_result, "qperf.json", metadata)
+                    continue
 
                 case TestType.PING:
-                    ping_result = execute_test(
+                    ping_result, test_attempts = execute_test(
                         run_ping_test,
                         bmachine.cmachine,
                         "vpn." + next_bmachine.cmachine.name,
                     )
-                    save_bench_report(result_dir, ping_result, "ping.json")
+                    duration = time.time() - start_time
+                    vpn_restart_attempts = restart_vpn_service(bmachines, vpn)
+                    metadata = {
+                        "duration_seconds": duration,
+                        "test_attempts": test_attempts,
+                        "vpn_restart_attempts": vpn_restart_attempts,
+                    }
+                    save_bench_report(result_dir, ping_result, "ping.json", metadata)
+                    continue
 
                 case TestType.NIX_CACHE:
-                    nix_cache_result = execute_test(
+                    nix_cache_result, test_attempts = execute_test(
                         run_nix_cache_test, bmachine, vpn, next_bmachine
                     )
-                    save_bench_report(result_dir, nix_cache_result, "nix_cache.json")
+                    duration = time.time() - start_time
+                    vpn_restart_attempts = restart_vpn_service(bmachines, vpn)
+                    metadata = {
+                        "duration_seconds": duration,
+                        "test_attempts": test_attempts,
+                        "vpn_restart_attempts": vpn_restart_attempts,
+                    }
+                    save_bench_report(
+                        result_dir, nix_cache_result, "nix_cache.json", metadata
+                    )
+                    continue
 
                 case TestType.RIST_STREAM:
-                    rist_result = execute_test(
+                    rist_result, test_attempts = execute_test(
                         run_rist_test,
                         bmachine.cmachine,
                         "vpn." + next_bmachine.cmachine.name,
                         duration=30,
+                        target_machine=next_bmachine.cmachine,
                     )
-                    save_bench_report(result_dir, rist_result, "rist_stream.json")
+                    duration = time.time() - start_time
+                    vpn_restart_attempts = restart_vpn_service(bmachines, vpn)
+                    metadata = {
+                        "duration_seconds": duration,
+                        "test_attempts": test_attempts,
+                        "vpn_restart_attempts": vpn_restart_attempts,
+                    }
+                    save_bench_report(
+                        result_dir, rist_result, "rist_stream.json", metadata
+                    )
+                    continue
 
                 case _:
                     msg = f"Unknown BenchType: {test}"
                     raise ValueError(msg)
-
-            # Restart VPN service after each test to ensure clean state
-            restart_vpn_service(bmachines, vpn)
 
 
 def benchmark_vpn(

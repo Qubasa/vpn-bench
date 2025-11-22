@@ -312,14 +312,28 @@ def reboot_connection_timings(
             )
             time.sleep(2)
 
+    # Give machines a few seconds to stabilize after becoming SSH-reachable
+    # This ensures services are fully started before we try to use them
+    log.info("Waiting 5 seconds for machines to stabilize after reboot")
+    time.sleep(5)
+
     def _wait_service(machine: Machine, wait_service_path: Path) -> None:
-        host = machine.target_host().override(host_key_check="none")
-        with host.host_connection() as ssh:
-            upload(ssh, script, wait_service_path, file_mode=0o777)
-            ssh.run(
-                [f"{wait_service_path}", "-s", "connection-check.service"],
-                RunOpts(log=Log.BOTH),
-            )
+        def _do_wait() -> None:
+            host = machine.target_host().override(host_key_check="none")
+            with host.host_connection() as ssh:
+                upload(ssh, script, wait_service_path, file_mode=0o777)
+                ssh.run(
+                    [f"{wait_service_path}", "-s", "connection-check.service"],
+                    RunOpts(log=Log.BOTH, timeout=120),  # Add 2 minute timeout
+                )
+
+        retry_operation(
+            _do_wait,
+            max_retries=3,
+            initial_delay=5.0,
+            max_delay=30.0,
+            operation_name=f"wait for connection-check on {machine.name} (after reboot)",
+        )
 
     # Wait for connection-check service to finish
     with ThreadPoolExecutor() as executor:

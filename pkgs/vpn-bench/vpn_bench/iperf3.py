@@ -7,7 +7,6 @@ from typing import Any
 from clan_lib.cmd import Log, RunOpts
 from clan_lib.machines.machines import Machine
 from clan_lib.nix import nix_command
-from clan_lib.ssh.remote import Remote
 
 # from clan_lib.ssh.upload import upload
 
@@ -22,9 +21,21 @@ class IperfCreds:
 
 
 def run_iperf_test(
-    machine: Machine, target_host: str, creds: IperfCreds, udp_mode: bool = False
+    machine: Machine,
+    target_host: str,
+    creds: IperfCreds,
+    target_machine: Machine,
+    udp_mode: bool = False,
 ) -> dict[str, Any]:
-    """Run a single iperf3 test and return the results."""
+    """Run a single iperf3 test and return the results.
+
+    Args:
+        machine: The source machine to run the test from
+        target_host: The VPN hostname to connect to (e.g., "vpn.yuki")
+        creds: Iperf3 credentials
+        udp_mode: Whether to run in UDP mode
+        target_machine: The target Machine object for SSH access (uses public IP)
+    """
 
     bench_cmd = [
         "shell",
@@ -50,7 +61,9 @@ def run_iperf_test(
         bench_cmd.extend(["-u", "--udp-counters-64bit", "-b", "0"])
 
     # Restart iperf3 service on target (server) before running the test
-    target = Remote(target_host).override(host_key_check="none")
+    if target_machine:
+        # Use the target machine's public IP for SSH
+        target = target_machine.target_host().override(host_key_check="none")
     with target.host_connection() as ssh:
         ssh.run(["systemctl", "restart", "iperf3.service"], RunOpts(log=Log.BOTH))
 

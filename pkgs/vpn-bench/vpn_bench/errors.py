@@ -5,7 +5,16 @@ from pathlib import Path
 from typing import Any, Literal, TypedDict
 
 from clan_lib.api import dataclass_to_dict
+from clan_lib.cmd import ClanCmdTimeoutError
 from clan_lib.errors import ClanCmdError, ClanError, CmdOut
+
+
+class TestMetadataDict(TypedDict):
+    """Metadata about test execution."""
+
+    duration_seconds: float
+    test_attempts: int
+    vpn_restart_attempts: int
 
 
 class VpnBenchError(ClanError):
@@ -32,7 +41,10 @@ class ErrorDataClass:
 
 
 def save_bench_report(
-    result_dir: Path, data: dict[str, Any] | ClanError | Exception, filename: str
+    result_dir: Path,
+    data: dict[str, Any] | ClanError | Exception,
+    filename: str,
+    metadata: TestMetadataDict | None = None,
 ) -> None:
     result_dir.mkdir(parents=True, exist_ok=True)
     result_file = result_dir / filename
@@ -42,6 +54,11 @@ def save_bench_report(
     if isinstance(data, dict):
         success_data = SucessDataClass(status="success", data=data)
         result = dataclass_to_dict(success_data)
+    elif isinstance(data, ClanCmdTimeoutError):
+        # Handle timeout errors specifically to include timeout value
+        error_data = ErrorDataClass(status="error", error=data.cmd, error_type="CmdOut")
+        result = dataclass_to_dict(error_data)
+        result["timeout"] = data.timeout
     elif isinstance(data, ClanCmdError):
         error_data = ErrorDataClass(status="error", error=data.cmd, error_type="CmdOut")
         result = dataclass_to_dict(error_data)
@@ -67,6 +84,10 @@ def save_bench_report(
             error_type="ClanError",
         )
         result = dataclass_to_dict(error_data)
+
+    # Add metadata if provided
+    if metadata:
+        result["meta"] = metadata
 
     with (result_file).open("w") as f:
         json.dump(result, f, indent=4)

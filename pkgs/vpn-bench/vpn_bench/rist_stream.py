@@ -250,6 +250,7 @@ def run_rist_test(
     duration: int = 30,
     bitrate: str = "5M",
     profile: str = "main",
+    target_machine: Machine | None = None,
 ) -> RistSummaryDict:
     """
     Run a RIST video streaming test and return summary statistics.
@@ -260,12 +261,18 @@ def run_rist_test(
         duration: Test duration in seconds
         bitrate: Target bitrate (e.g., "5M" for 5 Mbps)
         profile: RIST profile (simple, main, or advanced)
+        target_machine: The target Machine object for SSH access (uses public IP)
 
     Returns:
         Summary statistics with min/avg/max/percentiles for bitrate, fps, and dropped frames
     """
     # Restart the RIST receiver service on the target
-    target = Remote(target_host).override(host_key_check="none")
+    if target_machine:
+        # Use the target machine's public IP for SSH
+        target = target_machine.target_host().override(host_key_check="none")
+    else:
+        # Fallback for backwards compatibility
+        target = Remote(target_host).override(host_key_check="none")
     with target.host_connection() as ssh:
         ssh.run(["systemctl", "restart", "rist-stream.service"], RunOpts(log=Log.BOTH))
 

@@ -9,7 +9,6 @@ from typing import Literal, TypedDict, TypeVar, cast
 
 from clan_lib.cmd import Log, RunOpts
 from clan_lib.machines.machines import Machine
-from clan_lib.ssh.remote import Remote
 
 # Define TypeVar for numeric types (int or float)
 T = TypeVar("T", int, float)
@@ -311,13 +310,23 @@ def _qperf_test(
     return parse_qperf_output(res.stdout)
 
 
-def run_qperf_test(machine: Machine, target_host: str) -> QperfSummaryDict:
-    """Run a single qperf test and return the results."""
+def run_qperf_test(
+    machine: Machine, target_host: str, target_machine: Machine
+) -> QperfSummaryDict:
+    """Run a single qperf test and return the results.
+
+    Args:
+        machine: The source machine to run the test from
+        target_host: The VPN hostname to connect to (e.g., "vpn.yuki")
+        target_machine: The target Machine object for SSH access (uses public IP)
+    """
 
     parsed_outputs: list[QperfOutputDict] = []
 
     # Restart qperf service on target (server) before running the test
-    target = Remote(target_host).override(host_key_check="none")
+    if target_machine:
+        # Use the target machine's public IP for SSH
+        target = target_machine.target_host().override(host_key_check="none")
     with target.host_connection() as ssh:
         ssh.run(["systemctl", "restart", "qperf.service"], RunOpts(log=Log.BOTH))
 

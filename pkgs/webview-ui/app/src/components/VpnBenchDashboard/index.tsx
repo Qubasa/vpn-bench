@@ -23,7 +23,14 @@ import {
   RistReport,
 } from "@/src/components/RistStreamCharts";
 import { For, JSX, Show, createSignal, createEffect } from "solid-js";
-import { Result, Err, Ok, MixedReport, getErrorMessage } from "@/src/benchData"; // Assuming Result and BenchmarkRunError are here
+import {
+  Result,
+  Err,
+  Ok,
+  MixedReport,
+  getErrorMessage,
+  TestMetadata,
+} from "@/src/benchData"; // Assuming Result and BenchmarkRunError are here
 // Using the name from your import - ensure this component accepts BenchmarkRunError
 import { DisplayClanError } from "@/src/components/ClanError"; // *** USE THE CORRECT COMPONENT NAME AND PATH ***
 import { useSearchParams } from "@solidjs/router";
@@ -104,6 +111,143 @@ const FallbackMessage = () => (
     </p>
   </div>
 );
+
+// Helper to format duration
+const formatDuration = (seconds: number): string => {
+  if (seconds < 60) {
+    return `${seconds.toFixed(1)}s`;
+  }
+  const minutes = Math.floor(seconds / 60);
+  const remainingSeconds = seconds % 60;
+  return `${minutes}m ${remainingSeconds.toFixed(0)}s`;
+};
+
+// Metadata display component
+interface MetadataDisplayProps {
+  meta?: TestMetadata;
+  machineName?: string;
+}
+
+const MetadataDisplay = (props: MetadataDisplayProps) => {
+  return (
+    <Show when={props.meta}>
+      {(meta) => (
+        <div
+          style={{
+            display: "flex",
+            "flex-wrap": "wrap",
+            gap: "12px",
+            padding: "12px 16px",
+            background: "#f8f9fa",
+            "border-radius": "8px",
+            "margin-bottom": "16px",
+            "font-size": "13px",
+            "align-items": "center",
+          }}
+        >
+          <Show when={props.machineName}>
+            <span
+              style={{
+                "font-weight": "600",
+                color: "#333",
+                "margin-right": "8px",
+              }}
+            >
+              {props.machineName}
+            </span>
+          </Show>
+
+          <div
+            style={{
+              display: "flex",
+              "align-items": "center",
+              gap: "4px",
+              color: "#555",
+            }}
+          >
+            <span style={{ opacity: "0.7" }}>⏱</span>
+            <span>Duration: {formatDuration(meta().duration_seconds)}</span>
+          </div>
+
+          <Show when={meta().test_attempts > 1}>
+            <div
+              style={{
+                display: "flex",
+                "align-items": "center",
+                gap: "4px",
+                color: meta().test_attempts > 2 ? "#e67700" : "#555",
+              }}
+            >
+              <span style={{ opacity: "0.7" }}>🔄</span>
+              <span>Test attempts: {meta().test_attempts}</span>
+            </div>
+          </Show>
+
+          <Show when={meta().vpn_restart_attempts > 0}>
+            <div
+              style={{
+                display: "flex",
+                "align-items": "center",
+                gap: "4px",
+                color:
+                  meta().vpn_restart_attempts > meta().test_attempts
+                    ? "#e67700"
+                    : "#555",
+              }}
+            >
+              <span style={{ opacity: "0.7" }}>🔌</span>
+              <span>VPN restarts: {meta().vpn_restart_attempts}</span>
+            </div>
+          </Show>
+        </div>
+      )}
+    </Show>
+  );
+};
+
+// Metadata display for MixedReport arrays (shows per-machine metadata)
+interface MixedReportMetadataDisplayProps {
+  /* eslint-disable @typescript-eslint/no-explicit-any */
+  mixedReports: MixedReport<any>[];
+}
+
+const MixedReportMetadataDisplay = (props: MixedReportMetadataDisplayProps) => {
+  // Get all successful results with metadata
+  const reportsWithMeta = () =>
+    props.mixedReports.filter((r) => r.result.ok && (r.result as Ok<any>).meta);
+
+  return (
+    <Show when={reportsWithMeta().length > 0}>
+      <div
+        style={{
+          display: "flex",
+          "flex-direction": "column",
+          gap: "8px",
+          "margin-bottom": "16px",
+        }}
+      >
+        <div
+          style={{
+            "font-size": "14px",
+            "font-weight": "600",
+            color: "#333",
+            "margin-bottom": "4px",
+          }}
+        >
+          Test Execution Metadata
+        </div>
+        <For each={reportsWithMeta()}>
+          {(report) => (
+            <MetadataDisplay
+              meta={(report.result as Ok<any>).meta}
+              machineName={report.name}
+            />
+          )}
+        </For>
+      </div>
+    </Show>
+  );
+};
 
 // VPN Info Display Component
 const VpnInfoDisplay = (props: { vpnInfo: VpnInfoData }) => (
@@ -437,7 +581,10 @@ export const VpnDashboard = (props: VpnDashboardProps) => {
       <Tabs.Content class="tabs__content" value="qperf">
         <Show when={props.qperfReports} fallback={<FallbackMessage />}>
           {(mixedReports) => (
-            <QperfChartsDashboard mixedReports={mixedReports()} />
+            <>
+              <MixedReportMetadataDisplay mixedReports={mixedReports()} />
+              <QperfChartsDashboard mixedReports={mixedReports()} />
+            </>
           )}
         </Show>
       </Tabs.Content>

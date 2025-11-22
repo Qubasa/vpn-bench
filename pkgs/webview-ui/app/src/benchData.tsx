@@ -31,6 +31,7 @@ export interface NotRunError {
 interface SuccessResponse<T> {
   status: "success";
   data: T;
+  meta?: TestMetadata;
 }
 
 interface ErrorResponse {
@@ -51,10 +52,18 @@ export interface BenchmarkRunError {
   filePath?: string;
 }
 
+// Metadata about test execution
+export interface TestMetadata {
+  duration_seconds: number;
+  test_attempts: number;
+  vpn_restart_attempts: number;
+}
+
 // Success case for the Result type
 export interface Ok<T> {
   ok: true;
   value: T;
+  meta?: TestMetadata;
 }
 
 // Error case for the Result type
@@ -120,7 +129,6 @@ export interface Machine {
 // --- TC Settings Interface ---
 export interface TCSettingsData {
   alias: string;
-  description: string;
   settings: {
     bandwidth_mbit: number | null;
     latency_ms: number | null;
@@ -319,7 +327,12 @@ export function generateBenchData(): BenchData {
 
     if (moduleData.status === "success") {
       // Create an Ok result, value type depends on the file
-      generatedResult = { ok: true, value: moduleData.data };
+      // Include metadata if present
+      generatedResult = {
+        ok: true,
+        value: moduleData.data,
+        meta: moduleData.meta,
+      };
     } else if (moduleData.status === "error") {
       // Create an Err result
       console.warn(

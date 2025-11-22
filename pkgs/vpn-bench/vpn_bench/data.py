@@ -105,52 +105,26 @@ class TCSettings:
         return "_".join(parts) if parts else "baseline"
 
     def to_dict(self) -> dict[str, int | float | None]:
-        """Convert TC settings to dictionary for JSON serialization."""
-        return {
-            "bandwidth_mbit": self.bandwidth_mbit,
-            "latency_ms": self.latency_ms,
-            "jitter_ms": self.jitter_ms,
-            "packet_loss_percent": self.packet_loss_percent,
-            "reorder_percent": self.reorder_percent,
-            "reorder_correlation": self.reorder_correlation,
-        }
+        """Convert TC settings to dictionary for JSON serialization.
 
-    def get_description(self) -> str:
-        """Get a human-readable description of the TC settings.
-
-        Note: Values are doubled for display because TC is applied to egress
+        Note: Values are doubled for additive metrics because TC is applied to egress
         on all machines, so the effective end-to-end impairment is 2x the
         configured value (data path + ACK path both get impaired).
+        Bandwidth is not doubled as it's a cap per direction.
         """
-        if not any(
-            [
-                self.bandwidth_mbit,
-                self.latency_ms,
-                self.jitter_ms,
-                self.packet_loss_percent,
-                self.reorder_percent,
-            ]
-        ):
-            return "No network impairment applied"
-
-        parts = []
-        if self.latency_ms is not None:
-            # Effective latency is 2x (applied on both ends)
-            parts.append(f"{self.latency_ms * 2}ms latency")
-        if self.jitter_ms is not None:
-            # Effective jitter is approximately 2x
-            parts.append(f"{self.jitter_ms * 2}ms jitter")
-        if self.packet_loss_percent is not None:
-            # Effective loss is approximately 2x (compounds on both ends)
-            parts.append(f"{self.packet_loss_percent * 2}% packet loss")
-        if self.reorder_percent is not None:
-            # Effective reordering is approximately 2x
-            parts.append(f"{self.reorder_percent * 2}% packet reordering")
-        if self.bandwidth_mbit is not None:
-            # Bandwidth limit is not doubled - it's a cap per direction
-            parts.append(f"{self.bandwidth_mbit}Mbit/s bandwidth limit")
-
-        return ", ".join(parts)
+        return {
+            "bandwidth_mbit": self.bandwidth_mbit,
+            # Effective values are 2x (applied on both ends)
+            "latency_ms": self.latency_ms * 2 if self.latency_ms is not None else None,
+            "jitter_ms": self.jitter_ms * 2 if self.jitter_ms is not None else None,
+            "packet_loss_percent": self.packet_loss_percent * 2
+            if self.packet_loss_percent is not None
+            else None,
+            "reorder_percent": self.reorder_percent * 2
+            if self.reorder_percent is not None
+            else None,
+            "reorder_correlation": self.reorder_correlation,
+        }
 
 
 @dataclass

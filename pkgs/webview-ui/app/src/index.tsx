@@ -47,57 +47,80 @@ export const client = new QueryClient();
 
 // TC Settings Display Component
 function TCSettingsDisplay(props: { tcSettings: TCSettingsData | null }) {
+  // Values are already totals from Python (doubled there for additive metrics)
+  const getTotalLatency = () => props.tcSettings?.settings?.latency_ms ?? null;
+  const getTotalJitter = () => props.tcSettings?.settings?.jitter_ms ?? null;
+  const getTotalPacketLoss = () =>
+    props.tcSettings?.settings?.packet_loss_percent ?? null;
+  const getTotalReorder = () =>
+    props.tcSettings?.settings?.reorder_percent ?? null;
+
+  // Check if any settings are applied
+  const hasSettings = () =>
+    props.tcSettings?.settings &&
+    (props.tcSettings.settings.latency_ms != null ||
+      props.tcSettings.settings.jitter_ms != null ||
+      props.tcSettings.settings.packet_loss_percent != null ||
+      props.tcSettings.settings.reorder_percent != null ||
+      props.tcSettings.settings.bandwidth_mbit != null);
+
   return (
     <div class="mb-6 rounded-lg border-2 border-secondary-200 bg-secondary-50 p-4">
       <h3 class="mb-2 text-lg font-semibold text-secondary-900">
         Network Conditions
       </h3>
-      <p class="text-base text-secondary-700">
-        {props.tcSettings?.description || "No network impairment applied"}
-      </p>
-      {props.tcSettings?.settings && (
-        <div class="mt-3 grid grid-cols-2 gap-3 text-sm md:grid-cols-4">
-          {props.tcSettings?.settings?.latency_ms !== null && (
-            <div class="rounded bg-white p-2">
-              <div class="font-medium text-secondary-600">Latency</div>
-              <div class="text-lg font-semibold text-secondary-900">
-                {props.tcSettings.settings.latency_ms}ms
+      {hasSettings() ? (
+        <>
+          <p class="text-xs italic text-secondary-500">
+            Total round-trip impairment (half applied to each endpoint)
+          </p>
+          <div class="mt-3 grid grid-cols-2 gap-3 text-sm md:grid-cols-4">
+            {getTotalLatency() !== null && (
+              <div class="rounded bg-white p-2">
+                <div class="font-medium text-secondary-600">Latency</div>
+                <div class="text-lg font-semibold text-secondary-900">
+                  {getTotalLatency()}ms
+                </div>
               </div>
-            </div>
-          )}
-          {props.tcSettings?.settings?.jitter_ms !== null && (
-            <div class="rounded bg-white p-2">
-              <div class="font-medium text-secondary-600">Jitter</div>
-              <div class="text-lg font-semibold text-secondary-900">
-                {props.tcSettings.settings.jitter_ms}ms
+            )}
+            {getTotalJitter() !== null && (
+              <div class="rounded bg-white p-2">
+                <div class="font-medium text-secondary-600">Jitter</div>
+                <div class="text-lg font-semibold text-secondary-900">
+                  {getTotalJitter()}ms
+                </div>
               </div>
-            </div>
-          )}
-          {props.tcSettings?.settings?.packet_loss_percent !== null && (
-            <div class="rounded bg-white p-2">
-              <div class="font-medium text-secondary-600">Packet Loss</div>
-              <div class="text-lg font-semibold text-secondary-900">
-                {props.tcSettings.settings.packet_loss_percent}%
+            )}
+            {getTotalPacketLoss() !== null && (
+              <div class="rounded bg-white p-2">
+                <div class="font-medium text-secondary-600">Packet Loss</div>
+                <div class="text-lg font-semibold text-secondary-900">
+                  {getTotalPacketLoss()}%
+                </div>
               </div>
-            </div>
-          )}
-          {props.tcSettings?.settings?.reorder_percent !== null && (
-            <div class="rounded bg-white p-2">
-              <div class="font-medium text-secondary-600">Reordering</div>
-              <div class="text-lg font-semibold text-secondary-900">
-                {props.tcSettings.settings.reorder_percent}%
+            )}
+            {getTotalReorder() !== null && (
+              <div class="rounded bg-white p-2">
+                <div class="font-medium text-secondary-600">Reordering</div>
+                <div class="text-lg font-semibold text-secondary-900">
+                  {getTotalReorder()}%
+                </div>
               </div>
-            </div>
-          )}
-          {props.tcSettings?.settings?.bandwidth_mbit !== null && (
-            <div class="rounded bg-white p-2">
-              <div class="font-medium text-secondary-600">Bandwidth</div>
-              <div class="text-lg font-semibold text-secondary-900">
-                {props.tcSettings.settings.bandwidth_mbit} Mbit/s
+            )}
+            {props.tcSettings?.settings?.bandwidth_mbit != null && (
+              <div class="rounded bg-white p-2">
+                <div class="font-medium text-secondary-600">Bandwidth</div>
+                <div class="text-lg font-semibold text-secondary-900">
+                  {props.tcSettings.settings.bandwidth_mbit} Mbit/s
+                </div>
               </div>
-            </div>
-          )}
-        </div>
+            )}
+          </div>
+        </>
+      ) : (
+        <p class="text-base text-secondary-700">
+          No network impairment applied
+        </p>
       )}
     </div>
   );
