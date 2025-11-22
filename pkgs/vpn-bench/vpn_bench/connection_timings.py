@@ -130,6 +130,94 @@ def download_connection_timings(
                 raise exc
 
 
+def wait_for_vpn_connectivity(
+    machines: list[Machine],
+) -> None:
+    """
+    Wait for VPN connectivity between machines after a VPN service restart.
+
+    This clears the connection check data, restarts the connection-check service,
+    and waits for it to complete (which verifies machines can ping each other).
+
+    Args:
+        machines: List of machines to wait for connectivity
+    """
+    log.info("Waiting for VPN connectivity between machines")
+
+    # Clear old connection check data
+    delete_dirs(["/var/lib/connection-check"], machines)
+
+    # Recreate the directory (needed for WorkingDirectory in connection-check.service)
+    def _mkdir(machine: Machine) -> None:
+        host = machine.target_host().override(host_key_check="none")
+        with host.host_connection() as ssh:
+            ssh.run(
+                ["mkdir", "-p", "/var/lib/connection-check"],
+                RunOpts(log=Log.BOTH),
+            )
+
+    with ThreadPoolExecutor() as executor:
+        futures = [executor.submit(_mkdir, m) for m in machines]
+        concurrent.futures.wait(futures)
+        for f in futures:
+            exc = f.exception()
+            if exc is not None:
+                raise exc
+
+    def _restart_connection_check(machine: Machine) -> None:
+        host = machine.target_host().override(host_key_check="none")
+        with host.host_connection() as ssh:
+            ssh.run(
+                ["systemctl", "restart", "connection-check.service"],
+                RunOpts(log=Log.BOTH),
+            )
+
+    # Restart connection-check service on all machines
+    with ThreadPoolExecutor() as executor:
+        futures = []
+        for machine in machines:
+            future = executor.submit(_restart_connection_check, machine)
+            futures.append(future)
+
+        done, not_done = concurrent.futures.wait(futures)
+
+        for future in done:
+            exc = future.exception()
+            if exc is not None:
+                raise exc
+
+    def _wait_service(machine: Machine, wait_service_path: Path) -> None:
+        host = machine.target_host().override(host_key_check="none")
+        with host.host_connection() as ssh:
+            upload(ssh, script, wait_service_path, file_mode=0o777)
+            ssh.run(
+                [f"{wait_service_path}", "-s", "connection-check.service"],
+                RunOpts(log=Log.BOTH),
+            )
+
+    # Wait for connection-check service to finish on all machines
+    with ThreadPoolExecutor() as executor:
+        futures = []
+        for machine in machines:
+            script = get_script_asset("wait_service.sh")
+            wait_service_path = Path("/tmp/wait_service.sh")
+            future = executor.submit(
+                _wait_service,
+                machine,
+                wait_service_path,
+            )
+            futures.append(future)
+
+        done, not_done = concurrent.futures.wait(futures)
+
+        for future in done:
+            exc = future.exception()
+            if exc is not None:
+                raise exc
+
+    log.info("VPN connectivity established between all machines")
+
+
 def reboot_connection_timings(
     config: Config,
     vpn: VPN,

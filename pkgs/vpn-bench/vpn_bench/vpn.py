@@ -425,8 +425,8 @@ def install_vpn(
     # Install Nix cache
     install_nix_cache(config, tr_machines, bmachines)
 
-    if get_con_times and vpn != VPN.Internal:
-        # Install VPN connection timing service
+    # Always install connection timings service (needed for wait_for_vpn_connectivity)
+    if vpn != VPN.Internal or vpn == VPN.Wireguard:
         install_connection_timings_conf(config, tr_machines, vpn, bmachines)
 
     # Invalidate cache for all machines

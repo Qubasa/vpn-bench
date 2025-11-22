@@ -3,9 +3,12 @@ from collections.abc import Callable
 from pathlib import Path
 from typing import Any, ParamSpec
 
+from clan_lib.cmd import Log, RunOpts
 from clan_lib.ssh.upload import upload
 
 from vpn_bench.assets import get_iperf_asset
+from vpn_bench.comparison import generate_comparison_data
+from vpn_bench.connection_timings import wait_for_vpn_connectivity
 from vpn_bench.data import VPN, BenchMachine, BenchmarkRun, Config, TCSettings, TestType
 from vpn_bench.errors import save_bench_report
 from vpn_bench.iperf3 import IperfCreds, run_iperf_test
@@ -17,6 +20,53 @@ from vpn_bench.terraform import TrMachine
 from vpn_bench.vpn import install_vpn
 
 log = logging.getLogger(__name__)
+
+
+def get_vpn_service_name(vpn: VPN) -> str:
+    """Get the systemd service name for a given VPN type."""
+    match vpn:
+        case VPN.Zerotier:
+            return "zerotierone.service"
+        case VPN.Mycelium:
+            return "mycelium.service"
+        case VPN.Hyprspace:
+            return "hyprspace.service"
+        case VPN.VpnCloud:
+            return "vpncloud.service"
+        case VPN.Yggdrasil:
+            return "yggdrasil.service"
+        case VPN.Easytier:
+            return "easytier-easytier.service"
+        case VPN.Nebula:
+            return "nebula@nebula.service"
+        case VPN.Tinc:
+            return "tinc.tinc.service"
+        case _:
+            msg = f"Unknown VPN type: {vpn}"
+            raise ValueError(msg)
+
+
+def restart_vpn_service(bmachines: list[BenchMachine], vpn: VPN) -> None:
+    """Restart the VPN service on all benchmark machines and wait for connectivity."""
+    if vpn == VPN.Internal or vpn == VPN.Wireguard:
+        # No VPN service to restart for internal tests
+        return
+
+    service_name = get_vpn_service_name(vpn)
+    log.info(f"Restarting VPN service {service_name} on all machines")
+
+    for bmachine in bmachines:
+        host = bmachine.cmachine.target_host().override(host_key_check="none")
+        with host.host_connection() as ssh:
+            ssh.run(
+                ["systemctl", "restart", service_name],
+                RunOpts(log=Log.BOTH),
+            )
+    log.info(f"VPN service {service_name} restarted on all machines")
+
+    # Wait for VPN connectivity to be re-established
+    machines = [bm.cmachine for bm in bmachines]
+    wait_for_vpn_connectivity(machines)
 
 
 def run_benchmarks(
@@ -136,6 +186,9 @@ def run_benchmarks(
                     msg = f"Unknown BenchType: {test}"
                     raise ValueError(msg)
 
+            # Restart VPN service after each test to ensure clean state
+            restart_vpn_service(bmachines, vpn)
+
 
 def benchmark_vpn(
     config: Config,
@@ -173,13 +226,18 @@ def benchmark_vpn(
 
     # Get list of machines for TC application
     machines = [bm.cmachine for bm in bmachines]
-
     for run_config in benchmark_runs:
         log.info(f"========== Running benchmark: {run_config.alias} ==========")
 
         # Use context manager to apply TC settings and automatically clean up
         with apply_tc_settings(machines, run_config.tc_settings):
+            log.info("TC settings applied, waiting 30 seconds for stabilization")
             # Run benchmarks with this configuration
             run_benchmarks(
-                config, vpn, bmachines, tests, run_config.alias, run_config.tc_settings
+               config, vpn, bmachines, tests, run_config.alias, run_config.tc_settings
             )
+
+
+    # Regenerate comparison data after benchmarks complete
+    log.info("Regenerating comparison data...")
+    generate_comparison_data(config.bench_dir)
