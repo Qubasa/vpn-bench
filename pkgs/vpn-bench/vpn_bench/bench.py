@@ -186,14 +186,20 @@ def run_benchmarks(
                     tcp_duration = time.time() - start_time
 
                     udp_start = time.time()
-                    udp_results, udp_attempts = execute_test(
-                        run_iperf_test,
-                        bmachine.cmachine,
-                        "vpn." + next_bmachine.cmachine.name,
-                        creds,
-                        udp_mode=True,
-                        target_machine=next_bmachine.cmachine,
-                    )
+                    # UDP test: no retry, 120s timeout
+                    try:
+                        udp_results: dict[str, Any] | Exception = run_iperf_test(
+                            bmachine.cmachine,
+                            "vpn." + next_bmachine.cmachine.name,
+                            creds,
+                            target_machine=next_bmachine.cmachine,
+                            udp_mode=True,
+                            timeout=120,
+                        )
+                        udp_attempts = 1
+                    except Exception as err:
+                        udp_results = err
+                        udp_attempts = 1
                     udp_duration = time.time() - udp_start
 
                     # Restart VPN and track attempts

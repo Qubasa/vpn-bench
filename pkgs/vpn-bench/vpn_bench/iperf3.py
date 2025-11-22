@@ -26,6 +26,7 @@ def run_iperf_test(
     creds: IperfCreds,
     target_machine: Machine,
     udp_mode: bool = False,
+    timeout: int = 250,
 ) -> dict[str, Any]:
     """Run a single iperf3 test and return the results.
 
@@ -35,6 +36,7 @@ def run_iperf_test(
         creds: Iperf3 credentials
         udp_mode: Whether to run in UDP mode
         target_machine: The target Machine object for SSH access (uses public IP)
+        timeout: SSH command timeout in seconds (default 250 for TCP, use 120 for UDP)
     """
 
     bench_cmd = [
@@ -73,7 +75,7 @@ def run_iperf_test(
         # Set the password for the iperf3 server
         res = ssh.run(
             nix_command(bench_cmd),
-            RunOpts(log=Log.BOTH, timeout=250),
+            RunOpts(log=Log.BOTH, timeout=timeout),
             extra_env={"IPERF3_PASSWORD": creds.password},
         )
 
