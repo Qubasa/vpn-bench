@@ -23,6 +23,11 @@ export interface ClanError {
   location: string;
 }
 
+// Error type for tests that were not run (machine exists but test file missing)
+export interface NotRunError {
+  reason: string;
+}
+
 interface SuccessResponse<T> {
   status: "success";
   data: T;
@@ -40,8 +45,8 @@ type JsonWrapper<T> = SuccessResponse<T> | ErrorResponse;
 
 // Structure to hold the specific error details within the Result
 export interface BenchmarkRunError {
-  type: "CmdOut" | "ClanError";
-  details: CmdOutError | ClanError;
+  type: "CmdOut" | "ClanError" | "NotRun";
+  details: CmdOutError | ClanError | NotRunError;
   // Optionally add the source file path for better debugging context
   filePath?: string;
 }
@@ -64,6 +69,38 @@ export interface Err {
  * or Err (failure) containing a BenchmarkRunError.
  */
 export type Result<T> = Ok<T> | Err;
+
+/**
+ * Represents a machine's benchmark result that can be either success or failure.
+ * Used for displaying mixed results in charts (some machines succeeded, some failed).
+ */
+export interface MixedReport<TData> {
+  name: string;
+  result: Result<TData>;
+}
+
+/**
+ * Helper to get error message from a BenchmarkRunError for display
+ */
+export function getErrorMessage(error: BenchmarkRunError): string {
+  if (error.type === "CmdOut") {
+    const cmdError = error.details as CmdOutError;
+    // Return stderr if available, otherwise stdout, otherwise a generic message
+    if (cmdError.stderr.trim()) {
+      return cmdError.stderr.trim().slice(0, 500); // Limit length
+    }
+    if (cmdError.stdout.trim()) {
+      return cmdError.stdout.trim().slice(0, 500);
+    }
+    return `Command failed with exit code ${cmdError.returncode}`;
+  } else if (error.type === "NotRun") {
+    const notRunError = error.details as NotRunError;
+    return notRunError.reason;
+  } else {
+    const clanError = error.details as ClanError;
+    return clanError.msg || clanError.description || "Unknown error";
+  }
+}
 
 // --- Updated Machine Interface ---
 
@@ -160,12 +197,32 @@ export interface UdpIperfComparisonData {
 // Maps VPN name to its comparison data
 export type VpnComparisonMap<T> = Record<string, T>;
 
+// VPN comparison entry that can be success or error
+export interface VpnComparisonSuccess<T> {
+  status: "success";
+  data: T;
+}
+
+export interface VpnComparisonError {
+  status: "error";
+  error_type: "CmdOut" | "ClanError";
+  error: CmdOutError | ClanError;
+  machine?: string;
+}
+
+export type VpnComparisonEntry<T> =
+  | VpnComparisonSuccess<T>
+  | VpnComparisonError;
+
+// Maps VPN name to its comparison entry (can be success or error)
+export type VpnComparisonResultMap<T> = Record<string, VpnComparisonEntry<T>>;
+
 export interface ComparisonRunData {
-  ping?: VpnComparisonMap<PingComparisonData>;
-  qperf?: VpnComparisonMap<QperfComparisonData>;
-  videoStreaming?: VpnComparisonMap<VideoStreamingComparisonData>;
-  tcpIperf?: VpnComparisonMap<TcpIperfComparisonData>;
-  udpIperf?: VpnComparisonMap<UdpIperfComparisonData>;
+  ping?: VpnComparisonResultMap<PingComparisonData>;
+  qperf?: VpnComparisonResultMap<QperfComparisonData>;
+  videoStreaming?: VpnComparisonResultMap<VideoStreamingComparisonData>;
+  tcpIperf?: VpnComparisonResultMap<TcpIperfComparisonData>;
+  udpIperf?: VpnComparisonResultMap<UdpIperfComparisonData>;
 }
 
 // Maps run alias (TC profile) to comparison data
@@ -338,6 +395,58 @@ export function generateBenchData(): BenchData {
     // Add more else if blocks for other potential benchmark file types
   });
 
+  // --- Fill in "Not Run" results for machines that exist but are missing tests ---
+  // This helps visualize when a benchmark run was incomplete
+  const createNotRunResult = (machineName: string): Err => ({
+    ok: false,
+    error: {
+      type: "NotRun",
+      details: {
+        reason: `Test not run for ${machineName} (benchmark may have stopped before this test)`,
+      },
+    },
+  });
+
+  // For each category (VPN)
+  Object.values(categories).forEach((category) => {
+    // For each run (TC profile)
+    Object.values(category.runs).forEach((run) => {
+      // For each machine
+      run.machines.forEach((machine) => {
+        // Check if the machine has at least one test result
+        const hasAnyData =
+          machine.iperf3.tcp !== null ||
+          machine.iperf3.udp !== null ||
+          machine.qperf !== null ||
+          machine.nixCache !== null ||
+          machine.ping !== null ||
+          machine.ristStream !== null;
+
+        if (hasAnyData) {
+          // Fill in missing tests with "Not Run" results
+          if (machine.iperf3.tcp === null) {
+            machine.iperf3.tcp = createNotRunResult(machine.name);
+          }
+          if (machine.iperf3.udp === null) {
+            machine.iperf3.udp = createNotRunResult(machine.name);
+          }
+          if (machine.qperf === null) {
+            machine.qperf = createNotRunResult(machine.name);
+          }
+          if (machine.nixCache === null) {
+            machine.nixCache = createNotRunResult(machine.name);
+          }
+          if (machine.ping === null) {
+            machine.ping = createNotRunResult(machine.name);
+          }
+          if (machine.ristStream === null) {
+            machine.ristStream = createNotRunResult(machine.name);
+          }
+        }
+      });
+    });
+  });
+
   return Object.values(categories);
 }
 
@@ -455,19 +564,19 @@ export function generateComparisonData(): ComparisonData {
     // Assign data based on file name
     if (fileName === "ping.json") {
       result[runAlias].ping =
-        moduleData.data as VpnComparisonMap<PingComparisonData>;
+        moduleData.data as VpnComparisonResultMap<PingComparisonData>;
     } else if (fileName === "qperf.json") {
       result[runAlias].qperf =
-        moduleData.data as VpnComparisonMap<QperfComparisonData>;
+        moduleData.data as VpnComparisonResultMap<QperfComparisonData>;
     } else if (fileName === "video_streaming.json") {
       result[runAlias].videoStreaming =
-        moduleData.data as VpnComparisonMap<VideoStreamingComparisonData>;
+        moduleData.data as VpnComparisonResultMap<VideoStreamingComparisonData>;
     } else if (fileName === "tcp_iperf3.json") {
       result[runAlias].tcpIperf =
-        moduleData.data as VpnComparisonMap<TcpIperfComparisonData>;
+        moduleData.data as VpnComparisonResultMap<TcpIperfComparisonData>;
     } else if (fileName === "udp_iperf3.json") {
       result[runAlias].udpIperf =
-        moduleData.data as VpnComparisonMap<UdpIperfComparisonData>;
+        moduleData.data as VpnComparisonResultMap<UdpIperfComparisonData>;
     }
   });
 

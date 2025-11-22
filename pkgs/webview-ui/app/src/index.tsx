@@ -34,6 +34,7 @@ import {
   Machine,
   Ok,
   Result,
+  MixedReport,
 } from "./benchData";
 import { GeneralDashboard } from "./components/GeneralDashboard";
 import { QperfData, QperfReport } from "./components/QperfCharts";
@@ -163,6 +164,25 @@ function processCategoryReports<TData, TReport>(
   return { ok: true, value: successData };
 }
 
+// Helper function to process results keeping both success and error states for mixed display
+function processCategoryReportsMixed<TData>(
+  machines: Machine[],
+  // Function to access the specific Result object on a machine
+  accessor: (m: Machine) => Result<TData> | null,
+): MixedReport<TData>[] | null {
+  // Get results along with machine names, filtering out machines where the result is null
+  const machineResults = machines
+    .map((m) => ({ name: m.name, result: accessor(m) }))
+    .filter((mr) => mr.result !== null) as MixedReport<TData>[];
+
+  // Handle case where no machines had data for this benchmark
+  if (machineResults.length === 0) {
+    return null;
+  }
+
+  return machineResults;
+}
+
 // Wrapper component that handles TC profile selection
 function VpnDashboardWithProfiles(props: { category: BenchData[0] }) {
   // Get the list of TC profile aliases
@@ -205,11 +225,7 @@ function VpnDashboardWithProfiles(props: { category: BenchData[0] }) {
         (m) => m.iperf3.udp,
         (name, data) => ({ name, data }),
       ),
-      qperf: processCategoryReports<QperfData, QperfReport>(
-        machines,
-        (m) => m.qperf,
-        (name, data) => ({ name, data }),
-      ),
+      qperf: processCategoryReportsMixed<QperfData>(machines, (m) => m.qperf),
       nixCache: processCategoryReports<HyperfineData, HyperfineReport>(
         machines,
         (m) => m.nixCache,
@@ -306,6 +322,9 @@ function generateAppRouteFromGeneralData(
     return [];
   }
 
+  // Get all VPN names from benchData to show incomplete VPNs
+  const allVpnNames = benchData.map((category) => category.name);
+
   return [
     {
       path: "/general",
@@ -315,6 +334,7 @@ function generateAppRouteFromGeneralData(
           bootstrap_connection_timings={data?.connection_timings}
           reboot_connection_timings={data?.reboot_connection_timings}
           comparisonData={comparison}
+          allVpnNames={allVpnNames}
         />
       ),
     },

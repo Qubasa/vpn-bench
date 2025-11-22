@@ -237,6 +237,7 @@ interface GeneralDashboardProps {
   bootstrap_connection_timings: ConnectionTimings | undefined;
   reboot_connection_timings: ConnectionTimings | undefined;
   comparisonData?: ComparisonData;
+  allVpnNames?: string[]; // All VPN names from benchData to show incomplete VPNs
 }
 
 // Helper component for consistent "No Data" message
@@ -418,7 +419,12 @@ export const GeneralDashboard = (props: GeneralDashboardProps) => {
             when={currentProfileData()?.tcpIperf}
             fallback={<FallbackMessage />}
           >
-            {(data) => <TcpComparisonSection data={data()} />}
+            {(data) => (
+              <TcpComparisonSection
+                data={data()}
+                allVpnNames={props.allVpnNames}
+              />
+            )}
           </Show>
         </Tabs.Content>
 
@@ -427,7 +433,12 @@ export const GeneralDashboard = (props: GeneralDashboardProps) => {
             when={currentProfileData()?.udpIperf}
             fallback={<FallbackMessage />}
           >
-            {(data) => <UdpComparisonSection data={data()} />}
+            {(data) => (
+              <UdpComparisonSection
+                data={data()}
+                allVpnNames={props.allVpnNames}
+              />
+            )}
           </Show>
         </Tabs.Content>
 
@@ -436,7 +447,12 @@ export const GeneralDashboard = (props: GeneralDashboardProps) => {
             when={currentProfileData()?.ping}
             fallback={<FallbackMessage />}
           >
-            {(data) => <PingComparisonSection data={data()} />}
+            {(data) => (
+              <PingComparisonSection
+                data={data()}
+                allVpnNames={props.allVpnNames}
+              />
+            )}
           </Show>
         </Tabs.Content>
 
@@ -445,7 +461,12 @@ export const GeneralDashboard = (props: GeneralDashboardProps) => {
             when={currentProfileData()?.qperf}
             fallback={<FallbackMessage />}
           >
-            {(data) => <QperfComparisonSection data={data()} />}
+            {(data) => (
+              <QperfComparisonSection
+                data={data()}
+                allVpnNames={props.allVpnNames}
+              />
+            )}
           </Show>
         </Tabs.Content>
 
@@ -454,7 +475,12 @@ export const GeneralDashboard = (props: GeneralDashboardProps) => {
             when={currentProfileData()?.videoStreaming}
             fallback={<FallbackMessage />}
           >
-            {(data) => <VideoStreamingComparisonSection data={data()} />}
+            {(data) => (
+              <VideoStreamingComparisonSection
+                data={data()}
+                allVpnNames={props.allVpnNames}
+              />
+            )}
           </Show>
         </Tabs.Content>
       </Tabs>

@@ -35,7 +35,7 @@ def run_iperf_test(
         "--connect-timeout",
         "600",  # 5 seconds
         "--time",
-        "45",  # 45 seconds
+        "30",  # 30 seconds
         "--json",
         "-Z",
         "-c",

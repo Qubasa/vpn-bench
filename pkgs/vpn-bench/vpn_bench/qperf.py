@@ -301,7 +301,7 @@ def _qperf_test(
             "-g",
             "1",
             "-t",
-            "45",  # run 45 seconds
+            "30",  # run 30 seconds
             "-p",
             str(18000 + core),
             "-c",

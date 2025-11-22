@@ -191,7 +191,7 @@ def run_benchmarks(
                         run_rist_test,
                         bmachine.cmachine,
                         "vpn." + next_bmachine.cmachine.name,
-                        duration=45,
+                        duration=30,
                     )
                     save_bench_report(result_dir, rist_result, "rist_stream.json")
 

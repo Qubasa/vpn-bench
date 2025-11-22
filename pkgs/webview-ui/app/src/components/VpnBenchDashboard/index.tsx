@@ -10,6 +10,7 @@ import { Tabs } from "@kobalte/core/tabs";
 import {
   QperfReport, // Assuming QperfReport is the type within the Result array
   QperfChartsDashboard,
+  QperfData,
 } from "@/src/components/QperfCharts";
 import "./style.css"; // Ensure this path is correct
 import {
@@ -22,7 +23,7 @@ import {
   RistReport,
 } from "@/src/components/RistStreamCharts";
 import { For, JSX, Show, createSignal, createEffect } from "solid-js";
-import { Result, Err, Ok } from "@/src/benchData"; // Assuming Result and BenchmarkRunError are here
+import { Result, Err, Ok, MixedReport, getErrorMessage } from "@/src/benchData"; // Assuming Result and BenchmarkRunError are here
 // Using the name from your import - ensure this component accepts BenchmarkRunError
 import { DisplayClanError } from "@/src/components/ClanError"; // *** USE THE CORRECT COMPONENT NAME AND PATH ***
 import { useSearchParams } from "@solidjs/router";
@@ -36,7 +37,8 @@ interface VpnDashboardProps {
   tcpReports: Result<IperfTcpReport[]> | null;
   udpReports: Result<IperfUdpReport[]> | null;
   nixCacheReports: Result<HyperfineReport[]> | null;
-  qperfReports: Result<QperfReport[]> | null;
+  // Qperf uses mixed reports to show both successful and crashed machines
+  qperfReports: MixedReport<QperfData>[] | null;
   pingReports: Result<PingReport[]> | null;
   ristStreamReports: Result<RistReport[]> | null;
   tcpHeight?: {
@@ -434,17 +436,8 @@ export const VpnDashboard = (props: VpnDashboardProps) => {
 
       <Tabs.Content class="tabs__content" value="qperf">
         <Show when={props.qperfReports} fallback={<FallbackMessage />}>
-          {(reportResult) => (
-            <Show
-              when={reportResult().ok}
-              fallback={
-                <DisplayClanError error={(reportResult() as Err).error} />
-              }
-            >
-              <QperfChartsDashboard
-                reports={(reportResult() as Ok<QperfReport[]>).value}
-              />
-            </Show>
+          {(mixedReports) => (
+            <QperfChartsDashboard mixedReports={mixedReports()} />
           )}
         </Show>
       </Tabs.Content>

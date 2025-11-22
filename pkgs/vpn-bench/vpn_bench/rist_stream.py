@@ -247,7 +247,7 @@ def calculate_rist_summary(parsed_outputs: list[RistOutputDict]) -> RistSummaryD
 def run_rist_test(
     machine: Machine,
     target_host: str,
-    duration: int = 45,
+    duration: int = 30,
     bitrate: str = "5M",
     profile: str = "main",
 ) -> RistSummaryDict:

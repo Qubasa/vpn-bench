@@ -2,12 +2,15 @@ import { Echart } from "../Echarts";
 import { Show } from "solid-js";
 import {
   MetricStats,
-  VpnComparisonMap,
+  VpnComparisonResultMap,
   PingComparisonData,
   QperfComparisonData,
   TcpIperfComparisonData,
   UdpIperfComparisonData,
   VideoStreamingComparisonData,
+  VpnComparisonError,
+  CmdOutError,
+  ClanError,
 } from "@/src/benchData";
 
 // --- Generic Bar Chart Component ---
@@ -17,6 +20,26 @@ interface BarChartData {
   value: number;
   min: number;
   max: number;
+  isIncomplete?: boolean; // VPN exists but didn't complete this test
+  errorMessage?: string; // Error message for failed VPNs
+  machineName?: string; // Machine that failed (if applicable)
+}
+
+// Helper to get error message from comparison error
+function getComparisonErrorMessage(error: VpnComparisonError): string {
+  if (error.error_type === "CmdOut") {
+    const cmdError = error.error as CmdOutError;
+    if (cmdError.stderr.trim()) {
+      return cmdError.stderr.trim().slice(0, 500);
+    }
+    if (cmdError.stdout.trim()) {
+      return cmdError.stdout.trim().slice(0, 500);
+    }
+    return `Command failed with exit code ${cmdError.returncode}`;
+  } else {
+    const clanError = error.error as ClanError;
+    return clanError.msg || clanError.description || "Unknown error";
+  }
 }
 
 const createBarChartOption = (
@@ -25,8 +48,20 @@ const createBarChartOption = (
   yAxisLabel: string,
   color = "#1890ff",
 ) => {
-  // Sort by value for better visualization
-  const sortedData = [...data].sort((a, b) => b.value - a.value);
+  // Sort by value for better visualization (incomplete items at end)
+  const sortedData = [...data].sort((a, b) => {
+    // Put incomplete items at the end
+    if (a.isIncomplete && !b.isIncomplete) return 1;
+    if (!a.isIncomplete && b.isIncomplete) return -1;
+    return b.value - a.value;
+  });
+
+  // Calculate placeholder height for incomplete items
+  const maxValue = Math.max(
+    ...sortedData.filter((d) => !d.isIncomplete).map((d) => d.value),
+    100,
+  );
+  const incompleteBarHeight = maxValue * 0.3;
 
   return {
     title: {
@@ -43,6 +78,24 @@ const createBarChartOption = (
       ) {
         const item = params[0];
         const originalData = sortedData[item.dataIndex];
+
+        if (originalData.isIncomplete) {
+          const machineInfo = originalData.machineName
+            ? `<div style="font-size: 11px; color: #888; margin-top: 2px;">Machine: ${originalData.machineName}</div>`
+            : "";
+          const errorInfo = originalData.errorMessage
+            ? `<div style="font-size: 12px; color: #666; margin-top: 4px; white-space: pre-wrap; word-break: break-word;">${originalData.errorMessage}</div>`
+            : `<div style="font-size: 12px; color: #666; margin-top: 4px;">Benchmark did not complete for this VPN</div>`;
+
+          return `<div style="padding: 8px; max-width: 400px;">
+                    <div style="font-weight: bold; color: #d32f2f;">
+                      ⚠️ ${item.name} - FAILED
+                    </div>
+                    ${machineInfo}
+                    ${errorInfo}
+                  </div>`;
+        }
+
         return `${item.name}<br/>
                 Average: ${originalData.value.toFixed(2)}<br/>
                 Min: ${originalData.min.toFixed(2)}<br/>
@@ -73,10 +126,52 @@ const createBarChartOption = (
       {
         name: title,
         type: "bar",
-        data: sortedData.map((d) => d.value),
-        itemStyle: {
-          color: color,
-        },
+        data: sortedData.map((d) => {
+          if (d.isIncomplete) {
+            // Incomplete VPN - show gray bar with diagonal pattern
+            return {
+              value: incompleteBarHeight,
+              itemStyle: {
+                color: {
+                  type: "pattern",
+                  image: (() => {
+                    const canvas = document.createElement("canvas");
+                    canvas.width = 10;
+                    canvas.height = 10;
+                    const ctx = canvas.getContext("2d");
+                    if (ctx) {
+                      ctx.fillStyle = "#e0e0e0";
+                      ctx.fillRect(0, 0, 10, 10);
+                      ctx.strokeStyle = "#999";
+                      ctx.lineWidth = 2;
+                      ctx.beginPath();
+                      ctx.moveTo(0, 10);
+                      ctx.lineTo(10, 0);
+                      ctx.stroke();
+                    }
+                    return canvas;
+                  })(),
+                  repeat: "repeat",
+                },
+                borderColor: "#d32f2f",
+                borderWidth: 2,
+              },
+              label: {
+                show: true,
+                position: "top",
+                formatter: "⚠️",
+                fontSize: 14,
+              },
+            };
+          }
+          // Normal VPN
+          return {
+            value: d.value,
+            itemStyle: {
+              color: color,
+            },
+          };
+        }),
         // Add error bars for min/max
         markLine: {
           silent: true,
@@ -115,28 +210,71 @@ export const ComparisonBarChart = (props: {
 // --- Helper function to convert VPN comparison map to bar chart data ---
 
 function metricToBarData<T>(
-  vpnMap: VpnComparisonMap<T>,
+  vpnMap: VpnComparisonResultMap<T>,
   getMetric: (data: T) => MetricStats,
+  allVpnNames?: string[],
 ): BarChartData[] {
-  return Object.entries(vpnMap).map(([vpnName, data]) => {
-    const metric = getMetric(data);
-    return {
-      name: vpnName,
-      value: metric.average,
-      min: metric.min,
-      max: metric.max,
-    };
+  const result: BarChartData[] = [];
+
+  // Process VPNs in the comparison data
+  Object.entries(vpnMap).forEach(([vpnName, entry]) => {
+    if (entry.status === "success") {
+      // VPN completed successfully
+      const metric = getMetric(entry.data);
+      result.push({
+        name: vpnName,
+        value: metric.average,
+        min: metric.min,
+        max: metric.max,
+        isIncomplete: false,
+      });
+    } else {
+      // VPN failed - show error information
+      result.push({
+        name: vpnName,
+        value: 0,
+        min: 0,
+        max: 0,
+        isIncomplete: true,
+        errorMessage: getComparisonErrorMessage(entry),
+        machineName: entry.machine,
+      });
+    }
   });
+
+  // Add VPNs that are completely missing from comparison data (not even attempted)
+  if (allVpnNames) {
+    const vpnsInData = new Set(Object.keys(vpnMap));
+    allVpnNames.forEach((vpnName) => {
+      if (!vpnsInData.has(vpnName)) {
+        result.push({
+          name: vpnName,
+          value: 0,
+          min: 0,
+          max: 0,
+          isIncomplete: true,
+          errorMessage: "Benchmark not run for this VPN",
+        });
+      }
+    });
+  }
+
+  return result;
 }
 
 // --- TCP Performance Comparison Charts ---
 
 export const TcpThroughputComparisonChart = (props: {
-  data: VpnComparisonMap<TcpIperfComparisonData>;
+  data: VpnComparisonResultMap<TcpIperfComparisonData>;
   height?: number;
+  allVpnNames?: string[];
 }) => {
   const chartData = () =>
-    metricToBarData(props.data, (d) => d.sender_throughput_mbps);
+    metricToBarData(
+      props.data,
+      (d) => d.sender_throughput_mbps,
+      props.allVpnNames,
+    );
   return (
     <ComparisonBarChart
       data={chartData()}
@@ -149,11 +287,16 @@ export const TcpThroughputComparisonChart = (props: {
 };
 
 export const TcpReceiverThroughputComparisonChart = (props: {
-  data: VpnComparisonMap<TcpIperfComparisonData>;
+  data: VpnComparisonResultMap<TcpIperfComparisonData>;
   height?: number;
+  allVpnNames?: string[];
 }) => {
   const chartData = () =>
-    metricToBarData(props.data, (d) => d.receiver_throughput_mbps);
+    metricToBarData(
+      props.data,
+      (d) => d.receiver_throughput_mbps,
+      props.allVpnNames,
+    );
   return (
     <ComparisonBarChart
       data={chartData()}
@@ -166,10 +309,12 @@ export const TcpReceiverThroughputComparisonChart = (props: {
 };
 
 export const TcpRetransmitsComparisonChart = (props: {
-  data: VpnComparisonMap<TcpIperfComparisonData>;
+  data: VpnComparisonResultMap<TcpIperfComparisonData>;
   height?: number;
+  allVpnNames?: string[];
 }) => {
-  const chartData = () => metricToBarData(props.data, (d) => d.retransmits);
+  const chartData = () =>
+    metricToBarData(props.data, (d) => d.retransmits, props.allVpnNames);
   return (
     <ComparisonBarChart
       data={chartData()}
@@ -184,11 +329,16 @@ export const TcpRetransmitsComparisonChart = (props: {
 // --- UDP Performance Comparison Charts ---
 
 export const UdpThroughputComparisonChart = (props: {
-  data: VpnComparisonMap<UdpIperfComparisonData>;
+  data: VpnComparisonResultMap<UdpIperfComparisonData>;
   height?: number;
+  allVpnNames?: string[];
 }) => {
   const chartData = () =>
-    metricToBarData(props.data, (d) => d.sender_throughput_mbps);
+    metricToBarData(
+      props.data,
+      (d) => d.sender_throughput_mbps,
+      props.allVpnNames,
+    );
   return (
     <ComparisonBarChart
       data={chartData()}
@@ -201,10 +351,12 @@ export const UdpThroughputComparisonChart = (props: {
 };
 
 export const UdpJitterComparisonChart = (props: {
-  data: VpnComparisonMap<UdpIperfComparisonData>;
+  data: VpnComparisonResultMap<UdpIperfComparisonData>;
   height?: number;
+  allVpnNames?: string[];
 }) => {
-  const chartData = () => metricToBarData(props.data, (d) => d.jitter_ms);
+  const chartData = () =>
+    metricToBarData(props.data, (d) => d.jitter_ms, props.allVpnNames);
   return (
     <ComparisonBarChart
       data={chartData()}
@@ -217,10 +369,12 @@ export const UdpJitterComparisonChart = (props: {
 };
 
 export const UdpPacketLossComparisonChart = (props: {
-  data: VpnComparisonMap<UdpIperfComparisonData>;
+  data: VpnComparisonResultMap<UdpIperfComparisonData>;
   height?: number;
+  allVpnNames?: string[];
 }) => {
-  const chartData = () => metricToBarData(props.data, (d) => d.lost_percent);
+  const chartData = () =>
+    metricToBarData(props.data, (d) => d.lost_percent, props.allVpnNames);
   return (
     <ComparisonBarChart
       data={chartData()}
@@ -235,10 +389,12 @@ export const UdpPacketLossComparisonChart = (props: {
 // --- Ping Comparison Charts ---
 
 export const PingLatencyComparisonChart = (props: {
-  data: VpnComparisonMap<PingComparisonData>;
+  data: VpnComparisonResultMap<PingComparisonData>;
   height?: number;
+  allVpnNames?: string[];
 }) => {
-  const chartData = () => metricToBarData(props.data, (d) => d.rtt_avg_ms);
+  const chartData = () =>
+    metricToBarData(props.data, (d) => d.rtt_avg_ms, props.allVpnNames);
   return (
     <ComparisonBarChart
       data={chartData()}
@@ -251,10 +407,12 @@ export const PingLatencyComparisonChart = (props: {
 };
 
 export const PingJitterComparisonChart = (props: {
-  data: VpnComparisonMap<PingComparisonData>;
+  data: VpnComparisonResultMap<PingComparisonData>;
   height?: number;
+  allVpnNames?: string[];
 }) => {
-  const chartData = () => metricToBarData(props.data, (d) => d.rtt_mdev_ms);
+  const chartData = () =>
+    metricToBarData(props.data, (d) => d.rtt_mdev_ms, props.allVpnNames);
   return (
     <ComparisonBarChart
       data={chartData()}
@@ -267,11 +425,16 @@ export const PingJitterComparisonChart = (props: {
 };
 
 export const PingPacketLossComparisonChart = (props: {
-  data: VpnComparisonMap<PingComparisonData>;
+  data: VpnComparisonResultMap<PingComparisonData>;
   height?: number;
+  allVpnNames?: string[];
 }) => {
   const chartData = () =>
-    metricToBarData(props.data, (d) => d.packet_loss_percent);
+    metricToBarData(
+      props.data,
+      (d) => d.packet_loss_percent,
+      props.allVpnNames,
+    );
   return (
     <ComparisonBarChart
       data={chartData()}
@@ -286,11 +449,16 @@ export const PingPacketLossComparisonChart = (props: {
 // --- QUIC/Qperf Comparison Charts ---
 
 export const QperfBandwidthComparisonChart = (props: {
-  data: VpnComparisonMap<QperfComparisonData>;
+  data: VpnComparisonResultMap<QperfComparisonData>;
   height?: number;
+  allVpnNames?: string[];
 }) => {
   const chartData = () =>
-    metricToBarData(props.data, (d) => d.total_bandwidth_mbps);
+    metricToBarData(
+      props.data,
+      (d) => d.total_bandwidth_mbps,
+      props.allVpnNames,
+    );
   return (
     <ComparisonBarChart
       data={chartData()}
@@ -303,10 +471,12 @@ export const QperfBandwidthComparisonChart = (props: {
 };
 
 export const QperfTtfbComparisonChart = (props: {
-  data: VpnComparisonMap<QperfComparisonData>;
+  data: VpnComparisonResultMap<QperfComparisonData>;
   height?: number;
+  allVpnNames?: string[];
 }) => {
-  const chartData = () => metricToBarData(props.data, (d) => d.ttfb_ms);
+  const chartData = () =>
+    metricToBarData(props.data, (d) => d.ttfb_ms, props.allVpnNames);
   return (
     <ComparisonBarChart
       data={chartData()}
@@ -319,11 +489,12 @@ export const QperfTtfbComparisonChart = (props: {
 };
 
 export const QperfCpuComparisonChart = (props: {
-  data: VpnComparisonMap<QperfComparisonData>;
+  data: VpnComparisonResultMap<QperfComparisonData>;
   height?: number;
+  allVpnNames?: string[];
 }) => {
   const chartData = () =>
-    metricToBarData(props.data, (d) => d.cpu_usage_percent);
+    metricToBarData(props.data, (d) => d.cpu_usage_percent, props.allVpnNames);
   return (
     <ComparisonBarChart
       data={chartData()}
@@ -338,10 +509,12 @@ export const QperfCpuComparisonChart = (props: {
 // --- Video Streaming Comparison Charts ---
 
 export const VideoStreamingBitrateComparisonChart = (props: {
-  data: VpnComparisonMap<VideoStreamingComparisonData>;
+  data: VpnComparisonResultMap<VideoStreamingComparisonData>;
   height?: number;
+  allVpnNames?: string[];
 }) => {
-  const chartData = () => metricToBarData(props.data, (d) => d.bitrate_kbps);
+  const chartData = () =>
+    metricToBarData(props.data, (d) => d.bitrate_kbps, props.allVpnNames);
   return (
     <ComparisonBarChart
       data={chartData()}
@@ -354,10 +527,12 @@ export const VideoStreamingBitrateComparisonChart = (props: {
 };
 
 export const VideoStreamingFpsComparisonChart = (props: {
-  data: VpnComparisonMap<VideoStreamingComparisonData>;
+  data: VpnComparisonResultMap<VideoStreamingComparisonData>;
   height?: number;
+  allVpnNames?: string[];
 }) => {
-  const chartData = () => metricToBarData(props.data, (d) => d.fps);
+  const chartData = () =>
+    metricToBarData(props.data, (d) => d.fps, props.allVpnNames);
   return (
     <ComparisonBarChart
       data={chartData()}
@@ -370,10 +545,12 @@ export const VideoStreamingFpsComparisonChart = (props: {
 };
 
 export const VideoStreamingDroppedFramesComparisonChart = (props: {
-  data: VpnComparisonMap<VideoStreamingComparisonData>;
+  data: VpnComparisonResultMap<VideoStreamingComparisonData>;
   height?: number;
+  allVpnNames?: string[];
 }) => {
-  const chartData = () => metricToBarData(props.data, (d) => d.dropped_frames);
+  const chartData = () =>
+    metricToBarData(props.data, (d) => d.dropped_frames, props.allVpnNames);
   return (
     <ComparisonBarChart
       data={chartData()}
@@ -388,7 +565,8 @@ export const VideoStreamingDroppedFramesComparisonChart = (props: {
 // --- Combined Dashboard Sections ---
 
 export const TcpComparisonSection = (props: {
-  data: VpnComparisonMap<TcpIperfComparisonData>;
+  data: VpnComparisonResultMap<TcpIperfComparisonData>;
+  allVpnNames?: string[];
 }) => {
   return (
     <div
@@ -398,15 +576,25 @@ export const TcpComparisonSection = (props: {
         gap: "20px",
       }}
     >
-      <TcpThroughputComparisonChart data={props.data} />
-      <TcpReceiverThroughputComparisonChart data={props.data} />
-      <TcpRetransmitsComparisonChart data={props.data} />
+      <TcpThroughputComparisonChart
+        data={props.data}
+        allVpnNames={props.allVpnNames}
+      />
+      <TcpReceiverThroughputComparisonChart
+        data={props.data}
+        allVpnNames={props.allVpnNames}
+      />
+      <TcpRetransmitsComparisonChart
+        data={props.data}
+        allVpnNames={props.allVpnNames}
+      />
     </div>
   );
 };
 
 export const UdpComparisonSection = (props: {
-  data: VpnComparisonMap<UdpIperfComparisonData>;
+  data: VpnComparisonResultMap<UdpIperfComparisonData>;
+  allVpnNames?: string[];
 }) => {
   return (
     <div
@@ -416,15 +604,25 @@ export const UdpComparisonSection = (props: {
         gap: "20px",
       }}
     >
-      <UdpThroughputComparisonChart data={props.data} />
-      <UdpJitterComparisonChart data={props.data} />
-      <UdpPacketLossComparisonChart data={props.data} />
+      <UdpThroughputComparisonChart
+        data={props.data}
+        allVpnNames={props.allVpnNames}
+      />
+      <UdpJitterComparisonChart
+        data={props.data}
+        allVpnNames={props.allVpnNames}
+      />
+      <UdpPacketLossComparisonChart
+        data={props.data}
+        allVpnNames={props.allVpnNames}
+      />
     </div>
   );
 };
 
 export const PingComparisonSection = (props: {
-  data: VpnComparisonMap<PingComparisonData>;
+  data: VpnComparisonResultMap<PingComparisonData>;
+  allVpnNames?: string[];
 }) => {
   return (
     <div
@@ -434,15 +632,25 @@ export const PingComparisonSection = (props: {
         gap: "20px",
       }}
     >
-      <PingLatencyComparisonChart data={props.data} />
-      <PingJitterComparisonChart data={props.data} />
-      <PingPacketLossComparisonChart data={props.data} />
+      <PingLatencyComparisonChart
+        data={props.data}
+        allVpnNames={props.allVpnNames}
+      />
+      <PingJitterComparisonChart
+        data={props.data}
+        allVpnNames={props.allVpnNames}
+      />
+      <PingPacketLossComparisonChart
+        data={props.data}
+        allVpnNames={props.allVpnNames}
+      />
     </div>
   );
 };
 
 export const QperfComparisonSection = (props: {
-  data: VpnComparisonMap<QperfComparisonData>;
+  data: VpnComparisonResultMap<QperfComparisonData>;
+  allVpnNames?: string[];
 }) => {
   return (
     <div
@@ -452,15 +660,25 @@ export const QperfComparisonSection = (props: {
         gap: "20px",
       }}
     >
-      <QperfBandwidthComparisonChart data={props.data} />
-      <QperfTtfbComparisonChart data={props.data} />
-      <QperfCpuComparisonChart data={props.data} />
+      <QperfBandwidthComparisonChart
+        data={props.data}
+        allVpnNames={props.allVpnNames}
+      />
+      <QperfTtfbComparisonChart
+        data={props.data}
+        allVpnNames={props.allVpnNames}
+      />
+      <QperfCpuComparisonChart
+        data={props.data}
+        allVpnNames={props.allVpnNames}
+      />
     </div>
   );
 };
 
 export const VideoStreamingComparisonSection = (props: {
-  data: VpnComparisonMap<VideoStreamingComparisonData>;
+  data: VpnComparisonResultMap<VideoStreamingComparisonData>;
+  allVpnNames?: string[];
 }) => {
   return (
     <div
@@ -470,9 +688,18 @@ export const VideoStreamingComparisonSection = (props: {
         gap: "20px",
       }}
     >
-      <VideoStreamingBitrateComparisonChart data={props.data} />
-      <VideoStreamingFpsComparisonChart data={props.data} />
-      <VideoStreamingDroppedFramesComparisonChart data={props.data} />
+      <VideoStreamingBitrateComparisonChart
+        data={props.data}
+        allVpnNames={props.allVpnNames}
+      />
+      <VideoStreamingFpsComparisonChart
+        data={props.data}
+        allVpnNames={props.allVpnNames}
+      />
+      <VideoStreamingDroppedFramesComparisonChart
+        data={props.data}
+        allVpnNames={props.allVpnNames}
+      />
     </div>
   );
 };

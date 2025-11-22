@@ -4,6 +4,7 @@ import { Component, Show } from "solid-js";
 // Assuming Echart component is correctly imported and works with echarts options
 import { Echart } from "../Echarts";
 import * as echarts from "echarts";
+import { MixedReport, getErrorMessage, Err, Ok } from "@/src/benchData";
 
 interface QperfPercentiles {
   p25: number;
@@ -100,6 +101,43 @@ const processDataForQperfBarChart = (
     fullStatsList.push(stats); // Keep stats for later use (tooltip)
   });
   return { categories, barData, fullStatsList };
+};
+
+// Process mixed reports for Bar Chart (handles both success and error states)
+interface MixedBarDataItem {
+  value: number;
+  isError: boolean;
+  errorMessage?: string;
+  stats?: QperfMetricStats;
+}
+
+const processDataForMixedBarChart = (
+  mixedReports: MixedReport<QperfData>[],
+  metric: MetricKey,
+): { categories: string[]; barDataItems: MixedBarDataItem[] } => {
+  const categories: string[] = [];
+  const barDataItems: MixedBarDataItem[] = [];
+
+  mixedReports.forEach((report) => {
+    categories.push(report.name);
+    if (report.result.ok) {
+      const data = (report.result as Ok<QperfData>).value;
+      const stats = getMetricStats(data, metric);
+      barDataItems.push({
+        value: stats.average,
+        isError: false,
+        stats: stats,
+      });
+    } else {
+      const error = (report.result as Err).error;
+      barDataItems.push({
+        value: 0, // No value for crashed machines
+        isError: true,
+        errorMessage: getErrorMessage(error),
+      });
+    }
+  });
+  return { categories, barDataItems };
 };
 
 // --- Color Palette and Styling (Unchanged) ---
@@ -437,6 +475,220 @@ const createQperfBarChartOption = (
   };
 };
 
+// Create ECharts option for Mixed Bar Chart (shows both success and crashed machines)
+const createMixedBarChartOption = (
+  mixedReports: MixedReport<QperfData>[],
+  metric: MetricKey,
+  title: string,
+): echarts.EChartsOption | null => {
+  if (!mixedReports || mixedReports.length === 0) return null;
+
+  const { categories, barDataItems } = processDataForMixedBarChart(
+    mixedReports,
+    metric,
+  );
+  if (categories.length === 0) return null;
+
+  // Check if all are errors (show placeholder bar height)
+  const hasAnySuccess = barDataItems.some((item) => !item.isError);
+  const maxValue = hasAnySuccess
+    ? Math.max(...barDataItems.filter((i) => !i.isError).map((i) => i.value))
+    : 100;
+  const crashedBarHeight = maxValue * 0.5; // Show crashed bars at 50% height of max
+
+  // Define label and tooltip formatting
+  let yAxisName = "";
+  let unitSymbol = "";
+  let chartTitle = title;
+  switch (metric) {
+    case "total_bandwidth_mbps":
+      yAxisName = "Megabits per second (Mbps)";
+      unitSymbol = " Mbps";
+      chartTitle = "Average Total Bandwidth";
+      break;
+    case "cpu_usage_percent":
+      yAxisName = "Percentage (%)";
+      unitSymbol = "%";
+      chartTitle = "Average CPU Usage";
+      break;
+    default:
+      yAxisName = "";
+      unitSymbol = "";
+  }
+
+  // Custom tooltip formatter for mixed data
+  const tooltipFormatter = (params: any) => {
+    if (params.componentType !== "series" || params.seriesType !== "bar")
+      return "";
+    const dataIndex = params.dataIndex;
+    const categoryName = categories[dataIndex];
+    const item = barDataItems[dataIndex];
+
+    if (item.isError) {
+      // Show error tooltip for crashed machines
+      return `<div style="padding: 8px; border-radius: 5px; max-width: 400px;">
+                <div style="font-weight: bold; border-bottom: 1px solid #eee; padding-bottom: 5px; margin-bottom: 5px; color: #d32f2f;">
+                  ⚠️ ${categoryName} - CRASHED
+                </div>
+                <div style="font-size: 12px; color: #666; white-space: pre-wrap; word-break: break-word;">
+                  ${item.errorMessage || "Unknown error"}
+                </div>
+              </div>`;
+    }
+
+    const machineColor = getMachineColor(dataIndex);
+    const colorBox = `<span style="display:inline-block;margin-right:5px;border-radius:10px;width:10px;height:10px;background-color:${machineColor}"></span>`;
+    const stats = item.stats;
+    if (!stats) return "Data error";
+
+    return `<div style="padding: 5px; border-radius: 5px; box-shadow: 0 0 10px rgba(0,0,0,0.1)">
+              <div style="font-weight: bold; border-bottom: 1px solid #eee; padding-bottom: 5px; margin-bottom: 5px">${categoryName}</div>
+              <div>${colorBox} Average: <strong>${stats.average.toFixed(2)}${unitSymbol}</strong></div>
+              <div>${colorBox} Min: <small>${stats.min.toFixed(2)}${unitSymbol}</small></div>
+              <div>${colorBox} Max: <small>${stats.max.toFixed(2)}${unitSymbol}</small></div>
+              <div><small>(P25: ${stats.percentiles.p25.toFixed(2)}, P50: ${stats.percentiles.p50.toFixed(2)}, P75: ${stats.percentiles.p75.toFixed(2)})</small></div>
+            </div>`;
+  };
+
+  return {
+    title: {
+      text: chartTitle,
+      left: "center",
+      textStyle: { fontWeight: "normal", fontSize: 16 },
+      padding: [10, 0, 10, 0],
+    },
+    tooltip: {
+      trigger: "item",
+      formatter: tooltipFormatter,
+      backgroundColor: "rgba(255, 255, 255, 0.95)",
+      borderColor: "#ccc",
+      borderWidth: 1,
+      textStyle: { color: "#333" },
+      extraCssText: "box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);",
+      confine: true,
+    },
+    animation: true,
+    toolbox: {
+      feature: {
+        saveAsImage: { title: "Save Image" },
+        dataView: { show: true, readOnly: false, title: "View Data" },
+      },
+      orient: "vertical",
+      right: 10,
+      top: "center",
+    },
+    grid: {
+      left: "10%",
+      right: "12%",
+      bottom: "10%",
+      top: "15%",
+      containLabel: true,
+    },
+    xAxis: {
+      type: "category",
+      data: categories,
+      axisLabel: {
+        interval: 0,
+        rotate: mixedReports.length > 6 ? 30 : 0,
+        fontSize: 11,
+      },
+      axisTick: { alignWithLabel: true },
+    },
+    yAxis: {
+      type: "value",
+      name: yAxisName,
+      nameLocation: "middle",
+      nameGap: 40,
+      nameTextStyle: { fontWeight: "bold", fontSize: 13 },
+      min: 0,
+      max: metric === "cpu_usage_percent" ? 100 : undefined,
+      axisLabel: {
+        formatter: (value: number) =>
+          value.toFixed(metric === "cpu_usage_percent" ? 1 : 2),
+        fontSize: 11,
+      },
+      splitLine: { lineStyle: { type: "dashed", color: "#eee" } },
+    },
+    series: [
+      {
+        name: chartTitle,
+        type: "bar",
+        data: barDataItems.map((item, index) => {
+          if (item.isError) {
+            // Crashed machine - show gray bar with diagonal pattern
+            return {
+              value: crashedBarHeight,
+              itemStyle: {
+                color: {
+                  type: "pattern",
+                  image: (() => {
+                    // Create a canvas pattern for diagonal stripes
+                    const canvas = document.createElement("canvas");
+                    canvas.width = 10;
+                    canvas.height = 10;
+                    const ctx = canvas.getContext("2d");
+                    if (ctx) {
+                      ctx.fillStyle = "#e0e0e0";
+                      ctx.fillRect(0, 0, 10, 10);
+                      ctx.strokeStyle = "#999";
+                      ctx.lineWidth = 2;
+                      ctx.beginPath();
+                      ctx.moveTo(0, 10);
+                      ctx.lineTo(10, 0);
+                      ctx.stroke();
+                    }
+                    return canvas;
+                  })(),
+                  repeat: "repeat",
+                },
+                borderColor: "#d32f2f",
+                borderWidth: 2,
+                borderRadius: [3, 3, 0, 0],
+              },
+              emphasis: {
+                itemStyle: {
+                  borderWidth: 3,
+                  borderColor: "#b71c1c",
+                },
+              },
+              label: {
+                show: true,
+                position: "top",
+                formatter: "⚠️",
+                fontSize: 14,
+              },
+            };
+          }
+          // Successful machine - normal colored bar
+          return {
+            value: item.value,
+            itemStyle: {
+              color: getMachineColor(index),
+              borderRadius: [3, 3, 0, 0],
+            },
+            emphasis: {
+              itemStyle: {
+                color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+                  { offset: 0, color: getMachineColor(index) + "E0" },
+                  { offset: 1, color: getMachineColor(index) + "B0" },
+                ]),
+              },
+            },
+            label: {
+              show: true,
+              position: "top",
+              formatter: (params: any) => parseFloat(params.value).toFixed(1),
+              color: "#555",
+              fontSize: 10,
+            },
+          };
+        }),
+        barWidth: "40%",
+      },
+    ],
+  };
+};
+
 // --- SolidJS Components (Wrapper Components Unchanged) ---
 
 export interface QperfBoxplotChartProps {
@@ -506,10 +758,13 @@ export const QperfBarChart: Component<QperfBarChartProps> = (props) => {
   );
 };
 
-// --- Main Dashboard Component (Structure Unchanged, uses updated charts) ---
+// --- Main Dashboard Component (Updated to use mixed reports) ---
 
 export interface QperfChartsDashboardProps {
-  reports: QperfReport[];
+  // New prop for mixed reports (can include both success and error)
+  mixedReports?: MixedReport<QperfData>[];
+  // Legacy prop for backward compatibility
+  reports?: QperfReport[];
   height?: {
     // Optional height overrides
     totalBandwidth?: number;
@@ -519,19 +774,58 @@ export interface QperfChartsDashboardProps {
   };
 }
 
+// Component for mixed bar chart that handles both success and crash states
+export interface QperfMixedBarChartProps {
+  mixedReports: MixedReport<QperfData>[];
+  metric: MetricKey;
+  title: string;
+  height?: number;
+}
+
+export const QperfMixedBarChart: Component<QperfMixedBarChartProps> = (
+  props,
+) => {
+  const option = () =>
+    createMixedBarChartOption(props.mixedReports, props.metric, props.title);
+  return (
+    <Show
+      when={option()}
+      fallback={
+        <div
+          style={{
+            height: `${props.height || 500}px`,
+            display: "flex",
+            "align-items": "center",
+            "justify-content": "center",
+            color: "#888",
+          }}
+        >
+          Data unavailable for {props.title}.
+        </div>
+      }
+    >
+      {(opt) => <Echart option={opt()} height={props.height || 500} />}
+    </Show>
+  );
+};
+
 export const QperfChartsDashboard: Component<QperfChartsDashboardProps> = (
   props,
 ) => {
   // Set default heights safely
   const effectiveHeights = {
     totalBandwidth: props.height?.totalBandwidth ?? 500,
-    cpuUsage: props.height?.cpuUsage ?? 400, // Adjusted default
-    ttfb: props.height?.ttfb ?? 400, // Adjusted default
-    connTime: props.height?.connTime ?? 450, // Adjusted default
+    cpuUsage: props.height?.cpuUsage ?? 400,
+    ttfb: props.height?.ttfb ?? 400,
+    connTime: props.height?.connTime ?? 450,
   };
 
+  // Handle both new mixedReports and legacy reports props
+  const hasMixedReports = props.mixedReports && props.mixedReports.length > 0;
+  const hasLegacyReports = props.reports && props.reports.length > 0;
+
   // Basic check for reports
-  if (!props.reports || props.reports.length === 0) {
+  if (!hasMixedReports && !hasLegacyReports) {
     return (
       <div style={{ padding: "20px", color: "red", "text-align": "center" }}>
         No qperf report data provided.
@@ -539,17 +833,42 @@ export const QperfChartsDashboard: Component<QperfChartsDashboardProps> = (
     );
   }
 
+  // Convert legacy reports to mixed format if needed
+  const getMixedReports = (): MixedReport<QperfData>[] => {
+    if (hasMixedReports && props.mixedReports) {
+      return props.mixedReports;
+    }
+    // Convert legacy reports
+    if (props.reports) {
+      return props.reports.map((r) => ({
+        name: r.name,
+        result: { ok: true, value: r.data } as Ok<QperfData>,
+      }));
+    }
+    return [];
+  };
+
+  // Get successful reports for boxplot charts (they don't support crash visualization yet)
+  const getSuccessfulReports = (): QperfReport[] => {
+    return getMixedReports()
+      .filter((r) => r.result.ok)
+      .map((r) => ({
+        name: r.name,
+        data: (r.result as Ok<QperfData>).value,
+      }));
+  };
+
   return (
     <div
       style={{
         display: "flex",
         "flex-direction": "column",
-        gap: "20px", // Reduced gap slightly
-        padding: "15px", // Reduced padding
-        "background-color": "#f7f7f7", // Slightly lighter background
+        gap: "20px",
+        padding: "15px",
+        "background-color": "#f7f7f7",
       }}
     >
-      {/* Average Total Bandwidth (Bar Chart) */}
+      {/* Average Total Bandwidth (Mixed Bar Chart with crash support) */}
       <div
         style={{
           "background-color": "#fff",
@@ -558,19 +877,17 @@ export const QperfChartsDashboard: Component<QperfChartsDashboardProps> = (
           "box-shadow": "0 1px 3px rgba(0,0,0,0.05)",
         }}
       >
-        <QperfBarChart
-          reports={props.reports}
+        <QperfMixedBarChart
+          mixedReports={getMixedReports()}
           metric="total_bandwidth_mbps"
-          title="Total Bandwidth" // Base title, creator adds "Average"
+          title="Total Bandwidth"
           height={effectiveHeights.totalBandwidth}
         />
       </div>
 
-      {/* Row for CPU (Bar) and TTFB (Boxplot) */}
+      {/* Row for CPU (Mixed Bar) and TTFB (Boxplot) */}
       <div style={{ display: "flex", gap: "20px", "flex-wrap": "wrap" }}>
-        {" "}
-        {/* Allow wrapping */}
-        {/* Average CPU Usage (Bar Chart) */}
+        {/* Average CPU Usage (Mixed Bar Chart with crash support) */}
         <div
           style={{
             flex: "1 1 45%",
@@ -581,14 +898,14 @@ export const QperfChartsDashboard: Component<QperfChartsDashboardProps> = (
             "box-shadow": "0 1px 3px rgba(0,0,0,0.05)",
           }}
         >
-          <QperfBarChart
-            reports={props.reports}
+          <QperfMixedBarChart
+            mixedReports={getMixedReports()}
             metric="cpu_usage_percent"
-            title="CPU Usage" // Base title
+            title="CPU Usage"
             height={effectiveHeights.cpuUsage}
           />
         </div>
-        {/* TTFB (Boxplot Chart) */}
+        {/* TTFB (Boxplot Chart - uses successful reports only) */}
         <div
           style={{
             flex: "1 1 45%",
@@ -600,15 +917,15 @@ export const QperfChartsDashboard: Component<QperfChartsDashboardProps> = (
           }}
         >
           <QperfBoxplotChart
-            reports={props.reports}
+            reports={getSuccessfulReports()}
             metric="ttfb_ms"
-            title="Time to First Byte (TTFB)" // More descriptive title
+            title="Time to First Byte (TTFB)"
             height={effectiveHeights.ttfb}
           />
         </div>
       </div>
 
-      {/* Connection Time (Boxplot Chart) */}
+      {/* Connection Time (Boxplot Chart - uses successful reports only) */}
       <div
         style={{
           "background-color": "#fff",
@@ -618,9 +935,9 @@ export const QperfChartsDashboard: Component<QperfChartsDashboardProps> = (
         }}
       >
         <QperfBoxplotChart
-          reports={props.reports}
+          reports={getSuccessfulReports()}
           metric="conn_time_ms"
-          title="Connection Establishment Time" // More descriptive title
+          title="Connection Establishment Time"
           height={effectiveHeights.connTime}
         />
       </div>

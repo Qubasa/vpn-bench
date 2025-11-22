@@ -109,6 +109,15 @@ def aggregate_metric_stats(stats_list: list[MetricStatsDict]) -> MetricStatsDict
     }
 
 
+class LoadResult(TypedDict, total=False):
+    """Result of loading a JSON file - can be success or error."""
+
+    status: str
+    data: dict[str, Any]
+    error_type: str
+    error: dict[str, Any]
+
+
 def load_json_data(file_path: Path) -> dict[str, Any] | None:
     """Load JSON data from a file, returning None if it doesn't exist or fails."""
     if not file_path.exists():
@@ -124,6 +133,44 @@ def load_json_data(file_path: Path) -> dict[str, Any] | None:
     except (json.JSONDecodeError, OSError) as e:
         log.warning(f"Failed to load {file_path}: {e}")
         return None
+
+
+def load_json_with_errors(file_path: Path) -> LoadResult | None:
+    """Load JSON data including error information, returning None if file doesn't exist."""
+    if not file_path.exists():
+        return None
+
+    try:
+        with file_path.open("r") as f:
+            data = json.load(f)
+            return data
+    except (json.JSONDecodeError, OSError) as e:
+        log.warning(f"Failed to load {file_path}: {e}")
+        return None
+
+
+def get_vpn_error_for_test(
+    bench_dir: Path, vpn_name: str, run_alias: str, test_file: str
+) -> dict[str, Any] | None:
+    """Get the first error found for a VPN's test across its machines."""
+    vpn_dir = bench_dir / vpn_name / run_alias
+    if not vpn_dir.exists():
+        return None
+
+    for machine_dir in sorted(vpn_dir.iterdir()):
+        if not machine_dir.is_dir():
+            continue
+
+        test_path = machine_dir / test_file
+        result = load_json_with_errors(test_path)
+        if result and result.get("status") == "error":
+            return {
+                "error_type": result.get("error_type", "Unknown"),
+                "error": result.get("error", {}),
+                "machine": machine_dir.name,
+            }
+
+    return None
 
 
 # --- Aggregation Functions ---
@@ -437,63 +484,150 @@ def generate_comparison_data(bench_dir: Path) -> None:
         run_comparison_dir = comparison_dir / run_alias
         run_comparison_dir.mkdir(parents=True, exist_ok=True)
 
-        # Aggregate ping data
-        ping_comparison: dict[str, PingComparisonDict] = {}
+        # Aggregate ping data (including errors)
+        ping_comparison: dict[str, Any] = {}
         for vpn_dir in vpn_dirs:
             ping_data = aggregate_ping_data(bench_dir, vpn_dir.name, run_alias)
             if ping_data:
-                ping_comparison[vpn_dir.name] = ping_data
+                ping_comparison[vpn_dir.name] = {"status": "success", "data": ping_data}
+            else:
+                # Check if there are any error files
+                error_info = get_vpn_error_for_test(
+                    bench_dir, vpn_dir.name, run_alias, "ping.json"
+                )
+                if error_info:
+                    ping_comparison[vpn_dir.name] = {
+                        "status": "error",
+                        "error_type": error_info["error_type"],
+                        "error": error_info["error"],
+                        "machine": error_info["machine"],
+                    }
 
         if ping_comparison:
             save_bench_report(run_comparison_dir, ping_comparison, "ping.json")
-            log.info(f"  Saved ping comparison ({len(ping_comparison)} VPNs)")
+            success_count = sum(
+                1 for v in ping_comparison.values() if v.get("status") == "success"
+            )
+            error_count = len(ping_comparison) - success_count
+            log.info(
+                f"  Saved ping comparison ({success_count} success, {error_count} errors)"
+            )
 
-        # Aggregate qperf data
-        qperf_comparison: dict[str, QperfComparisonDict] = {}
+        # Aggregate qperf data (including errors)
+        qperf_comparison: dict[str, Any] = {}
         for vpn_dir in vpn_dirs:
             qperf_data = aggregate_qperf_data(bench_dir, vpn_dir.name, run_alias)
             if qperf_data:
-                qperf_comparison[vpn_dir.name] = qperf_data
+                qperf_comparison[vpn_dir.name] = {
+                    "status": "success",
+                    "data": qperf_data,
+                }
+            else:
+                error_info = get_vpn_error_for_test(
+                    bench_dir, vpn_dir.name, run_alias, "qperf.json"
+                )
+                if error_info:
+                    qperf_comparison[vpn_dir.name] = {
+                        "status": "error",
+                        "error_type": error_info["error_type"],
+                        "error": error_info["error"],
+                        "machine": error_info["machine"],
+                    }
 
         if qperf_comparison:
             save_bench_report(run_comparison_dir, qperf_comparison, "qperf.json")
-            log.info(f"  Saved qperf comparison ({len(qperf_comparison)} VPNs)")
+            success_count = sum(
+                1 for v in qperf_comparison.values() if v.get("status") == "success"
+            )
+            error_count = len(qperf_comparison) - success_count
+            log.info(
+                f"  Saved qperf comparison ({success_count} success, {error_count} errors)"
+            )
 
-        # Aggregate RIST data
-        rist_comparison: dict[str, RistComparisonDict] = {}
+        # Aggregate RIST data (including errors)
+        rist_comparison: dict[str, Any] = {}
         for vpn_dir in vpn_dirs:
             rist_data = aggregate_rist_data(bench_dir, vpn_dir.name, run_alias)
             if rist_data:
-                rist_comparison[vpn_dir.name] = rist_data
+                rist_comparison[vpn_dir.name] = {"status": "success", "data": rist_data}
+            else:
+                error_info = get_vpn_error_for_test(
+                    bench_dir, vpn_dir.name, run_alias, "rist_stream.json"
+                )
+                if error_info:
+                    rist_comparison[vpn_dir.name] = {
+                        "status": "error",
+                        "error_type": error_info["error_type"],
+                        "error": error_info["error"],
+                        "machine": error_info["machine"],
+                    }
 
         if rist_comparison:
             save_bench_report(
                 run_comparison_dir, rist_comparison, "video_streaming.json"
             )
+            success_count = sum(
+                1 for v in rist_comparison.values() if v.get("status") == "success"
+            )
+            error_count = len(rist_comparison) - success_count
             log.info(
-                f"  Saved video streaming comparison ({len(rist_comparison)} VPNs)"
+                f"  Saved video streaming comparison ({success_count} success, {error_count} errors)"
             )
 
-        # Aggregate TCP iperf3 data
-        tcp_comparison: dict[str, TcpIperfComparisonDict] = {}
+        # Aggregate TCP iperf3 data (including errors)
+        tcp_comparison: dict[str, Any] = {}
         for vpn_dir in vpn_dirs:
             tcp_data = aggregate_tcp_iperf_data(bench_dir, vpn_dir.name, run_alias)
             if tcp_data:
-                tcp_comparison[vpn_dir.name] = tcp_data
+                tcp_comparison[vpn_dir.name] = {"status": "success", "data": tcp_data}
+            else:
+                error_info = get_vpn_error_for_test(
+                    bench_dir, vpn_dir.name, run_alias, "tcp_iperf3.json"
+                )
+                if error_info:
+                    tcp_comparison[vpn_dir.name] = {
+                        "status": "error",
+                        "error_type": error_info["error_type"],
+                        "error": error_info["error"],
+                        "machine": error_info["machine"],
+                    }
 
         if tcp_comparison:
             save_bench_report(run_comparison_dir, tcp_comparison, "tcp_iperf3.json")
-            log.info(f"  Saved TCP iperf3 comparison ({len(tcp_comparison)} VPNs)")
+            success_count = sum(
+                1 for v in tcp_comparison.values() if v.get("status") == "success"
+            )
+            error_count = len(tcp_comparison) - success_count
+            log.info(
+                f"  Saved TCP iperf3 comparison ({success_count} success, {error_count} errors)"
+            )
 
-        # Aggregate UDP iperf3 data
-        udp_comparison: dict[str, UdpIperfComparisonDict] = {}
+        # Aggregate UDP iperf3 data (including errors)
+        udp_comparison: dict[str, Any] = {}
         for vpn_dir in vpn_dirs:
             udp_data = aggregate_udp_iperf_data(bench_dir, vpn_dir.name, run_alias)
             if udp_data:
-                udp_comparison[vpn_dir.name] = udp_data
+                udp_comparison[vpn_dir.name] = {"status": "success", "data": udp_data}
+            else:
+                error_info = get_vpn_error_for_test(
+                    bench_dir, vpn_dir.name, run_alias, "udp_iperf3.json"
+                )
+                if error_info:
+                    udp_comparison[vpn_dir.name] = {
+                        "status": "error",
+                        "error_type": error_info["error_type"],
+                        "error": error_info["error"],
+                        "machine": error_info["machine"],
+                    }
 
         if udp_comparison:
             save_bench_report(run_comparison_dir, udp_comparison, "udp_iperf3.json")
-            log.info(f"  Saved UDP iperf3 comparison ({len(udp_comparison)} VPNs)")
+            success_count = sum(
+                1 for v in udp_comparison.values() if v.get("status") == "success"
+            )
+            error_count = len(udp_comparison) - success_count
+            log.info(
+                f"  Saved UDP iperf3 comparison ({success_count} success, {error_count} errors)"
+            )
 
     log.info("Comparison data generation complete")
