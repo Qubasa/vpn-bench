@@ -22,6 +22,7 @@ class Provider(Enum):
     GCloud = "gcloud"
     Hetzner = "hetzner"
     Chameleon = "chameleon"
+    Hardware = "hardware"
 
     @staticmethod
     def from_str(label: str) -> "Provider":
@@ -223,6 +224,10 @@ class Config:
     clan_dir: Path
     bench_dir: Path
     ssh_keys: list[SSHKeyPair]
+
+    def get_hardware_metadata_path(self) -> Path:
+        """Get the path to the hardware machines metadata file."""
+        return self.data_dir / "hardware_machines.json"
 
 
 def _delete_dir(machine: Machine, state_dirs: list[str]) -> None:

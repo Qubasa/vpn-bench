@@ -210,6 +210,10 @@ def create_base_inventory(config: Config, tr_machines: list[TrMachine]) -> None:
                     },
                 )
 
+            case Provider.Hardware:
+                # Hardware provider doesn't need special IP module configuration
+                pass
+
             case _:
                 pass
 

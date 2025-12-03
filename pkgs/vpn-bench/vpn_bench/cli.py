@@ -47,6 +47,12 @@ def create_parser() -> argparse.ArgumentParser:
         type=Path,
     )
     create_parser.add_argument("--location", help="Server location")
+    create_parser.add_argument(
+        "--host",
+        action="append",
+        default=[],
+        help="Hardware host in format user@ip:port:name or user@ip:name (for hardware provider)",
+    )
 
     destroy_parser = subparsers.add_parser("destroy", help="Destroy resources")
     destroy_parser.add_argument(
@@ -187,9 +193,17 @@ def run_cli() -> None:
 
     if args.subcommand == "create":
         machines = args.m
-        if len(machines) == 0:
+        if len(machines) == 0 and provider != Provider.Hardware:
             machines = ["lom", "luna", "yuki"]
-        tr_create(config, provider, args.location, args.ssh_pubkey, machines=machines)
+        hardware_hosts = args.host if args.host else None
+        tr_create(
+            config,
+            provider,
+            args.location,
+            args.ssh_pubkey,
+            machines=machines,
+            hardware_hosts=hardware_hosts,
+        )
 
     elif args.subcommand == "destroy":
         tr_destroy(config, provider, args.force)
