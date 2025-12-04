@@ -34,8 +34,8 @@ def install_zerotier(config: Config, tr_machines: list[TrMachine]) -> None:
     inventory_store = InventoryStore(Flake(str(config.clan_dir)))
     inventory = inventory_store.read()
     conf: dict[str, Any] = {
+        "module": {"name": "zerotier", "input": "cvpn-bench"},
         "roles": {
-            "module": {"name": "zerotier", "input": "cvpn-bench"},
             "controller": {
                 "machines": {},
             },

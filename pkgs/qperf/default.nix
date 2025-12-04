@@ -17,6 +17,8 @@ pkgs.clangStdenv.mkDerivation {
     "dev"
   ];
 
+  CMAKE_POLICY_VERSION_MINIMUM="3.5";
+
   nativeBuildInputs = with pkgs; [
     gnumake
     cmake
@@ -24,7 +26,7 @@ pkgs.clangStdenv.mkDerivation {
     llvmPackages.bintools
     llvmPackages.lld
     pkg-config
-    openssl_3_5.dev
+    openssl.dev
     libev
     perl
   ];
