@@ -125,6 +125,7 @@ in
               # exits with 0 sometimes if it cannot connect
               # see https://github.com/EasyTier/EasyTier/issues/1167
               serviceConfig.Restart = lib.mkForce "always";
+              serviceConfig.Slice = "benchmark.slice";
             };
 
             # easytier

@@ -35,6 +35,8 @@ let
   isBootstrap = machineName: roles.bootstrap.machines ? ${machineName};
 in
 {
+  systemd.services."tinc.${interface}".serviceConfig.Slice = "benchmark.slice";
+
   environment.systemPackages = with pkgs; [ tinc_pre ];
   services.tinc.networks."${interface}" = {
     ed25519PrivateKeyFile =

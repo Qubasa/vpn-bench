@@ -13,6 +13,8 @@ let
   nebulaPkg = pkgs.callPackage ./package.nix { inherit nebula-src; };
 in
 {
+  systemd.services."nebula@${interface}".serviceConfig.Slice = "benchmark.slice";
+
   services.nebula.networks."${interface}" = {
     enable = true;
     package = nebulaPkg;

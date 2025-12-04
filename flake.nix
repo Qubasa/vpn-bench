@@ -75,6 +75,7 @@
               nebula-src = inputs.nebula;
             }
           );
+          "zerotier" = ./clanModules/zerotier;
           "rist-stream" = ./clanModules/rist-stream;
           "tinc" = ./clanModules/tinc;
           "wireguard" = ./clanModules/wireguard;
@@ -88,6 +89,7 @@
           "qperf-new" = ./clanModules/qperf-new;
           "my-static-hosts-new" = ./clanModules/my-static-hosts-new;
           "nix-cache-new" = ./clanModules/nix-cache-new;
+          "mycelium" = ./clanModules/mycelium;
         };
       };
     };

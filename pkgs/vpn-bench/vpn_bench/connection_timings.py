@@ -26,7 +26,7 @@ from vpn_bench.terraform import TrMachine
 log = logging.getLogger(__name__)
 
 # Maximum time to wait for a machine to come back online after reboot (in seconds)
-MAX_MACHINE_ONLINE_WAIT = 300  # 5 minutes
+MAX_MACHINE_ONLINE_WAIT = 420  # 7 minutes
 
 
 def install_connection_timings_conf(

@@ -37,6 +37,7 @@
               "172.16.0.0/12"
               "192.168.0.0/16"
             ];
+            systemd.services.hyprspace.serviceConfig.Slice = "benchmark.slice";
             services.hyprspace = {
               enable = true;
 

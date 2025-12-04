@@ -31,6 +31,8 @@ in
               wgName = if settings.name != null then settings.name else config.networking.hostName;
             in
             {
+              systemd.services."wireguard-${instanceName}".serviceConfig.Slice = "benchmark.slice";
+
               networking.firewall.allowedUDPPorts = [ settings.listenPort ];
 
               networking.wireguard.interfaces.${instanceName} = {
@@ -109,6 +111,8 @@ in
               wgName = if settings.name != null then settings.name else config.networking.hostName;
             in
             {
+              systemd.services."wireguard-${instanceName}".serviceConfig.Slice = "benchmark.slice";
+
               networking.firewall.allowedUDPPorts = [ settings.listenPort ];
 
               networking.wireguard.interfaces.${instanceName} = {

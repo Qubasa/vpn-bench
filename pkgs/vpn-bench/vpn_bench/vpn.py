@@ -35,6 +35,7 @@ def install_zerotier(config: Config, tr_machines: list[TrMachine]) -> None:
     inventory = inventory_store.read()
     conf: dict[str, Any] = {
         "roles": {
+            "module": {"name": "zerotier", "input": "cvpn-bench"},
             "controller": {
                 "machines": {},
             },
@@ -127,12 +128,13 @@ def install_mycelium(config: Config, tr_machines: list[TrMachine]) -> None:
     inventory_store = InventoryStore(Flake(str(config.clan_dir)))
     inventory = inventory_store.read()
     conf: dict[str, Any] = {
+        "module": {"name": "mycelium", "input": "cvpn-bench"},
         "roles": {
             "peer": {
                 "tags": {"all": {}},
                 "settings": {"openFirewall": True, "addHostedPublicNodes": True},
             },
-        }
+        },
     }
     set_value_by_path_tuple(inventory, ("instances", "mycelium"), conf)
     inventory_store.write(inventory, message="Add mycelium configuration")
@@ -445,16 +447,23 @@ def install_vpn(
     bmachines = get_vpn_ips(config, machines, vpn)
     save_machine_layout(config, vpn, bmachines)
 
-    # Install Nix cache
+    # Install Nix cache (first machine is the server, others are clients)
     install_nix_cache(config, tr_machines, bmachines)
 
     # Always install connection timings service (needed for wait_for_vpn_connectivity)
     if vpn != VPN.Internal or vpn == VPN.Wireguard:
         install_connection_timings_conf(config, tr_machines, vpn, bmachines)
 
+    machines = [bmachine.cmachine for bmachine in bmachines]
+
     # Invalidate cache for all machines
     for machine in machines:
         machine.flake.invalidate_cache()
+
+    for bmachine in bmachines:
+        bmachine.cmachine.flake.invalidate_cache()
+
+    run_generators(machines, generators=None, full_closure=False)
 
     # Update machine configuration with VPNs
     deploy_machines(machines, build_host=build_host, ssh_key=config.ssh_keys[0])

@@ -74,6 +74,7 @@ let
       after = [ "network.target" ];
 
       serviceConfig = {
+        Slice = "benchmark.slice";
         Restart = "on-failure";
         RestartSec = 2;
         User = "rist-stream";

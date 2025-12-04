@@ -3,7 +3,7 @@
   _class = "clan.service";
   manifest.name = "nix-cache-new";
 
-  roles.default = {
+  roles.server = {
     perInstance =
       { ... }:
       {
@@ -14,21 +14,34 @@
             ...
           }:
           {
-
             imports = [
               ../nginx
             ];
-            services.harmonia.enable = true;
+
+            clan.core.vars.generators."harmonia" = {
+              files.ca-priv = {
+                secret = true;
+                owner = "harmonia";
+              };
+              files.ca-pub = {
+                secret = false;
+              };
+              runtimeInputs = [
+                pkgs.coreutils
+                pkgs.nix
+              ];
+              script = ''
+                nix-store --generate-binary-cache-key "harmonia-${config.networking.hostName}" "$out"/ca-priv "$out"/ca-pub
+              '';
+            };
+
+            services.harmonia = {
+              enable = true;
+              signKeyPaths = [ config.clan.core.vars.generators."harmonia".files.ca-priv.path ];
+            };
 
             environment.systemPackages = with pkgs; [
               hyperfine
-            ];
-
-            assertions = [
-              # {
-              #   assertion = (config.clan.service ? my-static-hosts-new) == true;
-              #   message = "The nix-cache module requires the my-static-hosts module to be configured with the hostnames.";
-              # }
             ];
 
             services.nginx =
@@ -53,6 +66,27 @@
                   '';
                 };
               };
+          };
+      };
+  };
+
+  roles.client = {
+    perInstance =
+      { roles, ... }:
+      {
+        nixosModule =
+          { config, lib, ... }:
+          let
+            caPubPath =
+              name: "${config.clan.core.settings.directory}/vars/per-machine/${name}/harmonia/ca-pub/value";
+
+            nixCacheServers = lib.mapAttrs (name: _: {
+              trusted-public-key =
+                if builtins.pathExists (caPubPath name) then builtins.readFile (caPubPath name) else "";
+            }) (roles.server.machines or { });
+          in
+          {
+            nix.settings.trusted-public-keys = lib.mapAttrsToList (_: s: s.trusted-public-key) nixCacheServers;
           };
       };
   };

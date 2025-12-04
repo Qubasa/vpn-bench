@@ -10,6 +10,8 @@
         nixosModule =
           { config, ... }:
           {
+            systemd.services.iperf3.serviceConfig.Slice = "benchmark.slice";
+
             networking.firewall.allowedUDPPorts = [ config.services.iperf3.port ];
             services.iperf3 = {
               enable = true;

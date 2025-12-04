@@ -83,6 +83,7 @@ let
           ${lib.concatMapStrings (k: " --peer " + k) cfg.peers}
       '';
       serviceConfig = {
+        Slice = "benchmark.slice";
         Type = "forking";
         RestartSec = 5;
         Restart = "on-failure";

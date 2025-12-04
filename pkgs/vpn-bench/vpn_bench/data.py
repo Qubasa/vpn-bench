@@ -45,14 +45,14 @@ class TrMachine(TypedDict):
 class VPN(Enum):
     Internal = "internal"
     Zerotier = "zerotier"
-    Mycelium = "mycelium"
-    Hyprspace = "hyprspace"
-    Yggdrasil = "yggdrasil"
-    VpnCloud = "vpncloud"
-    Wireguard = "wireguard"
-    Easytier = "easytier"
-    Nebula = "nebula"
-    Tinc = "tinc"
+    Mycelium = "mycelium"  #
+    Hyprspace = "hyprspace"  #
+    Yggdrasil = "yggdrasil"  #
+    VpnCloud = "vpncloud"  #
+    Wireguard = "wireguard"  #
+    Easytier = "easytier"  #
+    Nebula = "nebula"  #
+    Tinc = "tinc"  #
 
     @staticmethod
     def from_str(label: str) -> "VPN":
@@ -162,7 +162,7 @@ class TCProfile(Enum):
                 return BenchmarkRun(
                     alias="low_impairment",
                     tc_settings=TCSettings(
-                        latency_ms=10,
+                        latency_ms=2,
                         jitter_ms=2,
                         packet_loss_percent=0.25,
                         reorder_percent=0.5,
@@ -173,7 +173,7 @@ class TCProfile(Enum):
                 return BenchmarkRun(
                     alias="medium_impairment",
                     tc_settings=TCSettings(
-                        latency_ms=25,
+                        latency_ms=4,
                         jitter_ms=7,
                         packet_loss_percent=1.0,
                         reorder_percent=2.5,
@@ -184,7 +184,7 @@ class TCProfile(Enum):
                 return BenchmarkRun(
                     alias="high_impairment",
                     tc_settings=TCSettings(
-                        latency_ms=50,
+                        latency_ms=6,
                         jitter_ms=15,
                         packet_loss_percent=2.5,
                         reorder_percent=5.0,
@@ -195,7 +195,7 @@ class TCProfile(Enum):
                 return BenchmarkRun(
                     alias="extreme_impairment",
                     tc_settings=TCSettings(
-                        latency_ms=100,
+                        latency_ms=8,
                         jitter_ms=25,
                         packet_loss_percent=5.0,
                         reorder_percent=12.5,

@@ -112,6 +112,8 @@
               lib.map (peer: "${peer.protocol}://${peer.ip}:${toString peer.port}") peerConfigs;
           in
           {
+            systemd.services.yggdrasil.serviceConfig.Slice = "benchmark.slice";
+
             clan.core.vars.generators.yggdrasil = {
               files.private-key = { };
               files.public-key = {
