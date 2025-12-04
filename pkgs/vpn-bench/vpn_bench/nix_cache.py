@@ -17,9 +17,7 @@ log = logging.getLogger(__name__)
 
 
 def install_nix_cache(
-    config: Config,
-    tr_machines: list[TrMachine],
-    bmachines: list[BenchMachine],
+    config: Config, tr_machines: list[TrMachine], bmachines: list[BenchMachine]
 ) -> None:
     ip_to_hostnames: dict[str, list[str]] = {}
     for index, machine in enumerate(tr_machines):
@@ -67,9 +65,12 @@ def install_nix_cache(
         conf = {
             "module": {"name": "nix-cache-new", "input": "cvpn-bench"},
             "roles": {
-                "default": {
+                "server": {
                     "tags": {"all": {}},
-                }
+                },
+                "client": {
+                    "tags": {"all": {}},
+                },
             },
         }
         data["instances"]["nix-cache-new-all"] = conf
@@ -97,11 +98,12 @@ def run_nix_cache_test(
     with cache_host.host_connection() as ssh:
         ssh.run(["systemctl", "restart", "harmonia.service"], RunOpts(log=Log.BOTH))
 
+    # Copy firefox to the cache SERVER (yuki) so harmonia can serve it
+    init_nix_cache_path(cache_host, cache_target.cmachine)
+
     host = fetch_machine.cmachine.target_host().override(host_key_check="none")
     firefox = fetch_machine.cmachine.select("pkgs.firefox.outPath")
     with host.host_connection() as ssh:
-        init_nix_cache_path(host, cache_target.cmachine)
-
         clear_cache_cmd = (
             "rm -R ~/.cache/nix/binary-cache-*.sqlite*; rm -rf /tmp/cache;"
         )
