@@ -164,7 +164,7 @@ def run_benchmarks(
                 result, attempts = execute_test_with_retry(func, *args, **kwargs)
             except Exception as err:
                 # Return the exception with attempt count of max retries + 1
-                return err, 3
+                return err, attempts + 1
             else:
                 return result, attempts
 

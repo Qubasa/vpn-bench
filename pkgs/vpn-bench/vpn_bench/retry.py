@@ -26,6 +26,7 @@ def retry_with_backoff[R](
     max_delay: float = 30.0,
     backoff_factor: float = 2.0,
     exceptions: tuple[type[Exception], ...] = (Exception,),
+    max_total_time: float | None = None,
 ) -> Callable[[Callable[P, R]], Callable[P, R]]:
     """
     Decorator that retries a function with exponential backoff.
@@ -36,6 +37,8 @@ def retry_with_backoff[R](
         max_delay: Maximum delay between retries in seconds
         backoff_factor: Multiplier for delay after each retry
         exceptions: Tuple of exception types to catch and retry
+        max_total_time: Maximum total time in seconds for all attempts combined.
+                        If exceeded, no more retries will be attempted.
 
     Returns:
         Decorated function with retry logic
@@ -46,12 +49,23 @@ def retry_with_backoff[R](
         def wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
             delay = initial_delay
             last_exception: Exception | None = None
+            start_time = time.monotonic()
 
             for attempt in range(max_retries + 1):
                 try:
                     return func(*args, **kwargs)
                 except exceptions as e:
                     last_exception = e
+                    elapsed = time.monotonic() - start_time
+
+                    # Check if we've exceeded total time budget
+                    if max_total_time is not None and elapsed >= max_total_time:
+                        log.error(
+                            f"{func.__name__} failed after {elapsed:.1f}s "
+                            f"(max_total_time={max_total_time}s exceeded): {e}"
+                        )
+                        break
+
                     if attempt < max_retries:
                         log.warning(
                             f"{func.__name__} failed (attempt {attempt + 1}/{max_retries + 1}): {e}. "
@@ -80,6 +94,7 @@ def retry_operation[R](
     backoff_factor: float = 2.0,
     exceptions: tuple[type[Exception], ...] = (Exception,),
     operation_name: str = "operation",
+    max_total_time: float | None = None,
 ) -> R:
     """
     Execute an operation with retry logic and exponential backoff.
@@ -92,6 +107,8 @@ def retry_operation[R](
         backoff_factor: Multiplier for delay after each retry
         exceptions: Tuple of exception types to catch and retry
         operation_name: Name for logging purposes
+        max_total_time: Maximum total time in seconds for all attempts combined.
+                        If exceeded, no more retries will be attempted.
 
     Returns:
         Result of the operation
@@ -101,12 +118,23 @@ def retry_operation[R](
     """
     delay = initial_delay
     last_exception: Exception | None = None
+    start_time = time.monotonic()
 
     for attempt in range(max_retries + 1):
         try:
             return operation()
         except exceptions as e:
             last_exception = e
+            elapsed = time.monotonic() - start_time
+
+            # Check if we've exceeded total time budget
+            if max_total_time is not None and elapsed >= max_total_time:
+                log.error(
+                    f"{operation_name} failed after {elapsed:.1f}s "
+                    f"(max_total_time={max_total_time}s exceeded): {e}"
+                )
+                break
+
             if attempt < max_retries:
                 log.warning(
                     f"{operation_name} failed (attempt {attempt + 1}/{max_retries + 1}): {e}. "
@@ -135,6 +163,7 @@ def retry_operation_with_info[R](
     backoff_factor: float = 2.0,
     exceptions: tuple[type[Exception], ...] = (Exception,),
     operation_name: str = "operation",
+    max_total_time: float | None = None,
 ) -> RetryResult[R]:
     """
     Execute an operation with retry logic and return metadata about attempts.
@@ -147,6 +176,8 @@ def retry_operation_with_info[R](
         backoff_factor: Multiplier for delay after each retry
         exceptions: Tuple of exception types to catch and retry
         operation_name: Name for logging purposes
+        max_total_time: Maximum total time in seconds for all attempts combined.
+                        If exceeded, no more retries will be attempted.
 
     Returns:
         RetryResult containing the result and number of attempts
@@ -156,6 +187,7 @@ def retry_operation_with_info[R](
     """
     delay = initial_delay
     last_exception: Exception | None = None
+    start_time = time.monotonic()
 
     for attempt in range(max_retries + 1):
         try:
@@ -163,6 +195,16 @@ def retry_operation_with_info[R](
             return RetryResult(result=result, attempts=attempt + 1)
         except exceptions as e:
             last_exception = e
+            elapsed = time.monotonic() - start_time
+
+            # Check if we've exceeded total time budget
+            if max_total_time is not None and elapsed >= max_total_time:
+                log.error(
+                    f"{operation_name} failed after {elapsed:.1f}s "
+                    f"(max_total_time={max_total_time}s exceeded): {e}"
+                )
+                break
+
             if attempt < max_retries:
                 log.warning(
                     f"{operation_name} failed (attempt {attempt + 1}/{max_retries + 1}): {e}. "
