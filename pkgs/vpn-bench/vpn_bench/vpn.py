@@ -42,7 +42,7 @@ def install_zerotier(config: Config, tr_machines: list[TrMachine]) -> None:
             "peer": {
                 "machines": {},
             },
-        }
+        },
     }
     for machine_num, tr_machine in enumerate(tr_machines):
         # Configure ZeroTier role

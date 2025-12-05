@@ -159,12 +159,12 @@ def run_benchmarks(
         def execute_test(
             func: Callable[P, Any], *args: P.args, **kwargs: P.kwargs
         ) -> tuple[dict[str, Any] | Exception, int]:
-            """Execute a test and return result plus attempt count (1 on success, 1 on error)."""
+            """Execute a test and return result plus attempt count (1 on success, max_retries+1 on error)."""
             try:
                 result, attempts = execute_test_with_retry(func, *args, **kwargs)
             except Exception as err:
-                # Return the exception with attempt count of max retries + 1
-                return err, attempts + 1
+                # Return the exception with attempt count of max retries + 1 (3 total attempts)
+                return err, 3
             else:
                 return result, attempts
 

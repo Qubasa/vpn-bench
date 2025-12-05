@@ -20,7 +20,7 @@
       inherit (clan.config) nixosConfigurations nixosModules clanInternals;
       clan = clan.config;
 
-      devShell =
+      devShells =
         inputs.nixpkgs.lib.genAttrs
           [
             "x86_64-linux"

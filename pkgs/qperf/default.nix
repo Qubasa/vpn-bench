@@ -17,7 +17,7 @@ pkgs.clangStdenv.mkDerivation {
     "dev"
   ];
 
-  CMAKE_POLICY_VERSION_MINIMUM="3.5";
+  CMAKE_POLICY_VERSION_MINIMUM = "3.5";
 
   nativeBuildInputs = with pkgs; [
     gnumake
