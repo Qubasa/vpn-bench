@@ -1,0 +1,36 @@
+{
+  "status": "error",
+  "error_type": "CmdOut",
+  "error": {
+    "stdout": "{\n\t\"start\":\t{\n\t\t\"connected\":\t[],\n\t\t\"version\":\t\"iperf 3.19.1\",\n\t\t\"system_info\":\t\"Linux lom 6.12.57 #1-NixOS SMP PREEMPT_DYNAMIC Sun Nov  2 13:15:23 UTC 2025 x86_64\",\n\t\t\"timestamp\":\t{\n\t\t\t\"time\":\t\"Fri, 05 Dec 2025 08:02:55 GMT\",\n\t\t\t\"timesecs\":\t1764921775\n\t\t},\n\t\t\"connecting_to\":\t{\n\t\t\t\"host\":\t\"vpn.luna\",\n\t\t\t\"port\":\t5201\n\t\t},\n\t\t\"cookie\":\t\"zl7wgcmuylh2zzp3lbora3gfbnbqkuuss4pw\",\n\t\t\"tcp_mss_default\":\t1368,\n\t\t\"target_bitrate\":\t0,\n\t\t\"fq_rate\":\t0\n\t},\n\t\"intervals\":\t[],\n\t\"end\":\t{\n\t},\n\t\"error\":\t\"test authorization failed\"\n}\n",
+    "stderr": "Warning: Permanently added '116.203.103.30' (ED25519) to the list of known hosts.\r\nerror:1C80006A:Provider routines::output buffer too small\n",
+    "cwd": "/home/lhebendanz/Projects/vpn-benchmark-suite/pkgs/vpn-bench",
+    "command_list": [
+      "ssh",
+      "root@116.203.103.30",
+      "-A",
+      "-o",
+      "StrictHostKeyChecking=no",
+      "-o",
+      "UserKnownHostsFile=/dev/null",
+      "-o",
+      "ControlMaster=auto",
+      "-o",
+      "ControlPersist=1m",
+      "-o",
+      "ControlPath=/tmp/clan-sshrd2erk6g/socket",
+      "--",
+      "bash",
+      "-c",
+      "'export IPERF3_PASSWORD=mambaBudo; exec \"$@\"'",
+      "--",
+      "nix --extra-experimental-features 'nix-command flakes' shell 'nixpkgs#iperf3' -c iperf3 --bidir --connect-timeout 600 --time 30 --json -Z -c vpn.luna --username mario --rsa-public-key-path /tmp/iperf3.public"
+    ],
+    "returncode": 1
+  },
+  "meta": {
+    "duration_seconds": 17.821849822998047,
+    "test_attempts": 3,
+    "vpn_restart_attempts": 0
+  }
+}

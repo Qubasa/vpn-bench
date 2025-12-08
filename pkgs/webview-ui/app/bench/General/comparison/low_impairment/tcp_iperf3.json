@@ -1,0 +1,296 @@
+{
+  "status": "success",
+  "data": {
+    "Mycelium": {
+      "status": "error",
+      "error_type": "CmdOut",
+      "error": {
+        "stdout": "{\n\t\"start\":\t{\n\t\t\"connected\":\t[],\n\t\t\"version\":\t\"iperf 3.19.1\",\n\t\t\"system_info\":\t\"Linux lom 6.12.57 #1-NixOS SMP PREEMPT_DYNAMIC Sun Nov  2 13:15:23 UTC 2025 x86_64\",\n\t\t\"timestamp\":\t{\n\t\t\t\"time\":\t\"Fri, 05 Dec 2025 00:51:47 GMT\",\n\t\t\t\"timesecs\":\t1764895907\n\t\t},\n\t\t\"connecting_to\":\t{\n\t\t\t\"host\":\t\"vpn.luna\",\n\t\t\t\"port\":\t5201\n\t\t},\n\t\t\"cookie\":\t\"pxvuhb3qwpitd5mopzz2w4jisfwfncdguumg\",\n\t\t\"tcp_mss_default\":\t1328,\n\t\t\"target_bitrate\":\t0,\n\t\t\"fq_rate\":\t0\n\t},\n\t\"intervals\":\t[],\n\t\"end\":\t{\n\t},\n\t\"error\":\t\"test authorization failed\"\n}\n",
+        "stderr": "Warning: Permanently added '116.203.103.30' (ED25519) to the list of known hosts.\r\nerror:1C80006A:Provider routines::output buffer too small\n",
+        "cwd": "/home/lhebendanz/Projects/vpn-benchmark-suite/pkgs/vpn-bench",
+        "command_list": [
+          "ssh",
+          "root@116.203.103.30",
+          "-A",
+          "-o",
+          "StrictHostKeyChecking=no",
+          "-o",
+          "UserKnownHostsFile=/dev/null",
+          "-o",
+          "ControlMaster=auto",
+          "-o",
+          "ControlPersist=1m",
+          "-o",
+          "ControlPath=/tmp/clan-sshnr6vflld/socket",
+          "--",
+          "bash",
+          "-c",
+          "'export IPERF3_PASSWORD=mambaBudo; exec \"$@\"'",
+          "--",
+          "nix --extra-experimental-features 'nix-command flakes' shell 'nixpkgs#iperf3' -c iperf3 --bidir --connect-timeout 600 --time 30 --json -Z -c vpn.luna --username mario --rsa-public-key-path /tmp/iperf3.public"
+        ],
+        "returncode": 1
+      },
+      "machine": "0_lom"
+    },
+    "Tinc": {
+      "status": "error",
+      "error_type": "CmdOut",
+      "error": {
+        "stdout": "{\n\t\"start\":\t{\n\t\t\"connected\":\t[],\n\t\t\"version\":\t\"iperf 3.19.1\",\n\t\t\"system_info\":\t\"Linux lom 6.12.57 #1-NixOS SMP PREEMPT_DYNAMIC Sun Nov  2 13:15:23 UTC 2025 x86_64\",\n\t\t\"timestamp\":\t{\n\t\t\t\"time\":\t\"Fri, 05 Dec 2025 09:10:54 GMT\",\n\t\t\t\"timesecs\":\t1764925854\n\t\t},\n\t\t\"connecting_to\":\t{\n\t\t\t\"host\":\t\"vpn.luna\",\n\t\t\t\"port\":\t5201\n\t\t},\n\t\t\"cookie\":\t\"xbpatqga5dtzxi6qcaffjlyc2jd54agrz464\",\n\t\t\"tcp_mss_default\":\t1353,\n\t\t\"target_bitrate\":\t0,\n\t\t\"fq_rate\":\t0\n\t},\n\t\"intervals\":\t[],\n\t\"end\":\t{\n\t},\n\t\"error\":\t\"test authorization failed\"\n}\n",
+        "stderr": "Warning: Permanently added '116.203.103.30' (ED25519) to the list of known hosts.\r\nerror:1C80006A:Provider routines::output buffer too small\n",
+        "cwd": "/home/lhebendanz/Projects/vpn-benchmark-suite/pkgs/vpn-bench",
+        "command_list": [
+          "ssh",
+          "root@116.203.103.30",
+          "-A",
+          "-o",
+          "StrictHostKeyChecking=no",
+          "-o",
+          "UserKnownHostsFile=/dev/null",
+          "-o",
+          "ControlMaster=auto",
+          "-o",
+          "ControlPersist=1m",
+          "-o",
+          "ControlPath=/tmp/clan-sshdwrzrxsm/socket",
+          "--",
+          "bash",
+          "-c",
+          "'export IPERF3_PASSWORD=mambaBudo; exec \"$@\"'",
+          "--",
+          "nix --extra-experimental-features 'nix-command flakes' shell 'nixpkgs#iperf3' -c iperf3 --bidir --connect-timeout 600 --time 30 --json -Z -c vpn.luna --username mario --rsa-public-key-path /tmp/iperf3.public"
+        ],
+        "returncode": 1
+      },
+      "machine": "0_lom"
+    },
+    "VpnCloud": {
+      "status": "error",
+      "error_type": "CmdOut",
+      "error": {
+        "stdout": "{\n\t\"start\":\t{\n\t\t\"connected\":\t[],\n\t\t\"version\":\t\"iperf 3.19.1\",\n\t\t\"system_info\":\t\"Linux lom 6.12.57 #1-NixOS SMP PREEMPT_DYNAMIC Sun Nov  2 13:15:23 UTC 2025 x86_64\",\n\t\t\"timestamp\":\t{\n\t\t\t\"time\":\t\"Fri, 05 Dec 2025 07:35:54 GMT\",\n\t\t\t\"timesecs\":\t1764920154\n\t\t},\n\t\t\"connecting_to\":\t{\n\t\t\t\"host\":\t\"vpn.luna\",\n\t\t\t\"port\":\t5201\n\t\t},\n\t\t\"cookie\":\t\"7ahr46f677ngdadunhzekpuhculyigeyamq2\",\n\t\t\"tcp_mss_default\":\t1375,\n\t\t\"target_bitrate\":\t0,\n\t\t\"fq_rate\":\t0\n\t},\n\t\"intervals\":\t[],\n\t\"end\":\t{\n\t},\n\t\"error\":\t\"test authorization failed\"\n}\n",
+        "stderr": "Warning: Permanently added '116.203.103.30' (ED25519) to the list of known hosts.\r\nerror:1C80006A:Provider routines::output buffer too small\n",
+        "cwd": "/home/lhebendanz/Projects/vpn-benchmark-suite/pkgs/vpn-bench",
+        "command_list": [
+          "ssh",
+          "root@116.203.103.30",
+          "-A",
+          "-o",
+          "StrictHostKeyChecking=no",
+          "-o",
+          "UserKnownHostsFile=/dev/null",
+          "-o",
+          "ControlMaster=auto",
+          "-o",
+          "ControlPersist=1m",
+          "-o",
+          "ControlPath=/tmp/clan-sshimp0bbqj/socket",
+          "--",
+          "bash",
+          "-c",
+          "'export IPERF3_PASSWORD=mambaBudo; exec \"$@\"'",
+          "--",
+          "nix --extra-experimental-features 'nix-command flakes' shell 'nixpkgs#iperf3' -c iperf3 --bidir --connect-timeout 600 --time 30 --json -Z -c vpn.luna --username mario --rsa-public-key-path /tmp/iperf3.public"
+        ],
+        "returncode": 1
+      },
+      "machine": "0_lom"
+    },
+    "Zerotier": {
+      "status": "error",
+      "error_type": "CmdOut",
+      "error": {
+        "stdout": "{\n\t\"start\":\t{\n\t\t\"connected\":\t[],\n\t\t\"version\":\t\"iperf 3.19.1\",\n\t\t\"system_info\":\t\"Linux lom 6.12.57 #1-NixOS SMP PREEMPT_DYNAMIC Sun Nov  2 13:15:23 UTC 2025 x86_64\",\n\t\t\"timestamp\":\t{\n\t\t\t\"time\":\t\"Fri, 05 Dec 2025 00:32:06 GMT\",\n\t\t\t\"timesecs\":\t1764894726\n\t\t},\n\t\t\"connecting_to\":\t{\n\t\t\t\"host\":\t\"vpn.luna\",\n\t\t\t\"port\":\t5201\n\t\t},\n\t\t\"cookie\":\t\"x7urwzc7mqff3sjm7obqtk2r7rnzdywleqgu\",\n\t\t\"tcp_mss_default\":\t2728,\n\t\t\"target_bitrate\":\t0,\n\t\t\"fq_rate\":\t0\n\t},\n\t\"intervals\":\t[],\n\t\"end\":\t{\n\t},\n\t\"error\":\t\"test authorization failed\"\n}\n",
+        "stderr": "Warning: Permanently added '116.203.103.30' (ED25519) to the list of known hosts.\r\nerror:1C80006A:Provider routines::output buffer too small\n",
+        "cwd": "/home/lhebendanz/Projects/vpn-benchmark-suite/pkgs/vpn-bench",
+        "command_list": [
+          "ssh",
+          "root@116.203.103.30",
+          "-A",
+          "-o",
+          "StrictHostKeyChecking=no",
+          "-o",
+          "UserKnownHostsFile=/dev/null",
+          "-o",
+          "ControlMaster=auto",
+          "-o",
+          "ControlPersist=1m",
+          "-o",
+          "ControlPath=/tmp/clan-sshh76yiq4z/socket",
+          "--",
+          "bash",
+          "-c",
+          "'export IPERF3_PASSWORD=mambaBudo; exec \"$@\"'",
+          "--",
+          "nix --extra-experimental-features 'nix-command flakes' shell 'nixpkgs#iperf3' -c iperf3 --bidir --connect-timeout 600 --time 30 --json -Z -c vpn.luna --username mario --rsa-public-key-path /tmp/iperf3.public"
+        ],
+        "returncode": 1
+      },
+      "machine": "0_lom"
+    },
+    "Nebula": {
+      "status": "success",
+      "data": {
+        "sender_throughput_mbps": {
+          "min": 45.891382129690605,
+          "average": 46.30921624703353,
+          "max": 46.554493229831735,
+          "percentiles": {
+            "p25": 46.30921624703353,
+            "p50": 46.30921624703353,
+            "p75": 46.30921624703353
+          }
+        },
+        "receiver_throughput_mbps": {
+          "min": 45.80582762436175,
+          "average": 46.17805474539926,
+          "max": 46.44556769089666,
+          "percentiles": {
+            "p25": 46.17805474539926,
+            "p50": 46.17805474539926,
+            "p75": 46.17805474539926
+          }
+        },
+        "retransmits": {
+          "min": 1117.0,
+          "average": 1236.0,
+          "max": 1332.0,
+          "percentiles": {
+            "p25": 1236.0,
+            "p50": 1236.0,
+            "p75": 1236.0
+          }
+        }
+      }
+    },
+    "Yggdrasil": {
+      "status": "error",
+      "error_type": "CmdOut",
+      "error": {
+        "stdout": "{\n\t\"start\":\t{\n\t\t\"connected\":\t[],\n\t\t\"version\":\t\"iperf 3.19.1\",\n\t\t\"system_info\":\t\"Linux lom 6.12.57 #1-NixOS SMP PREEMPT_DYNAMIC Sun Nov  2 13:15:23 UTC 2025 x86_64\",\n\t\t\"timestamp\":\t{\n\t\t\t\"time\":\t\"Fri, 05 Dec 2025 06:18:43 GMT\",\n\t\t\t\"timesecs\":\t1764915523\n\t\t},\n\t\t\"connecting_to\":\t{\n\t\t\t\"host\":\t\"vpn.luna\",\n\t\t\t\"port\":\t5201\n\t\t},\n\t\t\"cookie\":\t\"xtmn7lkuaqp6uzq3qsvuhvpffdm4vh6ap7he\",\n\t\t\"tcp_mss_default\":\t32731,\n\t\t\"target_bitrate\":\t0,\n\t\t\"fq_rate\":\t0\n\t},\n\t\"intervals\":\t[],\n\t\"end\":\t{\n\t},\n\t\"error\":\t\"test authorization failed\"\n}\n",
+        "stderr": "Warning: Permanently added '116.203.103.30' (ED25519) to the list of known hosts.\r\nerror:1C80006A:Provider routines::output buffer too small\n",
+        "cwd": "/home/lhebendanz/Projects/vpn-benchmark-suite/pkgs/vpn-bench",
+        "command_list": [
+          "ssh",
+          "root@116.203.103.30",
+          "-A",
+          "-o",
+          "StrictHostKeyChecking=no",
+          "-o",
+          "UserKnownHostsFile=/dev/null",
+          "-o",
+          "ControlMaster=auto",
+          "-o",
+          "ControlPersist=1m",
+          "-o",
+          "ControlPath=/tmp/clan-ssh9rbo013e/socket",
+          "--",
+          "bash",
+          "-c",
+          "'export IPERF3_PASSWORD=mambaBudo; exec \"$@\"'",
+          "--",
+          "nix --extra-experimental-features 'nix-command flakes' shell 'nixpkgs#iperf3' -c iperf3 --bidir --connect-timeout 600 --time 30 --json -Z -c vpn.luna --username mario --rsa-public-key-path /tmp/iperf3.public"
+        ],
+        "returncode": 1
+      },
+      "machine": "0_lom"
+    },
+    "Wireguard": {
+      "status": "error",
+      "error_type": "CmdOut",
+      "error": {
+        "stdout": "{\n\t\"start\":\t{\n\t\t\"connected\":\t[],\n\t\t\"version\":\t\"iperf 3.19.1\",\n\t\t\"system_info\":\t\"Linux lom 6.12.57 #1-NixOS SMP PREEMPT_DYNAMIC Sun Nov  2 13:15:23 UTC 2025 x86_64\",\n\t\t\"timestamp\":\t{\n\t\t\t\"time\":\t\"Fri, 05 Dec 2025 08:02:55 GMT\",\n\t\t\t\"timesecs\":\t1764921775\n\t\t},\n\t\t\"connecting_to\":\t{\n\t\t\t\"host\":\t\"vpn.luna\",\n\t\t\t\"port\":\t5201\n\t\t},\n\t\t\"cookie\":\t\"zl7wgcmuylh2zzp3lbora3gfbnbqkuuss4pw\",\n\t\t\"tcp_mss_default\":\t1368,\n\t\t\"target_bitrate\":\t0,\n\t\t\"fq_rate\":\t0\n\t},\n\t\"intervals\":\t[],\n\t\"end\":\t{\n\t},\n\t\"error\":\t\"test authorization failed\"\n}\n",
+        "stderr": "Warning: Permanently added '116.203.103.30' (ED25519) to the list of known hosts.\r\nerror:1C80006A:Provider routines::output buffer too small\n",
+        "cwd": "/home/lhebendanz/Projects/vpn-benchmark-suite/pkgs/vpn-bench",
+        "command_list": [
+          "ssh",
+          "root@116.203.103.30",
+          "-A",
+          "-o",
+          "StrictHostKeyChecking=no",
+          "-o",
+          "UserKnownHostsFile=/dev/null",
+          "-o",
+          "ControlMaster=auto",
+          "-o",
+          "ControlPersist=1m",
+          "-o",
+          "ControlPath=/tmp/clan-sshrd2erk6g/socket",
+          "--",
+          "bash",
+          "-c",
+          "'export IPERF3_PASSWORD=mambaBudo; exec \"$@\"'",
+          "--",
+          "nix --extra-experimental-features 'nix-command flakes' shell 'nixpkgs#iperf3' -c iperf3 --bidir --connect-timeout 600 --time 30 --json -Z -c vpn.luna --username mario --rsa-public-key-path /tmp/iperf3.public"
+        ],
+        "returncode": 1
+      },
+      "machine": "0_lom"
+    },
+    "Internal": {
+      "status": "error",
+      "error_type": "CmdOut",
+      "error": {
+        "stdout": "{\n\t\"start\":\t{\n\t\t\"connected\":\t[],\n\t\t\"version\":\t\"iperf 3.19.1\",\n\t\t\"system_info\":\t\"Linux lom 6.12.57 #1-NixOS SMP PREEMPT_DYNAMIC Sun Nov  2 13:15:23 UTC 2025 x86_64\",\n\t\t\"timestamp\":\t{\n\t\t\t\"time\":\t\"Fri, 05 Dec 2025 00:17:46 GMT\",\n\t\t\t\"timesecs\":\t1764893866\n\t\t},\n\t\t\"connecting_to\":\t{\n\t\t\t\"host\":\t\"vpn.luna\",\n\t\t\t\"port\":\t5201\n\t\t},\n\t\t\"cookie\":\t\"pbdkxjksglw5vgq7xoncmdhdmvdsuyr5ltys\",\n\t\t\"tcp_mss_default\":\t1448,\n\t\t\"target_bitrate\":\t0,\n\t\t\"fq_rate\":\t0\n\t},\n\t\"intervals\":\t[],\n\t\"end\":\t{\n\t},\n\t\"error\":\t\"test authorization failed\"\n}\n",
+        "stderr": "Warning: Permanently added '116.203.103.30' (ED25519) to the list of known hosts.\r\nerror:1C80006A:Provider routines::output buffer too small\n",
+        "cwd": "/home/lhebendanz/Projects/vpn-benchmark-suite/pkgs/vpn-bench",
+        "command_list": [
+          "ssh",
+          "root@116.203.103.30",
+          "-A",
+          "-o",
+          "StrictHostKeyChecking=no",
+          "-o",
+          "UserKnownHostsFile=/dev/null",
+          "-o",
+          "ControlMaster=auto",
+          "-o",
+          "ControlPersist=1m",
+          "-o",
+          "ControlPath=/tmp/clan-sshbz8plp6y/socket",
+          "--",
+          "bash",
+          "-c",
+          "'export IPERF3_PASSWORD=mambaBudo; exec \"$@\"'",
+          "--",
+          "nix --extra-experimental-features 'nix-command flakes' shell 'nixpkgs#iperf3' -c iperf3 --bidir --connect-timeout 600 --time 30 --json -Z -c vpn.luna --username mario --rsa-public-key-path /tmp/iperf3.public"
+        ],
+        "returncode": 1
+      },
+      "machine": "0_lom"
+    },
+    "Hyprspace": {
+      "status": "error",
+      "error_type": "CmdOut",
+      "error": {
+        "stdout": "{\n\t\"start\":\t{\n\t\t\"connected\":\t[],\n\t\t\"version\":\t\"iperf 3.19.1\",\n\t\t\"system_info\":\t\"Linux lom 6.12.57 #1-NixOS SMP PREEMPT_DYNAMIC Sun Nov  2 13:15:23 UTC 2025 x86_64\",\n\t\t\"timestamp\":\t{\n\t\t\t\"time\":\t\"Fri, 05 Dec 2025 01:54:15 GMT\",\n\t\t\t\"timesecs\":\t1764899655\n\t\t},\n\t\t\"connecting_to\":\t{\n\t\t\t\"host\":\t\"vpn.luna\",\n\t\t\t\"port\":\t5201\n\t\t},\n\t\t\"cookie\":\t\"tlzhwlihymf6uan7hwyjko5746i3ymxdfg7a\",\n\t\t\"tcp_mss_default\":\t1348,\n\t\t\"target_bitrate\":\t0,\n\t\t\"fq_rate\":\t0\n\t},\n\t\"intervals\":\t[],\n\t\"end\":\t{\n\t},\n\t\"error\":\t\"test authorization failed\"\n}\n",
+        "stderr": "Warning: Permanently added '116.203.103.30' (ED25519) to the list of known hosts.\r\nerror:1C80006A:Provider routines::output buffer too small\n",
+        "cwd": "/home/lhebendanz/Projects/vpn-benchmark-suite/pkgs/vpn-bench",
+        "command_list": [
+          "ssh",
+          "root@116.203.103.30",
+          "-A",
+          "-o",
+          "StrictHostKeyChecking=no",
+          "-o",
+          "UserKnownHostsFile=/dev/null",
+          "-o",
+          "ControlMaster=auto",
+          "-o",
+          "ControlPersist=1m",
+          "-o",
+          "ControlPath=/tmp/clan-ssh_78tzkpn/socket",
+          "--",
+          "bash",
+          "-c",
+          "'export IPERF3_PASSWORD=mambaBudo; exec \"$@\"'",
+          "--",
+          "nix --extra-experimental-features 'nix-command flakes' shell 'nixpkgs#iperf3' -c iperf3 --bidir --connect-timeout 600 --time 30 --json -Z -c vpn.luna --username mario --rsa-public-key-path /tmp/iperf3.public"
+        ],
+        "returncode": 1
+      },
+      "machine": "0_lom"
+    }
+  }
+}

@@ -1,0 +1,128 @@
+{
+  "status": "success",
+  "data": {
+    "Zerotier": {
+      "status": "success",
+      "data": {
+        "sender_throughput_mbps": {
+          "min": 9733.71730454005,
+          "average": 10423.312521885075,
+          "max": 11296.125502510495,
+          "percentiles": {
+            "p25": 10423.312521885075,
+            "p50": 10423.312521885075,
+            "p75": 10423.312521885075
+          }
+        },
+        "receiver_throughput_mbps": {
+          "min": 9733.71730454005,
+          "average": 10423.312521885075,
+          "max": 11296.125502510495,
+          "percentiles": {
+            "p25": 10423.312521885075,
+            "p50": 10423.312521885075,
+            "p75": 10423.312521885075
+          }
+        },
+        "jitter_ms": {
+          "min": 0.02287563901273835,
+          "average": 0.23130680319180597,
+          "max": 0.6422472089369795,
+          "percentiles": {
+            "p25": 0.23130680319180597,
+            "p50": 0.23130680319180597,
+            "p75": 0.23130680319180597
+          }
+        },
+        "lost_percent": {
+          "min": 88.98984886519983,
+          "average": 89.77865108200855,
+          "max": 90.489131901871,
+          "percentiles": {
+            "p25": 89.77865108200855,
+            "p50": 89.77865108200855,
+            "p75": 89.77865108200855
+          }
+        }
+      }
+    },
+    "Internal": {
+      "status": "success",
+      "data": {
+        "sender_throughput_mbps": {
+          "min": 1150.3560529356366,
+          "average": 1192.0405743866274,
+          "max": 1270.4055662354056,
+          "percentiles": {
+            "p25": 1192.0405743866274,
+            "p50": 1192.0405743866274,
+            "p75": 1192.0405743866274
+          }
+        },
+        "receiver_throughput_mbps": {
+          "min": 1150.3560529356366,
+          "average": 1192.0405743866274,
+          "max": 1270.4055662354056,
+          "percentiles": {
+            "p25": 1192.0405743866274,
+            "p50": 1192.0405743866274,
+            "p75": 1192.0405743866274
+          }
+        },
+        "jitter_ms": {
+          "min": 0.0032603990030937793,
+          "average": 0.005155185019195484,
+          "max": 0.00701280240002265,
+          "percentiles": {
+            "p25": 0.005155185019195484,
+            "p50": 0.005155185019195484,
+            "p75": 0.005155185019195484
+          }
+        },
+        "lost_percent": {
+          "min": 0.16238366792590037,
+          "average": 0.339148810713041,
+          "max": 0.5840482758643837,
+          "percentiles": {
+            "p25": 0.339148810713041,
+            "p50": 0.339148810713041,
+            "p75": 0.339148810713041
+          }
+        }
+      }
+    },
+    "Hyprspace": {
+      "status": "error",
+      "error_type": "CmdOut",
+      "error": {
+        "stdout": "",
+        "stderr": "Warning: Permanently added '116.203.103.30' (ED25519) to the list of known hosts.\r\n",
+        "cwd": "/home/lhebendanz/Projects/vpn-benchmark-suite/pkgs/vpn-bench",
+        "command_list": [
+          "ssh",
+          "root@116.203.103.30",
+          "-A",
+          "-o",
+          "StrictHostKeyChecking=no",
+          "-o",
+          "UserKnownHostsFile=/dev/null",
+          "-o",
+          "ControlMaster=auto",
+          "-o",
+          "ControlPersist=1m",
+          "-o",
+          "ControlPath=/tmp/clan-sshhjvj947o/socket",
+          "--",
+          "bash",
+          "-c",
+          "'export IPERF3_PASSWORD=mambaBudo; exec \"$@\"'",
+          "--",
+          "iperf --bidir --connect-timeout 600 --time 30 --json -Z -c vpn.luna --username mario --rsa-public-key-path /tmp/iperf3.public -u --udp-counters-64bit -b 0"
+        ],
+        "returncode": -1,
+        "msg": "Command timed out after 120 seconds"
+      },
+      "machine": "0_lom"
+    }
+  }
+}

@@ -1,26 +1,30 @@
 import {
   IperfTcpCharts,
-  IperfTcpReport, // Assuming IperfTcpReport is the type within the Result array
+  IperfTcpReport,
+  IperfTcpReportData,
 } from "@/src/components/IperfTcpCharts";
 import {
   IperfUdpCharts,
-  IperfUdpReport, // Assuming IperfUdpReport is the type within the Result array
+  IperfUdpReport,
+  IperfUdpReportData,
 } from "@/src/components/IperfUdpCharts";
 import { Tabs } from "@kobalte/core/tabs";
 import {
-  QperfReport, // Assuming QperfReport is the type within the Result array
+  QperfReport,
   QperfChartsDashboard,
   QperfData,
 } from "@/src/components/QperfCharts";
 import "./style.css"; // Ensure this path is correct
 import {
   HyperfineCharts,
-  HyperfineReport, // Assuming HyperfineReport is the type within the Result array
+  HyperfineReport,
+  HyperfineData,
 } from "../HyperfineCharts"; // Ensure this path is correct
-import { PingCharts, PingReport } from "@/src/components/PingCharts";
+import { PingCharts, PingReport, PingData } from "@/src/components/PingCharts";
 import {
   RistChartsDashboard,
   RistReport,
+  RistData,
 } from "@/src/components/RistStreamCharts";
 import { For, JSX, Show, createSignal, createEffect } from "solid-js";
 import {
@@ -40,14 +44,13 @@ import { getVpnInfo, getDefaultVpnInfo, VpnInfoData } from "@/src/vpnInfo";
 interface VpnDashboardProps {
   // VPN name for displaying info
   vpnName: string;
-  // Ensure the generic type T in Result<T> matches what the Chart expects
-  tcpReports: Result<IperfTcpReport[]> | null;
-  udpReports: Result<IperfUdpReport[]> | null;
-  nixCacheReports: Result<HyperfineReport[]> | null;
-  // Qperf uses mixed reports to show both successful and crashed machines
+  // All reports use MixedReport to show per-machine metadata
+  tcpReports: MixedReport<IperfTcpReportData>[] | null;
+  udpReports: MixedReport<IperfUdpReportData>[] | null;
+  nixCacheReports: MixedReport<HyperfineData>[] | null;
   qperfReports: MixedReport<QperfData>[] | null;
-  pingReports: Result<PingReport[]> | null;
-  ristStreamReports: Result<RistReport[]> | null;
+  pingReports: MixedReport<PingData>[] | null;
+  ristStreamReports: MixedReport<RistData>[] | null;
   tcpHeight?: {
     throughput?: number;
     timeSeries?: number;
@@ -544,53 +547,51 @@ export const VpnDashboard = (props: VpnDashboardProps) => {
 
       <Tabs.Content class="tabs__content" value="tcp_iperf">
         <Show when={props.tcpReports} fallback={<FallbackMessage />}>
-          {(reportResult) => (
-            <Show
-              when={reportResult().ok}
-              fallback={
-                <DisplayClanError
-                  error={(reportResult() as Err).error}
-                  meta={(reportResult() as Err).meta}
-                />
-              }
-            >
+          {(mixedReports) => {
+            // Extract successful reports for charts
+            const successfulReports = () =>
+              mixedReports()
+                .filter((r) => r.result.ok)
+                .map((r) => ({
+                  name: r.name,
+                  data: (r.result as Ok<IperfTcpReportData>).value,
+                }));
+
+            return (
               <>
-                <MetadataDisplay
-                  meta={(reportResult() as Ok<IperfTcpReport[]>).meta}
-                />
+                <MixedReportMetadataDisplay mixedReports={mixedReports()} />
                 <IperfTcpCharts
-                  reports={(reportResult() as Ok<IperfTcpReport[]>).value}
+                  reports={successfulReports()}
                   height={tcpHeight}
                 />
               </>
-            </Show>
-          )}
+            );
+          }}
         </Show>
       </Tabs.Content>
 
       <Tabs.Content class="tabs__content" value="udp_iperf">
         <Show when={props.udpReports} fallback={<FallbackMessage />}>
-          {(reportResult) => (
-            <Show
-              when={reportResult().ok}
-              fallback={
-                <DisplayClanError
-                  error={(reportResult() as Err).error}
-                  meta={(reportResult() as Err).meta}
-                />
-              }
-            >
+          {(mixedReports) => {
+            // Extract successful reports for charts
+            const successfulReports = () =>
+              mixedReports()
+                .filter((r) => r.result.ok)
+                .map((r) => ({
+                  name: r.name,
+                  data: (r.result as Ok<IperfUdpReportData>).value,
+                }));
+
+            return (
               <>
-                <MetadataDisplay
-                  meta={(reportResult() as Ok<IperfUdpReport[]>).meta}
-                />
+                <MixedReportMetadataDisplay mixedReports={mixedReports()} />
                 <IperfUdpCharts
-                  reports={(reportResult() as Ok<IperfUdpReport[]>).value}
+                  reports={successfulReports()}
                   height={udpHeight}
                 />
               </>
-            </Show>
-          )}
+            );
+          }}
         </Show>
       </Tabs.Content>
 
@@ -607,78 +608,70 @@ export const VpnDashboard = (props: VpnDashboardProps) => {
 
       <Tabs.Content class="tabs__content" value="nix-cache">
         <Show when={props.nixCacheReports} fallback={<FallbackMessage />}>
-          {(reportResult) => (
-            <Show
-              when={reportResult().ok}
-              fallback={
-                <DisplayClanError
-                  error={(reportResult() as Err).error}
-                  meta={(reportResult() as Err).meta}
-                />
-              }
-            >
+          {(mixedReports) => {
+            // Extract successful reports for charts
+            const successfulReports = () =>
+              mixedReports()
+                .filter((r) => r.result.ok)
+                .map((r) => ({
+                  name: r.name,
+                  data: (r.result as Ok<HyperfineData>).value,
+                }));
+
+            return (
               <>
-                <MetadataDisplay
-                  meta={(reportResult() as Ok<HyperfineReport[]>).meta}
-                />
-                <HyperfineCharts
-                  reports={(reportResult() as Ok<HyperfineReport[]>).value}
-                />
+                <MixedReportMetadataDisplay mixedReports={mixedReports()} />
+                <HyperfineCharts reports={successfulReports()} />
               </>
-            </Show>
-          )}
+            );
+          }}
         </Show>
       </Tabs.Content>
 
       <Tabs.Content class="tabs__content" value="ping">
         <Show when={props.pingReports} fallback={<FallbackMessage />}>
-          {(reportResult) => (
-            <Show
-              when={reportResult().ok}
-              fallback={
-                <DisplayClanError
-                  error={(reportResult() as Err).error}
-                  meta={(reportResult() as Err).meta}
-                />
-              }
-            >
+          {(mixedReports) => {
+            // Extract successful reports for charts
+            const successfulReports = () =>
+              mixedReports()
+                .filter((r) => r.result.ok)
+                .map((r) => ({
+                  name: r.name,
+                  data: (r.result as Ok<PingData>).value,
+                }));
+
+            return (
               <>
-                <MetadataDisplay
-                  meta={(reportResult() as Ok<PingReport[]>).meta}
-                />
-                <PingCharts
-                  reports={(reportResult() as Ok<PingReport[]>).value}
-                  height={pingHeight}
-                />
+                <MixedReportMetadataDisplay mixedReports={mixedReports()} />
+                <PingCharts reports={successfulReports()} height={pingHeight} />
               </>
-            </Show>
-          )}
+            );
+          }}
         </Show>
       </Tabs.Content>
 
       <Tabs.Content class="tabs__content" value="rist-stream">
         <Show when={props.ristStreamReports} fallback={<FallbackMessage />}>
-          {(reportResult) => (
-            <Show
-              when={reportResult().ok}
-              fallback={
-                <DisplayClanError
-                  error={(reportResult() as Err).error}
-                  meta={(reportResult() as Err).meta}
-                />
-              }
-            >
+          {(mixedReports) => {
+            // Extract successful reports for charts
+            const successfulReports = () =>
+              mixedReports()
+                .filter((r) => r.result.ok)
+                .map((r) => ({
+                  name: r.name,
+                  data: (r.result as Ok<RistData>).value,
+                }));
+
+            return (
               <>
-                <MetadataDisplay
-                  meta={(reportResult() as Ok<RistReport[]>).meta}
-                />
+                <MixedReportMetadataDisplay mixedReports={mixedReports()} />
                 <RistChartsDashboard
-                  reports={(reportResult() as Ok<RistReport[]>).value}
+                  reports={successfulReports()}
                   height={ristStreamHeight}
                 />
               </>
-            </Show>
-          )}
+            );
+          }}
         </Show>
       </Tabs.Content>
     </Tabs>

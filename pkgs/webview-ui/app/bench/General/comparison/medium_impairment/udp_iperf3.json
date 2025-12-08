@@ -1,0 +1,115 @@
+{
+  "status": "success",
+  "data": {
+    "Zerotier": {
+      "status": "success",
+      "data": {
+        "sender_throughput_mbps": {
+          "min": 10911.524250882174,
+          "average": 10911.524250882174,
+          "max": 10911.524250882174,
+          "percentiles": {
+            "p25": 10911.524250882174,
+            "p50": 10911.524250882174,
+            "p75": 10911.524250882174
+          }
+        },
+        "receiver_throughput_mbps": {
+          "min": 10911.524250882174,
+          "average": 10911.524250882174,
+          "max": 10911.524250882174,
+          "percentiles": {
+            "p25": 10911.524250882174,
+            "p50": 10911.524250882174,
+            "p75": 10911.524250882174
+          }
+        },
+        "jitter_ms": {
+          "min": 2.5203164693697,
+          "average": 2.5203164693697,
+          "max": 2.5203164693697,
+          "percentiles": {
+            "p25": 2.5203164693697,
+            "p50": 2.5203164693697,
+            "p75": 2.5203164693697
+          }
+        },
+        "lost_percent": {
+          "min": 99.65022176977145,
+          "average": 99.65022176977145,
+          "max": 99.65022176977145,
+          "percentiles": {
+            "p25": 99.65022176977145,
+            "p50": 99.65022176977145,
+            "p75": 99.65022176977145
+          }
+        }
+      }
+    },
+    "Internal": {
+      "status": "error",
+      "error_type": "CmdOut",
+      "error": {
+        "stdout": "{\n\t\"start\":\t{\n\t\t\"connected\":\t[{\n\t\t\t\t\"socket\":\t5,\n\t\t\t\t\"local_host\":\t\"116.203.103.30\",\n\t\t\t\t\"local_port\":\t53387,\n\t\t\t\t\"remote_host\":\t\"46.224.55.225\",\n\t\t\t\t\"remote_port\":\t5201\n\t\t\t}],\n\t\t\"version\":\t\"iperf 3.20\",\n\t\t\"system_info\":\t\"Linux lom 6.12.57 #1-NixOS SMP PREEMPT_DYNAMIC Sun Nov  2 13:15:23 UTC 2025 x86_64\",\n\t\t\"timestamp\":\t{\n\t\t\t\"time\":\t\"Mon, 08 Dec 2025 15:03:20 GMT\",\n\t\t\t\"timesecs\":\t1765206200,\n\t\t\t\"timemillisecs\":\t1765206200576\n\t\t},\n\t\t\"connecting_to\":\t{\n\t\t\t\"host\":\t\"vpn.luna\",\n\t\t\t\"port\":\t5201\n\t\t},\n\t\t\"cookie\":\t\"ba3mtzlrcrkzk2inaamlsfhfzqjyiw7uorjl\",\n\t\t\"target_bitrate\":\t0,\n\t\t\"fq_rate\":\t0,\n\t\t\"sock_bufsize\":\t0,\n\t\t\"sndbuf_actual\":\t212992,\n\t\t\"rcvbuf_actual\":\t212992\n\t},\n\t\"intervals\":\t[],\n\t\"end\":\t{\n\t},\n\t\"error\":\t\"unable to read from stream socket: No such file or directory\"\n}\n",
+        "stderr": "Warning: Permanently added '116.203.103.30' (ED25519) to the list of known hosts.\r\n",
+        "cwd": "/home/lhebendanz/Projects/vpn-benchmark-suite/pkgs/vpn-bench",
+        "command_list": [
+          "ssh",
+          "root@116.203.103.30",
+          "-A",
+          "-o",
+          "StrictHostKeyChecking=no",
+          "-o",
+          "UserKnownHostsFile=/dev/null",
+          "-o",
+          "ControlMaster=auto",
+          "-o",
+          "ControlPersist=1m",
+          "-o",
+          "ControlPath=/tmp/clan-ssh0ns9xrm2/socket",
+          "--",
+          "bash",
+          "-c",
+          "'export IPERF3_PASSWORD=mambaBudo; exec \"$@\"'",
+          "--",
+          "iperf --bidir --connect-timeout 600 --time 30 --json -Z -c vpn.luna --username mario --rsa-public-key-path /tmp/iperf3.public -u --udp-counters-64bit -b 0"
+        ],
+        "returncode": 1
+      },
+      "machine": "0_lom"
+    },
+    "Hyprspace": {
+      "status": "error",
+      "error_type": "CmdOut",
+      "error": {
+        "stdout": "",
+        "stderr": "Warning: Permanently added '116.203.103.30' (ED25519) to the list of known hosts.\r\n",
+        "cwd": "/home/lhebendanz/Projects/vpn-benchmark-suite/pkgs/vpn-bench",
+        "command_list": [
+          "ssh",
+          "root@116.203.103.30",
+          "-A",
+          "-o",
+          "StrictHostKeyChecking=no",
+          "-o",
+          "UserKnownHostsFile=/dev/null",
+          "-o",
+          "ControlMaster=auto",
+          "-o",
+          "ControlPersist=1m",
+          "-o",
+          "ControlPath=/tmp/clan-sshc88xn30z/socket",
+          "--",
+          "bash",
+          "-c",
+          "'export IPERF3_PASSWORD=mambaBudo; exec \"$@\"'",
+          "--",
+          "iperf --bidir --connect-timeout 600 --time 30 --json -Z -c vpn.luna --username mario --rsa-public-key-path /tmp/iperf3.public -u --udp-counters-64bit -b 0"
+        ],
+        "returncode": -1,
+        "msg": "Command timed out after 120 seconds"
+      },
+      "machine": "0_lom"
+    }
+  }
+}

@@ -181,8 +181,12 @@ function processCategoryReports<TData, TReport>(
     return reportMapper(mr.name, successResult.value);
   });
 
-  // Return an Ok result containing the array of successfully mapped reports
-  return { ok: true, value: successData };
+  // Get metadata from the first successful result (all machines should have similar metadata)
+  const firstSuccessResult = machineResults[0].result as Ok<TData>;
+  const metadata = firstSuccessResult.meta;
+
+  // Return an Ok result containing the array of successfully mapped reports, preserving metadata
+  return { ok: true, value: successData, meta: metadata };
 }
 
 // Helper function to process results keeping both success and error states for mixed display
@@ -236,31 +240,23 @@ function VpnDashboardWithProfiles(props: { category: BenchData[0] }) {
     const machines = getCurrentMachines();
 
     return {
-      tcp: processCategoryReports<IperfTcpReportData, IperfTcpReport>(
+      tcp: processCategoryReportsMixed<IperfTcpReportData>(
         machines,
         (m) => m.iperf3.tcp,
-        (name, data) => ({ name, data }),
       ),
-      udp: processCategoryReports<IperfUdpReportData, IperfUdpReport>(
+      udp: processCategoryReportsMixed<IperfUdpReportData>(
         machines,
         (m) => m.iperf3.udp,
-        (name, data) => ({ name, data }),
       ),
       qperf: processCategoryReportsMixed<QperfData>(machines, (m) => m.qperf),
-      nixCache: processCategoryReports<HyperfineData, HyperfineReport>(
+      nixCache: processCategoryReportsMixed<HyperfineData>(
         machines,
         (m) => m.nixCache,
-        (name, data) => ({ name, data }),
       ),
-      ping: processCategoryReports<PingData, PingReport>(
-        machines,
-        (m) => m.ping,
-        (name, data) => ({ name, data }),
-      ),
-      ristStream: processCategoryReports<RistData, RistReport>(
+      ping: processCategoryReportsMixed<PingData>(machines, (m) => m.ping),
+      ristStream: processCategoryReportsMixed<RistData>(
         machines,
         (m) => m.ristStream,
-        (name, data) => ({ name, data }),
       ),
     };
   });
