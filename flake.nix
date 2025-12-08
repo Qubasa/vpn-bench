@@ -42,6 +42,7 @@
         ./pkgs/qperf/flake-module.nix
         ./pkgs/vpncloud/flake-module.nix
         ./pkgs/hyprspace-pre-generate/flake-module.nix
+        ./pkgs/iperf/flake-module.nix
       ];
 
       clan = {

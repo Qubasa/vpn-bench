@@ -14,6 +14,8 @@ import "../VpnBenchDashboard/style.css";
 
 export type ConnectionData = Record<string, string>;
 
+// ConnectionTimings structure: VPN name -> machine name -> time string
+// Each TC profile has its own file, so no profile nesting needed here
 export type ConnectionTimings = Record<string, ConnectionData>;
 
 // Convert time string (H:MM:SS.MS) to milliseconds
@@ -49,8 +51,10 @@ const processDataForBoxplot = (report: ConnectionTimings) => {
   const categories = [];
 
   for (const service of services) {
+    const machineData = report[service];
+
     // Get time values and ensure we have valid data
-    const timeValues = Object.values(report[service]);
+    const timeValues = Object.values(machineData);
     if (timeValues.length === 0) {
       continue; // Skip empty services
     }
@@ -234,8 +238,6 @@ export const ConnectionTimingsChart = (props: {
 };
 
 interface GeneralDashboardProps {
-  bootstrap_connection_timings: ConnectionTimings | undefined;
-  reboot_connection_timings: ConnectionTimings | undefined;
   comparisonData?: ComparisonData;
   allVpnNames?: string[]; // All VPN names from benchData to show incomplete VPNs
 }
@@ -376,7 +378,7 @@ export const GeneralDashboard = (props: GeneralDashboardProps) => {
             Ping Latency
           </Tabs.Trigger>
           <Tabs.Trigger class="tabs__trigger" value="qperf-comparison">
-            QUIC Performance
+            HTTP3 Performance
           </Tabs.Trigger>
           <Tabs.Trigger class="tabs__trigger" value="video-comparison">
             Video Streaming
@@ -389,7 +391,7 @@ export const GeneralDashboard = (props: GeneralDashboardProps) => {
             style={{ display: "flex", "flex-direction": "column", gap: "20px" }}
           >
             <Show
-              when={props.bootstrap_connection_timings}
+              when={currentProfileData()?.connectionTimings}
               fallback={
                 <FallbackMessage message="No bootstrap connection timing data available." />
               }
@@ -402,7 +404,7 @@ export const GeneralDashboard = (props: GeneralDashboardProps) => {
                 />
               )}
             </Show>
-            <Show when={props.reboot_connection_timings}>
+            <Show when={currentProfileData()?.rebootConnectionTimings}>
               {(timings) => (
                 <ConnectionTimingsChart
                   report={timings()}

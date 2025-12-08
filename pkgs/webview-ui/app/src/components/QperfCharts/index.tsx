@@ -5,6 +5,7 @@ import { Component, Show } from "solid-js";
 import { Echart } from "../Echarts";
 import * as echarts from "echarts";
 import { MixedReport, getErrorMessage, Err, Ok } from "@/src/benchData";
+import { ErrorDetailsPanel } from "../ErrorDetailsPanel";
 
 interface QperfPercentiles {
   p25: number;
@@ -941,6 +942,12 @@ export const QperfChartsDashboard: Component<QperfChartsDashboardProps> = (
           height={effectiveHeights.connTime}
         />
       </div>
+
+      {/* Error Details Panel - shows detailed error info with service logs */}
+      <ErrorDetailsPanel
+        mixedReports={getMixedReports()}
+        title="QPERF Test Failures"
+      />
     </div>
   );
 };

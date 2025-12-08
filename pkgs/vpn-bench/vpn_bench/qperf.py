@@ -339,7 +339,7 @@ def run_qperf_test(
         for core in range(num_cores):
             future = executor.submit(_qperf_test, machine, target_host, core)
             futures.append(future)
-        done, not_done = concurrent.futures.wait(futures)
+        done, _not_done = concurrent.futures.wait(futures)
         for future in done:
             exc = future.exception()
             if exc is not None:

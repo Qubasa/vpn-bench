@@ -7,11 +7,14 @@ import type {
   BenchmarkRunError,
   CmdOutError,
   ClanError,
+  TestMetadata,
 } from "../../benchData"; // Adjust the import path as needed
 
 interface BenchmarkErrorDisplayProps {
   /** The error object from an Err Result */
   error: BenchmarkRunError;
+  /** Optional metadata that may contain service_logs */
+  meta?: TestMetadata;
 }
 
 // --- Basic Styling Placeholders (replace with your actual CSS/utility classes) ---
@@ -156,6 +159,26 @@ export const DisplayClanError: Component<BenchmarkErrorDisplayProps> = (
               </Show>
             </Accordion.Content>
           </Accordion.Item>
+
+          {/* --- Service Logs Section (only shown when logs are available) --- */}
+          <Show when={props.meta?.service_logs}>
+            <Accordion.Item value="service-logs" class={accordionItemClass}>
+              <Accordion.Header>
+                <Accordion.Trigger class={accordionTriggerClass}>
+                  Show Service Logs (last 5 minutes)
+                </Accordion.Trigger>
+              </Accordion.Header>
+              <Accordion.Content class={accordionContentClass}>
+                <p class="mb-2 text-sm text-gray-600">
+                  Logs collected from the target service after all retries
+                  failed:
+                </p>
+                <pre>
+                  <code class={codeBlockClass}>{props.meta?.service_logs}</code>
+                </pre>
+              </Accordion.Content>
+            </Accordion.Item>
+          </Show>
         </Accordion.Root>
       </Alert.Root>
     </Alert.Root>

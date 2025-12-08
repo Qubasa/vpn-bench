@@ -9,12 +9,16 @@ from clan_lib.cmd import ClanCmdTimeoutError
 from clan_lib.errors import ClanCmdError, ClanError, CmdOut
 
 
-class TestMetadataDict(TypedDict):
-    """Metadata about test execution."""
+class TestMetadataDict(TypedDict, total=False):
+    """Metadata about test execution.
+
+    All fields except the core metrics are optional.
+    """
 
     duration_seconds: float
     test_attempts: int
     vpn_restart_attempts: int
+    service_logs: str  # Logs collected from target service on failure
 
 
 class VpnBenchError(ClanError):

@@ -168,7 +168,7 @@ def _apply_tc_settings_internal(machines: list[Machine], settings: TCSettings) -
             future = executor.submit(_apply_tc_to_machine, machine, settings)
             futures.append(future)
 
-        done, not_done = concurrent.futures.wait(futures)
+        done, _not_done = concurrent.futures.wait(futures)
 
         for future in done:
             exc = future.exception()
@@ -192,7 +192,7 @@ def clear_tc_settings(machines: list[Machine]) -> None:
             future = executor.submit(_clear_tc_from_machine, machine)
             futures.append(future)
 
-        done, not_done = concurrent.futures.wait(futures)
+        done, _not_done = concurrent.futures.wait(futures)
 
         for future in done:
             exc = future.exception()

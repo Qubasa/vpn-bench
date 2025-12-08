@@ -247,7 +247,7 @@ def delete_dirs(state_dirs: list[str], machines: list[Machine]) -> None:
             futures.append(future)
         concurrent.futures.wait(futures)
 
-        done, not_done = concurrent.futures.wait(futures)
+        done, _not_done = concurrent.futures.wait(futures)
 
         for future in done:
             exc = future.exception()

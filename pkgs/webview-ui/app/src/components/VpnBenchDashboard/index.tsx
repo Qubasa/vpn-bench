@@ -548,13 +548,21 @@ export const VpnDashboard = (props: VpnDashboardProps) => {
             <Show
               when={reportResult().ok}
               fallback={
-                <DisplayClanError error={(reportResult() as Err).error} />
+                <DisplayClanError
+                  error={(reportResult() as Err).error}
+                  meta={(reportResult() as Err).meta}
+                />
               }
             >
-              <IperfTcpCharts
-                reports={(reportResult() as Ok<IperfTcpReport[]>).value}
-                height={tcpHeight}
-              />
+              <>
+                <MetadataDisplay
+                  meta={(reportResult() as Ok<IperfTcpReport[]>).meta}
+                />
+                <IperfTcpCharts
+                  reports={(reportResult() as Ok<IperfTcpReport[]>).value}
+                  height={tcpHeight}
+                />
+              </>
             </Show>
           )}
         </Show>
@@ -566,13 +574,21 @@ export const VpnDashboard = (props: VpnDashboardProps) => {
             <Show
               when={reportResult().ok}
               fallback={
-                <DisplayClanError error={(reportResult() as Err).error} />
+                <DisplayClanError
+                  error={(reportResult() as Err).error}
+                  meta={(reportResult() as Err).meta}
+                />
               }
             >
-              <IperfUdpCharts
-                reports={(reportResult() as Ok<IperfUdpReport[]>).value}
-                height={udpHeight}
-              />
+              <>
+                <MetadataDisplay
+                  meta={(reportResult() as Ok<IperfUdpReport[]>).meta}
+                />
+                <IperfUdpCharts
+                  reports={(reportResult() as Ok<IperfUdpReport[]>).value}
+                  height={udpHeight}
+                />
+              </>
             </Show>
           )}
         </Show>
@@ -595,12 +611,20 @@ export const VpnDashboard = (props: VpnDashboardProps) => {
             <Show
               when={reportResult().ok}
               fallback={
-                <DisplayClanError error={(reportResult() as Err).error} />
+                <DisplayClanError
+                  error={(reportResult() as Err).error}
+                  meta={(reportResult() as Err).meta}
+                />
               }
             >
-              <HyperfineCharts
-                reports={(reportResult() as Ok<HyperfineReport[]>).value}
-              />
+              <>
+                <MetadataDisplay
+                  meta={(reportResult() as Ok<HyperfineReport[]>).meta}
+                />
+                <HyperfineCharts
+                  reports={(reportResult() as Ok<HyperfineReport[]>).value}
+                />
+              </>
             </Show>
           )}
         </Show>
@@ -612,13 +636,21 @@ export const VpnDashboard = (props: VpnDashboardProps) => {
             <Show
               when={reportResult().ok}
               fallback={
-                <DisplayClanError error={(reportResult() as Err).error} />
+                <DisplayClanError
+                  error={(reportResult() as Err).error}
+                  meta={(reportResult() as Err).meta}
+                />
               }
             >
-              <PingCharts
-                reports={(reportResult() as Ok<PingReport[]>).value}
-                height={pingHeight}
-              />
+              <>
+                <MetadataDisplay
+                  meta={(reportResult() as Ok<PingReport[]>).meta}
+                />
+                <PingCharts
+                  reports={(reportResult() as Ok<PingReport[]>).value}
+                  height={pingHeight}
+                />
+              </>
             </Show>
           )}
         </Show>
@@ -630,13 +662,21 @@ export const VpnDashboard = (props: VpnDashboardProps) => {
             <Show
               when={reportResult().ok}
               fallback={
-                <DisplayClanError error={(reportResult() as Err).error} />
+                <DisplayClanError
+                  error={(reportResult() as Err).error}
+                  meta={(reportResult() as Err).meta}
+                />
               }
             >
-              <RistChartsDashboard
-                reports={(reportResult() as Ok<RistReport[]>).value}
-                height={ristStreamHeight}
-              />
+              <>
+                <MetadataDisplay
+                  meta={(reportResult() as Ok<RistReport[]>).meta}
+                />
+                <RistChartsDashboard
+                  reports={(reportResult() as Ok<RistReport[]>).value}
+                  height={ristStreamHeight}
+                />
+              </>
             </Show>
           )}
         </Show>

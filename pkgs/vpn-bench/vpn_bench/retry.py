@@ -143,8 +143,8 @@ def retry_operation[R](
                 time.sleep(delay)
                 delay = min(delay * backoff_factor, max_delay)
             else:
-                log.error(
-                    f"{operation_name} failed after {max_retries + 1} attempts: {e}"
+                log.exception(
+                    f"{operation_name} failed after {max_retries + 1} attempts."
                 )
 
     assert last_exception is not None
@@ -207,14 +207,14 @@ def retry_operation_with_info[R](
 
             if attempt < max_retries:
                 log.warning(
-                    f"{operation_name} failed (attempt {attempt + 1}/{max_retries + 1}): {e}. "
+                    f"{operation_name} failed (attempt {attempt + 1}/{max_retries + 1}). "
                     f"Retrying in {delay:.1f}s..."
                 )
                 time.sleep(delay)
                 delay = min(delay * backoff_factor, max_delay)
             else:
-                log.error(
-                    f"{operation_name} failed after {max_retries + 1} attempts: {e}"
+                log.exception(
+                    f"{operation_name} failed after {max_retries + 1} attempts"
                 )
 
     assert last_exception is not None

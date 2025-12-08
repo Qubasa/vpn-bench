@@ -6,7 +6,6 @@ from typing import Any
 
 from clan_lib.cmd import Log, RunOpts
 from clan_lib.machines.machines import Machine
-from clan_lib.nix import nix_command
 
 # from clan_lib.ssh.upload import upload
 
@@ -40,10 +39,7 @@ def run_iperf_test(
     """
 
     bench_cmd = [
-        "shell",
-        "nixpkgs#iperf3",
-        "-c",
-        "iperf3",
+        "iperf",
         "--bidir",
         "--connect-timeout",
         "600",  # 5 seconds
@@ -74,7 +70,7 @@ def run_iperf_test(
     with host.host_connection() as ssh:
         # Set the password for the iperf3 server
         res = ssh.run(
-            nix_command(bench_cmd),
+            bench_cmd,
             RunOpts(log=Log.BOTH, timeout=timeout),
             extra_env={"IPERF3_PASSWORD": creds.password},
         )

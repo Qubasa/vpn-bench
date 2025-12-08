@@ -25,9 +25,7 @@ import { Toaster } from "solid-toast";
 import { IconVariant } from "./components/icon";
 import {
   benchData,
-  generalData,
   comparisonData,
-  GeneralData,
   BenchData,
   ComparisonData,
   Err,
@@ -338,10 +336,9 @@ function generateRoutesFromBenchData(data: BenchData): AppRoute[] {
 }
 
 function generateAppRouteFromGeneralData(
-  data: GeneralData | undefined,
   comparison: ComparisonData,
 ): AppRoute[] {
-  if (!data && Object.keys(comparison).length === 0) {
+  if (Object.keys(comparison).length === 0) {
     return [];
   }
 
@@ -354,8 +351,6 @@ function generateAppRouteFromGeneralData(
       label: "General",
       component: () => (
         <GeneralDashboard
-          bootstrap_connection_timings={data?.connection_timings}
-          reboot_connection_timings={data?.reboot_connection_timings}
           comparisonData={comparison}
           allVpnNames={allVpnNames}
         />
@@ -379,7 +374,7 @@ export const routes: AppRoute[] =
           ),
         },
         ...generateRoutesFromBenchData(benchData),
-        ...generateAppRouteFromGeneralData(generalData, comparisonData),
+        ...generateAppRouteFromGeneralData(comparisonData),
       ]
     : [];
 

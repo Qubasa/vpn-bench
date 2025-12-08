@@ -462,7 +462,7 @@ export const QperfBandwidthComparisonChart = (props: {
   return (
     <ComparisonBarChart
       data={chartData()}
-      title="QUIC Bandwidth"
+      title="HTTP3 Bandwidth"
       yAxisLabel="Bandwidth (Mbps)"
       height={props.height ?? 400}
       color="#52c41a"

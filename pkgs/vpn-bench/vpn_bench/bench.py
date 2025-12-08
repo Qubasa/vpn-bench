@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import Any, ParamSpec
 
 from clan_lib.cmd import Log, RunOpts
+from clan_lib.machines.machines import Machine
 from clan_lib.ssh.upload import upload
 
 from vpn_bench.assets import get_iperf_asset
@@ -46,6 +47,51 @@ def get_vpn_service_name(vpn: VPN) -> str:
         case _:
             msg = f"Unknown VPN type: {vpn}"
             raise ValueError(msg)
+
+
+def get_test_service_name(test: TestType) -> str | None:
+    """Get the systemd service name for a given test type.
+
+    Returns None for tests that don't have a dedicated server-side service.
+    """
+    match test:
+        case TestType.QPERF:
+            return "qperf.service"
+        case TestType.IPERF3:
+            return "iperf3.service"
+        case TestType.RIST_STREAM:
+            return "rist-receiver.service"
+        case TestType.PING | TestType.NIX_CACHE:
+            # These tests don't have dedicated server services
+            return None
+        case _:
+            return None
+
+
+def get_service_logs(
+    machine: Machine, service_name: str, since: str = "5 minutes ago"
+) -> str:
+    """Fetch systemd service logs from a remote machine.
+
+    Args:
+        machine: The Machine to fetch logs from
+        service_name: The systemd service name (e.g., "qperf.service")
+        since: Time specification for journalctl --since (default: "5 minutes ago")
+
+    Returns:
+        The service logs as a string, or error message if fetching fails
+    """
+    try:
+        host = machine.target_host().override(host_key_check="none")
+        with host.host_connection() as ssh:
+            result = ssh.run(
+                ["journalctl", "-u", service_name, "--since", since, "--no-pager"],
+                RunOpts(log=Log.BOTH, timeout=30),
+            )
+            return result.stdout
+    except Exception as e:
+        log.warning(f"Failed to fetch logs for {service_name} from {machine.name}: {e}")
+        return f"Failed to fetch logs: {e}"
 
 
 def restart_vpn_service(bmachines: list[BenchMachine], vpn: VPN) -> int:
@@ -168,6 +214,34 @@ def run_benchmarks(
             else:
                 return result, attempts
 
+        def collect_logs_on_failure(
+            result: dict[str, Any] | Exception,
+            test_type: TestType,
+            target_machine: Machine,
+        ) -> str | None:
+            """Collect service logs from target machine if test failed.
+
+            Args:
+                result: Test result (Exception if failed)
+                test_type: The type of test that was run
+                target_machine: The machine running the server service
+
+            Returns:
+                Service logs if test failed and service exists, None otherwise
+            """
+            if not isinstance(result, Exception):
+                return None
+
+            service_name = get_test_service_name(test_type)
+            if service_name is None:
+                return None
+
+            log.info(
+                f"Test {test_type.name} failed after all retries, "
+                f"collecting logs from {service_name} on {target_machine.name}"
+            )
+            return get_service_logs(target_machine, service_name)
+
         for test in tests:
             start_time = time.time()
             test_attempts = 0
@@ -184,6 +258,9 @@ def run_benchmarks(
                         target_machine=next_bmachine.cmachine,
                     )
                     tcp_duration = time.time() - start_time
+                    tcp_logs = collect_logs_on_failure(
+                        tcp_results, TestType.IPERF3, next_bmachine.cmachine
+                    )
 
                     udp_start = time.time()
                     # UDP test: no retry, 120s timeout
@@ -197,9 +274,14 @@ def run_benchmarks(
                             timeout=120,
                         )
                         udp_attempts = 1
+                        udp_logs = None
                     except Exception as err:
                         udp_results = err
                         udp_attempts = 1
+                        # Collect logs for UDP failure (single attempt)
+                        udp_logs = get_service_logs(
+                            next_bmachine.cmachine, "iperf3.service"
+                        )
                     udp_duration = time.time() - udp_start
 
                     # Restart VPN and track attempts
@@ -211,6 +293,8 @@ def run_benchmarks(
                         "test_attempts": tcp_attempts,
                         "vpn_restart_attempts": vpn_restart_attempts,
                     }
+                    if tcp_logs:
+                        tcp_metadata["service_logs"] = tcp_logs
                     save_bench_report(
                         result_dir, tcp_results, "tcp_iperf3.json", tcp_metadata
                     )
@@ -221,6 +305,8 @@ def run_benchmarks(
                         "test_attempts": udp_attempts,
                         "vpn_restart_attempts": 0,  # Already counted in TCP
                     }
+                    if udp_logs:
+                        udp_metadata["service_logs"] = udp_logs
                     save_bench_report(
                         result_dir, udp_results, "udp_iperf3.json", udp_metadata
                     )
@@ -234,12 +320,17 @@ def run_benchmarks(
                         next_bmachine.cmachine,
                     )
                     duration = time.time() - start_time
+                    service_logs = collect_logs_on_failure(
+                        quick_result, TestType.QPERF, next_bmachine.cmachine
+                    )
                     vpn_restart_attempts = restart_vpn_service(bmachines, vpn)
                     metadata: TestMetadataDict = {
                         "duration_seconds": duration,
                         "test_attempts": test_attempts,
                         "vpn_restart_attempts": vpn_restart_attempts,
                     }
+                    if service_logs:
+                        metadata["service_logs"] = service_logs
                     save_bench_report(result_dir, quick_result, "qperf.json", metadata)
                     continue
 
@@ -284,12 +375,17 @@ def run_benchmarks(
                         target_machine=next_bmachine.cmachine,
                     )
                     duration = time.time() - start_time
+                    service_logs = collect_logs_on_failure(
+                        rist_result, TestType.RIST_STREAM, next_bmachine.cmachine
+                    )
                     vpn_restart_attempts = restart_vpn_service(bmachines, vpn)
                     metadata = {
                         "duration_seconds": duration,
                         "test_attempts": test_attempts,
                         "vpn_restart_attempts": vpn_restart_attempts,
                     }
+                    if service_logs:
+                        metadata["service_logs"] = service_logs
                     save_bench_report(
                         result_dir, rist_result, "rist_stream.json", metadata
                     )

@@ -38,6 +38,7 @@ interface ErrorResponse {
   status: "error";
   error_type: "CmdOut" | "ClanError";
   error: CmdOutError | ClanError;
+  meta?: TestMetadata; // Metadata including service_logs on failure
 }
 
 type JsonWrapper<T> = SuccessResponse<T> | ErrorResponse;
@@ -57,6 +58,7 @@ export interface TestMetadata {
   duration_seconds: number;
   test_attempts: number;
   vpn_restart_attempts: number;
+  service_logs?: string; // Logs collected from target service on failure
 }
 
 // Success case for the Result type
@@ -70,6 +72,7 @@ export interface Ok<T> {
 export interface Err {
   ok: false;
   error: BenchmarkRunError;
+  meta?: TestMetadata; // Metadata including service_logs on failure
 }
 
 /**
@@ -231,6 +234,9 @@ export interface ComparisonRunData {
   videoStreaming?: VpnComparisonResultMap<VideoStreamingComparisonData>;
   tcpIperf?: VpnComparisonResultMap<TcpIperfComparisonData>;
   udpIperf?: VpnComparisonResultMap<UdpIperfComparisonData>;
+  // Connection timings are stored as VPN -> machine -> time string
+  connectionTimings?: ConnectionTimings;
+  rebootConnectionTimings?: ConnectionTimings;
 }
 
 // Maps run alias (TC profile) to comparison data
@@ -344,7 +350,12 @@ export function generateBenchData(): BenchData {
         details: moduleData.error,
         filePath: path, // Include path for context
       };
-      generatedResult = { ok: false, error: errorDetails };
+      // Include metadata (which may contain service_logs) for error results
+      generatedResult = {
+        ok: false,
+        error: errorDetails,
+        meta: moduleData.meta,
+      };
     } else {
       console.warn(
         /* eslint-disable-next-line "@typescript-eslint/no-explicit-any" */
@@ -590,6 +601,11 @@ export function generateComparisonData(): ComparisonData {
     } else if (fileName === "udp_iperf3.json") {
       result[runAlias].udpIperf =
         moduleData.data as VpnComparisonResultMap<UdpIperfComparisonData>;
+    } else if (fileName === "connection_timings.json") {
+      result[runAlias].connectionTimings = moduleData.data as ConnectionTimings;
+    } else if (fileName === "reboot_connection_timings.json") {
+      result[runAlias].rebootConnectionTimings =
+        moduleData.data as ConnectionTimings;
     }
   });
 

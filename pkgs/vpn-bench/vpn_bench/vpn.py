@@ -42,13 +42,21 @@ def install_zerotier(config: Config, tr_machines: list[TrMachine]) -> None:
             "peer": {
                 "machines": {},
             },
+            "moon": {"machines": {}},
         },
     }
     for machine_num, tr_machine in enumerate(tr_machines):
         # Configure ZeroTier role
         if machine_num == 0:
+            ipv4 = tr_machine["ipv4"]
+            assert ipv4 is not None, (
+                "Zerotier requires one public moon IPv4 address, for holepunching"
+            )
             log.info(f"Setting up {tr_machine['name']} as the zerotier controller")
             conf["roles"]["controller"]["machines"][tr_machine["name"]] = {}
+            conf["roles"]["moon"]["machines"][tr_machine["name"]] = {
+                "settings": {"stableEndpoints": [ipv4]}
+            }
         else:
             log.info(f"Adding {tr_machine['name']} to the zerotier peers")
             conf["roles"]["peer"]["machines"][tr_machine["name"]] = {}

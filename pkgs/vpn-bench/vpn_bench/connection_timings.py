@@ -126,7 +126,7 @@ def download_connection_timings(
                 dest,
             )
             futures.append(future)
-        done, not_done = concurrent.futures.wait(futures)
+        done, _not_done = concurrent.futures.wait(futures)
 
         for future in done:
             exc = future.exception()
@@ -201,7 +201,7 @@ def wait_for_vpn_connectivity(
             future = executor.submit(_restart_connection_check, machine)
             futures.append(future)
 
-        done, not_done = concurrent.futures.wait(futures)
+        done, _not_done = concurrent.futures.wait(futures)
 
         for future in done:
             exc = future.exception()
@@ -239,7 +239,7 @@ def wait_for_vpn_connectivity(
             )
             futures.append(future)
 
-        done, not_done = concurrent.futures.wait(futures)
+        done, _not_done = concurrent.futures.wait(futures)
 
         for future in done:
             exc = future.exception()
@@ -275,7 +275,7 @@ def reboot_connection_timings(
             future = executor.submit(_reboot, machine)
             futures.append(future)
 
-        done, not_done = concurrent.futures.wait(futures)
+        done, _not_done = concurrent.futures.wait(futures)
 
         for future in done:
             exc = future.exception()
@@ -348,7 +348,7 @@ def reboot_connection_timings(
             )
             futures.append(future)
 
-        done, not_done = concurrent.futures.wait(futures)
+        done, _not_done = concurrent.futures.wait(futures)
 
         for future in done:
             exc = future.exception()
@@ -382,12 +382,13 @@ def analyse_connection_timings(config: Config, tr_machines: list[TrMachine]) -> 
 
 def process_timing_files(config: Config, timing_type: str, general_dir: Path) -> None:
     """
-    Process timing files of a specific type across all VPNs and machines.
+    Process timing files of a specific type across all VPNs and machines,
+    saving per TC profile in the comparison directory structure.
 
     Args:
         config: Configuration containing benchmark directory
         timing_type: Type of timing files to process ("connection_timings" or "reboot_connection_timings")
-        general_dir: Directory to save the summary file
+        general_dir: Directory to save the summary files
     """
     log.info(f"Processing {timing_type}")
 
@@ -398,16 +399,13 @@ def process_timing_files(config: Config, timing_type: str, general_dir: Path) ->
         if d.is_dir() and not d.name.startswith(".") and d.name != "General"
     ]
 
-    # Dictionary to store the summary of all connection timings
-    # Structure: {vpn_name: {run_alias: {machine_name: timing}}}
-    all_vpn_timings: dict[str, dict[str, dict[str, str]]] = {}
+    # Dictionary to reorganize data by profile
+    # Structure: {run_alias: {vpn_name: {machine_name: timing}}}
+    profiles_data: dict[str, dict[str, dict[str, str]]] = {}
 
     for vpn_dir in vpn_dirs:
         vpn_name = vpn_dir.name
         log.info(f"Processing VPN: {vpn_name}")
-
-        vpn_timings: dict[str, dict[str, str]] = {}
-        all_vpn_timings[vpn_name] = vpn_timings
 
         # Process each benchmark run directory
         for run_dir in vpn_dir.iterdir():
@@ -417,8 +415,13 @@ def process_timing_files(config: Config, timing_type: str, general_dir: Path) ->
             run_alias = run_dir.name
             log.info(f"  Processing run: {run_alias}")
 
-            run_timings: dict[str, str] = {}
-            vpn_timings[run_alias] = run_timings
+            # Initialize profile entry if it doesn't exist
+            if run_alias not in profiles_data:
+                profiles_data[run_alias] = {}
+
+            # Initialize VPN entry for this profile if it doesn't exist
+            if vpn_name not in profiles_data[run_alias]:
+                profiles_data[run_alias][vpn_name] = {}
 
             # Process each machine directory within the run
             for machine_dir in run_dir.iterdir():
@@ -451,7 +454,9 @@ def process_timing_files(config: Config, timing_type: str, general_dir: Path) ->
                             break
 
                     if connection_time:
-                        run_timings[machine_name] = connection_time
+                        profiles_data[run_alias][vpn_name][machine_name] = (
+                            connection_time
+                        )
                         log.info(f"    {machine_name}: {connection_time}")
                     else:
                         log.warning(
@@ -460,4 +465,13 @@ def process_timing_files(config: Config, timing_type: str, general_dir: Path) ->
                 except Exception as e:
                     log.error(f"Error processing {timing_file}: {e}")
 
-    save_bench_report(general_dir, all_vpn_timings, f"{timing_type}.json")
+    # Save data per profile in the comparison directory structure
+    comparison_dir = general_dir / "comparison"
+    comparison_dir.mkdir(exist_ok=True)
+
+    for run_alias, vpn_data in profiles_data.items():
+        profile_dir = comparison_dir / run_alias
+        profile_dir.mkdir(exist_ok=True)
+
+        log.info(f"Saving {timing_type} for profile: {run_alias}")
+        save_bench_report(profile_dir, vpn_data, f"{timing_type}.json")
