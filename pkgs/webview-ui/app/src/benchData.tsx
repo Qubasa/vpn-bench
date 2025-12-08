@@ -267,7 +267,6 @@ function loadTCSettings(
     }
   }
 
-  console.warn(`TC settings not found for ${vpnName}/${runAlias}`);
   return null;
 }
 
@@ -299,7 +298,6 @@ export function generateBenchData(): BenchData {
       machineName = pathParts[pathParts.length - 2];
       fileName = pathParts[pathParts.length - 1];
     } else {
-      console.warn(`Skipping file with unexpected path structure: ${path}`);
       return;
     }
 
@@ -307,8 +305,15 @@ export function generateBenchData(): BenchData {
       return;
     }
 
+    // Filter out connection timing files
+    if (
+      fileName === "connection_timings.json" ||
+      fileName === "reboot_connection_timings.json"
+    ) {
+      return;
+    }
+
     if (!categoryName || !machineName || !fileName) {
-      console.warn(`Skipping file with missing path components: ${path}`);
       return;
     }
 
@@ -317,10 +322,6 @@ export function generateBenchData(): BenchData {
       typeof rawModule !== "object" ||
       !("status" in rawModule)
     ) {
-      console.warn(
-        `Skipping file with unexpected content format (missing 'status'): ${path}`,
-        rawModule,
-      );
       return;
     }
 
@@ -341,10 +342,6 @@ export function generateBenchData(): BenchData {
       };
     } else if (moduleData.status === "error") {
       // Create an Err result
-      console.warn(
-        `Benchmark run failed for ${path}: Type=${moduleData.error_type}`,
-        moduleData.error,
-      );
       const errorDetails: BenchmarkRunError = {
         type: moduleData.error_type,
         details: moduleData.error,
@@ -357,10 +354,6 @@ export function generateBenchData(): BenchData {
         meta: moduleData.meta,
       };
     } else {
-      console.warn(
-        /* eslint-disable-next-line "@typescript-eslint/no-explicit-any" */
-        `Skipping file with unknown status '${(moduleData as any).status}': ${path}`,
-      );
       return; // Skip if status is neither 'success' nor 'error'
     }
 
