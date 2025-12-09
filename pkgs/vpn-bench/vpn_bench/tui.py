@@ -96,6 +96,44 @@ class ProgressPanel(Static):
         color: $text;
         margin-right: 2;
     }
+
+    ProgressPanel .operation-row {
+        height: auto;
+        padding: 0 1;
+    }
+
+    ProgressPanel .operation-label {
+        color: $text-muted;
+    }
+
+    ProgressPanel .operation-value {
+        color: $warning;
+        text-style: bold;
+    }
+
+    ProgressPanel .operation-duration {
+        color: $text-muted;
+        margin-left: 1;
+    }
+
+    ProgressPanel .last-op-row {
+        height: auto;
+        padding: 0 1 1 1;
+    }
+
+    ProgressPanel .last-op-value {
+        color: $success;
+    }
+
+    ProgressPanel .eta-breakdown-row {
+        height: auto;
+        padding: 0 1;
+    }
+
+    ProgressPanel .eta-breakdown-value {
+        color: $primary;
+        text-style: italic;
+    }
     """
 
     def compose(self) -> ComposeResult:
@@ -116,12 +154,27 @@ class ProgressPanel(Static):
         # Progress bar
         yield ProgressBar(total=100, show_eta=False, id="main-progress")
 
+        # Current operation row
+        with Horizontal(classes="operation-row"):
+            yield Label("Operation: ", classes="operation-label")
+            yield Label("--", id="operation-value", classes="operation-value")
+            yield Label("", id="operation-duration", classes="operation-duration")
+
+        # Last completed operation row
+        with Horizontal(classes="last-op-row"):
+            yield Label("Last: ", classes="timing-label")
+            yield Label("--", id="last-op-value", classes="last-op-value")
+
         # Timing row
         with Horizontal(classes="timing-row"):
             yield Label("Elapsed: ", classes="timing-label")
             yield Label("0s", id="elapsed-value", classes="timing-value")
             yield Label("ETA: ", classes="timing-label")
             yield Label("calculating...", id="eta-value", classes="timing-value")
+
+        # ETA breakdown row (shows phase-specific estimates)
+        with Horizontal(classes="eta-breakdown-row"):
+            yield Label("", id="eta-breakdown-value", classes="eta-breakdown-value")
 
     def update_progress(self, progress: BenchmarkProgress) -> None:
         """Update the progress display with new state."""
@@ -173,6 +226,54 @@ class ProgressPanel(Static):
         # Update timing
         self.query_one("#elapsed-value", Label).update(progress.format_elapsed())
         self.query_one("#eta-value", Label).update(progress.format_eta())
+
+        # Update ETA breakdown
+        self.query_one("#eta-breakdown-value", Label).update(
+            progress.format_eta_breakdown()
+        )
+
+        # Update current operation display
+        if progress.current_operation is not None:
+            self.query_one("#operation-value", Label).update(progress.current_operation)
+            # Calculate elapsed time for current operation
+            if progress.current_operation_start is not None:
+                from time import monotonic
+
+                elapsed = monotonic() - progress.current_operation_start
+                self.query_one("#operation-duration", Label).update(
+                    f"({self._format_duration(elapsed)})"
+                )
+            else:
+                self.query_one("#operation-duration", Label).update("")
+        else:
+            self.query_one("#operation-value", Label).update("--")
+            self.query_one("#operation-duration", Label).update("")
+
+        # Update last completed operation display
+        if (
+            progress.last_operation_name is not None
+            and progress.last_operation_duration is not None
+        ):
+            last_op_text = (
+                f"{progress.last_operation_name} "
+                f"({self._format_duration(progress.last_operation_duration)})"
+            )
+            self.query_one("#last-op-value", Label).update(last_op_text)
+        else:
+            self.query_one("#last-op-value", Label).update("--")
+
+    @staticmethod
+    def _format_duration(seconds: float) -> str:
+        """Format seconds as human-readable duration."""
+        if seconds < 60:
+            return f"{int(seconds)}s"
+        if seconds < 3600:
+            minutes = int(seconds // 60)
+            secs = int(seconds % 60)
+            return f"{minutes}m {secs}s"
+        hours = int(seconds // 3600)
+        minutes = int((seconds % 3600) // 60)
+        return f"{hours}h {minutes}m"
 
 
 class MachineRingPanel(Static):

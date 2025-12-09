@@ -63,6 +63,7 @@ class VPN(Enum):
 
 class TestType(Enum):
     IPERF3 = "iperf3"
+    IPERF3_PARALLEL_TCP = "iperf3-parallel-tcp"
     QPERF = "qperf"
     NIX_CACHE = "nix-cache"
     PING = "ping"

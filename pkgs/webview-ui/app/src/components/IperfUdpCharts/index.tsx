@@ -1048,8 +1048,22 @@ export const IperfUdpCharts = ({
   // Basic check for reports array
   if (!reports || reports.length === 0) {
     return (
-      <div style={{ padding: "20px", color: "red" }}>
-        No UDP reports provided.
+      <div
+        style={{
+          background: "#f9f9f9",
+          border: "1px solid #e0e0e0",
+          "border-radius": "8px",
+          padding: "20px",
+          "text-align": "center",
+          color: "#555",
+          "font-size": "16px",
+          margin: "1rem 0",
+        }}
+      >
+        <p style={{ margin: 0 }}>
+          No UDP performance data available. Run the benchmark to generate iperf
+          UDP data.
+        </p>
       </div>
     );
   }

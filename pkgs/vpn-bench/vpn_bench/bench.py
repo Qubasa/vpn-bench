@@ -1,6 +1,7 @@
 import logging
 import time
 from collections.abc import Callable
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, ParamSpec
 
@@ -21,6 +22,7 @@ from vpn_bench.qperf import run_qperf_test
 from vpn_bench.retry import retry_operation_with_info
 from vpn_bench.rist_stream import run_rist_test
 from vpn_bench.terraform import TrMachine
+from vpn_bench.timing import TimingTracker
 from vpn_bench.vpn import install_vpn
 
 log = logging.getLogger(__name__)
@@ -95,19 +97,33 @@ def get_service_logs(
         return f"Failed to fetch logs: {e}"
 
 
-def restart_vpn_service(bmachines: list[BenchMachine], vpn: VPN) -> int:
+@dataclass
+class VpnRestartResult:
+    """Result of restarting VPN service with timing breakdown."""
+
+    retries: int
+    restart_duration_seconds: float
+    connectivity_wait_duration_seconds: float
+
+
+def restart_vpn_service(bmachines: list[BenchMachine], vpn: VPN) -> VpnRestartResult:
     """Restart the VPN service on all benchmark machines and wait for connectivity.
 
     Returns:
-        Number of retries needed (0 = all succeeded on first try)
+        VpnRestartResult with timing breakdown
     """
     if vpn == VPN.Internal or vpn == VPN.Wireguard:
         # No VPN service to restart for internal tests
-        return 0
+        return VpnRestartResult(
+            retries=0,
+            restart_duration_seconds=0.0,
+            connectivity_wait_duration_seconds=0.0,
+        )
 
     service_name = get_vpn_service_name(vpn)
     log.info(f"Restarting VPN service {service_name} on all machines")
 
+    restart_start = time.time()
     total_retries = 0
 
     def restart_service_on_machine(bmachine: BenchMachine) -> int:
@@ -132,13 +148,22 @@ def restart_vpn_service(bmachines: list[BenchMachine], vpn: VPN) -> int:
         retries = restart_service_on_machine(bmachine)
         total_retries += retries
 
-    log.info(f"VPN service {service_name} restarted on all machines")
+    restart_duration = time.time() - restart_start
+    log.info(
+        f"VPN service {service_name} restarted on all machines in {restart_duration:.1f}s"
+    )
 
     # Wait for VPN connectivity to be re-established
+    connectivity_start = time.time()
     machines = [bm.cmachine for bm in bmachines]
     wait_for_vpn_connectivity(machines)
+    connectivity_duration = time.time() - connectivity_start
 
-    return total_retries
+    return VpnRestartResult(
+        retries=total_retries,
+        restart_duration_seconds=restart_duration,
+        connectivity_wait_duration_seconds=connectivity_duration,
+    )
 
 
 def run_benchmarks(
@@ -253,7 +278,6 @@ def run_benchmarks(
         for test_idx, test in enumerate(tests):
             start_time = time.time()
             test_attempts = 0
-            vpn_restart_attempts = 0
 
             # Track test progress
             if tracker is not None:
@@ -297,13 +321,15 @@ def run_benchmarks(
                     udp_duration = time.time() - udp_start
 
                     # Restart VPN and track attempts
-                    vpn_restart_attempts = restart_vpn_service(bmachines, vpn)
+                    vpn_restart_result = restart_vpn_service(bmachines, vpn)
 
                     # Save TCP results with metadata
                     tcp_metadata: TestMetadataDict = {
                         "duration_seconds": tcp_duration,
                         "test_attempts": tcp_attempts,
-                        "vpn_restart_attempts": vpn_restart_attempts,
+                        "vpn_restart_attempts": vpn_restart_result.retries,
+                        "vpn_restart_duration_seconds": vpn_restart_result.restart_duration_seconds,
+                        "connectivity_wait_duration_seconds": vpn_restart_result.connectivity_wait_duration_seconds,
                     }
                     if tcp_logs:
                         tcp_metadata["service_logs"] = tcp_logs
@@ -335,11 +361,13 @@ def run_benchmarks(
                     service_logs = collect_logs_on_failure(
                         quick_result, TestType.QPERF, next_bmachine.cmachine
                     )
-                    vpn_restart_attempts = restart_vpn_service(bmachines, vpn)
+                    vpn_restart_result = restart_vpn_service(bmachines, vpn)
                     metadata: TestMetadataDict = {
                         "duration_seconds": duration,
                         "test_attempts": test_attempts,
-                        "vpn_restart_attempts": vpn_restart_attempts,
+                        "vpn_restart_attempts": vpn_restart_result.retries,
+                        "vpn_restart_duration_seconds": vpn_restart_result.restart_duration_seconds,
+                        "connectivity_wait_duration_seconds": vpn_restart_result.connectivity_wait_duration_seconds,
                     }
                     if service_logs:
                         metadata["service_logs"] = service_logs
@@ -353,11 +381,13 @@ def run_benchmarks(
                         "vpn." + next_bmachine.cmachine.name,
                     )
                     duration = time.time() - start_time
-                    vpn_restart_attempts = restart_vpn_service(bmachines, vpn)
+                    vpn_restart_result = restart_vpn_service(bmachines, vpn)
                     metadata = {
                         "duration_seconds": duration,
                         "test_attempts": test_attempts,
-                        "vpn_restart_attempts": vpn_restart_attempts,
+                        "vpn_restart_attempts": vpn_restart_result.retries,
+                        "vpn_restart_duration_seconds": vpn_restart_result.restart_duration_seconds,
+                        "connectivity_wait_duration_seconds": vpn_restart_result.connectivity_wait_duration_seconds,
                     }
                     save_bench_report(result_dir, ping_result, "ping.json", metadata)
                     continue
@@ -370,11 +400,13 @@ def run_benchmarks(
                         next_bmachine,
                     )
                     duration = time.time() - start_time
-                    vpn_restart_attempts = restart_vpn_service(bmachines, vpn)
+                    vpn_restart_result = restart_vpn_service(bmachines, vpn)
                     metadata = {
                         "duration_seconds": duration,
                         "test_attempts": test_attempts,
-                        "vpn_restart_attempts": vpn_restart_attempts,
+                        "vpn_restart_attempts": vpn_restart_result.retries,
+                        "vpn_restart_duration_seconds": vpn_restart_result.restart_duration_seconds,
+                        "connectivity_wait_duration_seconds": vpn_restart_result.connectivity_wait_duration_seconds,
                     }
                     save_bench_report(
                         result_dir, nix_cache_result, "nix_cache.json", metadata
@@ -393,11 +425,13 @@ def run_benchmarks(
                     service_logs = collect_logs_on_failure(
                         rist_result, TestType.RIST_STREAM, next_bmachine.cmachine
                     )
-                    vpn_restart_attempts = restart_vpn_service(bmachines, vpn)
+                    vpn_restart_result = restart_vpn_service(bmachines, vpn)
                     metadata = {
                         "duration_seconds": duration,
                         "test_attempts": test_attempts,
-                        "vpn_restart_attempts": vpn_restart_attempts,
+                        "vpn_restart_attempts": vpn_restart_result.retries,
+                        "vpn_restart_duration_seconds": vpn_restart_result.restart_duration_seconds,
+                        "connectivity_wait_duration_seconds": vpn_restart_result.connectivity_wait_duration_seconds,
                     }
                     if service_logs:
                         metadata["service_logs"] = service_logs
@@ -438,18 +472,37 @@ def benchmark_vpn(
         f"Benchmarking VPN {vpn} with {len(benchmark_runs)} different configurations"
     )
 
+    # Create timing tracker with TUI callbacks
+    def on_op_start(name: str) -> None:
+        if tracker is not None:
+            tracker.start_operation(name)
+
+    def on_op_complete(name: str, duration: float) -> None:
+        if tracker is not None:
+            tracker.update_operation_timing(name, duration)
+
+    timing = TimingTracker(
+        vpn_name=vpn.value,
+        on_operation_start=on_op_start,
+        on_operation_complete=on_op_complete,
+    )
+
     # Track installation phase
     if tracker is not None:
         tracker.set_phase("installing VPN")
 
     # Install VPN once (connection timings collected for baseline if enabled)
-    bmachines = install_vpn(
-        config,
-        vpn,
-        tr_machines,
-        get_con_times=not skip_reboot_timings,
-        benchmark_run_alias=benchmark_runs[0].alias if benchmark_runs else "default",
-    )
+    with timing.phase("vpn_installation"):
+        bmachines = install_vpn(
+            config,
+            vpn,
+            tr_machines,
+            get_con_times=not skip_reboot_timings,
+            benchmark_run_alias=benchmark_runs[0].alias
+            if benchmark_runs
+            else "default",
+            timing=timing,
+        )
 
     # Get list of machines for TC application
     machines = [bm.cmachine for bm in bmachines]
@@ -460,23 +513,36 @@ def benchmark_vpn(
         if tracker is not None:
             tracker.start_profile(run_config.alias, profile_idx)
 
-        # Use context manager to apply TC settings and automatically clean up
-        with apply_tc_settings(machines, run_config.tc_settings):
-            log.info("TC settings applied, waiting 30 seconds for stabilization")
-            # Run benchmarks with this configuration
-            run_benchmarks(
-                config,
-                vpn,
-                bmachines,
-                tests,
-                run_config.alias,
-                run_config.tc_settings,
-                tracker,
-            )
+        with timing.phase("benchmarking", profile=run_config.alias):
+            # Use context manager to apply TC settings and automatically clean up
+            with apply_tc_settings(machines, run_config.tc_settings):
+                with timing.operation("tc_stabilization"):
+                    log.info(
+                        "TC settings applied, waiting 30 seconds for stabilization"
+                    )
+                    time.sleep(30)
+
+                # Run benchmarks with this configuration
+                with timing.operation("run_tests", profile=run_config.alias):
+                    run_benchmarks(
+                        config,
+                        vpn,
+                        bmachines,
+                        tests,
+                        run_config.alias,
+                        run_config.tc_settings,
+                        tracker,
+                    )
 
         # Track profile completion
         if tracker is not None:
             tracker.complete_profile()
+
+    # Save timing breakdown
+    timing_breakdown = timing.finalize()
+    timing_file = config.bench_dir / vpn.name / "timing_breakdown.json"
+    timing_breakdown.save(timing_file)
+    log.info(f"Saved timing breakdown to {timing_file}")
 
     # Regenerate comparison data after benchmarks complete
     log.info("Regenerating comparison data...")

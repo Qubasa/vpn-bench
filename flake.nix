@@ -77,6 +77,7 @@
             }
           );
           "zerotier" = ./clanModules/zerotier;
+          "headscale" = ./clanModules/headscale;
           "rist-stream" = ./clanModules/rist-stream;
           "tinc" = ./clanModules/tinc;
           "wireguard" = ./clanModules/wireguard;

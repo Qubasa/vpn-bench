@@ -4,8 +4,11 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+from clan_lib.async_run import AsyncRuntime
 from clan_lib.cmd import Log, RunOpts
 from clan_lib.machines.machines import Machine
+
+from vpn_bench.data import BenchMachine
 
 log = logging.getLogger(__name__)
 

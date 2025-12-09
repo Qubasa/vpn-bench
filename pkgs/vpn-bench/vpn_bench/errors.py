@@ -20,6 +20,13 @@ class TestMetadataDict(TypedDict, total=False):
     vpn_restart_attempts: int
     service_logs: str  # Logs collected from target service on failure
 
+    # Extended timing fields for bottleneck analysis
+    vpn_restart_duration_seconds: float  # Time spent restarting VPN between tests
+    connectivity_wait_duration_seconds: float  # Time waiting for VPN connectivity
+    test_setup_duration_seconds: (
+        float  # Time for test-specific setup (e.g., service restart)
+    )
+
 
 class VpnBenchError(ClanError):
     pass

@@ -59,6 +59,40 @@ export interface TestMetadata {
   test_attempts: number;
   vpn_restart_attempts: number;
   service_logs?: string; // Logs collected from target service on failure
+  // Extended timing fields for bottleneck analysis
+  vpn_restart_duration_seconds?: number;
+  connectivity_wait_duration_seconds?: number;
+  test_setup_duration_seconds?: number;
+}
+
+// --- Timing Breakdown Interfaces ---
+
+// Single operation timing record
+export interface OperationTiming {
+  name: string;
+  duration_seconds: number;
+  start_timestamp: number;
+  success: boolean;
+  error_message?: string | null;
+  metadata?: Record<string, unknown>;
+}
+
+// Phase-level timing with nested operations
+export interface PhaseTiming {
+  phase: string;
+  duration_seconds: number;
+  start_timestamp: number;
+  operations: OperationTiming[];
+  metadata?: Record<string, unknown>;
+}
+
+// Complete timing breakdown for a benchmark run
+export interface TimingBreakdown {
+  vpn_name: string;
+  total_duration_seconds: number;
+  start_timestamp: number;
+  end_timestamp: number;
+  phases: PhaseTiming[];
 }
 
 // Success case for the Result type

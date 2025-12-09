@@ -1,6 +1,8 @@
+from __future__ import annotations
+
 import json
 import logging
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from clan_cli.vars.get import get_machine_var
 from clan_cli.vars.list import stringify_all_vars
@@ -26,6 +28,9 @@ from vpn_bench.nix_cache import install_nix_cache
 from vpn_bench.retry import retry_operation
 from vpn_bench.setup import create_base_inventory
 from vpn_bench.terraform import TrMachine
+
+if TYPE_CHECKING:
+    from vpn_bench.timing import TimingTracker
 
 log = logging.getLogger(__name__)
 
@@ -380,11 +385,35 @@ def install_vpn(
     tr_machines: list[TrMachine],
     get_con_times: bool = True,
     benchmark_run_alias: str = "default",
+    timing: TimingTracker | None = None,
 ) -> list[BenchMachine]:
-    # Update cvpn-bench flake input, else error because of mismatched input
-    run(["nix", "flake", "update", "cvpn-bench", "--flake", str(config.clan_dir)])
+    """Install and configure VPN on all machines.
 
-    create_base_inventory(config, tr_machines)
+    Args:
+        config: Configuration object
+        vpn: VPN type to install
+        tr_machines: List of terraform machines
+        get_con_times: Whether to collect connection timing measurements
+        benchmark_run_alias: Alias for the benchmark run (for timing results)
+        timing: Optional TimingTracker for operation-level timing
+
+    Returns:
+        List of BenchMachine objects with VPN IPs
+    """
+    from contextlib import nullcontext
+
+    def timed_op(name: str) -> Any:
+        """Return timing context manager if timing is enabled, else nullcontext."""
+        if timing is not None:
+            return timing.operation(name)
+        return nullcontext()
+
+    # Update cvpn-bench flake input, else error because of mismatched input
+    with timed_op("nix_flake_update"):
+        run(["nix", "flake", "update", "cvpn-bench", "--flake", str(config.clan_dir)])
+
+    with timed_op("create_base_inventory"):
+        create_base_inventory(config, tr_machines)
 
     # Initialize and configure machines
 
@@ -410,45 +439,48 @@ def install_vpn(
 
     if get_con_times and vpn != VPN.Internal:
         # Update machine without VPNs to remove any previous VPN configuration
-        deploy_machines(machines, build_host=build_host, ssh_key=config.ssh_keys[0])
+        with timed_op("deploy_base_machines"):
+            deploy_machines(machines, build_host=build_host, ssh_key=config.ssh_keys[0])
 
-        state_dirs = [
-            "/root/qperf",
-            "/var/lib/qperf/qperf",
-            "/etc/zerotier",
-            "/etc/tinc",
-            "/var/lib/zerotier-one",
-            "/var/lib/mycelium",
-            "/var/lib/private/mycelium/",
-            "/var/lib/connection-check",
-        ]
-        delete_dirs(state_dirs, machines)
+        with timed_op("clean_state_dirs"):
+            state_dirs = [
+                "/root/qperf",
+                "/var/lib/qperf/qperf",
+                "/etc/zerotier",
+                "/etc/tinc",
+                "/var/lib/zerotier-one",
+                "/var/lib/mycelium",
+                "/var/lib/private/mycelium/",
+                "/var/lib/connection-check",
+            ]
+            delete_dirs(state_dirs, machines)
 
     # Setup VPN configuration
-    match vpn:
-        case VPN.Zerotier:
-            install_zerotier(config, tr_machines)
-        case VPN.Mycelium:
-            install_mycelium(config, tr_machines)
-        case VPN.Hyprspace:
-            install_hyprspace(config, tr_machines)
-        case VPN.VpnCloud:
-            install_vpncloud(config, tr_machines)
-        case VPN.Yggdrasil:
-            install_yggdrasil(config, tr_machines)
-        case VPN.Wireguard:
-            install_wireguard(config, tr_machines)
-        case VPN.Easytier:
-            install_easytier(config, tr_machines)
-        case VPN.Nebula:
-            install_nebula(config, tr_machines)
-        case VPN.Tinc:
-            install_tinc(config, tr_machines)
-        case VPN.Internal:
-            pass
-        case _:
-            msg = f"VPN {vpn} not supported"
-            raise VpnBenchError(msg)
+    with timed_op(f"install_{vpn.value.lower()}_config"):
+        match vpn:
+            case VPN.Zerotier:
+                install_zerotier(config, tr_machines)
+            case VPN.Mycelium:
+                install_mycelium(config, tr_machines)
+            case VPN.Hyprspace:
+                install_hyprspace(config, tr_machines)
+            case VPN.VpnCloud:
+                install_vpncloud(config, tr_machines)
+            case VPN.Yggdrasil:
+                install_yggdrasil(config, tr_machines)
+            case VPN.Wireguard:
+                install_wireguard(config, tr_machines)
+            case VPN.Easytier:
+                install_easytier(config, tr_machines)
+            case VPN.Nebula:
+                install_nebula(config, tr_machines)
+            case VPN.Tinc:
+                install_tinc(config, tr_machines)
+            case VPN.Internal:
+                pass
+            case _:
+                msg = f"VPN {vpn} not supported"
+                raise VpnBenchError(msg)
 
     for machine in machines:
         machine.flake.invalidate_cache()
@@ -457,18 +489,22 @@ def install_vpn(
         # Because of facts to vars migration code,
         # we need to generate the zerotier network-id var
         # for the controller machine
-        run_generators([machines[0]], "zerotier")
+        with timed_op("run_zerotier_generators"):
+            run_generators([machines[0]], "zerotier")
 
     # Get the VPN IP of each machine
-    bmachines = get_vpn_ips(config, machines, vpn)
-    save_machine_layout(config, vpn, bmachines)
+    with timed_op("get_vpn_ips"):
+        bmachines = get_vpn_ips(config, machines, vpn)
+        save_machine_layout(config, vpn, bmachines)
 
     # Install Nix cache (first machine is the server, others are clients)
-    install_nix_cache(config, tr_machines, bmachines)
+    with timed_op("install_nix_cache"):
+        install_nix_cache(config, tr_machines, bmachines)
 
     # Always install connection timings service (needed for wait_for_vpn_connectivity)
     if vpn != VPN.Internal or vpn == VPN.Wireguard:
-        install_connection_timings_conf(config, tr_machines, vpn, bmachines)
+        with timed_op("install_connection_timings_service"):
+            install_connection_timings_conf(config, tr_machines, vpn, bmachines)
 
     machines = [bmachine.cmachine for bmachine in bmachines]
 
@@ -479,17 +515,21 @@ def install_vpn(
     for bmachine in bmachines:
         bmachine.cmachine.flake.invalidate_cache()
 
-    run_generators(machines, generators=None, full_closure=False)
+    with timed_op("run_generators"):
+        run_generators(machines, generators=None, full_closure=False)
 
     # Update machine configuration with VPNs
-    deploy_machines(machines, build_host=build_host, ssh_key=config.ssh_keys[0])
+    with timed_op("deploy_vpn_machines"):
+        deploy_machines(machines, build_host=build_host, ssh_key=config.ssh_keys[0])
 
     if get_con_times and vpn != VPN.Internal:
-        download_connection_timings(
-            config, vpn, machines, benchmark_run_alias=benchmark_run_alias
-        )
-        reboot_connection_timings(
-            config, vpn, machines, benchmark_run_alias=benchmark_run_alias
-        )
+        with timed_op("initial_connection_timings"):
+            download_connection_timings(
+                config, vpn, machines, benchmark_run_alias=benchmark_run_alias
+            )
+        with timed_op("reboot_connection_timings"):
+            reboot_connection_timings(
+                config, vpn, machines, benchmark_run_alias=benchmark_run_alias
+            )
 
     return bmachines
