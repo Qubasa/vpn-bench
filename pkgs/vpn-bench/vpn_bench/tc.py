@@ -1,11 +1,10 @@
 """Traffic Control (tc) utilities for simulating network conditions."""
 
-import concurrent
 import logging
 from collections.abc import Generator
-from concurrent.futures import ThreadPoolExecutor
 from contextlib import contextmanager
 
+from clan_lib.async_run import AsyncRuntime
 from clan_lib.cmd import Log, RunOpts
 from clan_lib.machines.machines import Machine
 
@@ -162,19 +161,11 @@ def _apply_tc_settings_internal(machines: list[Machine], settings: TCSettings) -
     """
     log.info(f"Applying TC settings to {len(machines)} machines: {settings}")
 
-    with ThreadPoolExecutor() as executor:
-        futures = []
+    with AsyncRuntime() as runtime:
         for machine in machines:
-            future = executor.submit(_apply_tc_to_machine, machine, settings)
-            futures.append(future)
-
-        done, _not_done = concurrent.futures.wait(futures)
-
-        for future in done:
-            exc = future.exception()
-            if exc is not None:
-                log.error(f"Failed to apply TC settings: {exc}")
-                raise exc
+            runtime.async_run(None, _apply_tc_to_machine, machine, settings)
+        runtime.join_all()
+        runtime.check_all()
 
 
 def clear_tc_settings(machines: list[Machine]) -> None:
@@ -186,19 +177,11 @@ def clear_tc_settings(machines: list[Machine]) -> None:
     """
     log.info(f"Clearing TC settings from {len(machines)} machines")
 
-    with ThreadPoolExecutor() as executor:
-        futures = []
+    with AsyncRuntime() as runtime:
         for machine in machines:
-            future = executor.submit(_clear_tc_from_machine, machine)
-            futures.append(future)
-
-        done, _not_done = concurrent.futures.wait(futures)
-
-        for future in done:
-            exc = future.exception()
-            if exc is not None:
-                log.error(f"Failed to clear TC settings: {exc}")
-                raise exc
+            runtime.async_run(None, _clear_tc_from_machine, machine)
+        runtime.join_all()
+        runtime.check_all()
 
 
 @contextmanager

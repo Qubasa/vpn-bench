@@ -16,6 +16,7 @@ from vpn_bench.errors import TestMetadataDict, save_bench_report
 from vpn_bench.iperf3 import IperfCreds, run_iperf_test
 from vpn_bench.nix_cache import run_nix_cache_test
 from vpn_bench.ping import run_ping_test
+from vpn_bench.progress import ProgressTracker
 from vpn_bench.qperf import run_qperf_test
 from vpn_bench.retry import retry_operation_with_info
 from vpn_bench.rist_stream import run_rist_test
@@ -147,6 +148,7 @@ def run_benchmarks(
     tests: list[TestType],
     benchmark_run_alias: str = "default",
     tc_settings: TCSettings | None = None,
+    tracker: ProgressTracker | None = None,
 ) -> None:
     """Run TCP and UDP benchmarks for each machine."""
     import json
@@ -168,6 +170,12 @@ def run_benchmarks(
     for pos, bmachine in enumerate(bmachines):
         next_bmachine = bmachines[pos + 1] if pos + 1 < len(bmachines) else bmachines[0]
         log.info(f"Benchmarking {bmachine.cmachine.name} with ip {bmachine.vpn_ip}")
+
+        # Track machine progress
+        if tracker is not None:
+            tracker.start_machine(
+                bmachine.cmachine.name, next_bmachine.cmachine.name, pos
+            )
         result_dir = (
             config.bench_dir
             / vpn.name
@@ -242,10 +250,14 @@ def run_benchmarks(
             )
             return get_service_logs(target_machine, service_name)
 
-        for test in tests:
+        for test_idx, test in enumerate(tests):
             start_time = time.time()
             test_attempts = 0
             vpn_restart_attempts = 0
+
+            # Track test progress
+            if tracker is not None:
+                tracker.start_test(test, test_idx)
 
             match test:
                 case TestType.IPERF3:
@@ -352,7 +364,10 @@ def run_benchmarks(
 
                 case TestType.NIX_CACHE:
                     nix_cache_result, test_attempts = execute_test(
-                        run_nix_cache_test, bmachine, vpn, next_bmachine
+                        run_nix_cache_test,
+                        bmachine,
+                        vpn,
+                        next_bmachine,
                     )
                     duration = time.time() - start_time
                     vpn_restart_attempts = restart_vpn_service(bmachines, vpn)
@@ -403,6 +418,7 @@ def benchmark_vpn(
     tests: list[TestType],
     benchmark_runs: list[BenchmarkRun],
     skip_reboot_timings: bool = False,
+    tracker: ProgressTracker | None = None,
 ) -> None:
     """
     Run VPN benchmarks with multiple TC configurations.
@@ -414,12 +430,17 @@ def benchmark_vpn(
         tests: List of tests to run
         benchmark_runs: List of benchmark run configurations with TC settings
         skip_reboot_timings: Whether to skip reboot timing measurements
+        tracker: Optional progress tracker for TUI updates
     """
     from vpn_bench.tc import apply_tc_settings
 
     log.info(
         f"Benchmarking VPN {vpn} with {len(benchmark_runs)} different configurations"
     )
+
+    # Track installation phase
+    if tracker is not None:
+        tracker.set_phase("installing VPN")
 
     # Install VPN once (connection timings collected for baseline if enabled)
     bmachines = install_vpn(
@@ -432,16 +453,30 @@ def benchmark_vpn(
 
     # Get list of machines for TC application
     machines = [bm.cmachine for bm in bmachines]
-    for run_config in benchmark_runs:
+    for profile_idx, run_config in enumerate(benchmark_runs):
         log.info(f"========== Running benchmark: {run_config.alias} ==========")
+
+        # Track profile progress
+        if tracker is not None:
+            tracker.start_profile(run_config.alias, profile_idx)
 
         # Use context manager to apply TC settings and automatically clean up
         with apply_tc_settings(machines, run_config.tc_settings):
             log.info("TC settings applied, waiting 30 seconds for stabilization")
             # Run benchmarks with this configuration
             run_benchmarks(
-                config, vpn, bmachines, tests, run_config.alias, run_config.tc_settings
+                config,
+                vpn,
+                bmachines,
+                tests,
+                run_config.alias,
+                run_config.tc_settings,
+                tracker,
             )
+
+        # Track profile completion
+        if tracker is not None:
+            tracker.complete_profile()
 
     # Regenerate comparison data after benchmarks complete
     log.info("Regenerating comparison data...")

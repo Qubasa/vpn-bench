@@ -1,12 +1,11 @@
-import concurrent
 import json
 import logging
 import re
 import statistics
-from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from typing import Literal, TypedDict, TypeVar, cast
 
+from clan_lib.async_run import AsyncRuntime
 from clan_lib.cmd import Log, RunOpts
 from clan_lib.machines.machines import Machine
 
@@ -14,6 +13,7 @@ from clan_lib.machines.machines import Machine
 T = TypeVar("T", int, float)
 
 log = logging.getLogger(__name__)
+
 
 # --- TypedDict Definitions ---
 
@@ -290,7 +290,13 @@ def _qperf_test(
     target_host: str,
     core: int,
 ) -> QperfOutputDict:
-    """Run a qperf test and return the parsed output."""
+    """Run a qperf test and return the parsed output.
+
+    Args:
+        machine: The source machine to run the test from
+        target_host: The VPN hostname to connect to
+        core: CPU core number (for port assignment)
+    """
     host = machine.target_host().override(host_key_check="none")
     with host.host_connection() as ssh:
         cmd = [
@@ -311,7 +317,9 @@ def _qperf_test(
 
 
 def run_qperf_test(
-    machine: Machine, target_host: str, target_machine: Machine
+    machine: Machine,
+    target_host: str,
+    target_machine: Machine,
 ) -> QperfSummaryDict:
     """Run a single qperf test and return the results.
 
@@ -320,7 +328,6 @@ def run_qperf_test(
         target_host: The VPN hostname to connect to (e.g., "vpn.yuki")
         target_machine: The target Machine object for SSH access (uses public IP)
     """
-
     parsed_outputs: list[QperfOutputDict] = []
 
     # Restart qperf service on target (server) before running the test
@@ -333,19 +340,19 @@ def run_qperf_test(
     # Get number of cores from source machine
     host = machine.target_host().override(host_key_check="none")
     with host.host_connection() as ssh:
-        num_cores = int(ssh.run(["nproc"]).stdout.strip())
-    with ThreadPoolExecutor() as executor:
+        num_cores = int(ssh.run(["nproc"], RunOpts(log=Log.BOTH)).stdout.strip())
+
+    with AsyncRuntime() as runtime:
         futures = []
         for core in range(num_cores):
-            future = executor.submit(_qperf_test, machine, target_host, core)
+            future = runtime.async_run(None, _qperf_test, machine, target_host, core)
             futures.append(future)
-        done, _not_done = concurrent.futures.wait(futures)
-        for future in done:
-            exc = future.exception()
-            if exc is not None:
-                raise exc
-            res = future.result()
-            parsed_outputs.append(res)
+        runtime.join_all()
+        # Collect results from completed tasks
+        for future in futures:
+            result = future.get_result()
+            if result is not None:
+                parsed_outputs.append(result.result)
 
     return calculate_qperf_summary(parsed_outputs)
 

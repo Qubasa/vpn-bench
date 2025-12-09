@@ -11,6 +11,7 @@ from clan_lib.ssh.remote import Remote
 
 log = logging.getLogger(__name__)
 
+
 # --- TypedDict Definitions ---
 
 
@@ -274,7 +275,10 @@ def run_rist_test(
         # Fallback for backwards compatibility
         target = Remote(target_host).override(host_key_check="none")
     with target.host_connection() as ssh:
-        ssh.run(["systemctl", "restart", "rist-stream.service"], RunOpts(log=Log.BOTH))
+        ssh.run(
+            ["systemctl", "restart", "rist-stream.service"],
+            RunOpts(log=Log.BOTH),
+        )
 
     host = machine.target_host().override(host_key_check="none")
 

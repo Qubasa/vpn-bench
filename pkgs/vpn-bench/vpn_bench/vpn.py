@@ -5,7 +5,7 @@ from typing import Any
 from clan_cli.vars.get import get_machine_var
 from clan_cli.vars.list import stringify_all_vars
 from clan_lib.api import dataclass_to_dict
-from clan_lib.async_run import AsyncContext, AsyncOpts, AsyncRuntime
+from clan_lib.async_run import AsyncContext, AsyncOpts, AsyncRuntime, get_async_ctx
 from clan_lib.cmd import run
 from clan_lib.errors import ClanError
 from clan_lib.flake import Flake
@@ -334,6 +334,9 @@ def deploy_machines(
     """
 
     def _do_deploy() -> None:
+        # Get current context to preserve stdout/stderr capture for TUI
+        current_ctx = get_async_ctx()
+
         with AsyncRuntime() as runtime:
             for machine in machines:
                 # Re-create machine / flake instance to avoid thread safety issues
@@ -347,7 +350,12 @@ def deploy_machines(
                 runtime.async_run(
                     AsyncOpts(
                         tid=new_inst_machine.name,
-                        async_ctx=AsyncContext(prefix=new_inst_machine.name),
+                        async_ctx=AsyncContext(
+                            prefix=new_inst_machine.name,
+                            stdout=current_ctx.stdout,
+                            stderr=current_ctx.stderr,
+                            should_cancel=current_ctx.should_cancel,
+                        ),
                     ),
                     run_machine_update,
                     new_inst_machine,

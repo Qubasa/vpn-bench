@@ -8,6 +8,7 @@ from clan_lib.machines.machines import Machine
 
 log = logging.getLogger(__name__)
 
+
 # --- TypedDict Definitions ---
 
 

@@ -1,10 +1,9 @@
-import concurrent
-from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
 from typing import TypedDict
 
+from clan_lib.async_run import AsyncRuntime
 from clan_lib.cmd import Log, RunOpts
 from clan_lib.machines.machines import Machine
 
@@ -240,16 +239,8 @@ def _delete_dir(machine: Machine, state_dirs: list[str]) -> None:
 
 
 def delete_dirs(state_dirs: list[str], machines: list[Machine]) -> None:
-    with ThreadPoolExecutor() as executor:
-        futures = []
-        for _index, machine in enumerate(machines):
-            future = executor.submit(_delete_dir, machine, state_dirs)
-            futures.append(future)
-        concurrent.futures.wait(futures)
-
-        done, _not_done = concurrent.futures.wait(futures)
-
-        for future in done:
-            exc = future.exception()
-            if exc is not None:
-                raise exc
+    with AsyncRuntime() as runtime:
+        for machine in machines:
+            runtime.async_run(None, _delete_dir, machine, state_dirs)
+        runtime.join_all()
+        runtime.check_all()

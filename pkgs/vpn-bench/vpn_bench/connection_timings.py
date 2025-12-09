@@ -1,14 +1,13 @@
-import concurrent
 import contextlib
 import json
 import logging
 import time
-from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from typing import cast
 
+from clan_lib.async_run import AsyncRuntime
 from clan_lib.cmd import Log, RunOpts
-from clan_lib.errors import ClanError  # Assuming these are available
+from clan_lib.errors import ClanError
 from clan_lib.flake import Flake
 from clan_lib.machines.machines import Machine
 from clan_lib.nix_models.clan import InventoryInstance, Unknown
@@ -16,8 +15,6 @@ from clan_lib.persist.inventory_store import InventoryStore
 from clan_lib.ssh.upload import upload
 
 from vpn_bench.assets import get_script_asset
-
-# from clan_lib.ssh.upload import upload
 from vpn_bench.data import VPN, BenchMachine, Config, delete_dirs
 from vpn_bench.errors import save_bench_report
 from vpn_bench.retry import MaxRetriesExceededError, retry_operation
@@ -104,8 +101,7 @@ def download_connection_timings(
             with dest.open("w") as f:
                 json.dump(res, f, indent=4)
 
-    with ThreadPoolExecutor() as executor:
-        futures = []
+    with AsyncRuntime() as runtime:
         for index, machine in enumerate(machines):
             dest = (
                 config.bench_dir
@@ -120,18 +116,9 @@ def download_connection_timings(
             else:
                 dest /= "connection_timings.json"
 
-            future = executor.submit(
-                download_save,
-                machine,
-                dest,
-            )
-            futures.append(future)
-        done, _not_done = concurrent.futures.wait(futures)
-
-        for future in done:
-            exc = future.exception()
-            if exc is not None:
-                raise exc
+            runtime.async_run(None, download_save, machine, dest)
+        runtime.join_all()
+        runtime.check_all()
 
 
 def wait_for_vpn_connectivity(
@@ -170,13 +157,11 @@ def wait_for_vpn_connectivity(
             operation_name=f"mkdir on {machine.name}",
         )
 
-    with ThreadPoolExecutor() as executor:
-        futures = [executor.submit(_mkdir, m) for m in machines]
-        concurrent.futures.wait(futures)
-        for f in futures:
-            exc = f.exception()
-            if exc is not None:
-                raise exc
+    with AsyncRuntime() as runtime:
+        for m in machines:
+            runtime.async_run(None, _mkdir, m)
+        runtime.join_all()
+        runtime.check_all()
 
     def _restart_connection_check(machine: Machine) -> None:
         def _do_restart() -> None:
@@ -195,20 +180,15 @@ def wait_for_vpn_connectivity(
         )
 
     # Restart connection-check service on all machines
-    with ThreadPoolExecutor() as executor:
-        futures = []
+    with AsyncRuntime() as runtime:
         for machine in machines:
-            future = executor.submit(_restart_connection_check, machine)
-            futures.append(future)
-
-        done, _not_done = concurrent.futures.wait(futures)
-
-        for future in done:
-            exc = future.exception()
-            if exc is not None:
-                raise exc
+            runtime.async_run(None, _restart_connection_check, machine)
+        runtime.join_all()
+        runtime.check_all()
 
     def _wait_service(machine: Machine, wait_service_path: Path) -> None:
+        script = get_script_asset("wait_service.sh")
+
         def _do_wait() -> None:
             host = machine.target_host().override(host_key_check="none")
             with host.host_connection() as ssh:
@@ -227,24 +207,12 @@ def wait_for_vpn_connectivity(
         )
 
     # Wait for connection-check service to finish on all machines
-    with ThreadPoolExecutor() as executor:
-        futures = []
+    with AsyncRuntime() as runtime:
         for machine in machines:
-            script = get_script_asset("wait_service.sh")
             wait_service_path = Path("/tmp/wait_service.sh")
-            future = executor.submit(
-                _wait_service,
-                machine,
-                wait_service_path,
-            )
-            futures.append(future)
-
-        done, _not_done = concurrent.futures.wait(futures)
-
-        for future in done:
-            exc = future.exception()
-            if exc is not None:
-                raise exc
+            runtime.async_run(None, _wait_service, machine, wait_service_path)
+        runtime.join_all()
+        runtime.check_all()
 
     log.info("VPN connectivity established between all machines")
 
@@ -269,18 +237,11 @@ def reboot_connection_timings(
             )
 
     # Reboot machines
-    with ThreadPoolExecutor() as executor:
-        futures = []
+    with AsyncRuntime() as runtime:
         for machine in machines:
-            future = executor.submit(_reboot, machine)
-            futures.append(future)
-
-        done, _not_done = concurrent.futures.wait(futures)
-
-        for future in done:
-            exc = future.exception()
-            if exc is not None:
-                raise exc
+            runtime.async_run(None, _reboot, machine)
+        runtime.join_all()
+        runtime.check_all()
 
     # Wait for machines to be offline
     for machine in machines:
@@ -318,6 +279,8 @@ def reboot_connection_timings(
     time.sleep(5)
 
     def _wait_service(machine: Machine, wait_service_path: Path) -> None:
+        script = get_script_asset("wait_service.sh")
+
         def _do_wait() -> None:
             host = machine.target_host().override(host_key_check="none")
             with host.host_connection() as ssh:
@@ -336,24 +299,12 @@ def reboot_connection_timings(
         )
 
     # Wait for connection-check service to finish
-    with ThreadPoolExecutor() as executor:
-        futures = []
+    with AsyncRuntime() as runtime:
         for machine in machines:
-            script = get_script_asset("wait_service.sh")
             wait_service_path = Path("/tmp/wait_service.sh")
-            future = executor.submit(
-                _wait_service,
-                machine,
-                wait_service_path,
-            )
-            futures.append(future)
-
-        done, _not_done = concurrent.futures.wait(futures)
-
-        for future in done:
-            exc = future.exception()
-            if exc is not None:
-                raise exc
+            runtime.async_run(None, _wait_service, machine, wait_service_path)
+        runtime.join_all()
+        runtime.check_all()
 
     download_connection_timings(
         config, vpn, machines, reboot=True, benchmark_run_alias=benchmark_run_alias

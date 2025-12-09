@@ -3,6 +3,7 @@
 import argparse
 import logging
 import os
+import sys
 from pathlib import Path
 
 from clan_lib.custom_logger import setup_logging
@@ -319,30 +320,48 @@ def run_cli() -> None:
         # Convert TC profiles to benchmark runs
         benchmark_runs = get_benchmark_runs(tc_profiles_enum)
 
-        failed_vpns: list[tuple[VPN, str]] = []
-        for vpn in vpns_enum:
-            log.info(f"========== Running benchmark for {vpn} ==========")
-            try:
-                benchmark_vpn(
-                    config,
-                    vpn,
-                    machines,
-                    tests_enum,
-                    benchmark_runs,
-                    args.skip_con_times,
-                )
-            except Exception as e:
-                error_msg = str(e)
-                log.error(f"Benchmark for {vpn} failed with error: {error_msg}")
-                failed_vpns.append((vpn, error_msg))
-                log.info("Continuing with next VPN...")
-                continue
+        # Decide whether to use TUI based on TTY detection
+        use_tui = sys.stdout.isatty() and sys.stdin.isatty()
 
-        if failed_vpns:
-            log.warning("The following VPNs failed during benchmarking:")
-            for vpn, error in failed_vpns:
-                log.warning(f"  - {vpn.value}: {error}")
-            log.warning(f"Total: {len(failed_vpns)}/{len(vpns_enum)} VPNs failed")
+        if use_tui:
+            # Run with TUI
+            from vpn_bench.tui import BenchmarkTUI
+
+            app = BenchmarkTUI(
+                config=config,
+                vpns=vpns_enum,
+                tests=tests_enum,
+                benchmark_runs=benchmark_runs,
+                machines=machines,
+                skip_reboot_timings=args.skip_con_times,
+            )
+            app.run()
+        else:
+            # Run without TUI (standard logging)
+            failed_vpns: list[tuple[VPN, str]] = []
+            for vpn in vpns_enum:
+                log.info(f"========== Running benchmark for {vpn} ==========")
+                try:
+                    benchmark_vpn(
+                        config,
+                        vpn,
+                        machines,
+                        tests_enum,
+                        benchmark_runs,
+                        args.skip_con_times,
+                    )
+                except Exception as e:
+                    error_msg = str(e)
+                    log.error(f"Benchmark for {vpn} failed with error: {error_msg}")
+                    failed_vpns.append((vpn, error_msg))
+                    log.info("Continuing with next VPN...")
+                    continue
+
+            if failed_vpns:
+                log.warning("The following VPNs failed during benchmarking:")
+                for vpn, error in failed_vpns:
+                    log.warning(f"  - {vpn.value}: {error}")
+                log.warning(f"Total: {len(failed_vpns)}/{len(vpns_enum)} VPNs failed")
 
     elif args.subcommand == "plot":
         machines = tr_metadata(config)

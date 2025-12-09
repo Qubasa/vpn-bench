@@ -21,10 +21,10 @@ python3Packages.buildPythonApplication {
 
   build-system = with python3Packages; [
     setuptools
-    textual
   ];
   propagatedBuildInputs = [
     clan-cli-module
     opentofu
+    python3Packages.textual
   ];
 }

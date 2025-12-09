@@ -7,8 +7,6 @@ from typing import Any
 from clan_lib.cmd import Log, RunOpts
 from clan_lib.machines.machines import Machine
 
-# from clan_lib.ssh.upload import upload
-
 log = logging.getLogger(__name__)
 
 
@@ -63,7 +61,10 @@ def run_iperf_test(
         # Use the target machine's public IP for SSH
         target = target_machine.target_host().override(host_key_check="none")
     with target.host_connection() as ssh:
-        ssh.run(["systemctl", "restart", "iperf3.service"], RunOpts(log=Log.BOTH))
+        ssh.run(
+            ["systemctl", "restart", "iperf3.service"],
+            RunOpts(log=Log.BOTH),
+        )
 
     # Run iperf3 client on source machine
     host = machine.target_host().override(host_key_check="none")

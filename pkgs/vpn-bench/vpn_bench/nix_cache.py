@@ -91,12 +91,17 @@ def init_nix_cache_path(host: Remote, cache_target: Machine) -> None:
 
 
 def run_nix_cache_test(
-    fetch_machine: BenchMachine, vpn: VPN, cache_target: BenchMachine
+    fetch_machine: BenchMachine,
+    vpn: VPN,
+    cache_target: BenchMachine,
 ) -> dict[str, Any]:
     # Restart harmonia service on cache_target (server) before running the test
     cache_host = cache_target.cmachine.target_host().override(host_key_check="none")
     with cache_host.host_connection() as ssh:
-        ssh.run(["systemctl", "restart", "harmonia.service"], RunOpts(log=Log.BOTH))
+        ssh.run(
+            ["systemctl", "restart", "harmonia.service"],
+            RunOpts(log=Log.BOTH),
+        )
 
     # Copy firefox to the cache SERVER (yuki) so harmonia can serve it
     init_nix_cache_path(cache_host, cache_target.cmachine)
@@ -139,7 +144,7 @@ def run_nix_cache_test(
 
         ssh.run(cmd, RunOpts(log=Log.BOTH, timeout=1800))  # 30 minutes
 
-        res = ssh.run(["cat", f"{vpn.value}_nix-cache.json"])
+        res = ssh.run(["cat", f"{vpn.value}_nix-cache.json"], RunOpts(log=Log.BOTH))
         return json.loads(res.stdout)
 
 
