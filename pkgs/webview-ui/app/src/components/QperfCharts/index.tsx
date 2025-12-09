@@ -828,8 +828,22 @@ export const QperfChartsDashboard: Component<QperfChartsDashboardProps> = (
   // Basic check for reports
   if (!hasMixedReports && !hasLegacyReports) {
     return (
-      <div style={{ padding: "20px", color: "red", "text-align": "center" }}>
-        No qperf report data provided.
+      <div
+        style={{
+          background: "#f9f9f9",
+          border: "1px solid #e0e0e0",
+          "border-radius": "8px",
+          padding: "20px",
+          "text-align": "center",
+          color: "#555",
+          "font-size": "16px",
+          margin: "1rem 0",
+        }}
+      >
+        <p style={{ margin: 0 }}>
+          No HTTP3 performance data available. Run the benchmark to generate
+          qperf data.
+        </p>
       </div>
     );
   }

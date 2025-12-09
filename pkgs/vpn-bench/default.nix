@@ -19,7 +19,10 @@ python3Packages.buildPythonApplication {
 
   pythonImportsCheck = [ "vpn_bench" ];
 
-  build-system = with python3Packages; [ setuptools ];
+  build-system = with python3Packages; [
+    setuptools
+    textual
+  ];
   propagatedBuildInputs = [
     clan-cli-module
     opentofu

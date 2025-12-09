@@ -260,6 +260,46 @@ def reset_terminal() -> None:
     )
 
 
+def install_machines_only(
+    config: Config,
+    tr_machines: list[TrMachine],
+) -> None:
+    """Install specific machines without recreating the clan directory."""
+    if not config.clan_dir.exists():
+        msg = "Clan directory does not exist. Run 'vpb install' without -m first to initialize."
+        raise VpnBenchError(msg)
+
+    # Get all machines from metadata to pass to create_base_inventory
+    # This is needed to maintain IP configurations for all machines
+    from vpn_bench.terraform import tr_metadata
+
+    all_machines = tr_metadata(config)
+
+    # Update inventory with all machines (maintains existing configuration)
+    create_base_inventory(config, all_machines)
+
+    # Set up requested machines in the inventory
+    for machine_num, tr_machine in enumerate(tr_machines):
+        setup_machine(config.clan_dir, tr_machine, machine_num)
+
+    # Install only the requested machines
+    with AsyncRuntime() as runtime:
+        for tr_machine in tr_machines:
+            name = tr_machine["name"]
+            runtime.async_run(
+                AsyncOpts(tid=name, async_ctx=AsyncContext(prefix=name)),
+                install_single_machine,
+                config,
+                config.clan_dir,
+                tr_machine,
+            )
+        runtime.join_all()
+        runtime.check_all()
+
+    reset_terminal()
+    log.info(f"Installed machines: {', '.join(m['name'] for m in tr_machines)}")
+
+
 def clan_init(
     config: Config,
     age_opts: AgeOpts,

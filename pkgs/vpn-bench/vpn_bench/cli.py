@@ -21,7 +21,7 @@ from vpn_bench.data import (
 )
 from vpn_bench.errors import VpnBenchError
 from vpn_bench.plot import plot_data
-from vpn_bench.setup import AgeOpts, clan_clean, clan_init
+from vpn_bench.setup import AgeOpts, clan_clean, clan_init, install_machines_only
 from vpn_bench.ssh import generate_ssh_key, ssh_into_machine
 from vpn_bench.terraform import tr_create, tr_destroy, tr_metadata
 
@@ -91,6 +91,12 @@ def create_parser() -> argparse.ArgumentParser:
         "--ssh-pubkey",
         help="SSH pubkey path",
         type=str,
+    )
+    install_parser.add_argument(
+        "-m",
+        action="append",
+        default=[],
+        help="Machine name(s) to install (can be specified multiple times). If not specified, all machines will be installed.",
     )
 
     bench_parser = subparsers.add_parser("bench", help="Benchmark command")
@@ -217,21 +223,52 @@ def run_cli() -> None:
     elif args.subcommand == "install":
         machines = tr_metadata(config)
 
-        age_pubkey_path: Path | None = None
-        if args.age_pubkey is None:
-            if age_pubkey_str := os.environ.get("AGE_PUBKEY_PATH"):
-                age_pubkey_path = Path(age_pubkey_str)
+        # Filter machines if specific ones were requested
+        if args.m:
+            requested_machines = set(args.m)
+            available_machines = {m["name"] for m in machines}
 
-        age_usr_str = None
-        if args.age_user is None:
-            age_usr_str = os.environ.get("AGE_USER")
-            if not age_usr_str:
-                age_usr_str = os.environ.get("USER")
+            # Check for invalid machine names
+            invalid_machines = requested_machines - available_machines
+            if invalid_machines:
+                invalid_names = ", ".join(invalid_machines)
+                available_names = ", ".join(sorted(available_machines))
+                log.error(f"Invalid machine name(s): {invalid_names}")
+                log.error(f"Available machines: {available_names}")
+                msg = f"Invalid machine name(s): {invalid_names}"
+                raise VpnBenchError(msg)
 
-        assert age_usr_str is not None
-        age_opts = AgeOpts(username=age_usr_str, pubkey=age_pubkey_path)
+            # Filter to only requested machines
+            machines = [m for m in machines if m["name"] in requested_machines]
+            log.info(
+                f"Installing only requested machines: {', '.join(m['name'] for m in machines)}"
+            )
+        else:
+            log.info(
+                f"Installing all machines: {', '.join(m['name'] for m in machines)}"
+            )
 
-        clan_init(config, age_opts, machines)
+        # Check if this is an additive install (clan dir exists and specific machines requested)
+        if config.clan_dir.exists() and args.m:
+            # Additive install - only install the requested machines
+            install_machines_only(config, machines)
+        else:
+            # Full install - initialize clan and install machines
+            age_pubkey_path: Path | None = None
+            if args.age_pubkey is None:
+                if age_pubkey_str := os.environ.get("AGE_PUBKEY_PATH"):
+                    age_pubkey_path = Path(age_pubkey_str)
+
+            age_usr_str = None
+            if args.age_user is None:
+                age_usr_str = os.environ.get("AGE_USER")
+                if not age_usr_str:
+                    age_usr_str = os.environ.get("USER")
+
+            assert age_usr_str is not None
+            age_opts = AgeOpts(username=age_usr_str, pubkey=age_pubkey_path)
+
+            clan_init(config, age_opts, machines)
 
     elif args.subcommand == "bench":
         tests: list[str] = args.test

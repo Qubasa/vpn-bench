@@ -1,3 +1,4 @@
+import { Show } from "solid-js";
 import { Echart } from "../Echarts";
 
 const colorPalette = [
@@ -215,11 +216,34 @@ export const HyperfineMeanTimeChart = (props: {
   title?: string;
   height?: number;
 }) => {
+  const hasData = () => props.reports && props.reports.length > 0;
+
   return (
-    <Echart
-      option={createMeanTimeOption(props.reports, props.title)}
-      height={props.height || 400}
-    />
+    <Show
+      when={hasData()}
+      fallback={
+        <div
+          style={{
+            height: `${props.height || 400}px`,
+            display: "flex",
+            "align-items": "center",
+            "justify-content": "center",
+            background: "#f9f9f9",
+            border: "1px solid #e0e0e0",
+            "border-radius": "8px",
+            color: "#555",
+            "font-size": "16px",
+          }}
+        >
+          No data available for {props.title || "Mean Execution Time"}.
+        </div>
+      }
+    >
+      <Echart
+        option={createMeanTimeOption(props.reports, props.title)}
+        height={props.height || 400}
+      />
+    </Show>
   );
 };
 
@@ -228,11 +252,38 @@ export const HyperfineTimeSeriesChart = (props: {
   title?: string;
   height?: number;
 }) => {
+  const hasData = () => props.reports && props.reports.length > 0;
+
   return (
-    <Echart
-      option={createTimeSeriesOption(props.reports, props.title)}
-      height={props.height || 400}
-    />
+    <Show
+      when={hasData()}
+      fallback={
+        <div
+          style={{
+            height: `${props.height || 400}px`,
+            display: "flex",
+            "align-items": "center",
+            "justify-content": "center",
+            background: "#f9f9f9",
+            border: "1px solid #e0e0e0",
+            "border-radius": "8px",
+            color: "#555",
+            "font-size": "16px",
+          }}
+        >
+          No data available for{" "}
+          {props.title
+            ? `${props.title} - Individual Run Times`
+            : "Individual Run Times"}
+          .
+        </div>
+      }
+    >
+      <Echart
+        option={createTimeSeriesOption(props.reports, props.title)}
+        height={props.height || 400}
+      />
+    </Show>
   );
 };
 

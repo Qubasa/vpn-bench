@@ -1,3 +1,4 @@
+import { Show } from "solid-js";
 import { Echart } from "../Echarts";
 
 // Define interfaces for typing
@@ -312,24 +313,50 @@ export const PingCharts = (props: PingChartsProps) => {
     jitter: props.height?.jitter || 400,
   };
 
+  // Check if we have valid data
+  const hasData = () => props.reports && props.reports.length > 0;
+
   return (
-    <div>
-      <Echart
-        option={createRttBoxplotOption(props.reports)}
-        height={height.rttBoxplot}
-      />
-      <Echart
-        option={createRttMetricsOption(props.reports)}
-        height={height.rttMetrics}
-      />
-      <Echart
-        option={createJitterOption(props.reports)}
-        height={height.jitter}
-      />
-      <Echart
-        option={createPacketLossOption(props.reports)}
-        height={height.packetLoss}
-      />
-    </div>
+    <Show
+      when={hasData()}
+      fallback={
+        <div
+          style={{
+            background: "#f9f9f9",
+            border: "1px solid #e0e0e0",
+            "border-radius": "8px",
+            padding: "20px",
+            "text-align": "center",
+            color: "#555",
+            "font-size": "16px",
+            margin: "1rem 0",
+          }}
+        >
+          <p style={{ margin: 0 }}>
+            No ping latency data available. Run the benchmark to generate ping
+            data.
+          </p>
+        </div>
+      }
+    >
+      <div>
+        <Echart
+          option={createRttBoxplotOption(props.reports)}
+          height={height.rttBoxplot}
+        />
+        <Echart
+          option={createRttMetricsOption(props.reports)}
+          height={height.rttMetrics}
+        />
+        <Echart
+          option={createJitterOption(props.reports)}
+          height={height.jitter}
+        />
+        <Echart
+          option={createPacketLossOption(props.reports)}
+          height={height.packetLoss}
+        />
+      </div>
+    </Show>
   );
 };

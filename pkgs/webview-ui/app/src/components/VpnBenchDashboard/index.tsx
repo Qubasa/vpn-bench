@@ -597,12 +597,41 @@ export const VpnDashboard = (props: VpnDashboardProps) => {
 
       <Tabs.Content class="tabs__content" value="qperf">
         <Show when={props.qperfReports} fallback={<FallbackMessage />}>
-          {(mixedReports) => (
-            <>
-              <MixedReportMetadataDisplay mixedReports={mixedReports()} />
-              <QperfChartsDashboard mixedReports={mixedReports()} />
-            </>
-          )}
+          {(mixedReports) => {
+            // Check if we have any successful reports
+            const hasSuccessfulReports = () =>
+              mixedReports().some((r) => r.result.ok);
+
+            return (
+              <Show
+                when={hasSuccessfulReports()}
+                fallback={
+                  <div
+                    style={{
+                      background: "#f9f9f9",
+                      border: "1px solid #e0e0e0",
+                      "border-radius": "8px",
+                      padding: "20px",
+                      "text-align": "center",
+                      color: "#555",
+                      "font-size": "16px",
+                      margin: "1rem 0",
+                    }}
+                  >
+                    <p style={{ margin: 0 }}>
+                      No HTTP3 performance data available. Run the benchmark to
+                      generate qperf data.
+                    </p>
+                  </div>
+                }
+              >
+                <>
+                  <MixedReportMetadataDisplay mixedReports={mixedReports()} />
+                  <QperfChartsDashboard mixedReports={mixedReports()} />
+                </>
+              </Show>
+            );
+          }}
         </Show>
       </Tabs.Content>
 
