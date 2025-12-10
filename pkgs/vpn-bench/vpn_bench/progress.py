@@ -3,8 +3,10 @@
 from __future__ import annotations
 
 import io
+import threading
+import time
 from collections.abc import Callable, Iterator
-from contextlib import contextmanager
+from contextlib import contextmanager, suppress
 from dataclasses import dataclass, field
 from time import monotonic
 from typing import IO
@@ -168,6 +170,73 @@ class TimingHistory:
         return DEFAULT_TEST_ESTIMATES.get(test_type, 60.0)
 
 
+class BatchedLogForwarder:
+    """Batches log messages and forwards them at a fixed interval.
+
+    This prevents event loop flooding when subprocess output is very high volume.
+    Instead of forwarding every line immediately via call_from_thread(), messages
+    are collected and forwarded in batches at a configurable interval.
+    """
+
+    def __init__(
+        self,
+        callback: Callable[[str], None],
+        batch_interval: float = 0.1,  # 100ms batching
+        max_batch_size: int = 50,  # Max lines per batch before immediate flush
+    ) -> None:
+        self._callback = callback
+        self._batch_interval = batch_interval
+        self._max_batch_size = max_batch_size
+        self._buffer: list[str] = []
+        self._lock = threading.Lock()
+        self._running = True
+        self._flush_thread: threading.Thread | None = None
+
+    def start(self) -> None:
+        """Start the background flush thread."""
+        self._flush_thread = threading.Thread(target=self._flush_loop, daemon=True)
+        self._flush_thread.start()
+
+    def stop(self) -> None:
+        """Stop the forwarder and flush remaining messages."""
+        self._running = False
+        if self._flush_thread:
+            self._flush_thread.join(timeout=1.0)
+        self._flush_remaining()
+
+    def add(self, message: str) -> None:
+        """Add a message to the batch."""
+        with self._lock:
+            self._buffer.append(message)
+            # Immediate flush if batch is full to prevent memory growth
+            if len(self._buffer) >= self._max_batch_size:
+                self._flush_locked()
+
+    def _flush_loop(self) -> None:
+        """Background thread that flushes periodically."""
+        while self._running:
+            time.sleep(self._batch_interval)
+            with self._lock:
+                if self._buffer:
+                    self._flush_locked()
+
+    def _flush_locked(self) -> None:
+        """Flush buffer (must hold lock)."""
+        if not self._buffer:
+            return
+        # Join all messages and send as one call_from_thread
+        combined = "\n".join(self._buffer)
+        self._buffer.clear()
+        # Ignore callback errors during shutdown
+        with suppress(Exception):
+            self._callback(combined)
+
+    def _flush_remaining(self) -> None:
+        """Flush any remaining messages."""
+        with self._lock:
+            self._flush_locked()
+
+
 class CallbackIO(io.RawIOBase):
     """IO object that forwards writes to a callback function."""
 
@@ -175,11 +244,13 @@ class CallbackIO(io.RawIOBase):
         self,
         callback: Callable[[str], None],
         should_cancel: Callable[[], bool] | None = None,
+        batched_forwarder: BatchedLogForwarder | None = None,
     ) -> None:
         super().__init__()
         self._callback = callback
         self._should_cancel = should_cancel or (lambda: False)
         self._buffer = ""
+        self._batched_forwarder = batched_forwarder
 
     def writable(self) -> bool:
         return True
@@ -201,7 +272,10 @@ class CallbackIO(io.RawIOBase):
         while "\n" in self._buffer:
             line, self._buffer = self._buffer.split("\n", 1)
             if line:  # Don't send empty lines
-                self._callback(line)
+                if self._batched_forwarder:
+                    self._batched_forwarder.add(line)
+                else:
+                    self._callback(line)
 
         return len(b) if isinstance(b, bytes) else len(b.encode("utf-8"))
 
@@ -213,7 +287,10 @@ class CallbackIO(io.RawIOBase):
             return
 
         if self._buffer:
-            self._callback(self._buffer)
+            if self._batched_forwarder:
+                self._batched_forwarder.add(self._buffer)
+            else:
+                self._callback(self._buffer)
             self._buffer = ""
 
 
@@ -562,6 +639,7 @@ class ProgressTracker:
     _stdout_io: IO[bytes] | None = field(default=None, repr=False)
     _stderr_io: IO[bytes] | None = field(default=None, repr=False)
     _should_cancel: Callable[[], bool] = field(default=lambda: False, repr=False)
+    _log_forwarder: BatchedLogForwarder | None = field(default=None, repr=False)
 
     @property
     def stdout(self) -> IO[bytes] | None:
@@ -577,16 +655,32 @@ class ProgressTracker:
         self,
         callback: LogCallback,
         should_cancel: Callable[[], bool] | None = None,
+        use_batching: bool = True,
     ) -> None:
         """Set up IO objects for capturing stdout/stderr.
 
         Args:
             callback: Function to call with log messages
             should_cancel: Function that returns True when the app is shutting down
+            use_batching: If True, batch log messages to prevent event loop flooding
         """
         self._should_cancel = should_cancel or (lambda: False)
-        self._stdout_io = CallbackIO(callback, should_cancel)  # type: ignore[assignment]
-        self._stderr_io = CallbackIO(callback, should_cancel)  # type: ignore[assignment]
+
+        # Create and start batched forwarder if enabled
+        if use_batching:
+            self._log_forwarder = BatchedLogForwarder(callback)
+            self._log_forwarder.start()
+        else:
+            self._log_forwarder = None
+
+        self._stdout_io = CallbackIO(callback, should_cancel, self._log_forwarder)  # type: ignore[assignment]
+        self._stderr_io = CallbackIO(callback, should_cancel, self._log_forwarder)  # type: ignore[assignment]
+
+    def cleanup(self) -> None:
+        """Clean up resources like the batched log forwarder."""
+        if self._log_forwarder is not None:
+            self._log_forwarder.stop()
+            self._log_forwarder = None
 
     @contextmanager
     def capture_output_context(self) -> Iterator[None]:

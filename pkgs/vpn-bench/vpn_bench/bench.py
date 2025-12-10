@@ -296,6 +296,7 @@ def run_benchmarks(
                 lambda: func(*args, **kwargs),
                 max_retries=2,
                 initial_delay=5.0,
+                max_total_time=1800.0,  # 30 minutes max across all retries
                 operation_name=f"{func.__name__}",
             )
             return result.result, result.attempts
@@ -395,6 +396,8 @@ def run_benchmarks(
                         "vpn_restart_attempts": vpn_restart_result.retries,
                         "vpn_restart_duration_seconds": vpn_restart_result.restart_duration_seconds,
                         "connectivity_wait_duration_seconds": vpn_restart_result.connectivity_wait_duration_seconds,
+                        "source": bmachine.cmachine.name,
+                        "target": next_bmachine.cmachine.name,
                     }
                     if tcp_logs:
                         tcp_metadata["service_logs"] = tcp_logs
@@ -407,6 +410,8 @@ def run_benchmarks(
                         "duration_seconds": udp_duration,
                         "test_attempts": udp_attempts,
                         "vpn_restart_attempts": 0,  # Already counted in TCP
+                        "source": bmachine.cmachine.name,
+                        "target": next_bmachine.cmachine.name,
                     }
                     if udp_logs:
                         udp_metadata["service_logs"] = udp_logs
@@ -433,6 +438,8 @@ def run_benchmarks(
                         "vpn_restart_attempts": vpn_restart_result.retries,
                         "vpn_restart_duration_seconds": vpn_restart_result.restart_duration_seconds,
                         "connectivity_wait_duration_seconds": vpn_restart_result.connectivity_wait_duration_seconds,
+                        "source": bmachine.cmachine.name,
+                        "target": next_bmachine.cmachine.name,
                     }
                     if service_logs:
                         metadata["service_logs"] = service_logs
@@ -453,6 +460,8 @@ def run_benchmarks(
                         "vpn_restart_attempts": vpn_restart_result.retries,
                         "vpn_restart_duration_seconds": vpn_restart_result.restart_duration_seconds,
                         "connectivity_wait_duration_seconds": vpn_restart_result.connectivity_wait_duration_seconds,
+                        "source": bmachine.cmachine.name,
+                        "target": next_bmachine.cmachine.name,
                     }
                     save_bench_report(result_dir, ping_result, "ping.json", metadata)
                     continue
@@ -472,6 +481,8 @@ def run_benchmarks(
                         "vpn_restart_attempts": vpn_restart_result.retries,
                         "vpn_restart_duration_seconds": vpn_restart_result.restart_duration_seconds,
                         "connectivity_wait_duration_seconds": vpn_restart_result.connectivity_wait_duration_seconds,
+                        "source": bmachine.cmachine.name,
+                        "target": next_bmachine.cmachine.name,
                     }
                     save_bench_report(
                         result_dir, nix_cache_result, "nix_cache.json", metadata
@@ -497,6 +508,8 @@ def run_benchmarks(
                         "vpn_restart_attempts": vpn_restart_result.retries,
                         "vpn_restart_duration_seconds": vpn_restart_result.restart_duration_seconds,
                         "connectivity_wait_duration_seconds": vpn_restart_result.connectivity_wait_duration_seconds,
+                        "source": bmachine.cmachine.name,
+                        "target": next_bmachine.cmachine.name,
                     }
                     if service_logs:
                         metadata["service_logs"] = service_logs
@@ -602,11 +615,13 @@ def benchmark_vpn(
         if tracker is not None:
             tracker.complete_profile()
 
-    # Save timing breakdown
-    timing_breakdown = timing.finalize()
-    timing_file = config.bench_dir / vpn.name / "timing_breakdown.json"
-    timing_breakdown.save(timing_file)
-    log.info(f"Saved timing breakdown to {timing_file}")
+        # Save timing breakdown per profile
+        timing_breakdown = timing.finalize()
+        timing_file = (
+            config.bench_dir / vpn.name / run_config.alias / "timing_breakdown.json"
+        )
+        timing_breakdown.save(timing_file)
+        log.info(f"Saved timing breakdown to {timing_file}")
 
     # Regenerate comparison data after benchmarks complete
     log.info("Regenerating comparison data...")

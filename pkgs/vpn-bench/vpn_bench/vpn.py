@@ -125,14 +125,20 @@ def install_easytier(config: Config, tr_machines: list[TrMachine]) -> None:
     conf: dict[str, Any] = {
         "module": {"name": "easytier", "input": "cvpn-bench"},
         "roles": {
+            "bootstrap": {"machines": {}, "settings": {"publicAddress": {}}},
             "peer": {
                 "machines": {},
             },
         },
     }
-    for tr_machine in tr_machines:
-        log.info(f"Adding {tr_machine['name']} to the easytier peers")
-        conf["roles"]["peer"]["machines"][tr_machine["name"]] = {}
+    for machine_num, tr_machine in enumerate(tr_machines):
+        if machine_num == 0:
+            log.info(f"Setting up {tr_machine['name']} as an easytier bootstrap node")
+            conf["roles"]["bootstrap"]["machines"][tr_machine["name"]] = {}
+            conf["roles"]["bootstrap"]["settings"]["publicAddress"] = tr_machine["ipv4"]
+        else:
+            log.info(f"Adding {tr_machine['name']} to the easytier peers")
+            conf["roles"]["peer"]["machines"][tr_machine["name"]] = {}
     set_value_by_path_tuple(inventory, ("instances", "easytier"), conf)
     inventory_store.write(inventory, message="Add easytier configuration")
 

@@ -7,7 +7,42 @@ from dataclasses import dataclass
 from functools import wraps
 from typing import ParamSpec
 
+from clan_lib.async_run import get_async_ctx
+
 log = logging.getLogger(__name__)
+
+
+class CancelledError(Exception):
+    """Raised when an operation is cancelled via async context."""
+
+    def __init__(self, message: str = "Operation cancelled") -> None:
+        super().__init__(message)
+
+
+def is_async_cancelled() -> bool:
+    """Check if the current async context has been cancelled.
+
+    This checks the should_cancel callback in the current AsyncContext,
+    which is set by the TUI to signal shutdown.
+
+    Returns:
+        True if the operation should be cancelled, False otherwise.
+    """
+    ctx = get_async_ctx()
+    if ctx.should_cancel is not None:
+        return ctx.should_cancel()
+    return False
+
+
+def check_cancelled() -> None:
+    """Check if cancelled and raise CancelledError if so.
+
+    Raises:
+        CancelledError: If the async context signals cancellation.
+    """
+    if is_async_cancelled():
+        raise CancelledError
+
 
 P = ParamSpec("P")
 
@@ -42,6 +77,9 @@ def retry_with_backoff[R](
 
     Returns:
         Decorated function with retry logic
+
+    Raises:
+        CancelledError: If the async context signals cancellation
     """
 
     def decorator(func: Callable[P, R]) -> Callable[P, R]:
@@ -52,11 +90,21 @@ def retry_with_backoff[R](
             start_time = time.monotonic()
 
             for attempt in range(max_retries + 1):
+                # Check for cancellation before each attempt
+                check_cancelled()
+
                 try:
                     return func(*args, **kwargs)
                 except exceptions as e:
                     last_exception = e
                     elapsed = time.monotonic() - start_time
+
+                    # Check for cancellation after failure
+                    if is_async_cancelled():
+                        log.info(
+                            f"{func.__name__} cancelled after {attempt + 1} attempts"
+                        )
+                        raise CancelledError from e
 
                     # Check if we've exceeded total time budget
                     if max_total_time is not None and elapsed >= max_total_time:
@@ -71,7 +119,8 @@ def retry_with_backoff[R](
                             f"{func.__name__} failed (attempt {attempt + 1}/{max_retries + 1}): {e}. "
                             f"Retrying in {delay:.1f}s..."
                         )
-                        time.sleep(delay)
+                        # Sleep in small increments to check for cancellation
+                        _interruptible_sleep(delay)
                         delay = min(delay * backoff_factor, max_delay)
                     else:
                         log.error(
@@ -84,6 +133,25 @@ def retry_with_backoff[R](
         return wrapper
 
     return decorator
+
+
+def _interruptible_sleep(duration: float, check_interval: float = 0.5) -> None:
+    """Sleep for duration but check for cancellation periodically.
+
+    Args:
+        duration: Total time to sleep in seconds
+        check_interval: How often to check for cancellation (default 0.5s)
+
+    Raises:
+        CancelledError: If cancellation is detected during sleep
+    """
+    elapsed = 0.0
+    while elapsed < duration:
+        sleep_time = min(check_interval, duration - elapsed)
+        time.sleep(sleep_time)
+        elapsed += sleep_time
+        if is_async_cancelled():
+            raise CancelledError
 
 
 def retry_operation[R](
@@ -115,17 +183,26 @@ def retry_operation[R](
 
     Raises:
         The last exception if all retries fail
+        CancelledError: If the async context signals cancellation
     """
     delay = initial_delay
     last_exception: Exception | None = None
     start_time = time.monotonic()
 
     for attempt in range(max_retries + 1):
+        # Check for cancellation before each attempt
+        check_cancelled()
+
         try:
             return operation()
         except exceptions as e:
             last_exception = e
             elapsed = time.monotonic() - start_time
+
+            # Check for cancellation after failure
+            if is_async_cancelled():
+                log.info(f"{operation_name} cancelled after {attempt + 1} attempts")
+                raise CancelledError from e
 
             # Check if we've exceeded total time budget
             if max_total_time is not None and elapsed >= max_total_time:
@@ -140,7 +217,8 @@ def retry_operation[R](
                     f"{operation_name} failed (attempt {attempt + 1}/{max_retries + 1}): {e}. "
                     f"Retrying in {delay:.1f}s..."
                 )
-                time.sleep(delay)
+                # Sleep in small increments to check for cancellation
+                _interruptible_sleep(delay)
                 delay = min(delay * backoff_factor, max_delay)
             else:
                 log.exception(
@@ -184,18 +262,27 @@ def retry_operation_with_info[R](
 
     Raises:
         The last exception if all retries fail
+        CancelledError: If the async context signals cancellation
     """
     delay = initial_delay
     last_exception: Exception | None = None
     start_time = time.monotonic()
 
     for attempt in range(max_retries + 1):
+        # Check for cancellation before each attempt
+        check_cancelled()
+
         try:
             result = operation()
             return RetryResult(result=result, attempts=attempt + 1)
         except exceptions as e:
             last_exception = e
             elapsed = time.monotonic() - start_time
+
+            # Check for cancellation after failure
+            if is_async_cancelled():
+                log.info(f"{operation_name} cancelled after {attempt + 1} attempts")
+                raise CancelledError from e
 
             # Check if we've exceeded total time budget
             if max_total_time is not None and elapsed >= max_total_time:
@@ -210,7 +297,8 @@ def retry_operation_with_info[R](
                     f"{operation_name} failed (attempt {attempt + 1}/{max_retries + 1}). "
                     f"Retrying in {delay:.1f}s..."
                 )
-                time.sleep(delay)
+                # Sleep in small increments to check for cancellation
+                _interruptible_sleep(delay)
                 delay = min(delay * backoff_factor, max_delay)
             else:
                 log.exception(

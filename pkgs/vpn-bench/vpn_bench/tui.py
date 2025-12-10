@@ -8,7 +8,8 @@ from typing import TYPE_CHECKING
 from rich.text import Text
 from textual import work
 from textual.app import App, ComposeResult
-from textual.containers import Container, Horizontal, VerticalScroll
+from textual.containers import Container, Horizontal
+from textual.events import MouseScrollDown, MouseScrollUp
 from textual.widgets import Footer, Header, Label, ProgressBar, RichLog, Static
 from textual.worker import get_current_worker
 
@@ -20,6 +21,28 @@ if TYPE_CHECKING:
     from textual.worker import Worker
 
 log = logging.getLogger(__name__)
+
+
+class SmartRichLog(RichLog):
+    """RichLog with smart auto-scroll that pauses when user scrolls up."""
+
+    def _is_at_bottom(self, threshold: int = 2) -> bool:
+        """Check if scroll position is at or near the bottom."""
+        return self.scroll_y >= self.max_scroll_y - threshold
+
+    def on_mouse_scroll_up(self, event: MouseScrollUp) -> None:
+        """User scrolled up - disable auto-scroll."""
+        self.auto_scroll = False
+
+    def on_mouse_scroll_down(self, event: MouseScrollDown) -> None:
+        """User scrolled down - re-enable auto-scroll if at bottom."""
+        # Use call_later to check position after scroll completes
+        self.call_later(self._check_scroll_position)
+
+    def _check_scroll_position(self) -> None:
+        """Check scroll position and enable auto-scroll if at bottom."""
+        if self._is_at_bottom():
+            self.auto_scroll = True
 
 
 class ProgressPanel(Static):
@@ -447,7 +470,13 @@ class BenchmarkTUI(App[None]):
     CSS = """
     Screen {
         layout: vertical;
-        overflow: hidden;
+        overflow: hidden hidden;
+    }
+
+    #top-panels {
+        height: auto;
+        max-height: 50%;
+        overflow: hidden hidden;
     }
 
     #progress-panel {
@@ -465,14 +494,10 @@ class BenchmarkTUI(App[None]):
         max-height: 8;
     }
 
-    #log-container {
+    #log-panel {
         height: 1fr;
         min-height: 5;
         border: solid $accent;
-    }
-
-    #log-panel {
-        height: 100%;
     }
     """
 
@@ -510,11 +535,13 @@ class BenchmarkTUI(App[None]):
 
     def compose(self) -> ComposeResult:
         yield Header()
-        yield ProgressPanel(id="progress-panel")
-        yield MachineRingPanel(id="machine-ring-panel")
-        yield UpcomingPanel(id="upcoming-panel")
-        with VerticalScroll(id="log-container"):
-            yield RichLog(id="log-panel", auto_scroll=True, highlight=True, markup=True)
+        with Container(id="top-panels"):
+            yield ProgressPanel(id="progress-panel")
+            yield MachineRingPanel(id="machine-ring-panel")
+            yield UpcomingPanel(id="upcoming-panel")
+        yield SmartRichLog(
+            id="log-panel", auto_scroll=True, highlight=True, markup=True
+        )
         yield Footer()
 
     def on_mount(self) -> None:
@@ -568,6 +595,9 @@ class BenchmarkTUI(App[None]):
         # Signal shutdown to prevent CallbackIO from writing to destroyed widgets
         self._shutting_down = True
 
+        # Clean up tracker resources (stops batched log forwarder)
+        self.tracker.cleanup()
+
         root_logger = logging.getLogger()
         if self._log_handler is not None:
             root_logger.removeHandler(self._log_handler)
@@ -595,17 +625,21 @@ class BenchmarkTUI(App[None]):
     def _on_log_message(self, message: str) -> None:
         """Handle log message - must be called from main thread."""
         if not self._log_paused:
-            log_widget = self.query_one("#log-panel", RichLog)
-            # Color based on log level
-            if "[ERROR]" in message:
-                text = Text(message, style="red")
-            elif "[WARNING]" in message:
-                text = Text(message, style="yellow")
-            elif "[DEBUG]" in message:
-                text = Text(message, style="dim")
-            else:
-                text = Text(message)
-            log_widget.write(text)
+            log_widget = self.query_one("#log-panel", SmartRichLog)
+            # Handle batched messages (may contain multiple lines joined by \n)
+            for line in message.split("\n"):
+                if not line:
+                    continue
+                # Color based on log level
+                if "[ERROR]" in line:
+                    text = Text(line, style="red")
+                elif "[WARNING]" in line:
+                    text = Text(line, style="yellow")
+                elif "[DEBUG]" in line:
+                    text = Text(line, style="dim")
+                else:
+                    text = Text(line)
+                log_widget.write(text)
 
     @work(thread=True)
     def run_benchmark(self) -> None:
@@ -666,7 +700,7 @@ class BenchmarkTUI(App[None]):
 
     def action_clear_logs(self) -> None:
         """Clear the log panel."""
-        self.query_one("#log-panel", RichLog).clear()
+        self.query_one("#log-panel", SmartRichLog).clear()
 
     async def action_quit(self) -> None:
         """Quit the application."""

@@ -127,6 +127,11 @@ def create_parser() -> argparse.ArgumentParser:
         choices=[t.value for t in TCProfile] + ["all"],
         default=[],
     )
+    bench_parser.add_argument(
+        "--no-tui",
+        action="store_true",
+        help="Disable the TUI and use standard logging output",
+    )
 
     plot_parser = subparsers.add_parser("plot", help="Plot the data from benchmark")
     plot_parser.add_argument("--debug", action="store_true", help="Enable debug mode")
@@ -320,8 +325,8 @@ def run_cli() -> None:
         # Convert TC profiles to benchmark runs
         benchmark_runs = get_benchmark_runs(tc_profiles_enum)
 
-        # Decide whether to use TUI based on TTY detection
-        use_tui = sys.stdout.isatty() and sys.stdin.isatty()
+        # Decide whether to use TUI based on TTY detection and --no-tui flag
+        use_tui = sys.stdout.isatty() and sys.stdin.isatty() and not args.no_tui
 
         if use_tui:
             # Run with TUI
@@ -365,6 +370,7 @@ def run_cli() -> None:
 
     elif args.subcommand == "plot":
         machines = tr_metadata(config)
+        generate_comparison_data(config.bench_dir)
         plot_data(config, machines)
 
     elif args.subcommand == "compare":

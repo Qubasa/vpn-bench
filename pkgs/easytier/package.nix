@@ -12,12 +12,12 @@
 
 rustPlatform.buildRustPackage rec {
   pname = "easytier";
-  version = "2.3.2";
+  version = "2.4.5";
 
   src = easytier-src;
   useFetchCargoVendor = true;
 
-  cargoHash = "sha256-n9mOA8FFsFUUiwDVMbREHKb8sqVDOzoU2ZWpedqPeDE=";
+  cargoHash = "sha256-u3QppbzL67vvvMKPDdfM/PTdBwuRboqVoFE7cnmZuMU=";
 
   nativeBuildInputs = [
     protobuf

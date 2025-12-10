@@ -11,7 +11,10 @@ import { QperfChartsDashboard, QperfData } from "@/src/components/QperfCharts";
 import "./style.css"; // Ensure this path is correct
 import { HyperfineCharts, HyperfineData } from "../HyperfineCharts"; // Ensure this path is correct
 import { PingCharts, PingData } from "@/src/components/PingCharts";
-import { RistChartsDashboard, RistData } from "@/src/components/RistStreamCharts";
+import {
+  RistChartsDashboard,
+  RistData,
+} from "@/src/components/RistStreamCharts";
 import { ErrorDetailsPanel } from "@/src/components/ErrorDetailsPanel";
 import { For, Show, createSignal, createEffect } from "solid-js";
 import {
@@ -541,14 +544,30 @@ export const VpnDashboard = (props: VpnDashboardProps) => {
       <Tabs.Content class="tabs__content" value="tcp_iperf">
         <Show when={props.tcpReports} fallback={<FallbackMessage />}>
           {(mixedReports) => {
+            // Helper to clean machine name (remove leading number prefix like "0_")
+            const cleanMachineName = (name: string): string => {
+              // Remove leading "N_" prefix if present
+              return name.replace(/^\d+_/, "");
+            };
+
             // Extract successful reports for charts
             const successfulReports = () =>
               mixedReports()
                 .filter((r) => r.result.ok)
-                .map((r) => ({
-                  name: r.name,
-                  data: (r.result as Ok<IperfTcpReportData>).value,
-                }));
+                .map((r) => {
+                  const result = r.result as Ok<IperfTcpReportData>;
+                  const data = result.value;
+                  const meta = result.meta;
+                  // Only show source → target if both are in metadata
+                  const name =
+                    meta?.source && meta?.target
+                      ? `${meta.source} → ${meta.target}`
+                      : cleanMachineName(r.name);
+                  return {
+                    name,
+                    data,
+                  };
+                });
 
             return (
               <>
@@ -594,14 +613,30 @@ export const VpnDashboard = (props: VpnDashboardProps) => {
       <Tabs.Content class="tabs__content" value="udp_iperf">
         <Show when={props.udpReports} fallback={<FallbackMessage />}>
           {(mixedReports) => {
+            // Helper to clean machine name (remove leading number prefix like "0_")
+            const cleanMachineName = (name: string): string => {
+              // Remove leading "N_" prefix if present
+              return name.replace(/^\d+_/, "");
+            };
+
             // Extract successful reports for charts
             const successfulReports = () =>
               mixedReports()
                 .filter((r) => r.result.ok)
-                .map((r) => ({
-                  name: r.name,
-                  data: (r.result as Ok<IperfUdpReportData>).value,
-                }));
+                .map((r) => {
+                  const result = r.result as Ok<IperfUdpReportData>;
+                  const data = result.value;
+                  const meta = result.meta;
+                  // Only show source → target if both are in metadata
+                  const name =
+                    meta?.source && meta?.target
+                      ? `${meta.source} → ${meta.target}`
+                      : cleanMachineName(r.name);
+                  return {
+                    name,
+                    data,
+                  };
+                });
 
             return (
               <>
@@ -671,7 +706,9 @@ export const VpnDashboard = (props: VpnDashboardProps) => {
                 const data = (result() as Ok<ParallelTcpReportData>).value;
                 const reports = data.pairs
                   .filter(
-                    (pair): pair is typeof pair & { result: IperfTcpReportData } =>
+                    (
+                      pair,
+                    ): pair is typeof pair & { result: IperfTcpReportData } =>
                       pair.result !== undefined,
                   )
                   .map((pair) => ({
@@ -700,7 +737,9 @@ export const VpnDashboard = (props: VpnDashboardProps) => {
                         </h4>
                         <For each={failedPairs}>
                           {(pair) => (
-                            <div style={{ "font-size": "14px", color: "#742a2a" }}>
+                            <div
+                              style={{ "font-size": "14px", color: "#742a2a" }}
+                            >
                               {pair.source} → {pair.target}: {pair.error}
                             </div>
                           )}
@@ -734,8 +773,8 @@ export const VpnDashboard = (props: VpnDashboardProps) => {
                           color: "#276749",
                         }}
                       >
-                        <strong>Parallel Test:</strong> All {reports.length} machine
-                        pairs ran TCP tests simultaneously.
+                        <strong>Parallel Test:</strong> All {reports.length}{" "}
+                        machine pairs ran TCP tests simultaneously.
                       </div>
                       <IperfTcpCharts reports={reports} height={tcpHeight} />
                     </Show>
@@ -750,13 +789,27 @@ export const VpnDashboard = (props: VpnDashboardProps) => {
       <Tabs.Content class="tabs__content" value="qperf">
         <Show when={props.qperfReports} fallback={<FallbackMessage />}>
           {(mixedReports) => {
+            // Helper to clean machine name (remove leading number prefix like "0_")
+            const cleanMachineName = (name: string): string => {
+              return name.replace(/^\d+_/, "");
+            };
+
             const successfulReports = () =>
               mixedReports()
                 .filter((r) => r.result.ok)
-                .map((r) => ({
-                  name: r.name,
-                  data: (r.result as Ok<QperfData>).value,
-                }));
+                .map((r) => {
+                  const result = r.result as Ok<QperfData>;
+                  const meta = result.meta;
+                  // Use source → target from metadata if available
+                  const name =
+                    meta?.source && meta?.target
+                      ? `${meta.source} → ${meta.target}`
+                      : cleanMachineName(r.name);
+                  return {
+                    name,
+                    data: result.value,
+                  };
+                });
 
             return (
               <>
@@ -799,14 +852,28 @@ export const VpnDashboard = (props: VpnDashboardProps) => {
       <Tabs.Content class="tabs__content" value="nix-cache">
         <Show when={props.nixCacheReports} fallback={<FallbackMessage />}>
           {(mixedReports) => {
+            // Helper to clean machine name (remove leading number prefix like "0_")
+            const cleanMachineName = (name: string): string => {
+              return name.replace(/^\d+_/, "");
+            };
+
             // Extract successful reports for charts
             const successfulReports = () =>
               mixedReports()
                 .filter((r) => r.result.ok)
-                .map((r) => ({
-                  name: r.name,
-                  data: (r.result as Ok<HyperfineData>).value,
-                }));
+                .map((r) => {
+                  const result = r.result as Ok<HyperfineData>;
+                  const meta = result.meta;
+                  // Use source → target from metadata if available
+                  const name =
+                    meta?.source && meta?.target
+                      ? `${meta.source} → ${meta.target}`
+                      : cleanMachineName(r.name);
+                  return {
+                    name,
+                    data: result.value,
+                  };
+                });
 
             return (
               <>
@@ -849,14 +916,28 @@ export const VpnDashboard = (props: VpnDashboardProps) => {
       <Tabs.Content class="tabs__content" value="ping">
         <Show when={props.pingReports} fallback={<FallbackMessage />}>
           {(mixedReports) => {
+            // Helper to clean machine name (remove leading number prefix like "0_")
+            const cleanMachineName = (name: string): string => {
+              return name.replace(/^\d+_/, "");
+            };
+
             // Extract successful reports for charts
             const successfulReports = () =>
               mixedReports()
                 .filter((r) => r.result.ok)
-                .map((r) => ({
-                  name: r.name,
-                  data: (r.result as Ok<PingData>).value,
-                }));
+                .map((r) => {
+                  const result = r.result as Ok<PingData>;
+                  const meta = result.meta;
+                  // Use source → target from metadata if available
+                  const name =
+                    meta?.source && meta?.target
+                      ? `${meta.source} → ${meta.target}`
+                      : cleanMachineName(r.name);
+                  return {
+                    name,
+                    data: result.value,
+                  };
+                });
 
             return (
               <>
@@ -888,7 +969,10 @@ export const VpnDashboard = (props: VpnDashboardProps) => {
                     </Show>
                   }
                 >
-                  <PingCharts reports={successfulReports()} height={pingHeight} />
+                  <PingCharts
+                    reports={successfulReports()}
+                    height={pingHeight}
+                  />
                 </Show>
               </>
             );
@@ -899,14 +983,28 @@ export const VpnDashboard = (props: VpnDashboardProps) => {
       <Tabs.Content class="tabs__content" value="rist-stream">
         <Show when={props.ristStreamReports} fallback={<FallbackMessage />}>
           {(mixedReports) => {
+            // Helper to clean machine name (remove leading number prefix like "0_")
+            const cleanMachineName = (name: string): string => {
+              return name.replace(/^\d+_/, "");
+            };
+
             // Extract successful reports for charts
             const successfulReports = () =>
               mixedReports()
                 .filter((r) => r.result.ok)
-                .map((r) => ({
-                  name: r.name,
-                  data: (r.result as Ok<RistData>).value,
-                }));
+                .map((r) => {
+                  const result = r.result as Ok<RistData>;
+                  const meta = result.meta;
+                  // Use source → target from metadata if available
+                  const name =
+                    meta?.source && meta?.target
+                      ? `${meta.source} → ${meta.target}`
+                      : cleanMachineName(r.name);
+                  return {
+                    name,
+                    data: result.value,
+                  };
+                });
 
             return (
               <>

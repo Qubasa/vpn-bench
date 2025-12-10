@@ -79,6 +79,9 @@ export interface TestMetadata {
   vpn_restart_duration_seconds?: number;
   connectivity_wait_duration_seconds?: number;
   test_setup_duration_seconds?: number;
+  // Source and target machine names for the test
+  source?: string; // Machine name where the test client runs
+  target?: string; // Machine name where the test server runs
 }
 
 // --- Timing Breakdown Interfaces ---

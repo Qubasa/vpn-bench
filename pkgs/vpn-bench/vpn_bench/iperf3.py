@@ -87,6 +87,7 @@ def _run_single_parallel_iperf(
     target: BenchMachine,
     creds: IperfCreds,
     timeout: int = 250,
+    bench_time: int = 30,
 ) -> dict[str, Any]:
     """Run a single iperf3 TCP test from source to target.
 
@@ -104,9 +105,9 @@ def _run_single_parallel_iperf(
         "iperf",
         "--bidir",
         "--connect-timeout",
-        "600",  # 5 seconds
+        "600",  # 5 minutes
         "--time",
-        "30",  # 30 seconds
+        str(bench_time),  # default 30 seconds
         "--json",
         "-Z",
         "-c",
@@ -169,7 +170,9 @@ def run_parallel_iperf_test(
     def run_test(source: BenchMachine, target: BenchMachine) -> None:
         """Run test and store result."""
         try:
-            result = _run_single_parallel_iperf(source, target, creds, timeout)
+            result = _run_single_parallel_iperf(
+                source, target, creds, timeout, bench_time=60
+            )
             results.append(
                 ParallelIperfResult(
                     source_name=source.cmachine.name,

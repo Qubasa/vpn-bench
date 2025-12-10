@@ -7,6 +7,10 @@ export interface IperfTcpReportData {
     test_start: {
       bidir: number; // To check if the test was bidirectional
     };
+    connecting_to?: {
+      host: string;
+      port: number;
+    };
   };
   end: {
     sum_sent: {

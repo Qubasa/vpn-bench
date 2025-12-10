@@ -43,6 +43,8 @@
         ./pkgs/vpncloud/flake-module.nix
         ./pkgs/hyprspace-pre-generate/flake-module.nix
         ./pkgs/iperf/flake-module.nix
+        ./pkgs/phantun/flake-module.nix
+        ./pkgs/easytier/flake-module.nix
       ];
 
       clan = {
@@ -68,7 +70,7 @@
           );
           "easytier" = (
             lib.modules.importApply ./clanModules/easytier {
-              easytier-src = inputs.easytier;
+              packages = self.packages;
             }
           );
           "nebula" = (
@@ -92,6 +94,7 @@
           "my-static-hosts-new" = ./clanModules/my-static-hosts-new;
           "nix-cache-new" = ./clanModules/nix-cache-new;
           "mycelium" = ./clanModules/mycelium;
+          "phantun" = (lib.modules.importApply ./clanModules/phantun { packages = self.packages; });
         };
       };
     };

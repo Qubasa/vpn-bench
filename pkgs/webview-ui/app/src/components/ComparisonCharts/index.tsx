@@ -820,7 +820,11 @@ export const ParallelTcpAvgThroughputComparisonChart = (props: {
   allVpnNames?: string[];
 }) => {
   const chartData = () =>
-    metricToBarData(props.data, (d) => d.avg_throughput_mbps, props.allVpnNames);
+    metricToBarData(
+      props.data,
+      (d) => d.avg_throughput_mbps,
+      props.allVpnNames,
+    );
   return (
     <ComparisonBarChart
       data={chartData()}

@@ -27,6 +27,10 @@ class TestMetadataDict(TypedDict, total=False):
         float  # Time for test-specific setup (e.g., service restart)
     )
 
+    # Source and target machine names for the test
+    source: str  # Machine name where the test client runs
+    target: str  # Machine name where the test server runs
+
 
 class VpnBenchError(ClanError):
     pass

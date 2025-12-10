@@ -284,7 +284,7 @@ def run_ping_test(
 
             try:
                 # Timeout should be count * interval + some buffer
-                timeout = int(count * 0.2) + 10
+                timeout = int(count * 0.3) + 10
                 res = ssh.run(cmd, RunOpts(log=Log.BOTH, timeout=timeout))
                 parsed = parse_ping_output(res.stdout, target_host, count)
                 parsed_outputs.append(parsed)
