@@ -8,6 +8,8 @@ import {
   PingComparisonSection,
   QperfComparisonSection,
   VideoStreamingComparisonSection,
+  NixCacheComparisonSection,
+  ParallelTcpComparisonSection,
 } from "../ComparisonCharts";
 import { useSearchParams } from "@solidjs/router";
 import "../VpnBenchDashboard/style.css";
@@ -303,6 +305,8 @@ export const GeneralDashboard = (props: GeneralDashboardProps) => {
     "ping-comparison",
     "qperf-comparison",
     "video-comparison",
+    "nix-cache-comparison",
+    "parallel-tcp-comparison",
   ] as const;
 
   type ValidTab = (typeof validTabs)[number];
@@ -382,6 +386,12 @@ export const GeneralDashboard = (props: GeneralDashboardProps) => {
           </Tabs.Trigger>
           <Tabs.Trigger class="tabs__trigger" value="video-comparison">
             Video Streaming
+          </Tabs.Trigger>
+          <Tabs.Trigger class="tabs__trigger" value="nix-cache-comparison">
+            Nix Cache
+          </Tabs.Trigger>
+          <Tabs.Trigger class="tabs__trigger" value="parallel-tcp-comparison">
+            Parallel TCP
           </Tabs.Trigger>
           <Tabs.Indicator class="tabs__indicator" />
         </Tabs.List>
@@ -479,6 +489,34 @@ export const GeneralDashboard = (props: GeneralDashboardProps) => {
           >
             {(data) => (
               <VideoStreamingComparisonSection
+                data={data()}
+                allVpnNames={props.allVpnNames}
+              />
+            )}
+          </Show>
+        </Tabs.Content>
+
+        <Tabs.Content class="tabs__content" value="nix-cache-comparison">
+          <Show
+            when={currentProfileData()?.nixCache}
+            fallback={<FallbackMessage />}
+          >
+            {(data) => (
+              <NixCacheComparisonSection
+                data={data()}
+                allVpnNames={props.allVpnNames}
+              />
+            )}
+          </Show>
+        </Tabs.Content>
+
+        <Tabs.Content class="tabs__content" value="parallel-tcp-comparison">
+          <Show
+            when={currentProfileData()?.parallelTcp}
+            fallback={<FallbackMessage />}
+          >
+            {(data) => (
+              <ParallelTcpComparisonSection
                 data={data()}
                 allVpnNames={props.allVpnNames}
               />

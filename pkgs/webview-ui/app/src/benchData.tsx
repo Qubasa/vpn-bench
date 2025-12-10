@@ -7,6 +7,22 @@ import { HyperfineData } from "./components/HyperfineCharts"; // Assuming path r
 import { PingData } from "./components/PingCharts"; // Import ping data type
 import { RistData } from "./components/RistStreamCharts"; // Import RIST data type
 
+// --- Parallel TCP iperf3 Data Types ---
+
+// Single pair result in parallel TCP test
+export interface ParallelTcpPairResult {
+  source: string;
+  target: string;
+  result?: IperfTcpReportData; // Present on success
+  error?: string; // Present on failure
+  error_type?: string; // Present on failure
+}
+
+// Full parallel TCP test data (stored at run level, not machine level)
+export interface ParallelTcpReportData {
+  pairs: ParallelTcpPairResult[];
+}
+
 // --- Interfaces for raw JSON structure ---
 
 export interface CmdOutError {
@@ -176,13 +192,17 @@ export interface TCSettingsData {
   } | null;
 }
 
+// --- Run-level data (data that applies to the whole run, not individual machines) ---
+export interface RunLevelData {
+  machines: Machine[];
+  tcSettings: TCSettingsData | null;
+  parallelTcp: Result<ParallelTcpReportData> | null; // Parallel TCP test runs all machines at once
+}
+
 // --- Updated BenchCategory and BenchData Types ---
 export interface BenchCategory {
   name: string; // VPN name (e.g., "Tinc", "Wireguard")
-  runs: Record<
-    string,
-    { machines: Machine[]; tcSettings: TCSettingsData | null }
-  >; // TC profile alias -> machines and TC settings
+  runs: Record<string, RunLevelData>; // TC profile alias -> run data
 }
 export type BenchData = BenchCategory[];
 
@@ -239,6 +259,19 @@ export interface UdpIperfComparisonData {
   lost_percent: MetricStats;
 }
 
+export interface NixCacheComparisonData {
+  mean_seconds: MetricStats;
+  stddev_seconds: MetricStats;
+  min_seconds: MetricStats;
+  max_seconds: MetricStats;
+}
+
+export interface ParallelTcpComparisonData {
+  total_throughput_mbps: MetricStats;
+  avg_throughput_mbps: MetricStats;
+  total_retransmits: MetricStats;
+}
+
 // Maps VPN name to its comparison data
 export type VpnComparisonMap<T> = Record<string, T>;
 
@@ -268,6 +301,8 @@ export interface ComparisonRunData {
   videoStreaming?: VpnComparisonResultMap<VideoStreamingComparisonData>;
   tcpIperf?: VpnComparisonResultMap<TcpIperfComparisonData>;
   udpIperf?: VpnComparisonResultMap<UdpIperfComparisonData>;
+  nixCache?: VpnComparisonResultMap<NixCacheComparisonData>;
+  parallelTcp?: VpnComparisonResultMap<ParallelTcpComparisonData>;
   // Connection timings are stored as VPN -> machine -> time string
   connectionTimings?: ConnectionTimings;
   rebootConnectionTimings?: ConnectionTimings;
@@ -339,11 +374,78 @@ export function generateBenchData(): BenchData {
       return;
     }
 
-    // Filter out connection timing files
+    // Filter out connection timing files and tc_settings
     if (
       fileName === "connection_timings.json" ||
-      fileName === "reboot_connection_timings.json"
+      fileName === "reboot_connection_timings.json" ||
+      fileName === "tc_settings.json"
     ) {
+      return;
+    }
+
+    // Handle run-level files (parallel_tcp_iperf3.json is at run level, not machine level)
+    // Path: @/bench/<VPN>/<RUN_ALIAS>/parallel_tcp_iperf3.json (5 parts)
+    if (pathParts.length === 5 && fileName === "parallel_tcp_iperf3.json") {
+      const vpnName = pathParts[pathParts.length - 3];
+      const runAlias = pathParts[pathParts.length - 2];
+
+      if (vpnName === "General") {
+        return;
+      }
+
+      if (
+        !rawModule ||
+        typeof rawModule !== "object" ||
+        !("status" in rawModule)
+      ) {
+        return;
+      }
+
+      /* eslint-disable-next-line "@typescript-eslint/no-explicit-any" */
+      const moduleData = rawModule as JsonWrapper<any>;
+
+      /* eslint-disable-next-line "@typescript-eslint/no-explicit-any" */
+      let generatedResult: Result<any>;
+
+      if (moduleData.status === "success") {
+        generatedResult = {
+          ok: true,
+          value: moduleData.data,
+          meta: moduleData.meta,
+        };
+      } else if (moduleData.status === "error") {
+        const errorDetails: BenchmarkRunError = {
+          type: moduleData.error_type,
+          details: moduleData.error,
+          filePath: path,
+        };
+        generatedResult = {
+          ok: false,
+          error: errorDetails,
+          meta: moduleData.meta,
+        };
+      } else {
+        return;
+      }
+
+      // Initialize category if needed
+      if (!categories[vpnName]) {
+        categories[vpnName] = { name: vpnName, runs: {} };
+      }
+
+      // Initialize run if needed
+      if (!categories[vpnName].runs[runAlias]) {
+        const tcSettings = loadTCSettings(benchFiles, vpnName, runAlias);
+        categories[vpnName].runs[runAlias] = {
+          machines: [],
+          tcSettings,
+          parallelTcp: null,
+        };
+      }
+
+      // Assign parallel TCP result
+      categories[vpnName].runs[runAlias].parallelTcp =
+        generatedResult as Result<ParallelTcpReportData>;
       return;
     }
 
@@ -408,6 +510,7 @@ export function generateBenchData(): BenchData {
       categories[categoryName].runs[benchRunAlias] = {
         machines: [],
         tcSettings,
+        parallelTcp: null,
       };
     }
 
@@ -628,6 +731,12 @@ export function generateComparisonData(): ComparisonData {
     } else if (fileName === "udp_iperf3.json") {
       result[runAlias].udpIperf =
         moduleData.data as VpnComparisonResultMap<UdpIperfComparisonData>;
+    } else if (fileName === "nix_cache.json") {
+      result[runAlias].nixCache =
+        moduleData.data as VpnComparisonResultMap<NixCacheComparisonData>;
+    } else if (fileName === "parallel_tcp_iperf3.json") {
+      result[runAlias].parallelTcp =
+        moduleData.data as VpnComparisonResultMap<ParallelTcpComparisonData>;
     } else if (fileName === "connection_timings.json") {
       result[runAlias].connectionTimings = moduleData.data as ConnectionTimings;
     } else if (fileName === "reboot_connection_timings.json") {

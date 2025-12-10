@@ -238,6 +238,7 @@ function VpnDashboardWithProfiles(props: { category: BenchData[0] }) {
   // Process reports for the selected run's machines (memoized for reactivity)
   const reportsForCurrentRun = createMemo(() => {
     const machines = getCurrentMachines();
+    const run = getCurrentRun();
 
     return {
       tcp: processCategoryReportsMixed<IperfTcpReportData>(
@@ -248,6 +249,8 @@ function VpnDashboardWithProfiles(props: { category: BenchData[0] }) {
         machines,
         (m) => m.iperf3.udp,
       ),
+      // Parallel TCP is at run level, not machine level
+      parallelTcp: run?.parallelTcp || null,
       qperf: processCategoryReportsMixed<QperfData>(machines, (m) => m.qperf),
       nixCache: processCategoryReportsMixed<HyperfineData>(
         machines,
@@ -293,6 +296,7 @@ function VpnDashboardWithProfiles(props: { category: BenchData[0] }) {
         vpnName={props.category.name}
         tcpReports={reportsForCurrentRun().tcp}
         udpReports={reportsForCurrentRun().udp}
+        parallelTcpReport={reportsForCurrentRun().parallelTcp}
         qperfReports={reportsForCurrentRun().qperf}
         nixCacheReports={reportsForCurrentRun().nixCache}
         pingReports={reportsForCurrentRun().ping}
@@ -302,6 +306,7 @@ function VpnDashboardWithProfiles(props: { category: BenchData[0] }) {
             | "info"
             | "tcp_iperf"
             | "udp_iperf"
+            | "parallel_tcp"
             | "qperf"
             | "nix-cache"
             | "ping"

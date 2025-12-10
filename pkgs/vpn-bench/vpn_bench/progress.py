@@ -448,19 +448,17 @@ class BenchmarkProgress:
                     for i in range(remaining_tests_current):
                         test_idx = self.test_index + i
                         if test_idx < len(self.test_types):
-                            test_type = self.test_types[test_idx].name
+                            test_type_name = self.test_types[test_idx].name
                             remaining += self.timing_history.get_test_estimate(
-                                test_type
+                                test_type_name
                             )
                         else:
                             remaining += 60.0  # Default
 
                     # Add time for remaining machines (full test suite each)
                     for _ in range(remaining_machines - 1):
-                        for test_type in self.test_types:
-                            remaining += self.timing_history.get_test_estimate(
-                                test_type.name
-                            )
+                        for tt in self.test_types:
+                            remaining += self.timing_history.get_test_estimate(tt.name)
 
                 # Add full profile time for remaining profiles
                 remaining += (

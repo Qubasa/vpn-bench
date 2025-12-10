@@ -1,42 +1,26 @@
 import {
   IperfTcpCharts,
-  IperfTcpReport,
   IperfTcpReportData,
 } from "@/src/components/IperfTcpCharts";
 import {
   IperfUdpCharts,
-  IperfUdpReport,
   IperfUdpReportData,
 } from "@/src/components/IperfUdpCharts";
 import { Tabs } from "@kobalte/core/tabs";
-import {
-  QperfReport,
-  QperfChartsDashboard,
-  QperfData,
-} from "@/src/components/QperfCharts";
+import { QperfChartsDashboard, QperfData } from "@/src/components/QperfCharts";
 import "./style.css"; // Ensure this path is correct
+import { HyperfineCharts, HyperfineData } from "../HyperfineCharts"; // Ensure this path is correct
+import { PingCharts, PingData } from "@/src/components/PingCharts";
+import { RistChartsDashboard, RistData } from "@/src/components/RistStreamCharts";
+import { ErrorDetailsPanel } from "@/src/components/ErrorDetailsPanel";
+import { For, Show, createSignal, createEffect } from "solid-js";
 import {
-  HyperfineCharts,
-  HyperfineReport,
-  HyperfineData,
-} from "../HyperfineCharts"; // Ensure this path is correct
-import { PingCharts, PingReport, PingData } from "@/src/components/PingCharts";
-import {
-  RistChartsDashboard,
-  RistReport,
-  RistData,
-} from "@/src/components/RistStreamCharts";
-import { For, JSX, Show, createSignal, createEffect } from "solid-js";
-import {
-  Result,
-  Err,
   Ok,
   MixedReport,
-  getErrorMessage,
   TestMetadata,
+  ParallelTcpReportData,
+  Result,
 } from "@/src/benchData"; // Assuming Result and BenchmarkRunError are here
-// Using the name from your import - ensure this component accepts BenchmarkRunError
-import { DisplayClanError } from "@/src/components/ClanError"; // *** USE THE CORRECT COMPONENT NAME AND PATH ***
 import { useSearchParams } from "@solidjs/router";
 import { getVpnInfo, getDefaultVpnInfo, VpnInfoData } from "@/src/vpnInfo";
 
@@ -51,6 +35,8 @@ interface VpnDashboardProps {
   qperfReports: MixedReport<QperfData>[] | null;
   pingReports: MixedReport<PingData>[] | null;
   ristStreamReports: MixedReport<RistData>[] | null;
+  // Parallel TCP is at run level, not machine level
+  parallelTcpReport: Result<ParallelTcpReportData> | null;
   tcpHeight?: {
     throughput?: number;
     timeSeries?: number;
@@ -79,6 +65,7 @@ interface VpnDashboardProps {
     | "info"
     | "tcp_iperf"
     | "udp_iperf"
+    | "parallel_tcp"
     | "qperf"
     | "nix-cache"
     | "ping"
@@ -87,6 +74,7 @@ interface VpnDashboardProps {
     info?: string;
     tcp?: string;
     udp?: string;
+    parallelTcp?: string;
     qperf?: string;
     nixCache?: string;
     ping?: string;
@@ -438,6 +426,7 @@ export const VpnDashboard = (props: VpnDashboardProps) => {
     "info",
     "tcp_iperf",
     "udp_iperf",
+    "parallel_tcp",
     "qperf",
     "nix-cache",
     "ping",
@@ -497,6 +486,7 @@ export const VpnDashboard = (props: VpnDashboardProps) => {
     info: props.tabLabels?.info || "Overview",
     tcp: props.tabLabels?.tcp || "TCP Performance",
     udp: props.tabLabels?.udp || "UDP Performance",
+    parallelTcp: props.tabLabels?.parallelTcp || "Parallel TCP",
     qperf: props.tabLabels?.qperf || "HTTP3 Performance",
     nixCache: props.tabLabels?.nixCache || "Nix Cache",
     ping: props.tabLabels?.ping || "Ping Latency",
@@ -522,6 +512,9 @@ export const VpnDashboard = (props: VpnDashboardProps) => {
         </Tabs.Trigger>
         <Tabs.Trigger class="tabs__trigger" value="udp_iperf">
           {tabLabels.udp}
+        </Tabs.Trigger>
+        <Tabs.Trigger class="tabs__trigger" value="parallel_tcp">
+          {tabLabels.parallelTcp}
         </Tabs.Trigger>
         <Tabs.Trigger class="tabs__trigger" value="qperf">
           {tabLabels.qperf}
@@ -560,10 +553,38 @@ export const VpnDashboard = (props: VpnDashboardProps) => {
             return (
               <>
                 <MixedReportMetadataDisplay mixedReports={mixedReports()} />
-                <IperfTcpCharts
-                  reports={successfulReports()}
-                  height={tcpHeight}
+                <ErrorDetailsPanel
+                  mixedReports={mixedReports()}
+                  title="TCP Performance Errors"
                 />
+                <Show
+                  when={successfulReports().length > 0}
+                  fallback={
+                    <Show when={mixedReports().every((r) => !r.result.ok)}>
+                      <div
+                        style={{
+                          background: "#f9f9f9",
+                          border: "1px solid #e0e0e0",
+                          "border-radius": "8px",
+                          padding: "20px",
+                          "text-align": "center",
+                          color: "#555",
+                          "font-size": "16px",
+                          margin: "1rem 0",
+                        }}
+                      >
+                        <p style={{ margin: 0 }}>
+                          All TCP performance tests failed. See errors above.
+                        </p>
+                      </div>
+                    </Show>
+                  }
+                >
+                  <IperfTcpCharts
+                    reports={successfulReports()}
+                    height={tcpHeight}
+                  />
+                </Show>
               </>
             );
           }}
@@ -585,51 +606,191 @@ export const VpnDashboard = (props: VpnDashboardProps) => {
             return (
               <>
                 <MixedReportMetadataDisplay mixedReports={mixedReports()} />
-                <IperfUdpCharts
-                  reports={successfulReports()}
-                  height={udpHeight}
+                <ErrorDetailsPanel
+                  mixedReports={mixedReports()}
+                  title="UDP Performance Errors"
                 />
+                <Show
+                  when={successfulReports().length > 0}
+                  fallback={
+                    <Show when={mixedReports().every((r) => !r.result.ok)}>
+                      <div
+                        style={{
+                          background: "#f9f9f9",
+                          border: "1px solid #e0e0e0",
+                          "border-radius": "8px",
+                          padding: "20px",
+                          "text-align": "center",
+                          color: "#555",
+                          "font-size": "16px",
+                          margin: "1rem 0",
+                        }}
+                      >
+                        <p style={{ margin: 0 }}>
+                          All UDP performance tests failed. See errors above.
+                        </p>
+                      </div>
+                    </Show>
+                  }
+                >
+                  <IperfUdpCharts
+                    reports={successfulReports()}
+                    height={udpHeight}
+                  />
+                </Show>
               </>
             );
           }}
         </Show>
       </Tabs.Content>
 
+      <Tabs.Content class="tabs__content" value="parallel_tcp">
+        <Show when={props.parallelTcpReport} fallback={<FallbackMessage />}>
+          {(result) => (
+            <Show
+              when={result().ok}
+              fallback={
+                <div
+                  style={{
+                    background: "#fff5f5",
+                    border: "1px solid #e53e3e",
+                    "border-radius": "8px",
+                    padding: "20px",
+                    color: "#c53030",
+                    margin: "1rem 0",
+                  }}
+                >
+                  <p style={{ margin: 0 }}>
+                    Parallel TCP test failed. Check the logs for details.
+                  </p>
+                </div>
+              }
+            >
+              {/* Transform parallel TCP data to IperfTcpReport format */}
+              {(() => {
+                const data = (result() as Ok<ParallelTcpReportData>).value;
+                const reports = data.pairs
+                  .filter(
+                    (pair): pair is typeof pair & { result: IperfTcpReportData } =>
+                      pair.result !== undefined,
+                  )
+                  .map((pair) => ({
+                    name: `${pair.source} → ${pair.target}`,
+                    data: pair.result,
+                  }));
+
+                const failedPairs = data.pairs.filter(
+                  (pair) => pair.error !== undefined,
+                );
+
+                return (
+                  <>
+                    <Show when={failedPairs.length > 0}>
+                      <div
+                        style={{
+                          background: "#fff5f5",
+                          border: "1px solid #e53e3e",
+                          "border-radius": "8px",
+                          padding: "16px",
+                          "margin-bottom": "16px",
+                        }}
+                      >
+                        <h4 style={{ margin: "0 0 8px 0", color: "#c53030" }}>
+                          Failed Pairs ({failedPairs.length})
+                        </h4>
+                        <For each={failedPairs}>
+                          {(pair) => (
+                            <div style={{ "font-size": "14px", color: "#742a2a" }}>
+                              {pair.source} → {pair.target}: {pair.error}
+                            </div>
+                          )}
+                        </For>
+                      </div>
+                    </Show>
+                    <Show
+                      when={reports.length > 0}
+                      fallback={
+                        <div
+                          style={{
+                            background: "#f9f9f9",
+                            border: "1px solid #e0e0e0",
+                            "border-radius": "8px",
+                            padding: "20px",
+                            "text-align": "center",
+                            color: "#555",
+                          }}
+                        >
+                          No successful parallel TCP results available.
+                        </div>
+                      }
+                    >
+                      <div
+                        style={{
+                          background: "#f0fff4",
+                          border: "1px solid #38a169",
+                          "border-radius": "8px",
+                          padding: "12px 16px",
+                          "margin-bottom": "16px",
+                          color: "#276749",
+                        }}
+                      >
+                        <strong>Parallel Test:</strong> All {reports.length} machine
+                        pairs ran TCP tests simultaneously.
+                      </div>
+                      <IperfTcpCharts reports={reports} height={tcpHeight} />
+                    </Show>
+                  </>
+                );
+              })()}
+            </Show>
+          )}
+        </Show>
+      </Tabs.Content>
+
       <Tabs.Content class="tabs__content" value="qperf">
         <Show when={props.qperfReports} fallback={<FallbackMessage />}>
           {(mixedReports) => {
-            // Check if we have any successful reports
-            const hasSuccessfulReports = () =>
-              mixedReports().some((r) => r.result.ok);
+            const successfulReports = () =>
+              mixedReports()
+                .filter((r) => r.result.ok)
+                .map((r) => ({
+                  name: r.name,
+                  data: (r.result as Ok<QperfData>).value,
+                }));
 
             return (
-              <Show
-                when={hasSuccessfulReports()}
-                fallback={
-                  <div
-                    style={{
-                      background: "#f9f9f9",
-                      border: "1px solid #e0e0e0",
-                      "border-radius": "8px",
-                      padding: "20px",
-                      "text-align": "center",
-                      color: "#555",
-                      "font-size": "16px",
-                      margin: "1rem 0",
-                    }}
-                  >
-                    <p style={{ margin: 0 }}>
-                      No HTTP3 performance data available. Run the benchmark to
-                      generate qperf data.
-                    </p>
-                  </div>
-                }
-              >
-                <>
-                  <MixedReportMetadataDisplay mixedReports={mixedReports()} />
+              <>
+                <MixedReportMetadataDisplay mixedReports={mixedReports()} />
+                <ErrorDetailsPanel
+                  mixedReports={mixedReports()}
+                  title="HTTP3 Performance Errors"
+                />
+                <Show
+                  when={successfulReports().length > 0}
+                  fallback={
+                    <Show when={mixedReports().every((r) => !r.result.ok)}>
+                      <div
+                        style={{
+                          background: "#f9f9f9",
+                          border: "1px solid #e0e0e0",
+                          "border-radius": "8px",
+                          padding: "20px",
+                          "text-align": "center",
+                          color: "#555",
+                          "font-size": "16px",
+                          margin: "1rem 0",
+                        }}
+                      >
+                        <p style={{ margin: 0 }}>
+                          All HTTP3 performance tests failed. See errors above.
+                        </p>
+                      </div>
+                    </Show>
+                  }
+                >
                   <QperfChartsDashboard mixedReports={mixedReports()} />
-                </>
-              </Show>
+                </Show>
+              </>
             );
           }}
         </Show>
@@ -650,7 +811,35 @@ export const VpnDashboard = (props: VpnDashboardProps) => {
             return (
               <>
                 <MixedReportMetadataDisplay mixedReports={mixedReports()} />
-                <HyperfineCharts reports={successfulReports()} />
+                <ErrorDetailsPanel
+                  mixedReports={mixedReports()}
+                  title="Nix Cache Errors"
+                />
+                <Show
+                  when={successfulReports().length > 0}
+                  fallback={
+                    <Show when={mixedReports().every((r) => !r.result.ok)}>
+                      <div
+                        style={{
+                          background: "#f9f9f9",
+                          border: "1px solid #e0e0e0",
+                          "border-radius": "8px",
+                          padding: "20px",
+                          "text-align": "center",
+                          color: "#555",
+                          "font-size": "16px",
+                          margin: "1rem 0",
+                        }}
+                      >
+                        <p style={{ margin: 0 }}>
+                          All Nix Cache tests failed. See errors above.
+                        </p>
+                      </div>
+                    </Show>
+                  }
+                >
+                  <HyperfineCharts reports={successfulReports()} />
+                </Show>
               </>
             );
           }}
@@ -672,7 +861,35 @@ export const VpnDashboard = (props: VpnDashboardProps) => {
             return (
               <>
                 <MixedReportMetadataDisplay mixedReports={mixedReports()} />
-                <PingCharts reports={successfulReports()} height={pingHeight} />
+                <ErrorDetailsPanel
+                  mixedReports={mixedReports()}
+                  title="Ping Latency Errors"
+                />
+                <Show
+                  when={successfulReports().length > 0}
+                  fallback={
+                    <Show when={mixedReports().every((r) => !r.result.ok)}>
+                      <div
+                        style={{
+                          background: "#f9f9f9",
+                          border: "1px solid #e0e0e0",
+                          "border-radius": "8px",
+                          padding: "20px",
+                          "text-align": "center",
+                          color: "#555",
+                          "font-size": "16px",
+                          margin: "1rem 0",
+                        }}
+                      >
+                        <p style={{ margin: 0 }}>
+                          All Ping tests failed. See errors above.
+                        </p>
+                      </div>
+                    </Show>
+                  }
+                >
+                  <PingCharts reports={successfulReports()} height={pingHeight} />
+                </Show>
               </>
             );
           }}
@@ -694,10 +911,38 @@ export const VpnDashboard = (props: VpnDashboardProps) => {
             return (
               <>
                 <MixedReportMetadataDisplay mixedReports={mixedReports()} />
-                <RistChartsDashboard
-                  reports={successfulReports()}
-                  height={ristStreamHeight}
+                <ErrorDetailsPanel
+                  mixedReports={mixedReports()}
+                  title="Video Streaming Errors"
                 />
+                <Show
+                  when={successfulReports().length > 0}
+                  fallback={
+                    <Show when={mixedReports().every((r) => !r.result.ok)}>
+                      <div
+                        style={{
+                          background: "#f9f9f9",
+                          border: "1px solid #e0e0e0",
+                          "border-radius": "8px",
+                          padding: "20px",
+                          "text-align": "center",
+                          color: "#555",
+                          "font-size": "16px",
+                          margin: "1rem 0",
+                        }}
+                      >
+                        <p style={{ margin: 0 }}>
+                          All Video Streaming tests failed. See errors above.
+                        </p>
+                      </div>
+                    </Show>
+                  }
+                >
+                  <RistChartsDashboard
+                    reports={successfulReports()}
+                    height={ristStreamHeight}
+                  />
+                </Show>
               </>
             );
           }}

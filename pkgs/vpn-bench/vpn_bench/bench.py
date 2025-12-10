@@ -14,7 +14,7 @@ from vpn_bench.comparison import generate_comparison_data
 from vpn_bench.connection_timings import wait_for_vpn_connectivity
 from vpn_bench.data import VPN, BenchMachine, BenchmarkRun, Config, TCSettings, TestType
 from vpn_bench.errors import TestMetadataDict, save_bench_report
-from vpn_bench.iperf3 import IperfCreds, run_iperf_test
+from vpn_bench.iperf3 import IperfCreds, run_iperf_test, run_parallel_iperf_test
 from vpn_bench.nix_cache import run_nix_cache_test
 from vpn_bench.ping import run_ping_test
 from vpn_bench.progress import ProgressTracker
@@ -60,7 +60,7 @@ def get_test_service_name(test: TestType) -> str | None:
     match test:
         case TestType.QPERF:
             return "qperf.service"
-        case TestType.IPERF3:
+        case TestType.IPERF3 | TestType.IPERF3_PARALLEL_TCP:
             return "iperf3.service"
         case TestType.RIST_STREAM:
             return "rist-receiver.service"
@@ -190,8 +190,86 @@ def run_benchmarks(
     tc_settings_file.write_text(json.dumps(tc_data, indent=2))
     log.info(f"Saved TC settings to {tc_settings_file}")
 
-    # Upload iperf3 public key
+    # Prepare iperf3 credentials (used by multiple tests)
     remote_iperf3_pubkey = Path("/tmp/iperf3.public")
+    local_pubkey = get_iperf_asset("vpb_public.pem")
+    password = get_iperf_asset("vpb_password.txt").read_text()
+    creds = IperfCreds(username="mario", password=password, pubkey=remote_iperf3_pubkey)
+
+    # Upload iperf3 public key to all machines
+    for bmachine in bmachines:
+        host = bmachine.cmachine.target_host().override(host_key_check="none")
+        with host.host_connection() as ssh:
+            upload(ssh, local_pubkey, remote_iperf3_pubkey)
+
+    # Filter tests into parallel (run once) and per-machine tests
+    parallel_tests: list[TestType] = [
+        t for t in tests if t == TestType.IPERF3_PARALLEL_TCP
+    ]
+    per_machine_tests: list[TestType] = [
+        t for t in tests if t != TestType.IPERF3_PARALLEL_TCP
+    ]
+
+    # Run parallel tests first (once per profile, all machines simultaneously)
+    for test_idx, test in enumerate(parallel_tests):
+        if test == TestType.IPERF3_PARALLEL_TCP:
+            log.info("Running parallel TCP iperf3 test on all machines simultaneously")
+            start_time = time.time()
+
+            # Track test progress (use first machine as context)
+            if tracker is not None:
+                tracker.start_machine("all", "all", 0)
+                tracker.start_test(test, test_idx)
+
+            # Run parallel test
+            parallel_results = run_parallel_iperf_test(bmachines, creds)
+
+            duration = time.time() - start_time
+
+            # Convert results to serializable format
+            results_data: list[dict[str, Any]] = []
+            for pr in parallel_results:
+                result_entry: dict[str, Any] = {
+                    "source": pr.source_name,
+                    "target": pr.target_name,
+                }
+                if isinstance(pr.result, Exception):
+                    result_entry["error"] = str(pr.result)
+                    result_entry["error_type"] = type(pr.result).__name__
+                else:
+                    result_entry["result"] = pr.result
+                results_data.append(result_entry)
+
+            # Save results to profile-level directory
+            parallel_result_dir = config.bench_dir / vpn.name / benchmark_run_alias
+            parallel_result_dir.mkdir(parents=True, exist_ok=True)
+
+            parallel_metadata: TestMetadataDict = {
+                "duration_seconds": duration,
+                "test_attempts": 1,
+                "vpn_restart_attempts": 0,
+            }
+
+            # Save as a combined result
+            save_bench_report(
+                parallel_result_dir,
+                {"pairs": results_data},
+                "parallel_tcp_iperf3.json",
+                parallel_metadata,
+            )
+
+            # Restart VPN after parallel test
+            vpn_restart_result = restart_vpn_service(bmachines, vpn)
+            log.info(
+                f"Parallel TCP iperf3 completed in {duration:.1f}s, "
+                f"VPN restart took {vpn_restart_result.restart_duration_seconds:.1f}s"
+            )
+
+    # Skip per-machine tests if there are none
+    if not per_machine_tests:
+        return
+
+    # Run per-machine tests
     for pos, bmachine in enumerate(bmachines):
         next_bmachine = bmachines[pos + 1] if pos + 1 < len(bmachines) else bmachines[0]
         log.info(f"Benchmarking {bmachine.cmachine.name} with ip {bmachine.vpn_ip}")
@@ -207,19 +285,6 @@ def run_benchmarks(
             / benchmark_run_alias
             / f"{pos}_{bmachine.cmachine.name}"
         )
-
-        creds = None
-        local_pubkey = None
-        local_pubkey = get_iperf_asset("vpb_public.pem")
-        password = get_iperf_asset("vpb_password.txt").read_text()
-        creds = IperfCreds(
-            username="mario", password=password, pubkey=remote_iperf3_pubkey
-        )
-        host = bmachine.cmachine.target_host().override(host_key_check="none")
-
-        with host.host_connection() as ssh:
-            # Upload iperf3 public key
-            upload(ssh, local_pubkey, remote_iperf3_pubkey)
 
         P = ParamSpec("P")  # noqa: N806
 
@@ -275,7 +340,7 @@ def run_benchmarks(
             )
             return get_service_logs(target_machine, service_name)
 
-        for test_idx, test in enumerate(tests):
+        for test_idx, test in enumerate(per_machine_tests):
             start_time = time.time()
             test_attempts = 0
 
@@ -513,26 +578,25 @@ def benchmark_vpn(
         if tracker is not None:
             tracker.start_profile(run_config.alias, profile_idx)
 
-        with timing.phase("benchmarking", profile=run_config.alias):
-            # Use context manager to apply TC settings and automatically clean up
-            with apply_tc_settings(machines, run_config.tc_settings):
-                with timing.operation("tc_stabilization"):
-                    log.info(
-                        "TC settings applied, waiting 30 seconds for stabilization"
-                    )
-                    time.sleep(30)
+        with (
+            timing.phase("benchmarking", profile=run_config.alias),
+            apply_tc_settings(machines, run_config.tc_settings),
+        ):
+            with timing.operation("tc_stabilization"):
+                log.info("TC settings applied, waiting 30 seconds for stabilization")
+                time.sleep(30)
 
-                # Run benchmarks with this configuration
-                with timing.operation("run_tests", profile=run_config.alias):
-                    run_benchmarks(
-                        config,
-                        vpn,
-                        bmachines,
-                        tests,
-                        run_config.alias,
-                        run_config.tc_settings,
-                        tracker,
-                    )
+            # Run benchmarks with this configuration
+            with timing.operation("run_tests", profile=run_config.alias):
+                run_benchmarks(
+                    config,
+                    vpn,
+                    bmachines,
+                    tests,
+                    run_config.alias,
+                    run_config.tc_settings,
+                    tracker,
+                )
 
         # Track profile completion
         if tracker is not None:

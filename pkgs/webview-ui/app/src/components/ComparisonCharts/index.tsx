@@ -8,6 +8,8 @@ import {
   TcpIperfComparisonData,
   UdpIperfComparisonData,
   VideoStreamingComparisonData,
+  NixCacheComparisonData,
+  ParallelTcpComparisonData,
   VpnComparisonError,
   CmdOutError,
   ClanError,
@@ -697,6 +699,178 @@ export const VideoStreamingComparisonSection = (props: {
         allVpnNames={props.allVpnNames}
       />
       <VideoStreamingDroppedFramesComparisonChart
+        data={props.data}
+        allVpnNames={props.allVpnNames}
+      />
+    </div>
+  );
+};
+
+// --- Nix Cache Comparison Charts ---
+
+export const NixCacheMeanTimeComparisonChart = (props: {
+  data: VpnComparisonResultMap<NixCacheComparisonData>;
+  height?: number;
+  allVpnNames?: string[];
+}) => {
+  const chartData = () =>
+    metricToBarData(props.data, (d) => d.mean_seconds, props.allVpnNames);
+  return (
+    <ComparisonBarChart
+      data={chartData()}
+      title="Nix Cache Mean Download Time"
+      yAxisLabel="Time (seconds)"
+      height={props.height ?? 400}
+      color="#722ed1"
+    />
+  );
+};
+
+export const NixCacheMinTimeComparisonChart = (props: {
+  data: VpnComparisonResultMap<NixCacheComparisonData>;
+  height?: number;
+  allVpnNames?: string[];
+}) => {
+  const chartData = () =>
+    metricToBarData(props.data, (d) => d.min_seconds, props.allVpnNames);
+  return (
+    <ComparisonBarChart
+      data={chartData()}
+      title="Nix Cache Min Download Time"
+      yAxisLabel="Time (seconds)"
+      height={props.height ?? 400}
+      color="#13c2c2"
+    />
+  );
+};
+
+export const NixCacheMaxTimeComparisonChart = (props: {
+  data: VpnComparisonResultMap<NixCacheComparisonData>;
+  height?: number;
+  allVpnNames?: string[];
+}) => {
+  const chartData = () =>
+    metricToBarData(props.data, (d) => d.max_seconds, props.allVpnNames);
+  return (
+    <ComparisonBarChart
+      data={chartData()}
+      title="Nix Cache Max Download Time"
+      yAxisLabel="Time (seconds)"
+      height={props.height ?? 400}
+      color="#eb2f96"
+    />
+  );
+};
+
+export const NixCacheComparisonSection = (props: {
+  data: VpnComparisonResultMap<NixCacheComparisonData>;
+  allVpnNames?: string[];
+}) => {
+  return (
+    <div
+      style={{
+        display: "grid",
+        "grid-template-columns": "1fr 1fr",
+        gap: "20px",
+      }}
+    >
+      <NixCacheMeanTimeComparisonChart
+        data={props.data}
+        allVpnNames={props.allVpnNames}
+      />
+      <NixCacheMinTimeComparisonChart
+        data={props.data}
+        allVpnNames={props.allVpnNames}
+      />
+      <NixCacheMaxTimeComparisonChart
+        data={props.data}
+        allVpnNames={props.allVpnNames}
+      />
+    </div>
+  );
+};
+
+// --- Parallel TCP Comparison Charts ---
+
+export const ParallelTcpTotalThroughputComparisonChart = (props: {
+  data: VpnComparisonResultMap<ParallelTcpComparisonData>;
+  height?: number;
+  allVpnNames?: string[];
+}) => {
+  const chartData = () =>
+    metricToBarData(
+      props.data,
+      (d) => d.total_throughput_mbps,
+      props.allVpnNames,
+    );
+  return (
+    <ComparisonBarChart
+      data={chartData()}
+      title="Parallel TCP Total Throughput"
+      yAxisLabel="Throughput (Mbps)"
+      height={props.height ?? 400}
+      color="#52c41a"
+    />
+  );
+};
+
+export const ParallelTcpAvgThroughputComparisonChart = (props: {
+  data: VpnComparisonResultMap<ParallelTcpComparisonData>;
+  height?: number;
+  allVpnNames?: string[];
+}) => {
+  const chartData = () =>
+    metricToBarData(props.data, (d) => d.avg_throughput_mbps, props.allVpnNames);
+  return (
+    <ComparisonBarChart
+      data={chartData()}
+      title="Parallel TCP Average Throughput per Pair"
+      yAxisLabel="Throughput (Mbps)"
+      height={props.height ?? 400}
+      color="#1890ff"
+    />
+  );
+};
+
+export const ParallelTcpRetransmitsComparisonChart = (props: {
+  data: VpnComparisonResultMap<ParallelTcpComparisonData>;
+  height?: number;
+  allVpnNames?: string[];
+}) => {
+  const chartData = () =>
+    metricToBarData(props.data, (d) => d.total_retransmits, props.allVpnNames);
+  return (
+    <ComparisonBarChart
+      data={chartData()}
+      title="Parallel TCP Total Retransmits"
+      yAxisLabel="Retransmits"
+      height={props.height ?? 400}
+      color="#fa8c16"
+    />
+  );
+};
+
+export const ParallelTcpComparisonSection = (props: {
+  data: VpnComparisonResultMap<ParallelTcpComparisonData>;
+  allVpnNames?: string[];
+}) => {
+  return (
+    <div
+      style={{
+        display: "grid",
+        "grid-template-columns": "1fr 1fr",
+        gap: "20px",
+      }}
+    >
+      <ParallelTcpTotalThroughputComparisonChart
+        data={props.data}
+        allVpnNames={props.allVpnNames}
+      />
+      <ParallelTcpAvgThroughputComparisonChart
+        data={props.data}
+        allVpnNames={props.allVpnNames}
+      />
+      <ParallelTcpRetransmitsComparisonChart
         data={props.data}
         allVpnNames={props.allVpnNames}
       />
