@@ -47,6 +47,8 @@ def get_vpn_service_name(vpn: VPN) -> str:
             return "nebula@nebula.service"
         case VPN.Tinc:
             return "tinc.tinc.service"
+        case VPN.Headscale:
+            return "tailscaled.service"
         case _:
             msg = f"Unknown VPN type: {vpn}"
             raise ValueError(msg)

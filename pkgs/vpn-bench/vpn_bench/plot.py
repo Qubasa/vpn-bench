@@ -17,10 +17,17 @@ from vpn_bench.terraform import TrMachine
 log = logging.getLogger(__name__)
 
 
-def plot_data(config: Config, tr_machines: list[TrMachine]) -> None:
-    vpn_bench_flake = os.environ.get("VPN_BENCH_FLAKE")
+def build_ui(bench_dir: Path, create_symlink: bool = False) -> Path:
+    """Build the webview-ui for plotting benchmark data.
 
-    analyse_connection_timings(config, tr_machines)
+    Args:
+        bench_dir: Path to the benchmark directory containing the data.
+        create_symlink: If True, create a 'result' symlink in the current directory.
+
+    Returns:
+        Path to the built website directory.
+    """
+    vpn_bench_flake = os.environ.get("VPN_BENCH_FLAKE")
 
     log.info("Building webview-ui for plotting the data")
     nix_conf = nix_config()
@@ -29,7 +36,7 @@ def plot_data(config: Config, tr_machines: list[TrMachine]) -> None:
         self = builtins.getFlake "{vpn_bench_flake}";
         lib = self.inputs.nixpkgs.lib;
     in
-        self.packages.{nix_conf["system"]}.webview-ui.override {{ benchDir = {config.bench_dir}; }}
+        self.packages.{nix_conf["system"]}.webview-ui.override {{ benchDir = {bench_dir}; }}
     """
 
     cmd = nix_build(
@@ -37,13 +44,32 @@ def plot_data(config: Config, tr_machines: list[TrMachine]) -> None:
     )
     out = run(cmd)
 
-    website_dir = Path(out.stdout.strip()) / "lib/node_modules/@clan/webview-ui/dist"
+    store_path = Path(out.stdout.strip())
+    website_dir = store_path / "lib/node_modules/@clan/webview-ui/dist"
 
     log.info(f"Website dir: {website_dir}")
 
     if not website_dir.exists():
         msg = f"Webview UI not found at {website_dir}"
         raise VpnBenchError(msg)
+
+    if create_symlink:
+        symlink_path = Path.cwd() / "result"
+        if symlink_path.is_symlink():
+            symlink_path.unlink()
+        elif symlink_path.exists():
+            msg = f"Cannot create symlink: {symlink_path} already exists and is not a symlink"
+            raise VpnBenchError(msg)
+        symlink_path.symlink_to(store_path)
+        log.info(f"Created symlink: {symlink_path} -> {store_path}")
+
+    return website_dir
+
+
+def plot_data(config: Config, tr_machines: list[TrMachine]) -> None:
+    analyse_connection_timings(config, tr_machines)
+
+    website_dir = build_ui(config.bench_dir)
 
     class CustomHandler(SimpleHTTPRequestHandler):
         def __init__(self, *args: Any, **kwargs: Any) -> None:

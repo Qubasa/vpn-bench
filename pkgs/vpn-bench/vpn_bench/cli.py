@@ -21,7 +21,7 @@ from vpn_bench.data import (
     get_benchmark_runs,
 )
 from vpn_bench.errors import VpnBenchError
-from vpn_bench.plot import plot_data
+from vpn_bench.plot import build_ui, plot_data
 from vpn_bench.setup import AgeOpts, clan_clean, clan_init, install_machines_only
 from vpn_bench.ssh import generate_ssh_key, ssh_into_machine
 from vpn_bench.terraform import tr_create, tr_destroy, tr_metadata
@@ -141,6 +141,18 @@ def create_parser() -> argparse.ArgumentParser:
     )
     compare_parser.add_argument(
         "--debug", action="store_true", help="Enable debug mode"
+    )
+
+    build_ui_parser = subparsers.add_parser(
+        "build-ui", help="Build the webview-ui and create a result symlink"
+    )
+    build_ui_parser.add_argument(
+        "--debug", action="store_true", help="Enable debug mode"
+    )
+    build_ui_parser.add_argument(
+        "--no-symlink",
+        action="store_true",
+        help="Don't create a result symlink in the current directory",
     )
 
     return parser
@@ -375,6 +387,11 @@ def run_cli() -> None:
 
     elif args.subcommand == "compare":
         generate_comparison_data(config.bench_dir)
+
+    elif args.subcommand == "build-ui":
+        generate_comparison_data(config.bench_dir)
+        website_dir = build_ui(config.bench_dir, create_symlink=not args.no_symlink)
+        print(website_dir)
 
     elif args.subcommand == "ssh":
         machines = tr_metadata(config)

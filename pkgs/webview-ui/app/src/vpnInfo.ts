@@ -180,6 +180,28 @@ export const vpnInfoDatabase: Record<string, VpnInfoData> = {
       "Zero-trust network access",
     ],
   },
+  headscale: {
+    name: "Headscale",
+    description:
+      "Headscale is a self-hosted, open-source implementation of the Tailscale control server. It allows you to run your own Tailscale-compatible coordination server, enabling WireGuard-based mesh networking without relying on Tailscale's cloud infrastructure.",
+    website: "https://headscale.net/",
+    protocol: "UDP (WireGuard)",
+    encryption: "WireGuard cryptography (ChaCha20, Poly1305, Curve25519)",
+    features: [
+      "Self-hosted Tailscale control server",
+      "WireGuard-based encryption",
+      "Automatic NAT traversal via DERP relays",
+      "MagicDNS support",
+      "Compatible with official Tailscale clients",
+      "ACL and policy support",
+    ],
+    useCases: [
+      "Self-hosted mesh VPN infrastructure",
+      "Privacy-conscious organizations",
+      "Air-gapped or restricted environments",
+      "Replacing Tailscale cloud dependency",
+    ],
+  },
 };
 
 // Get VPN info by name (case-insensitive)

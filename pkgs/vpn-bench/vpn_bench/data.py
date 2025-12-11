@@ -52,7 +52,7 @@ class VPN(Enum):
     Easytier = "easytier"  #
     Nebula = "nebula"  #
     Tinc = "tinc"  #
-
+    Headscale = "headscale"  #
 
     @staticmethod
     def from_str(label: str) -> "VPN":

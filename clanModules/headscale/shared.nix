@@ -7,6 +7,7 @@
   machine,
   controllerInfo ? null,
   isController,
+  isPeer ? true, # By default, all nodes are peers
 }:
 let
   # User name for the headscale user (all machines join under this user)
@@ -20,10 +21,15 @@ let
 
   # Keyserver port
   keyserverPort = 8081;
-in
-lib.mkMerge [
-  # Controller configuration
-  (lib.mkIf isController {
+
+  # IPv6 ULA generation script (same as easytier)
+  ipgenv6 = pkgs.writers.writePython3Bin "ipgenv6" {
+    libraries = [ ];
+    doCheck = false;
+  } (builtins.readFile ./ipgenv6.py);
+
+  # Controller-specific configuration
+  controllerConfig = lib.optionalAttrs isController {
     services.headscale = {
       enable = true;
       address = "0.0.0.0";
@@ -74,7 +80,7 @@ lib.mkMerge [
 
         # Disable policy file (allow all traffic within the network)
         policy.mode = "file";
-        policy.path = "";
+        policy.path = null;
       };
     };
 
@@ -113,6 +119,7 @@ lib.mkMerge [
         pkgs.headscale
         pkgs.coreutils
         pkgs.gnugrep
+        pkgs.jq
       ];
 
       script = ''
@@ -128,16 +135,24 @@ lib.mkMerge [
         done
 
         # Create user if it doesn't exist
-        if ! headscale users list | grep -q "${userName}"; then
+        if ! headscale users list -o json | jq -e '.[] | select(.name == "${userName}")' > /dev/null 2>&1; then
           echo "Creating user ${userName}"
           headscale users create "${userName}"
         fi
 
+        # Get the user ID (headscale CLI requires numeric ID, not username)
+        USER_ID=$(headscale users list -o json | jq -r '.[] | select(.name == "${userName}") | .id')
+        if [ -z "$USER_ID" ]; then
+          echo "Failed to get user ID for ${userName}"
+          exit 1
+        fi
+        echo "Found user ${userName} with ID: $USER_ID"
+
         # Generate a reusable preauthkey if one doesn't exist or is expired
         if [ ! -f "${preauthKeyFile}" ] || [ ! -s "${preauthKeyFile}" ]; then
-          echo "Generating new preauthkey for ${userName}"
+          echo "Generating new preauthkey for ${userName} (user ID: $USER_ID)"
           # Create a reusable key that expires in 10 years
-          headscale preauthkeys create --user "${userName}" --reusable --expiration 87600h | tail -1 > "${preauthKeyFile}"
+          headscale preauthkeys create --user "$USER_ID" --reusable --expiration 87600h | tail -1 > "${preauthKeyFile}"
           chmod 644 "${preauthKeyFile}"
         fi
 
@@ -166,14 +181,50 @@ lib.mkMerge [
         ${pkgs.python3}/bin/python3 -m http.server ${toString keyserverPort} --directory /var/lib/headscale/preauthkeys --bind 0.0.0.0
       '';
     };
-  })
+  };
 
   # Peer (Tailscale client) configuration
-  (lib.mkIf (!isController) {
+  peerConfig = lib.optionalAttrs isPeer {
     services.tailscale = {
       enable = true;
       # Use the interface name for the tunnel
       interfaceName = interface;
+    };
+
+    # Shared ULA prefix generator (shared across all machines in this instance)
+    clan.core.vars.generators."headscale-${instanceName}-ula" = {
+      share = true;
+      files.network = {
+        secret = false;
+        deploy = false;
+      };
+      runtimeInputs = [
+        ipgenv6
+        pkgs.coreutils
+      ];
+      script = ''
+        ipgenv6 --generate-prefix | tr -d "\n" > "$out"/network
+      '';
+    };
+
+    # Generator to produce the VPN IPv6 for this peer
+    clan.core.vars.generators."headscale-${instanceName}" = {
+      files.ip = {
+        deploy = false;
+        secret = false;
+      };
+      dependencies = [
+        "headscale-${instanceName}-ula"
+      ];
+      runtimeInputs = [
+        pkgs.coreutils
+        pkgs.gnused
+        pkgs.gnugrep
+        ipgenv6
+      ];
+      script = ''
+        ipgenv6 --prefix "$(cat "$in"/headscale-${instanceName}-ula/network)" | tr -d "\n" > "$out"/ip
+      '';
     };
 
     # Benchmark resource slice
@@ -185,6 +236,10 @@ lib.mkMerge [
       after = [
         "tailscaled.service"
         "network-online.target"
+      ]
+      ++ lib.optionals isController [
+        "headscale-${instanceName}-setup.service"
+        "headscale-${instanceName}-keyserver.service"
       ];
       requires = [ "tailscaled.service" ];
       wants = [ "network-online.target" ];
@@ -205,51 +260,58 @@ lib.mkMerge [
         pkgs.jq
       ];
 
-      script = ''
-        set -euo pipefail
+      script =
+        let
+          # For controller, use localhost; for peers, use the controller's address
+          controllerHost = if isController then "127.0.0.1" else controllerInfo.publicAddress;
+          # Use HTTP since headscale is not configured with TLS
+          loginServerUrl = if isController then "http://127.0.0.1:${toString settings.port}" else serverUrl;
+        in
+        ''
+          set -euo pipefail
 
-        CONTROLLER_HOST="${controllerInfo.publicAddress}"
-        KEYSERVER_PORT="${toString keyserverPort}"
+          CONTROLLER_HOST="${controllerHost}"
+          KEYSERVER_PORT="${toString keyserverPort}"
 
-        # Wait for the key server to be available
-        echo "Waiting for headscale keyserver at $CONTROLLER_HOST:$KEYSERVER_PORT..."
-        for i in $(seq 1 60); do
-          if curl -sf "http://$CONTROLLER_HOST:$KEYSERVER_PORT/${userName}.key" > /dev/null 2>&1; then
-            break
+          # Wait for the key server to be available
+          echo "Waiting for headscale keyserver at $CONTROLLER_HOST:$KEYSERVER_PORT..."
+          for i in $(seq 1 60); do
+            if curl -sf "http://$CONTROLLER_HOST:$KEYSERVER_PORT/${userName}.key" > /dev/null 2>&1; then
+              break
+            fi
+            echo "Keyserver not ready, waiting... ($i/60)"
+            sleep 5
+          done
+
+          # Fetch the preauthkey
+          AUTHKEY=$(curl -sf "http://$CONTROLLER_HOST:$KEYSERVER_PORT/${userName}.key")
+
+          if [ -z "$AUTHKEY" ]; then
+            echo "Failed to fetch preauthkey"
+            exit 1
           fi
-          echo "Keyserver not ready, waiting... ($i/60)"
-          sleep 5
-        done
 
-        # Fetch the preauthkey
-        AUTHKEY=$(curl -sf "http://$CONTROLLER_HOST:$KEYSERVER_PORT/${userName}.key")
-
-        if [ -z "$AUTHKEY" ]; then
-          echo "Failed to fetch preauthkey"
-          exit 1
-        fi
-
-        # Check if already authenticated
-        if tailscale status &>/dev/null; then
-          STATUS=$(tailscale status --json 2>/dev/null | jq -r '.BackendState' || echo "unknown")
-          if [ "$STATUS" = "Running" ]; then
-            echo "Tailscale already authenticated and running"
-            exit 0
+          # Check if already authenticated
+          if tailscale status &>/dev/null; then
+            STATUS=$(tailscale status --json 2>/dev/null | jq -r '.BackendState' || echo "unknown")
+            if [ "$STATUS" = "Running" ]; then
+              echo "Tailscale already authenticated and running"
+              exit 0
+            fi
           fi
-        fi
 
-        # Authenticate with headscale
-        echo "Authenticating with headscale at ${serverUrl}..."
-        tailscale up \
-          --login-server="${serverUrl}" \
-          --authkey="$AUTHKEY" \
-          --hostname="${machine.name}" \
-          --accept-routes=${if settings.acceptRoutes then "true" else "false"} \
-          ${lib.optionalString settings.exitNode "--advertise-exit-node"} \
-          --reset
+          # Authenticate with headscale
+          echo "Authenticating with headscale at ${loginServerUrl}..."
+          tailscale up \
+            --login-server="${loginServerUrl}" \
+            --authkey="$AUTHKEY" \
+            --hostname="${machine.name}" \
+            --accept-routes=${if settings.acceptRoutes or true then "true" else "false"} \
+            ${lib.optionalString (settings.exitNode or false) "--advertise-exit-node"} \
+            --reset
 
-        echo "Tailscale authentication complete"
-      '';
+          echo "Tailscale authentication complete"
+        '';
     };
 
     # Open firewall for Tailscale/WireGuard
@@ -259,5 +321,17 @@ lib.mkMerge [
       # Trust the tailscale interface
       trustedInterfaces = [ interface ];
     };
-  })
-]
+  };
+
+  # Assertions configuration
+  assertionsConfig = {
+    assertions = lib.mkIf (!isController) [
+      {
+        assertion = controllerInfo != null;
+        message = "Peers require controllerInfo to be set.";
+      }
+    ];
+  };
+in
+# Return a proper NixOS module by recursively merging configs
+lib.recursiveUpdate (lib.recursiveUpdate controllerConfig peerConfig) assertionsConfig

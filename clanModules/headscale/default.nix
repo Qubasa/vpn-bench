@@ -60,9 +60,14 @@
         instanceName,
         settings,
         machine,
+        roles,
         mkExports,
         ...
       }:
+      let
+        # Check if this controller is also a peer
+        isPeer = roles.peer.machines ? ${machine.name};
+      in
       {
         exports = mkExports {
           controller.hosts = [
@@ -79,11 +84,8 @@
             ...
           }:
           let
-            serverUrl =
-              let
-                proto = "https";
-              in
-              "${proto}://${settings.publicAddress}:${toString settings.port}";
+            # Use HTTP since headscale is not configured with TLS
+            serverUrl = "http://${settings.publicAddress}:${toString settings.port}";
           in
           {
             imports = [
@@ -95,6 +97,7 @@
                   pkgs
                   lib
                   machine
+                  isPeer
                   ;
                 isController = true;
               })
@@ -131,13 +134,17 @@
         machine,
         ...
       }:
+      let
+        # Check if this peer is also a controller
+        isAlsoController = roles.controller.machines ? ${machine.name};
+      in
       {
         exports = mkExports {
           peer.hosts = [
             {
               plain = clanLib.getPublicValue {
                 machine = machine.name;
-                generator = "headscale-${instanceName}-peer";
+                generator = "headscale-${instanceName}";
                 file = "ip";
                 flake = directory;
               };
@@ -145,56 +152,65 @@
           ];
         };
 
+        # Only apply peer nixosModule if this machine is NOT also a controller
+        # (controller role handles peer config when machine has both roles)
         nixosModule =
           {
             lib,
             pkgs,
             ...
           }:
-          let
-            # Get controller information
-            controllers = roles.controller.machines or { };
-            controllerNames = lib.attrNames controllers;
+          # If this peer is also a controller, return empty module
+          # (controller role already handles peer config)
+          if isAlsoController then
+            { }
+          else
+            let
+              # Get controller information
+              controllers = roles.controller.machines or { };
+              controllerNames = lib.attrNames controllers;
 
-            controllerInfo =
-              if controllerNames == [ ] then
-                throw "The Headscale service instance '${instanceName}' requires at least one machine with the 'controller' role."
-              else
-                let
-                  name = lib.head controllerNames;
-                  ctrl = controllers.${name};
-                in
+              controllerInfo =
+                if controllerNames == [ ] then
+                  throw "The Headscale service instance '${instanceName}' requires at least one machine with the 'controller' role."
+                else
+                  let
+                    name = lib.head controllerNames;
+                    ctrl = controllers.${name};
+                  in
+                  {
+                    inherit name;
+                    publicAddress = ctrl.settings.publicAddress;
+                    port = ctrl.settings.port;
+                  };
+
+              # Use HTTP since headscale is not configured with TLS
+              serverUrl = "http://${controllerInfo.publicAddress}:${toString controllerInfo.port}";
+            in
+            {
+              imports = [
+                (lib.modules.importApply ./shared.nix {
+                  inherit
+                    instanceName
+                    settings
+                    serverUrl
+                    controllerInfo
+                    pkgs
+                    lib
+                    machine
+                    ;
+                  isController = false;
+                  isPeer = true;
+                })
+              ];
+
+              assertions = [
                 {
-                  inherit name;
-                  publicAddress = ctrl.settings.publicAddress;
-                  port = ctrl.settings.port;
-                };
-
-            serverUrl = "https://${controllerInfo.publicAddress}:${toString controllerInfo.port}";
-          in
-          {
-            imports = [
-              (lib.modules.importApply ./shared.nix {
-                inherit
-                  instanceName
-                  settings
-                  serverUrl
-                  controllerInfo
-                  pkgs
-                  lib
-                  machine
-                  ;
-                isController = false;
-              })
-            ];
-
-            assertions = [
-              {
-                assertion = controllerNames != [ ];
-                message = "The Headscale service instance '${instanceName}' requires at least one machine with the 'controller' role.";
-              }
-            ];
-          };
+                  assertion = controllerNames != [ ];
+                  message = "The Headscale service instance '${instanceName}' requires at least one machine with the 'controller' role.";
+                }
+              ];
+            };
       };
   };
 }

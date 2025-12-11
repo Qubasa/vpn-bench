@@ -268,6 +268,35 @@ def install_yggdrasil(config: Config, tr_machines: list[TrMachine]) -> None:
     inventory_store.write(inventory, message="Add yggdrasil configuration")
 
 
+def install_headscale(config: Config, tr_machines: list[TrMachine]) -> None:
+    inventory_store = InventoryStore(Flake(str(config.clan_dir)))
+    inventory = inventory_store.read()
+    conf: dict[str, Any] = {
+        "module": {"name": "headscale", "input": "cvpn-bench"},
+        "roles": {
+            "controller": {"machines": {}, "settings": {}},
+            "peer": {
+                "machines": {},
+            },
+        },
+    }
+    for machine_num, tr_machine in enumerate(tr_machines):
+        if machine_num == 0:
+            if tr_machine["ipv4"] is None:
+                msg = "Headscale controller requires a public IPv4 address"
+                raise VpnBenchError(msg)
+            log.info(f"Setting up {tr_machine['name']} as the headscale controller")
+            conf["roles"]["controller"]["machines"][tr_machine["name"]] = {}
+            conf["roles"]["controller"]["settings"]["publicAddress"] = tr_machine[
+                "ipv4"
+            ]
+        # All machines (including controller) are peers
+        log.info(f"Adding {tr_machine['name']} to the headscale peers")
+        conf["roles"]["peer"]["machines"][tr_machine["name"]] = {}
+    set_value_by_path_tuple(inventory, ("instances", "headscale"), conf)
+    inventory_store.write(inventory, message="Add headscale configuration")
+
+
 def get_vpn_ips(
     config: Config, machines: list[Machine], vpn: VPN
 ) -> list[BenchMachine]:
@@ -301,6 +330,10 @@ def get_vpn_ips(
                 vpn_ip = get_machine_var(machine, "nebula-nebula/ip").value.decode()
             case VPN.Tinc:
                 vpn_ip = get_machine_var(machine, "tinc-tinc/ip").value.decode()
+            case VPN.Headscale:
+                vpn_ip = get_machine_var(
+                    machine, "headscale-headscale/ip"
+                ).value.decode()
             case VPN.Wireguard:
                 # TODO: We hardcode the IP address here
                 # We should get it from the var
@@ -482,6 +515,8 @@ def install_vpn(
                 install_nebula(config, tr_machines)
             case VPN.Tinc:
                 install_tinc(config, tr_machines)
+            case VPN.Headscale:
+                install_headscale(config, tr_machines)
             case VPN.Internal:
                 pass
             case _:
