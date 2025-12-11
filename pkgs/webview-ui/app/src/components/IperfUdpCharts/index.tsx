@@ -295,7 +295,9 @@ const createUdpThroughputOption = (
   return {
     title: {
       text: "Average Throughput",
+      subtext: "Higher is better",
       left: "center",
+      subtextStyle: { color: "#888", fontSize: 12 },
     },
     tooltip: {
       trigger: "axis",
@@ -355,6 +357,7 @@ const createUdpThroughputOption = (
       left: "3%",
       right: "4%",
       bottom: "40px",
+      top: "15%",
       containLabel: true,
     },
     toolbox: {
@@ -438,7 +441,9 @@ const createPacketLossOption = (
   return {
     title: {
       text: "Overall Packet Loss (Reverse Direction)", // Clarified Title
+      subtext: "Lower is better",
       left: "center",
+      subtextStyle: { color: "#888", fontSize: 12 },
     },
     tooltip: {
       trigger: "axis",
@@ -455,6 +460,7 @@ const createPacketLossOption = (
       left: "3%",
       right: "4%",
       bottom: "3%",
+      top: "15%",
       containLabel: true,
     },
     toolbox: {
@@ -520,7 +526,9 @@ const createJitterOption = (
   return {
     title: {
       text: "Average Jitter (Reverse Direction)", // Clarified Title
+      subtext: "Lower is better",
       left: "center",
+      subtextStyle: { color: "#888", fontSize: 12 },
     },
     tooltip: {
       trigger: "axis",
@@ -537,6 +545,7 @@ const createJitterOption = (
       left: "3%",
       right: "4%",
       bottom: "3%",
+      top: "15%",
       containLabel: true,
     },
     toolbox: {
@@ -605,7 +614,9 @@ const createUdpCpuOption = (
   return {
     title: {
       text: "Average CPU Utilization", // Clarified Title
+      subtext: "Lower is better",
       left: "center",
+      subtextStyle: { color: "#888", fontSize: 12 },
     },
     tooltip: {
       trigger: "axis",
@@ -619,6 +630,7 @@ const createUdpCpuOption = (
       left: "3%",
       right: "4%",
       bottom: "40px", // Adjust grid bottom
+      top: "15%",
       containLabel: true,
     },
     toolbox: {
@@ -825,7 +837,9 @@ const createUdpTimeSeriesOption = (
   return {
     title: {
       text: "Performance Over Time",
+      subtext: "Higher throughput / Lower loss & jitter is better",
       left: "center",
+      subtextStyle: { color: "#888", fontSize: 12 },
     },
     tooltip: {
       trigger: "axis",
@@ -846,6 +860,7 @@ const createUdpTimeSeriesOption = (
       left: "3%",
       right: "4%",
       bottom: "60px", // Adjust for potentially larger legend
+      top: "15%",
       containLabel: true,
     },
     toolbox: {

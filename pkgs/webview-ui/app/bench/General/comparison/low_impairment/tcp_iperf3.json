@@ -1,296 +1,355 @@
 {
   "status": "success",
   "data": {
-    "Mycelium": {
-      "status": "error",
-      "error_type": "CmdOut",
-      "error": {
-        "stdout": "{\n\t\"start\":\t{\n\t\t\"connected\":\t[],\n\t\t\"version\":\t\"iperf 3.19.1\",\n\t\t\"system_info\":\t\"Linux lom 6.12.57 #1-NixOS SMP PREEMPT_DYNAMIC Sun Nov  2 13:15:23 UTC 2025 x86_64\",\n\t\t\"timestamp\":\t{\n\t\t\t\"time\":\t\"Fri, 05 Dec 2025 00:51:47 GMT\",\n\t\t\t\"timesecs\":\t1764895907\n\t\t},\n\t\t\"connecting_to\":\t{\n\t\t\t\"host\":\t\"vpn.luna\",\n\t\t\t\"port\":\t5201\n\t\t},\n\t\t\"cookie\":\t\"pxvuhb3qwpitd5mopzz2w4jisfwfncdguumg\",\n\t\t\"tcp_mss_default\":\t1328,\n\t\t\"target_bitrate\":\t0,\n\t\t\"fq_rate\":\t0\n\t},\n\t\"intervals\":\t[],\n\t\"end\":\t{\n\t},\n\t\"error\":\t\"test authorization failed\"\n}\n",
-        "stderr": "Warning: Permanently added '116.203.103.30' (ED25519) to the list of known hosts.\r\nerror:1C80006A:Provider routines::output buffer too small\n",
-        "cwd": "/home/lhebendanz/Projects/vpn-benchmark-suite/pkgs/vpn-bench",
-        "command_list": [
-          "ssh",
-          "root@116.203.103.30",
-          "-A",
-          "-o",
-          "StrictHostKeyChecking=no",
-          "-o",
-          "UserKnownHostsFile=/dev/null",
-          "-o",
-          "ControlMaster=auto",
-          "-o",
-          "ControlPersist=1m",
-          "-o",
-          "ControlPath=/tmp/clan-sshnr6vflld/socket",
-          "--",
-          "bash",
-          "-c",
-          "'export IPERF3_PASSWORD=mambaBudo; exec \"$@\"'",
-          "--",
-          "nix --extra-experimental-features 'nix-command flakes' shell 'nixpkgs#iperf3' -c iperf3 --bidir --connect-timeout 600 --time 30 --json -Z -c vpn.luna --username mario --rsa-public-key-path /tmp/iperf3.public"
-        ],
-        "returncode": 1
-      },
-      "machine": "0_lom"
-    },
     "Tinc": {
-      "status": "error",
-      "error_type": "CmdOut",
-      "error": {
-        "stdout": "{\n\t\"start\":\t{\n\t\t\"connected\":\t[],\n\t\t\"version\":\t\"iperf 3.19.1\",\n\t\t\"system_info\":\t\"Linux lom 6.12.57 #1-NixOS SMP PREEMPT_DYNAMIC Sun Nov  2 13:15:23 UTC 2025 x86_64\",\n\t\t\"timestamp\":\t{\n\t\t\t\"time\":\t\"Fri, 05 Dec 2025 09:10:54 GMT\",\n\t\t\t\"timesecs\":\t1764925854\n\t\t},\n\t\t\"connecting_to\":\t{\n\t\t\t\"host\":\t\"vpn.luna\",\n\t\t\t\"port\":\t5201\n\t\t},\n\t\t\"cookie\":\t\"xbpatqga5dtzxi6qcaffjlyc2jd54agrz464\",\n\t\t\"tcp_mss_default\":\t1353,\n\t\t\"target_bitrate\":\t0,\n\t\t\"fq_rate\":\t0\n\t},\n\t\"intervals\":\t[],\n\t\"end\":\t{\n\t},\n\t\"error\":\t\"test authorization failed\"\n}\n",
-        "stderr": "Warning: Permanently added '116.203.103.30' (ED25519) to the list of known hosts.\r\nerror:1C80006A:Provider routines::output buffer too small\n",
-        "cwd": "/home/lhebendanz/Projects/vpn-benchmark-suite/pkgs/vpn-bench",
-        "command_list": [
-          "ssh",
-          "root@116.203.103.30",
-          "-A",
-          "-o",
-          "StrictHostKeyChecking=no",
-          "-o",
-          "UserKnownHostsFile=/dev/null",
-          "-o",
-          "ControlMaster=auto",
-          "-o",
-          "ControlPersist=1m",
-          "-o",
-          "ControlPath=/tmp/clan-sshdwrzrxsm/socket",
-          "--",
-          "bash",
-          "-c",
-          "'export IPERF3_PASSWORD=mambaBudo; exec \"$@\"'",
-          "--",
-          "nix --extra-experimental-features 'nix-command flakes' shell 'nixpkgs#iperf3' -c iperf3 --bidir --connect-timeout 600 --time 30 --json -Z -c vpn.luna --username mario --rsa-public-key-path /tmp/iperf3.public"
-        ],
-        "returncode": 1
-      },
-      "machine": "0_lom"
+      "status": "success",
+      "data": {
+        "sender_throughput_mbps": {
+          "min": 54.17403578588731,
+          "average": 56.01478896340035,
+          "max": 57.28476371189133,
+          "percentiles": {
+            "p25": 56.01478896340035,
+            "p50": 56.01478896340035,
+            "p75": 56.01478896340035
+          }
+        },
+        "receiver_throughput_mbps": {
+          "min": 54.09774333951411,
+          "average": 55.93601631796097,
+          "max": 57.202441592585075,
+          "percentiles": {
+            "p25": 55.93601631796097,
+            "p50": 55.93601631796097,
+            "p75": 55.93601631796097
+          }
+        },
+        "retransmits": {
+          "min": 1205.0,
+          "average": 1300.0,
+          "max": 1443.0,
+          "percentiles": {
+            "p25": 1300.0,
+            "p50": 1300.0,
+            "p75": 1300.0
+          }
+        }
+      }
     },
-    "VpnCloud": {
-      "status": "error",
-      "error_type": "CmdOut",
-      "error": {
-        "stdout": "{\n\t\"start\":\t{\n\t\t\"connected\":\t[],\n\t\t\"version\":\t\"iperf 3.19.1\",\n\t\t\"system_info\":\t\"Linux lom 6.12.57 #1-NixOS SMP PREEMPT_DYNAMIC Sun Nov  2 13:15:23 UTC 2025 x86_64\",\n\t\t\"timestamp\":\t{\n\t\t\t\"time\":\t\"Fri, 05 Dec 2025 07:35:54 GMT\",\n\t\t\t\"timesecs\":\t1764920154\n\t\t},\n\t\t\"connecting_to\":\t{\n\t\t\t\"host\":\t\"vpn.luna\",\n\t\t\t\"port\":\t5201\n\t\t},\n\t\t\"cookie\":\t\"7ahr46f677ngdadunhzekpuhculyigeyamq2\",\n\t\t\"tcp_mss_default\":\t1375,\n\t\t\"target_bitrate\":\t0,\n\t\t\"fq_rate\":\t0\n\t},\n\t\"intervals\":\t[],\n\t\"end\":\t{\n\t},\n\t\"error\":\t\"test authorization failed\"\n}\n",
-        "stderr": "Warning: Permanently added '116.203.103.30' (ED25519) to the list of known hosts.\r\nerror:1C80006A:Provider routines::output buffer too small\n",
-        "cwd": "/home/lhebendanz/Projects/vpn-benchmark-suite/pkgs/vpn-bench",
-        "command_list": [
-          "ssh",
-          "root@116.203.103.30",
-          "-A",
-          "-o",
-          "StrictHostKeyChecking=no",
-          "-o",
-          "UserKnownHostsFile=/dev/null",
-          "-o",
-          "ControlMaster=auto",
-          "-o",
-          "ControlPersist=1m",
-          "-o",
-          "ControlPath=/tmp/clan-sshimp0bbqj/socket",
-          "--",
-          "bash",
-          "-c",
-          "'export IPERF3_PASSWORD=mambaBudo; exec \"$@\"'",
-          "--",
-          "nix --extra-experimental-features 'nix-command flakes' shell 'nixpkgs#iperf3' -c iperf3 --bidir --connect-timeout 600 --time 30 --json -Z -c vpn.luna --username mario --rsa-public-key-path /tmp/iperf3.public"
-        ],
-        "returncode": 1
-      },
-      "machine": "0_lom"
+    "Mycelium": {
+      "status": "success",
+      "data": {
+        "sender_throughput_mbps": {
+          "min": 9.89115776910695,
+          "average": 15.937442936613584,
+          "max": 26.457434427714663,
+          "percentiles": {
+            "p25": 15.937442936613584,
+            "p50": 15.937442936613584,
+            "p75": 15.937442936613584
+          }
+        },
+        "receiver_throughput_mbps": {
+          "min": 9.484295381685515,
+          "average": 15.399473835899254,
+          "max": 25.925429295167543,
+          "percentiles": {
+            "p25": 15.399473835899254,
+            "p50": 15.399473835899254,
+            "p75": 15.399473835899254
+          }
+        },
+        "retransmits": {
+          "min": 50.0,
+          "average": 447.0,
+          "max": 1224.0,
+          "percentiles": {
+            "p25": 447.0,
+            "p50": 447.0,
+            "p75": 447.0
+          }
+        }
+      }
+    },
+    "Hyprspace": {
+      "status": "success",
+      "data": {
+        "sender_throughput_mbps": {
+          "min": 3.774744755379016,
+          "average": 35.90623859631264,
+          "max": 99.1556370894686,
+          "percentiles": {
+            "p25": 35.90623859631264,
+            "p50": 35.90623859631264,
+            "p75": 35.90623859631264
+          }
+        },
+        "receiver_throughput_mbps": {
+          "min": 3.7739576604758027,
+          "average": 35.781294838815214,
+          "max": 98.85721176877406,
+          "percentiles": {
+            "p25": 35.781294838815214,
+            "p50": 35.781294838815214,
+            "p75": 35.781294838815214
+          }
+        },
+        "retransmits": {
+          "min": 117.0,
+          "average": 572.3333333333334,
+          "max": 1451.0,
+          "percentiles": {
+            "p25": 572.3333333333334,
+            "p50": 572.3333333333334,
+            "p75": 572.3333333333334
+          }
+        }
+      }
     },
     "Zerotier": {
-      "status": "error",
-      "error_type": "CmdOut",
-      "error": {
-        "stdout": "{\n\t\"start\":\t{\n\t\t\"connected\":\t[],\n\t\t\"version\":\t\"iperf 3.19.1\",\n\t\t\"system_info\":\t\"Linux lom 6.12.57 #1-NixOS SMP PREEMPT_DYNAMIC Sun Nov  2 13:15:23 UTC 2025 x86_64\",\n\t\t\"timestamp\":\t{\n\t\t\t\"time\":\t\"Fri, 05 Dec 2025 00:32:06 GMT\",\n\t\t\t\"timesecs\":\t1764894726\n\t\t},\n\t\t\"connecting_to\":\t{\n\t\t\t\"host\":\t\"vpn.luna\",\n\t\t\t\"port\":\t5201\n\t\t},\n\t\t\"cookie\":\t\"x7urwzc7mqff3sjm7obqtk2r7rnzdywleqgu\",\n\t\t\"tcp_mss_default\":\t2728,\n\t\t\"target_bitrate\":\t0,\n\t\t\"fq_rate\":\t0\n\t},\n\t\"intervals\":\t[],\n\t\"end\":\t{\n\t},\n\t\"error\":\t\"test authorization failed\"\n}\n",
-        "stderr": "Warning: Permanently added '116.203.103.30' (ED25519) to the list of known hosts.\r\nerror:1C80006A:Provider routines::output buffer too small\n",
-        "cwd": "/home/lhebendanz/Projects/vpn-benchmark-suite/pkgs/vpn-bench",
-        "command_list": [
-          "ssh",
-          "root@116.203.103.30",
-          "-A",
-          "-o",
-          "StrictHostKeyChecking=no",
-          "-o",
-          "UserKnownHostsFile=/dev/null",
-          "-o",
-          "ControlMaster=auto",
-          "-o",
-          "ControlPersist=1m",
-          "-o",
-          "ControlPath=/tmp/clan-sshh76yiq4z/socket",
-          "--",
-          "bash",
-          "-c",
-          "'export IPERF3_PASSWORD=mambaBudo; exec \"$@\"'",
-          "--",
-          "nix --extra-experimental-features 'nix-command flakes' shell 'nixpkgs#iperf3' -c iperf3 --bidir --connect-timeout 600 --time 30 --json -Z -c vpn.luna --username mario --rsa-public-key-path /tmp/iperf3.public"
-        ],
-        "returncode": 1
-      },
-      "machine": "0_lom"
+      "status": "success",
+      "data": {
+        "sender_throughput_mbps": {
+          "min": 62.45732693064773,
+          "average": 63.90207117681811,
+          "max": 65.00888194667259,
+          "percentiles": {
+            "p25": 63.90207117681811,
+            "p50": 63.90207117681811,
+            "p75": 63.90207117681811
+          }
+        },
+        "receiver_throughput_mbps": {
+          "min": 62.38108950362506,
+          "average": 63.82492511564111,
+          "max": 64.93457538612117,
+          "percentiles": {
+            "p25": 63.82492511564111,
+            "p50": 63.82492511564111,
+            "p75": 63.82492511564111
+          }
+        },
+        "retransmits": {
+          "min": 972.0,
+          "average": 1010.0,
+          "max": 1052.0,
+          "percentiles": {
+            "p25": 1010.0,
+            "p50": 1010.0,
+            "p75": 1010.0
+          }
+        }
+      }
+    },
+    "VpnCloud": {
+      "status": "success",
+      "data": {
+        "sender_throughput_mbps": {
+          "min": 54.76959189065886,
+          "average": 58.497020749485294,
+          "max": 61.58401738227107,
+          "percentiles": {
+            "p25": 58.497020749485294,
+            "p50": 58.497020749485294,
+            "p75": 58.497020749485294
+          }
+        },
+        "receiver_throughput_mbps": {
+          "min": 54.65939431389576,
+          "average": 58.40638933099663,
+          "max": 61.501534294344566,
+          "percentiles": {
+            "p25": 58.40638933099663,
+            "p50": 58.40638933099663,
+            "p75": 58.40638933099663
+          }
+        },
+        "retransmits": {
+          "min": 1261.0,
+          "average": 1307.6666666666667,
+          "max": 1338.0,
+          "percentiles": {
+            "p25": 1307.6666666666667,
+            "p50": 1307.6666666666667,
+            "p75": 1307.6666666666667
+          }
+        }
+      }
     },
     "Nebula": {
       "status": "success",
       "data": {
         "sender_throughput_mbps": {
-          "min": 45.891382129690605,
-          "average": 46.30921624703353,
-          "max": 46.554493229831735,
+          "min": 50.78470206696258,
+          "average": 52.333580615877004,
+          "max": 53.1603914902394,
           "percentiles": {
-            "p25": 46.30921624703353,
-            "p50": 46.30921624703353,
-            "p75": 46.30921624703353
+            "p25": 52.333580615877004,
+            "p50": 52.333580615877004,
+            "p75": 52.333580615877004
           }
         },
         "receiver_throughput_mbps": {
-          "min": 45.80582762436175,
-          "average": 46.17805474539926,
-          "max": 46.44556769089666,
+          "min": 50.704467219504,
+          "average": 52.25503719040732,
+          "max": 53.084655855767465,
           "percentiles": {
-            "p25": 46.17805474539926,
-            "p50": 46.17805474539926,
-            "p75": 46.17805474539926
+            "p25": 52.25503719040732,
+            "p50": 52.25503719040732,
+            "p75": 52.25503719040732
           }
         },
         "retransmits": {
-          "min": 1117.0,
-          "average": 1236.0,
-          "max": 1332.0,
+          "min": 1255.0,
+          "average": 1259.0,
+          "max": 1265.0,
           "percentiles": {
-            "p25": 1236.0,
-            "p50": 1236.0,
-            "p75": 1236.0
+            "p25": 1259.0,
+            "p50": 1259.0,
+            "p75": 1259.0
+          }
+        }
+      }
+    },
+    "Wireguard": {
+      "status": "success",
+      "data": {
+        "sender_throughput_mbps": {
+          "min": 51.27385211223428,
+          "average": 56.342053969422125,
+          "max": 61.235566741397335,
+          "percentiles": {
+            "p25": 56.342053969422125,
+            "p50": 56.342053969422125,
+            "p75": 56.342053969422125
+          }
+        },
+        "receiver_throughput_mbps": {
+          "min": 51.19007359721001,
+          "average": 56.26207668695333,
+          "max": 61.1589031693472,
+          "percentiles": {
+            "p25": 56.26207668695333,
+            "p50": 56.26207668695333,
+            "p75": 56.26207668695333
+          }
+        },
+        "retransmits": {
+          "min": 1178.0,
+          "average": 1260.6666666666667,
+          "max": 1321.0,
+          "percentiles": {
+            "p25": 1260.6666666666667,
+            "p50": 1260.6666666666667,
+            "p75": 1260.6666666666667
           }
         }
       }
     },
     "Yggdrasil": {
-      "status": "error",
-      "error_type": "CmdOut",
-      "error": {
-        "stdout": "{\n\t\"start\":\t{\n\t\t\"connected\":\t[],\n\t\t\"version\":\t\"iperf 3.19.1\",\n\t\t\"system_info\":\t\"Linux lom 6.12.57 #1-NixOS SMP PREEMPT_DYNAMIC Sun Nov  2 13:15:23 UTC 2025 x86_64\",\n\t\t\"timestamp\":\t{\n\t\t\t\"time\":\t\"Fri, 05 Dec 2025 06:18:43 GMT\",\n\t\t\t\"timesecs\":\t1764915523\n\t\t},\n\t\t\"connecting_to\":\t{\n\t\t\t\"host\":\t\"vpn.luna\",\n\t\t\t\"port\":\t5201\n\t\t},\n\t\t\"cookie\":\t\"xtmn7lkuaqp6uzq3qsvuhvpffdm4vh6ap7he\",\n\t\t\"tcp_mss_default\":\t32731,\n\t\t\"target_bitrate\":\t0,\n\t\t\"fq_rate\":\t0\n\t},\n\t\"intervals\":\t[],\n\t\"end\":\t{\n\t},\n\t\"error\":\t\"test authorization failed\"\n}\n",
-        "stderr": "Warning: Permanently added '116.203.103.30' (ED25519) to the list of known hosts.\r\nerror:1C80006A:Provider routines::output buffer too small\n",
-        "cwd": "/home/lhebendanz/Projects/vpn-benchmark-suite/pkgs/vpn-bench",
-        "command_list": [
-          "ssh",
-          "root@116.203.103.30",
-          "-A",
-          "-o",
-          "StrictHostKeyChecking=no",
-          "-o",
-          "UserKnownHostsFile=/dev/null",
-          "-o",
-          "ControlMaster=auto",
-          "-o",
-          "ControlPersist=1m",
-          "-o",
-          "ControlPath=/tmp/clan-ssh9rbo013e/socket",
-          "--",
-          "bash",
-          "-c",
-          "'export IPERF3_PASSWORD=mambaBudo; exec \"$@\"'",
-          "--",
-          "nix --extra-experimental-features 'nix-command flakes' shell 'nixpkgs#iperf3' -c iperf3 --bidir --connect-timeout 600 --time 30 --json -Z -c vpn.luna --username mario --rsa-public-key-path /tmp/iperf3.public"
-        ],
-        "returncode": 1
-      },
-      "machine": "0_lom"
+      "status": "success",
+      "data": {
+        "sender_throughput_mbps": {
+          "min": 13.385952856921536,
+          "average": 14.452070788751612,
+          "max": 15.518188720581689,
+          "percentiles": {
+            "p25": 14.452070788751612,
+            "p50": 14.452070788751612,
+            "p75": 14.452070788751612
+          }
+        },
+        "receiver_throughput_mbps": {
+          "min": 12.925887142911483,
+          "average": 13.892468913049328,
+          "max": 14.85905068318717,
+          "percentiles": {
+            "p25": 13.892468913049328,
+            "p50": 13.892468913049328,
+            "p75": 13.892468913049328
+          }
+        },
+        "retransmits": {
+          "min": 139.0,
+          "average": 143.0,
+          "max": 147.0,
+          "percentiles": {
+            "p25": 143.0,
+            "p50": 143.0,
+            "p75": 143.0
+          }
+        }
+      }
     },
-    "Wireguard": {
-      "status": "error",
-      "error_type": "CmdOut",
-      "error": {
-        "stdout": "{\n\t\"start\":\t{\n\t\t\"connected\":\t[],\n\t\t\"version\":\t\"iperf 3.19.1\",\n\t\t\"system_info\":\t\"Linux lom 6.12.57 #1-NixOS SMP PREEMPT_DYNAMIC Sun Nov  2 13:15:23 UTC 2025 x86_64\",\n\t\t\"timestamp\":\t{\n\t\t\t\"time\":\t\"Fri, 05 Dec 2025 08:02:55 GMT\",\n\t\t\t\"timesecs\":\t1764921775\n\t\t},\n\t\t\"connecting_to\":\t{\n\t\t\t\"host\":\t\"vpn.luna\",\n\t\t\t\"port\":\t5201\n\t\t},\n\t\t\"cookie\":\t\"zl7wgcmuylh2zzp3lbora3gfbnbqkuuss4pw\",\n\t\t\"tcp_mss_default\":\t1368,\n\t\t\"target_bitrate\":\t0,\n\t\t\"fq_rate\":\t0\n\t},\n\t\"intervals\":\t[],\n\t\"end\":\t{\n\t},\n\t\"error\":\t\"test authorization failed\"\n}\n",
-        "stderr": "Warning: Permanently added '116.203.103.30' (ED25519) to the list of known hosts.\r\nerror:1C80006A:Provider routines::output buffer too small\n",
-        "cwd": "/home/lhebendanz/Projects/vpn-benchmark-suite/pkgs/vpn-bench",
-        "command_list": [
-          "ssh",
-          "root@116.203.103.30",
-          "-A",
-          "-o",
-          "StrictHostKeyChecking=no",
-          "-o",
-          "UserKnownHostsFile=/dev/null",
-          "-o",
-          "ControlMaster=auto",
-          "-o",
-          "ControlPersist=1m",
-          "-o",
-          "ControlPath=/tmp/clan-sshrd2erk6g/socket",
-          "--",
-          "bash",
-          "-c",
-          "'export IPERF3_PASSWORD=mambaBudo; exec \"$@\"'",
-          "--",
-          "nix --extra-experimental-features 'nix-command flakes' shell 'nixpkgs#iperf3' -c iperf3 --bidir --connect-timeout 600 --time 30 --json -Z -c vpn.luna --username mario --rsa-public-key-path /tmp/iperf3.public"
-        ],
-        "returncode": 1
-      },
-      "machine": "0_lom"
+    "Easytier": {
+      "status": "success",
+      "data": {
+        "sender_throughput_mbps": {
+          "min": 104.71335700122027,
+          "average": 177.84445735339435,
+          "max": 222.1549991623458,
+          "percentiles": {
+            "p25": 177.84445735339435,
+            "p50": 177.84445735339435,
+            "p75": 177.84445735339435
+          }
+        },
+        "receiver_throughput_mbps": {
+          "min": 103.81739927911788,
+          "average": 177.0934475503667,
+          "max": 221.64469463591584,
+          "percentiles": {
+            "p25": 177.0934475503667,
+            "p50": 177.0934475503667,
+            "p75": 177.0934475503667
+          }
+        },
+        "retransmits": {
+          "min": 383.0,
+          "average": 1137.3333333333333,
+          "max": 2329.0,
+          "percentiles": {
+            "p25": 1137.3333333333333,
+            "p50": 1137.3333333333333,
+            "p75": 1137.3333333333333
+          }
+        }
+      }
     },
     "Internal": {
-      "status": "error",
-      "error_type": "CmdOut",
-      "error": {
-        "stdout": "{\n\t\"start\":\t{\n\t\t\"connected\":\t[],\n\t\t\"version\":\t\"iperf 3.19.1\",\n\t\t\"system_info\":\t\"Linux lom 6.12.57 #1-NixOS SMP PREEMPT_DYNAMIC Sun Nov  2 13:15:23 UTC 2025 x86_64\",\n\t\t\"timestamp\":\t{\n\t\t\t\"time\":\t\"Fri, 05 Dec 2025 00:17:46 GMT\",\n\t\t\t\"timesecs\":\t1764893866\n\t\t},\n\t\t\"connecting_to\":\t{\n\t\t\t\"host\":\t\"vpn.luna\",\n\t\t\t\"port\":\t5201\n\t\t},\n\t\t\"cookie\":\t\"pbdkxjksglw5vgq7xoncmdhdmvdsuyr5ltys\",\n\t\t\"tcp_mss_default\":\t1448,\n\t\t\"target_bitrate\":\t0,\n\t\t\"fq_rate\":\t0\n\t},\n\t\"intervals\":\t[],\n\t\"end\":\t{\n\t},\n\t\"error\":\t\"test authorization failed\"\n}\n",
-        "stderr": "Warning: Permanently added '116.203.103.30' (ED25519) to the list of known hosts.\r\nerror:1C80006A:Provider routines::output buffer too small\n",
-        "cwd": "/home/lhebendanz/Projects/vpn-benchmark-suite/pkgs/vpn-bench",
-        "command_list": [
-          "ssh",
-          "root@116.203.103.30",
-          "-A",
-          "-o",
-          "StrictHostKeyChecking=no",
-          "-o",
-          "UserKnownHostsFile=/dev/null",
-          "-o",
-          "ControlMaster=auto",
-          "-o",
-          "ControlPersist=1m",
-          "-o",
-          "ControlPath=/tmp/clan-sshbz8plp6y/socket",
-          "--",
-          "bash",
-          "-c",
-          "'export IPERF3_PASSWORD=mambaBudo; exec \"$@\"'",
-          "--",
-          "nix --extra-experimental-features 'nix-command flakes' shell 'nixpkgs#iperf3' -c iperf3 --bidir --connect-timeout 600 --time 30 --json -Z -c vpn.luna --username mario --rsa-public-key-path /tmp/iperf3.public"
-        ],
-        "returncode": 1
-      },
-      "machine": "0_lom"
-    },
-    "Hyprspace": {
-      "status": "error",
-      "error_type": "CmdOut",
-      "error": {
-        "stdout": "{\n\t\"start\":\t{\n\t\t\"connected\":\t[],\n\t\t\"version\":\t\"iperf 3.19.1\",\n\t\t\"system_info\":\t\"Linux lom 6.12.57 #1-NixOS SMP PREEMPT_DYNAMIC Sun Nov  2 13:15:23 UTC 2025 x86_64\",\n\t\t\"timestamp\":\t{\n\t\t\t\"time\":\t\"Fri, 05 Dec 2025 01:54:15 GMT\",\n\t\t\t\"timesecs\":\t1764899655\n\t\t},\n\t\t\"connecting_to\":\t{\n\t\t\t\"host\":\t\"vpn.luna\",\n\t\t\t\"port\":\t5201\n\t\t},\n\t\t\"cookie\":\t\"tlzhwlihymf6uan7hwyjko5746i3ymxdfg7a\",\n\t\t\"tcp_mss_default\":\t1348,\n\t\t\"target_bitrate\":\t0,\n\t\t\"fq_rate\":\t0\n\t},\n\t\"intervals\":\t[],\n\t\"end\":\t{\n\t},\n\t\"error\":\t\"test authorization failed\"\n}\n",
-        "stderr": "Warning: Permanently added '116.203.103.30' (ED25519) to the list of known hosts.\r\nerror:1C80006A:Provider routines::output buffer too small\n",
-        "cwd": "/home/lhebendanz/Projects/vpn-benchmark-suite/pkgs/vpn-bench",
-        "command_list": [
-          "ssh",
-          "root@116.203.103.30",
-          "-A",
-          "-o",
-          "StrictHostKeyChecking=no",
-          "-o",
-          "UserKnownHostsFile=/dev/null",
-          "-o",
-          "ControlMaster=auto",
-          "-o",
-          "ControlPersist=1m",
-          "-o",
-          "ControlPath=/tmp/clan-ssh_78tzkpn/socket",
-          "--",
-          "bash",
-          "-c",
-          "'export IPERF3_PASSWORD=mambaBudo; exec \"$@\"'",
-          "--",
-          "nix --extra-experimental-features 'nix-command flakes' shell 'nixpkgs#iperf3' -c iperf3 --bidir --connect-timeout 600 --time 30 --json -Z -c vpn.luna --username mario --rsa-public-key-path /tmp/iperf3.public"
-        ],
-        "returncode": 1
-      },
-      "machine": "0_lom"
+      "status": "success",
+      "data": {
+        "sender_throughput_mbps": {
+          "min": 292.0443077748459,
+          "average": 334.8046831580932,
+          "max": 373.1713932482574,
+          "percentiles": {
+            "p25": 334.8046831580932,
+            "p50": 334.8046831580932,
+            "p75": 334.8046831580932
+          }
+        },
+        "receiver_throughput_mbps": {
+          "min": 291.4011041687329,
+          "average": 333.9957329019561,
+          "max": 372.51973731503733,
+          "percentiles": {
+            "p25": 333.9957329019561,
+            "p50": 333.9957329019561,
+            "p75": 333.9957329019561
+          }
+        },
+        "retransmits": {
+          "min": 2919.0,
+          "average": 3226.6666666666665,
+          "max": 3387.0,
+          "percentiles": {
+            "p25": 3226.6666666666665,
+            "p50": 3226.6666666666665,
+            "p75": 3226.6666666666665
+          }
+        }
+      }
     }
   }
 }

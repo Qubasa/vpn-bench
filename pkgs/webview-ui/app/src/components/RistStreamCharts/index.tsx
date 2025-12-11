@@ -101,6 +101,12 @@ const getMachineColor = (machineIndex: number): string => {
   return machineColorPalette[machineIndex % machineColorPalette.length];
 };
 
+// Helper to get subtitle based on metric direction
+const getRistMetricSubtext = (metric: MetricKey): string => {
+  // Dropped frames: Lower is better; Bitrate/FPS: Higher is better
+  return metric === "dropped_frames" ? "Lower is better" : "Higher is better";
+};
+
 const createRistBoxplotOption = (
   reports: RistReport[],
   metric: MetricKey,
@@ -182,8 +188,10 @@ const createRistBoxplotOption = (
   return {
     title: {
       text: title,
+      subtext: getRistMetricSubtext(metric),
       left: "center",
       textStyle: { fontWeight: "normal", fontSize: 16 },
+      subtextStyle: { color: "#888", fontSize: 12 },
       padding: [10, 0, 10, 0],
     },
     tooltip: {
@@ -300,8 +308,10 @@ const createRistBarChartOption = (
   return {
     title: {
       text: chartTitle,
+      subtext: getRistMetricSubtext(metric),
       left: "center",
       textStyle: { fontWeight: "normal", fontSize: 16 },
+      subtextStyle: { color: "#888", fontSize: 12 },
       padding: [10, 0, 10, 0],
     },
     tooltip: {

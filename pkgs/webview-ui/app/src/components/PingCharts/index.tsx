@@ -56,6 +56,9 @@ const createRttBoxplotOption = (reports: PingReport[]) => {
   return {
     title: {
       text: "Round Trip Time Distribution (Average RTT)",
+      subtext: "Lower is better",
+      left: "center",
+      subtextStyle: { color: "#888", fontSize: 12 },
     },
     tooltip: {
       trigger: "item",
@@ -77,6 +80,7 @@ const createRttBoxplotOption = (reports: PingReport[]) => {
       left: "3%",
       right: "4%",
       bottom: "3%",
+      top: "15%",
       containLabel: true,
     },
     toolbox: {
@@ -118,6 +122,9 @@ const createRttMetricsOption = (reports: PingReport[]) => {
   return {
     title: {
       text: "RTT Metrics Comparison",
+      subtext: "Lower is better",
+      left: "center",
+      subtextStyle: { color: "#888", fontSize: 12 },
     },
     tooltip: {
       trigger: "axis",
@@ -127,11 +134,13 @@ const createRttMetricsOption = (reports: PingReport[]) => {
     },
     legend: {
       data: ["Min RTT", "Avg RTT", "Max RTT", "Jitter (mdev)"],
+      top: 50,
     },
     grid: {
       left: "3%",
       right: "4%",
       bottom: "3%",
+      top: "15%",
       containLabel: true,
     },
     toolbox: {
@@ -186,6 +195,9 @@ const createPacketLossOption = (reports: PingReport[]) => {
   return {
     title: {
       text: "Packet Loss Percentage",
+      subtext: "Lower is better",
+      left: "center",
+      subtextStyle: { color: "#888", fontSize: 12 },
     },
     tooltip: {
       trigger: "axis",
@@ -203,6 +215,7 @@ const createPacketLossOption = (reports: PingReport[]) => {
       left: "3%",
       right: "4%",
       bottom: "3%",
+      top: "15%",
       containLabel: true,
     },
     toolbox: {
@@ -255,6 +268,9 @@ const createJitterOption = (reports: PingReport[]) => {
   return {
     title: {
       text: "Jitter Distribution (RTT Standard Deviation)",
+      subtext: "Lower is better",
+      left: "center",
+      subtextStyle: { color: "#888", fontSize: 12 },
     },
     tooltip: {
       trigger: "item",
@@ -276,6 +292,7 @@ const createJitterOption = (reports: PingReport[]) => {
       left: "3%",
       right: "4%",
       bottom: "3%",
+      top: "15%",
       containLabel: true,
     },
     toolbox: {

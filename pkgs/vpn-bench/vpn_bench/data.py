@@ -53,6 +53,7 @@ class VPN(Enum):
     Nebula = "nebula"  #
     Tinc = "tinc"  #
 
+
     @staticmethod
     def from_str(label: str) -> "VPN":
         if label in VPN._value2member_map_:
@@ -144,7 +145,6 @@ class TCProfile(Enum):
     LOW = "low"
     MEDIUM = "medium"
     HIGH = "high"
-    EXTREME = "extreme"
 
     @staticmethod
     def from_str(label: str) -> "TCProfile":
@@ -189,17 +189,6 @@ class TCProfile(Enum):
                         packet_loss_percent=2.5,
                         reorder_percent=5.0,
                         reorder_correlation=50.0,
-                    ),
-                )
-            case TCProfile.EXTREME:
-                return BenchmarkRun(
-                    alias="extreme_impairment",
-                    tc_settings=TCSettings(
-                        latency_ms=8,
-                        jitter_ms=25,
-                        packet_loss_percent=5.0,
-                        reorder_percent=12.5,
-                        reorder_correlation=75.0,
                     ),
                 )
 

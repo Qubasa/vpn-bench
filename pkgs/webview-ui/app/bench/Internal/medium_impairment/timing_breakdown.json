@@ -1,0 +1,82 @@
+{
+  "vpn_name": "internal",
+  "total_duration_seconds": 1688.974855950015,
+  "start_timestamp": 1765413464.622843,
+  "end_timestamp": 1765415153.597699,
+  "phases": [
+    {
+      "phase": "vpn_installation",
+      "duration_seconds": 81.72682848898694,
+      "start_timestamp": 1765413464.6557827,
+      "operations": [
+        {
+          "name": "nix_flake_update",
+          "duration_seconds": 1.7247019830101635,
+          "start_timestamp": 1765413464.6558108,
+          "success": true
+        },
+        {
+          "name": "create_base_inventory",
+          "duration_seconds": 13.352203948015813,
+          "start_timestamp": 1765413466.390126,
+          "success": true
+        },
+        {
+          "name": "install_internal_config",
+          "duration_seconds": 0.014280612987931818,
+          "start_timestamp": 1765413480.2276368,
+          "success": true
+        },
+        {
+          "name": "get_vpn_ips",
+          "duration_seconds": 8.90229356000782,
+          "start_timestamp": 1765413480.4060376,
+          "success": true
+        },
+        {
+          "name": "install_nix_cache",
+          "duration_seconds": 0.08633084699977189,
+          "start_timestamp": 1765413489.3125112,
+          "success": true
+        },
+        {
+          "name": "run_generators",
+          "duration_seconds": 8.901605243998347,
+          "start_timestamp": 1765413489.7762942,
+          "success": true
+        },
+        {
+          "name": "deploy_vpn_machines",
+          "duration_seconds": 47.694529858010355,
+          "start_timestamp": 1765413498.6818972,
+          "success": true
+        }
+      ]
+    },
+    {
+      "phase": "benchmarking",
+      "duration_seconds": 1607.1920388829894,
+      "start_timestamp": 1765413546.3921304,
+      "operations": [
+        {
+          "name": "tc_stabilization",
+          "duration_seconds": 30.022060137009248,
+          "start_timestamp": 1765413547.2284584,
+          "success": true
+        },
+        {
+          "name": "run_tests",
+          "duration_seconds": 1575.8053513420164,
+          "start_timestamp": 1765413577.2615874,
+          "success": true,
+          "metadata": {
+            "profile": "medium_impairment"
+          }
+        }
+      ],
+      "metadata": {
+        "profile": "medium_impairment"
+      }
+    }
+  ]
+}

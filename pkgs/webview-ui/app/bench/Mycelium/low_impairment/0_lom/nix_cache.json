@@ -3,25 +3,29 @@
   "data": {
     "results": [
       {
-        "command": "nix copy --from http://cache.vpn.luna --to file:///tmp/cache?compression=none /nix/store/8y3bzk5rmdl9dqxnvii0cnx5rigi8vym-firefox-144.0.2",
-        "mean": 57.23789750592,
-        "stddev": 0.12881954808459062,
-        "median": 57.23789750592,
-        "user": 11.57645192,
-        "system": 6.294694179999999,
-        "min": 57.14680832992,
-        "max": 57.32898668192,
-        "times": [57.14680832992, 57.32898668192],
+        "command": "nix copy --from http://cache.vpn.yuki --to file:///tmp/cache?compression=none /nix/store/8y3bzk5rmdl9dqxnvii0cnx5rigi8vym-firefox-144.0.2",
+        "mean": 151.10035693908,
+        "stddev": 4.119036897245658,
+        "median": 151.10035693908,
+        "user": 44.483900320000004,
+        "system": 12.50601058,
+        "min": 148.18775801708,
+        "max": 154.01295586108,
+        "times": [154.01295586108, 148.18775801708],
         "exit_codes": [0, 0],
         "parameters": {
-          "url": "http://cache.vpn.luna"
+          "url": "http://cache.vpn.yuki"
         }
       }
     ]
   },
   "meta": {
-    "duration_seconds": 183.4309060573578,
+    "duration_seconds": 614.6932103633881,
     "test_attempts": 1,
-    "vpn_restart_attempts": 0
+    "vpn_restart_attempts": 0,
+    "vpn_restart_duration_seconds": 1.8913073539733887,
+    "connectivity_wait_duration_seconds": 71.04000902175903,
+    "source": "lom",
+    "target": "yuki"
   }
 }

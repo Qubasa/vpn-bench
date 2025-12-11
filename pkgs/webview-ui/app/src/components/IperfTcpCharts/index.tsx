@@ -116,6 +116,9 @@ const createRttOption = (reports: IperfTcpReport[]) => {
   return {
     title: {
       text: "Round Trip Time (RTT)", // Simplified title
+      subtext: "Lower is better",
+      left: "center",
+      subtextStyle: { color: "#888", fontSize: 12 },
     },
     tooltip: {
       trigger: "item",
@@ -142,6 +145,7 @@ const createRttOption = (reports: IperfTcpReport[]) => {
       left: "3%",
       right: "4%",
       bottom: "3%",
+      top: "15%",
       containLabel: true,
     },
     toolbox: {
@@ -208,6 +212,9 @@ const createMaxSendWindowOption = (reports: IperfTcpReport[]) => {
   return {
     title: {
       text: "Max TCP Window Size",
+      subtext: "Higher is better",
+      left: "center",
+      subtextStyle: { color: "#888", fontSize: 12 },
     },
     tooltip: {
       trigger: "axis",
@@ -217,11 +224,13 @@ const createMaxSendWindowOption = (reports: IperfTcpReport[]) => {
     },
     legend: {
       data: ["Max Send Window", "Max Congestion Window"],
+      top: 50,
     },
     grid: {
       left: "3%",
       right: "4%",
       bottom: "3%",
+      top: "15%",
       containLabel: true,
     },
     toolbox: {
@@ -390,6 +399,9 @@ const createThroughputOption = (reports: IperfTcpReport[]) => {
   return {
     title: {
       text: "Average Throughput", // Updated title
+      subtext: "Higher is better",
+      left: "center",
+      subtextStyle: { color: "#888", fontSize: 12 },
     },
     tooltip: {
       trigger: "axis",
@@ -437,11 +449,13 @@ const createThroughputOption = (reports: IperfTcpReport[]) => {
     },
     legend: {
       data: ["Average Sent", "Average Received"], // Updated legend labels
+      top: 50,
     },
     grid: {
       left: "3%",
       right: "4%",
       bottom: "3%",
+      top: "15%",
       containLabel: true,
     },
     toolbox: {
@@ -494,6 +508,9 @@ const createCpuOption = (reports: IperfTcpReport[]) => {
   return {
     title: {
       text: "Average CPU Utilization",
+      subtext: "Lower is better",
+      left: "center",
+      subtextStyle: { color: "#888", fontSize: 12 },
     },
     tooltip: {
       trigger: "axis",
@@ -503,11 +520,13 @@ const createCpuOption = (reports: IperfTcpReport[]) => {
     },
     legend: {
       data: ["Host CPU", "Remote CPU"],
+      top: 50,
     },
     grid: {
       left: "3%",
       right: "4%",
       bottom: "3%",
+      top: "15%",
       containLabel: true,
     },
     toolbox: {
@@ -561,6 +580,9 @@ const createRetransmitsOption = (reports: IperfTcpReport[]) => {
   return {
     title: {
       text: "Total TCP Retransmits",
+      subtext: "Lower is better",
+      left: "center",
+      subtextStyle: { color: "#888", fontSize: 12 },
     },
     tooltip: {
       trigger: "axis",
@@ -572,6 +594,7 @@ const createRetransmitsOption = (reports: IperfTcpReport[]) => {
       left: "3%",
       right: "4%",
       bottom: "3%",
+      top: "15%",
       containLabel: true,
     },
     toolbox: {
@@ -666,17 +689,22 @@ const createTimeSeriesOption = (reports: IperfTcpReport[]) => {
   return {
     title: {
       text: "Throughput Over Time",
+      subtext: "Higher is better",
+      left: "center",
+      subtextStyle: { color: "#888", fontSize: 12 },
     },
     tooltip: {
       trigger: "axis",
     },
     legend: {
       data: reports.map((report) => report.name),
+      top: 50,
     },
     grid: {
       left: "3%",
       right: "4%",
       bottom: "3%",
+      top: "15%",
       containLabel: true,
     },
     toolbox: {

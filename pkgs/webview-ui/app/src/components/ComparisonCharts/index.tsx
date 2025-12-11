@@ -49,6 +49,7 @@ const createBarChartOption = (
   title: string,
   yAxisLabel: string,
   color = "#1890ff",
+  higherIsBetter?: boolean,
 ) => {
   // Sort by value for better visualization (incomplete items at end)
   const sortedData = [...data].sort((a, b) => {
@@ -65,10 +66,29 @@ const createBarChartOption = (
   );
   const incompleteBarHeight = maxValue * 0.3;
 
+  // Determine the subtitle based on metric direction
+  const subtext =
+    higherIsBetter !== undefined
+      ? higherIsBetter
+        ? "Higher is better"
+        : "Lower is better"
+      : undefined;
+
   return {
     title: {
       text: title,
+      subtext: subtext,
       left: "center",
+      subtextStyle: {
+        color: "#888",
+        fontSize: 12,
+      },
+    },
+    toolbox: {
+      feature: {
+        saveAsImage: {},
+        dataView: { show: true, readOnly: false },
+      },
     },
     tooltip: {
       trigger: "axis",
@@ -172,6 +192,13 @@ const createBarChartOption = (
             itemStyle: {
               color: color,
             },
+            label: {
+              show: true,
+              position: "top",
+              formatter: (params: { value: number }) => params.value.toFixed(1),
+              color: "#555",
+              fontSize: 10,
+            },
           };
         }),
         // Add error bars for min/max
@@ -193,6 +220,7 @@ export const ComparisonBarChart = (props: {
   yAxisLabel: string;
   height?: number;
   color?: string;
+  higherIsBetter?: boolean;
 }) => {
   return (
     <Show when={props.data.length > 0} fallback={<div>No data available</div>}>
@@ -202,6 +230,7 @@ export const ComparisonBarChart = (props: {
           props.title,
           props.yAxisLabel,
           props.color,
+          props.higherIsBetter,
         )}
         height={props.height ?? 400}
       />
@@ -284,6 +313,7 @@ export const TcpThroughputComparisonChart = (props: {
       yAxisLabel="Throughput (Mbps)"
       height={props.height ?? 400}
       color="#52c41a"
+      higherIsBetter={true}
     />
   );
 };
@@ -306,6 +336,7 @@ export const TcpReceiverThroughputComparisonChart = (props: {
       yAxisLabel="Throughput (Mbps)"
       height={props.height ?? 400}
       color="#1890ff"
+      higherIsBetter={true}
     />
   );
 };
@@ -324,6 +355,7 @@ export const TcpRetransmitsComparisonChart = (props: {
       yAxisLabel="Retransmits"
       height={props.height ?? 400}
       color="#ff4d4f"
+      higherIsBetter={false}
     />
   );
 };
@@ -348,6 +380,7 @@ export const UdpThroughputComparisonChart = (props: {
       yAxisLabel="Throughput (Mbps)"
       height={props.height ?? 400}
       color="#52c41a"
+      higherIsBetter={true}
     />
   );
 };
@@ -366,6 +399,7 @@ export const UdpJitterComparisonChart = (props: {
       yAxisLabel="Jitter (ms)"
       height={props.height ?? 400}
       color="#faad14"
+      higherIsBetter={false}
     />
   );
 };
@@ -384,6 +418,7 @@ export const UdpPacketLossComparisonChart = (props: {
       yAxisLabel="Loss (%)"
       height={props.height ?? 400}
       color="#ff4d4f"
+      higherIsBetter={false}
     />
   );
 };
@@ -404,6 +439,7 @@ export const PingLatencyComparisonChart = (props: {
       yAxisLabel="RTT (ms)"
       height={props.height ?? 400}
       color="#1890ff"
+      higherIsBetter={false}
     />
   );
 };
@@ -422,6 +458,7 @@ export const PingJitterComparisonChart = (props: {
       yAxisLabel="Jitter (ms)"
       height={props.height ?? 400}
       color="#faad14"
+      higherIsBetter={false}
     />
   );
 };
@@ -444,6 +481,7 @@ export const PingPacketLossComparisonChart = (props: {
       yAxisLabel="Loss (%)"
       height={props.height ?? 400}
       color="#ff4d4f"
+      higherIsBetter={false}
     />
   );
 };
@@ -468,6 +506,7 @@ export const QperfBandwidthComparisonChart = (props: {
       yAxisLabel="Bandwidth (Mbps)"
       height={props.height ?? 400}
       color="#52c41a"
+      higherIsBetter={true}
     />
   );
 };
@@ -486,6 +525,7 @@ export const QperfTtfbComparisonChart = (props: {
       yAxisLabel="TTFB (ms)"
       height={props.height ?? 400}
       color="#1890ff"
+      higherIsBetter={false}
     />
   );
 };
@@ -504,6 +544,7 @@ export const QperfCpuComparisonChart = (props: {
       yAxisLabel="CPU (%)"
       height={props.height ?? 400}
       color="#faad14"
+      higherIsBetter={false}
     />
   );
 };
@@ -524,6 +565,7 @@ export const VideoStreamingBitrateComparisonChart = (props: {
       yAxisLabel="Bitrate (kbps)"
       height={props.height ?? 400}
       color="#52c41a"
+      higherIsBetter={true}
     />
   );
 };
@@ -542,6 +584,7 @@ export const VideoStreamingFpsComparisonChart = (props: {
       yAxisLabel="FPS"
       height={props.height ?? 400}
       color="#1890ff"
+      higherIsBetter={true}
     />
   );
 };
@@ -560,6 +603,7 @@ export const VideoStreamingDroppedFramesComparisonChart = (props: {
       yAxisLabel="Frames"
       height={props.height ?? 400}
       color="#ff4d4f"
+      higherIsBetter={false}
     />
   );
 };
@@ -722,6 +766,7 @@ export const NixCacheMeanTimeComparisonChart = (props: {
       yAxisLabel="Time (seconds)"
       height={props.height ?? 400}
       color="#722ed1"
+      higherIsBetter={false}
     />
   );
 };
@@ -740,6 +785,7 @@ export const NixCacheMinTimeComparisonChart = (props: {
       yAxisLabel="Time (seconds)"
       height={props.height ?? 400}
       color="#13c2c2"
+      higherIsBetter={false}
     />
   );
 };
@@ -758,6 +804,7 @@ export const NixCacheMaxTimeComparisonChart = (props: {
       yAxisLabel="Time (seconds)"
       height={props.height ?? 400}
       color="#eb2f96"
+      higherIsBetter={false}
     />
   );
 };
@@ -810,6 +857,7 @@ export const ParallelTcpTotalThroughputComparisonChart = (props: {
       yAxisLabel="Throughput (Mbps)"
       height={props.height ?? 400}
       color="#52c41a"
+      higherIsBetter={true}
     />
   );
 };
@@ -832,6 +880,7 @@ export const ParallelTcpAvgThroughputComparisonChart = (props: {
       yAxisLabel="Throughput (Mbps)"
       height={props.height ?? 400}
       color="#1890ff"
+      higherIsBetter={true}
     />
   );
 };
@@ -850,6 +899,7 @@ export const ParallelTcpRetransmitsComparisonChart = (props: {
       yAxisLabel="Retransmits"
       height={props.height ?? 400}
       color="#fa8c16"
+      higherIsBetter={false}
     />
   );
 };

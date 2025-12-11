@@ -142,7 +142,15 @@ const createConnectionTimingsOption = (
   return {
     title: {
       text: title,
+      subtext: "Lower is better",
       left: "center",
+      subtextStyle: { color: "#888", fontSize: 12 },
+    },
+    toolbox: {
+      feature: {
+        saveAsImage: {},
+        dataView: { show: true, readOnly: false },
+      },
     },
     tooltip: {
       trigger: "item",

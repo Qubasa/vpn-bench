@@ -1,0 +1,88 @@
+{
+  "vpn_name": "mycelium",
+  "total_duration_seconds": 311.1288880679931,
+  "start_timestamp": 1765320263.639004,
+  "end_timestamp": 1765320574.7678926,
+  "phases": [
+    {
+      "phase": "vpn_installation",
+      "duration_seconds": 172.43665180899552,
+      "start_timestamp": 1765320263.646105,
+      "operations": [
+        {
+          "name": "nix_flake_update",
+          "duration_seconds": 1.5446531440247782,
+          "start_timestamp": 1765320263.6461172,
+          "success": true
+        },
+        {
+          "name": "create_base_inventory",
+          "duration_seconds": 32.319520469987765,
+          "start_timestamp": 1765320265.1980927,
+          "success": true
+        },
+        {
+          "name": "install_mycelium_config",
+          "duration_seconds": 14.944948113989085,
+          "start_timestamp": 1765320297.8601086,
+          "success": true
+        },
+        {
+          "name": "get_vpn_ips",
+          "duration_seconds": 8.959201917023165,
+          "start_timestamp": 1765320313.0288868,
+          "success": true
+        },
+        {
+          "name": "install_nix_cache",
+          "duration_seconds": 0.07310561498161405,
+          "start_timestamp": 1765320321.9986591,
+          "success": true
+        },
+        {
+          "name": "install_connection_timings_service",
+          "duration_seconds": 0.270957628992619,
+          "start_timestamp": 1765320322.0824971,
+          "success": true
+        },
+        {
+          "name": "run_generators",
+          "duration_seconds": 8.604352082998957,
+          "start_timestamp": 1765320322.6989698,
+          "success": true
+        },
+        {
+          "name": "deploy_vpn_machines",
+          "duration_seconds": 104.76499553798931,
+          "start_timestamp": 1765320331.3064222,
+          "success": true
+        }
+      ]
+    },
+    {
+      "phase": "benchmarking",
+      "duration_seconds": 138.66395640399423,
+      "start_timestamp": 1765320436.099002,
+      "operations": [
+        {
+          "name": "tc_stabilization",
+          "duration_seconds": 30.018809134984622,
+          "start_timestamp": 1765320436.5209303,
+          "success": true
+        },
+        {
+          "name": "run_tests",
+          "duration_seconds": 107.73275790701155,
+          "start_timestamp": 1765320466.5494606,
+          "success": true,
+          "metadata": {
+            "profile": "baseline"
+          }
+        }
+      ],
+      "metadata": {
+        "profile": "baseline"
+      }
+    }
+  ]
+}

@@ -58,6 +58,9 @@ const createMeanTimeOption = (reports: HyperfineReport[], title?: string) => {
   return {
     title: {
       text: title || "Mean Execution Time",
+      subtext: "Lower is better",
+      left: "center",
+      subtextStyle: { color: "#888", fontSize: 12 },
     },
     tooltip: {
       trigger: "axis",
@@ -81,6 +84,7 @@ const createMeanTimeOption = (reports: HyperfineReport[], title?: string) => {
       left: "3%",
       right: "4%",
       bottom: "3%",
+      top: "15%",
       containLabel: true,
     },
     toolbox: {
@@ -156,6 +160,9 @@ const createTimeSeriesOption = (reports: HyperfineReport[], title?: string) => {
   return {
     title: {
       text: title ? `${title} - Individual Run Times` : "Individual Run Times",
+      subtext: "Lower is better",
+      left: "center",
+      subtextStyle: { color: "#888", fontSize: 12 },
     },
     tooltip: {
       trigger: "axis",
@@ -165,11 +172,13 @@ const createTimeSeriesOption = (reports: HyperfineReport[], title?: string) => {
     },
     legend: {
       data: originalNames,
+      top: 50,
     },
     grid: {
       left: "3%",
       right: "4%",
       bottom: "15%",
+      top: "15%",
       containLabel: true,
     },
     toolbox: {

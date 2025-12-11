@@ -112,6 +112,11 @@ interface MixedBarDataItem {
   stats?: QperfMetricStats;
 }
 
+// Helper to clean machine name (remove leading number prefix like "0_")
+const cleanMachineName = (name: string): string => {
+  return name.replace(/^\d+_/, "");
+};
+
 const processDataForMixedBarChart = (
   mixedReports: MixedReport<QperfData>[],
   metric: MetricKey,
@@ -120,16 +125,23 @@ const processDataForMixedBarChart = (
   const barDataItems: MixedBarDataItem[] = [];
 
   mixedReports.forEach((report) => {
-    categories.push(report.name);
+    // Use source → target from metadata if available
+    let displayName: string;
     if (report.result.ok) {
-      const data = (report.result as Ok<QperfData>).value;
-      const stats = getMetricStats(data, metric);
+      const result = report.result as Ok<QperfData>;
+      const meta = result.meta;
+      displayName =
+        meta?.source && meta?.target
+          ? `${meta.source} → ${meta.target}`
+          : cleanMachineName(report.name);
+      const stats = getMetricStats(result.value, metric);
       barDataItems.push({
         value: stats.average,
         isError: false,
         stats: stats,
       });
     } else {
+      displayName = cleanMachineName(report.name);
       const error = (report.result as Err).error;
       barDataItems.push({
         value: 0, // No value for crashed machines
@@ -137,6 +149,7 @@ const processDataForMixedBarChart = (
         errorMessage: getErrorMessage(error),
       });
     }
+    categories.push(displayName);
   });
   return { categories, barDataItems };
 };
@@ -157,7 +170,16 @@ const machineColorPalette = [
 const getMachineColor = (machineIndex: number): string => {
   return machineColorPalette[machineIndex % machineColorPalette.length];
 };
-// getMachineColorScheme remains the same
+
+// Helper to determine if higher values are better for a given metric
+const isHigherBetter = (metric: MetricKey): boolean => {
+  return metric === "total_bandwidth_mbps";
+};
+
+// Get subtitle based on metric direction
+const getMetricSubtext = (metric: MetricKey): string => {
+  return isHigherBetter(metric) ? "Higher is better" : "Lower is better";
+};
 
 // --- ECharts Option Creation Functions (Updated) ---
 
@@ -258,8 +280,10 @@ const createQperfBoxplotOption = (
     // Explicitly returning EChartsOption type
     title: {
       text: title,
+      subtext: getMetricSubtext(metric),
       left: "center",
       textStyle: { fontWeight: "normal", fontSize: 16 }, // Adjusted style
+      subtextStyle: { color: "#888", fontSize: 12 },
       padding: [10, 0, 10, 0],
     },
     tooltip: {
@@ -386,8 +410,10 @@ const createQperfBarChartOption = (
     // Explicitly returning EChartsOption type
     title: {
       text: chartTitle, // Use updated title
+      subtext: getMetricSubtext(metric),
       left: "center",
       textStyle: { fontWeight: "normal", fontSize: 16 },
+      subtextStyle: { color: "#888", fontSize: 12 },
       padding: [10, 0, 10, 0],
     },
     tooltip: {
@@ -554,8 +580,10 @@ const createMixedBarChartOption = (
   return {
     title: {
       text: chartTitle,
+      subtext: getMetricSubtext(metric),
       left: "center",
       textStyle: { fontWeight: "normal", fontSize: 16 },
+      subtextStyle: { color: "#888", fontSize: 12 },
       padding: [10, 0, 10, 0],
     },
     tooltip: {
