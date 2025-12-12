@@ -295,7 +295,9 @@ const FallbackMessage = (props: { message?: string }) => (
 );
 
 // TC Settings Display Component for showing network conditions
-const TCSettingsDisplay = (props: { tcSettings: TCSettingsData | null | undefined }) => {
+const TCSettingsDisplay = (props: {
+  tcSettings: TCSettingsData | null | undefined;
+}) => {
   const getTotalLatency = () => props.tcSettings?.settings?.latency_ms ?? null;
   const getTotalJitter = () => props.tcSettings?.settings?.jitter_ms ?? null;
   const getTotalPacketLoss = () =>

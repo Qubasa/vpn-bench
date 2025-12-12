@@ -2,7 +2,6 @@
   clanLib,
   config,
   lib,
-  directory,
   ...
 }:
 {
@@ -33,9 +32,9 @@
       };
       port = lib.mkOption {
         type = lib.types.port;
-        default = 8080;
+        default = 443;
         description = ''
-          The port on which headscale listens.
+          The port on which headscale listens. Default is 443 for noise protocol compatibility.
         '';
       };
       baseDomain = lib.mkOption {
@@ -60,13 +59,12 @@
         instanceName,
         settings,
         machine,
-        roles,
         mkExports,
         ...
       }:
       let
-        # Check if this controller is also a peer
-        isPeer = roles.peer.machines ? ${machine.name};
+        # Controller is always also a peer so it can participate in the VPN mesh
+        isPeer = true;
       in
       {
         exports = mkExports {
@@ -79,13 +77,20 @@
 
         nixosModule =
           {
+            config,
             lib,
             pkgs,
             ...
           }:
           let
-            # Use HTTP since headscale is not configured with TLS
-            serverUrl = "http://${settings.publicAddress}:${toString settings.port}";
+            # Use HTTPS for headscale with TLS (required for noise protocol)
+            serverUrl = "https://${settings.publicAddress}:${toString settings.port}";
+
+            # IPv6 ULA address generator
+            ipgenv6 = pkgs.writers.writePython3Bin "ipgenv6" {
+              libraries = [ ];
+              doCheck = false;
+            } (builtins.readFile ./ipgenv6.py);
           in
           {
             imports = [
@@ -98,6 +103,8 @@
                   lib
                   machine
                   isPeer
+                  config
+                  ipgenv6
                   ;
                 isController = true;
               })
@@ -139,15 +146,12 @@
         isAlsoController = roles.controller.machines ? ${machine.name};
       in
       {
+        # Headscale assigns IPs dynamically, so we export the hostname
+        # which is resolvable via MagicDNS (machine.baseDomain)
         exports = mkExports {
           peer.hosts = [
             {
-              plain = clanLib.getPublicValue {
-                machine = machine.name;
-                generator = "headscale-${instanceName}";
-                file = "ip";
-                flake = directory;
-              };
+              plain = machine.name;
             }
           ];
         };
@@ -156,6 +160,7 @@
         # (controller role handles peer config when machine has both roles)
         nixosModule =
           {
+            config,
             lib,
             pkgs,
             ...
@@ -184,8 +189,14 @@
                     port = ctrl.settings.port;
                   };
 
-              # Use HTTP since headscale is not configured with TLS
-              serverUrl = "http://${controllerInfo.publicAddress}:${toString controllerInfo.port}";
+              # Use HTTPS for headscale with TLS (required for noise protocol)
+              serverUrl = "https://${controllerInfo.publicAddress}:${toString controllerInfo.port}";
+
+              # IPv6 ULA address generator
+              ipgenv6 = pkgs.writers.writePython3Bin "ipgenv6" {
+                libraries = [ ];
+                doCheck = false;
+              } (builtins.readFile ./ipgenv6.py);
             in
             {
               imports = [
@@ -198,6 +209,8 @@
                     pkgs
                     lib
                     machine
+                    config
+                    ipgenv6
                     ;
                   isController = false;
                   isPeer = true;

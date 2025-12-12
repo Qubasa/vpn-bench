@@ -8,7 +8,7 @@ from clan_cli.vars.get import get_machine_var
 from clan_cli.vars.list import stringify_all_vars
 from clan_lib.api import dataclass_to_dict
 from clan_lib.async_run import AsyncContext, AsyncOpts, AsyncRuntime, get_async_ctx
-from clan_lib.cmd import run
+from clan_lib.cmd import Log, RunOpts, run
 from clan_lib.errors import ClanError
 from clan_lib.flake import Flake
 from clan_lib.machines.machines import Machine
@@ -331,9 +331,11 @@ def get_vpn_ips(
             case VPN.Tinc:
                 vpn_ip = get_machine_var(machine, "tinc-tinc/ip").value.decode()
             case VPN.Headscale:
-                vpn_ip = get_machine_var(
-                    machine, "headscale-headscale/ip"
-                ).value.decode()
+                # Headscale assigns IPs dynamically, query IPv6 via tailscale CLI
+                host = machine.target_host().override(host_key_check="none")
+                with host.host_connection() as ssh:
+                    result = ssh.run(["tailscale", "ip", "-6"], RunOpts(log=Log.BOTH))
+                vpn_ip = result.stdout.strip()
             case VPN.Wireguard:
                 # TODO: We hardcode the IP address here
                 # We should get it from the var
@@ -533,6 +535,51 @@ def install_vpn(
         with timed_op("run_zerotier_generators"):
             run_generators([machines[0]], "zerotier")
 
+    # Headscale needs a different flow: deploy first, then query IPs
+    # (because tailscale assigns IPs dynamically after authentication)
+    if vpn == VPN.Headscale:
+        # Run generators and deploy VPN machines FIRST
+        with timed_op("run_generators"):
+            run_generators(machines, generators=None, full_closure=False)
+
+        with timed_op("deploy_vpn_machines"):
+            deploy_machines(machines, build_host=build_host, ssh_key=config.ssh_keys[0])
+
+        # NOW query IPs (tailscale is running and authenticated)
+        with timed_op("get_vpn_ips"):
+            bmachines = get_vpn_ips(config, machines, vpn)
+            save_machine_layout(config, vpn, bmachines)
+
+        # Install nix cache and connection timings with real IPs
+        with timed_op("install_nix_cache"):
+            install_nix_cache(config, tr_machines, bmachines)
+
+        with timed_op("install_connection_timings_service"):
+            install_connection_timings_conf(config, tr_machines, vpn, bmachines)
+
+        if get_con_times:
+            # Need to redeploy to apply nix cache and connection timings config
+            machines = [bmachine.cmachine for bmachine in bmachines]
+            for machine in machines:
+                machine.flake.invalidate_cache()
+
+            with timed_op("deploy_vpn_machines_with_cache"):
+                deploy_machines(
+                    machines, build_host=build_host, ssh_key=config.ssh_keys[0]
+                )
+
+            with timed_op("initial_connection_timings"):
+                download_connection_timings(
+                    config, vpn, machines, benchmark_run_alias=benchmark_run_alias
+                )
+            with timed_op("reboot_connection_timings"):
+                reboot_connection_timings(
+                    config, vpn, machines, benchmark_run_alias=benchmark_run_alias
+                )
+
+        return bmachines
+
+    # Original flow for other VPNs (IPs available before deployment)
     # Get the VPN IP of each machine
     with timed_op("get_vpn_ips"):
         bmachines = get_vpn_ips(config, machines, vpn)

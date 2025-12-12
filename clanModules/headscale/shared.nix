@@ -8,6 +8,8 @@
   controllerInfo ? null,
   isController,
   isPeer ? true, # By default, all nodes are peers
+  config, # For vars generators
+  ipgenv6, # For ULA generation
 }:
 let
   # User name for the headscale user (all machines join under this user)
@@ -22,11 +24,73 @@ let
   # Keyserver port
   keyserverPort = 8081;
 
-  # IPv6 ULA generation script (same as easytier)
-  ipgenv6 = pkgs.writers.writePython3Bin "ipgenv6" {
-    libraries = [ ];
-    doCheck = false;
-  } (builtins.readFile ./ipgenv6.py);
+  # Vars generators configuration (shared between controller and peers)
+  generatorsConfig = {
+    # ULA prefix generator for IPv6 addressing
+    clan.core.vars.generators."headscale-${instanceName}-ula" = {
+      share = true;
+      files.network = {
+        secret = false;
+        deploy = false;
+      };
+      runtimeInputs = [
+        ipgenv6
+        pkgs.coreutils
+      ];
+      script = ''
+        ipgenv6 --generate-prefix | tr -d "\n" > "$out"/network
+      '';
+    };
+
+    # TLS certificate generator for headscale (required for noise protocol)
+    clan.core.vars.generators."headscale-${instanceName}-tls" = {
+      share = true;
+      files.cert = {
+        secret = false;
+      };
+      files.key = {
+        secret = true;
+        owner = "headscale";
+        group = "headscale";
+      };
+      runtimeInputs = [
+        pkgs.openssl
+        pkgs.coreutils
+      ];
+      script = ''
+        openssl req -x509 -newkey rsa:4096 \
+          -keyout "$out"/key \
+          -out "$out"/cert \
+          -days 3650 \
+          -nodes \
+          -subj "/CN=headscale-${instanceName}"
+      '';
+    };
+
+    # Create headscale user/group early so secrets can be owned by them
+    users.users.headscale = {
+      isSystemUser = true;
+      group = "headscale";
+      home = "/var/lib/headscale";
+    };
+    users.groups.headscale = { };
+  };
+
+  # Extract the /48 prefix from the /64 ULA prefix (strip last group and /64 suffix)
+  # ipgenv6 outputs: fdXX:XXXX:XXXX:YYYY::/64
+  # We need:         fdXX:XXXX:XXXX::/48
+  ulaPrefix48 =
+    let
+      # The network value is like "fdbc:4ca7:7b65:0001::/64"
+      fullPrefix = config.clan.core.vars.generators."headscale-${instanceName}-ula".files.network.value;
+      # Split by "::" to get "fdbc:4ca7:7b65:0001" and "/64"
+      parts = lib.splitString "::" fullPrefix;
+      addressPart = lib.head parts; # "fdbc:4ca7:7b65:0001"
+      # Split by ":" and take first 3 groups
+      groups = lib.splitString ":" addressPart;
+      first3Groups = lib.take 3 groups;
+    in
+    "${lib.concatStringsSep ":" first3Groups}::/48";
 
   # Controller-specific configuration
   controllerConfig = lib.optionalAttrs isController {
@@ -38,10 +102,14 @@ let
       settings = {
         server_url = serverUrl;
 
-        # IP prefixes for the tailnet
+        # TLS configuration from vars generator
+        tls_cert_path = config.clan.core.vars.generators."headscale-${instanceName}-tls".files.cert.path;
+        tls_key_path = config.clan.core.vars.generators."headscale-${instanceName}-tls".files.key.path;
+
+        # IP prefixes for the tailnet - use generated ULA /48 prefix
         prefixes = {
           v4 = "100.64.0.0/10";
-          v6 = "fd7a:115c:a1e0::/48";
+          v6 = ulaPrefix48;
           allocation = "sequential";
         };
 
@@ -102,11 +170,15 @@ let
     ];
 
     # Setup service that creates user and generates preauthkeys after headscale starts
+    # Only runs if the key file doesn't exist yet
     systemd.services."headscale-${instanceName}-setup" = {
       description = "Initialize headscale user and preauthkeys for ${instanceName}";
       after = [ "headscale.service" ];
       requires = [ "headscale.service" ];
       wantedBy = [ "multi-user.target" ];
+
+      # Skip if key already exists (avoids restart loops during deployment)
+      unitConfig.ConditionPathExists = "!${preauthKeyFile}";
 
       serviceConfig = {
         Type = "oneshot";
@@ -164,9 +236,17 @@ let
     # This allows peers to fetch their keys without SSH
     systemd.services."headscale-${instanceName}-keyserver" = {
       description = "Serve headscale preauthkeys for ${instanceName}";
-      after = [ "headscale-${instanceName}-setup.service" ];
-      requires = [ "headscale-${instanceName}-setup.service" ];
+      # Start after headscale and setup (if setup runs), but don't require setup
+      # since it may be skipped if key already exists
+      after = [
+        "headscale.service"
+        "headscale-${instanceName}-setup.service"
+      ];
+      requires = [ "headscale.service" ];
       wantedBy = [ "multi-user.target" ];
+
+      # Only start if the key file exists
+      unitConfig.ConditionPathExists = preauthKeyFile;
 
       serviceConfig = {
         Type = "simple";
@@ -185,46 +265,15 @@ let
 
   # Peer (Tailscale client) configuration
   peerConfig = lib.optionalAttrs isPeer {
+    # Trust the headscale TLS certificate
+    security.pki.certificateFiles = [
+      config.clan.core.vars.generators."headscale-${instanceName}-tls".files.cert.path
+    ];
+
     services.tailscale = {
       enable = true;
       # Use the interface name for the tunnel
       interfaceName = interface;
-    };
-
-    # Shared ULA prefix generator (shared across all machines in this instance)
-    clan.core.vars.generators."headscale-${instanceName}-ula" = {
-      share = true;
-      files.network = {
-        secret = false;
-        deploy = false;
-      };
-      runtimeInputs = [
-        ipgenv6
-        pkgs.coreutils
-      ];
-      script = ''
-        ipgenv6 --generate-prefix | tr -d "\n" > "$out"/network
-      '';
-    };
-
-    # Generator to produce the VPN IPv6 for this peer
-    clan.core.vars.generators."headscale-${instanceName}" = {
-      files.ip = {
-        deploy = false;
-        secret = false;
-      };
-      dependencies = [
-        "headscale-${instanceName}-ula"
-      ];
-      runtimeInputs = [
-        pkgs.coreutils
-        pkgs.gnused
-        pkgs.gnugrep
-        ipgenv6
-      ];
-      script = ''
-        ipgenv6 --prefix "$(cat "$in"/headscale-${instanceName}-ula/network)" | tr -d "\n" > "$out"/ip
-      '';
     };
 
     # Benchmark resource slice
@@ -264,8 +313,8 @@ let
         let
           # For controller, use localhost; for peers, use the controller's address
           controllerHost = if isController then "127.0.0.1" else controllerInfo.publicAddress;
-          # Use HTTP since headscale is not configured with TLS
-          loginServerUrl = if isController then "http://127.0.0.1:${toString settings.port}" else serverUrl;
+          # Use HTTPS for headscale with TLS (required for noise protocol)
+          loginServerUrl = if isController then "https://127.0.0.1:${toString settings.port}" else serverUrl;
         in
         ''
           set -euo pipefail
@@ -334,4 +383,9 @@ let
   };
 in
 # Return a proper NixOS module by recursively merging configs
-lib.recursiveUpdate (lib.recursiveUpdate controllerConfig peerConfig) assertionsConfig
+lib.foldl' lib.recursiveUpdate { } [
+  generatorsConfig
+  controllerConfig
+  peerConfig
+  assertionsConfig
+]
