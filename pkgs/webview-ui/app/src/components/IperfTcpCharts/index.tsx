@@ -800,11 +800,11 @@ export const IperfTcpCharts = (props: IperfTcpChartsProps) => {
         height={height().timeSeries}
       />
 
-      <div style={{ display: "flex", gap: "20px" }}>
-        <div style={{ flex: 1 }}>
+      <div class="flex flex-col gap-5 lg:flex-row">
+        <div class="flex-1">
           <IperfCpuChart reports={props.reports} height={height().cpu} />
         </div>
-        <div style={{ flex: 1 }}>
+        <div class="flex-1">
           <IperfRetransmitsChart
             reports={props.reports}
             height={height().retransmits}
@@ -812,11 +812,11 @@ export const IperfTcpCharts = (props: IperfTcpChartsProps) => {
         </div>
       </div>
 
-      <div style={{ display: "flex", gap: "20px" }}>
-        <div style={{ flex: 1 }}>
+      <div class="flex flex-col gap-5 lg:flex-row">
+        <div class="flex-1">
           <IperfRttChart reports={props.reports} height={height().rtt} />
         </div>
-        <div style={{ flex: 1 }}>
+        <div class="flex-1">
           <IperfMaxSendWindowChart
             reports={props.reports}
             height={height().maxSendWindow}

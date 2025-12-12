@@ -1155,25 +1155,14 @@ export const IperfUdpCharts = ({
       )}
 
       {/* Packet Loss & Jitter Row */}
-      <div
-        style={{
-          display: "flex",
-          gap: "20px",
-          "flex-wrap": "wrap",
-          "justify-content": "center",
-        }}
-      >
-        <div style={{ flex: 1, "min-width": "350px", "max-width": "500px" }}>
-          {" "}
-          {/* Adjusted flex basis */}
+      <div class="flex flex-col gap-5 lg:flex-row lg:justify-center">
+        <div class="flex-1 lg:max-w-[500px]">
           <IperfUdpPacketLossChart
             reports={reports}
             height={effectiveHeights.packetLoss}
           />
         </div>
-        <div style={{ flex: 1, "min-width": "350px", "max-width": "500px" }}>
-          {" "}
-          {/* Adjusted flex basis */}
+        <div class="flex-1 lg:max-w-[500px]">
           <IperfUdpJitterChart
             reports={reports}
             height={effectiveHeights.jitter}

@@ -730,6 +730,7 @@ export const VpnDashboard = (props: VpnDashboardProps) => {
                           "border-radius": "8px",
                           padding: "16px",
                           "margin-bottom": "16px",
+                          overflow: "hidden",
                         }}
                       >
                         <h4 style={{ margin: "0 0 8px 0", color: "#c53030" }}>
@@ -738,7 +739,12 @@ export const VpnDashboard = (props: VpnDashboardProps) => {
                         <For each={failedPairs}>
                           {(pair) => (
                             <div
-                              style={{ "font-size": "14px", color: "#742a2a" }}
+                              style={{
+                                "font-size": "14px",
+                                color: "#742a2a",
+                                "word-break": "break-word",
+                                "overflow-wrap": "break-word",
+                              }}
                             >
                               {pair.source} → {pair.target}: {pair.error}
                             </div>

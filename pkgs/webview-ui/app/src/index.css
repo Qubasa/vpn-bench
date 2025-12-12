@@ -97,46 +97,61 @@ html {
 .tc-profile-tabs {
   width: 100%;
   margin-bottom: 1rem;
-  border-bottom: 2px solid hsl(240 5% 90%);
 }
 
 .tc-profile-tabs__list {
   position: relative;
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem 1rem;
-  background-color: white;
-  border-radius: 8px 8px 0 0;
+  gap: 0;
+  padding: 0 1rem;
+  padding-left: 3.5rem;
+  background-color: transparent;
+  border-bottom: 1px solid hsl(240 5% 84%);
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.tc-profile-tabs__list::-webkit-scrollbar {
+  display: none;
+}
+
+@media (min-width: 1024px) {
+  .tc-profile-tabs__list {
+    padding-left: 1rem;
+  }
 }
 
 .tc-profile-tabs__trigger {
   display: inline-block;
-  padding: 0.625rem 1.5rem;
-  font-size: 0.95rem;
+  padding: 0.75rem 1rem;
+  font-size: 0.875rem;
   font-weight: 500;
   color: hsl(240 5% 45%);
-  background-color: hsl(0 0% 97%);
-  border: 1px solid hsl(240 5% 88%);
-  border-radius: 6px;
+  background-color: transparent;
+  border: none;
+  border-radius: 0;
   cursor: pointer;
   outline: none;
-  transition: all 200ms;
+  transition: color 200ms;
   text-transform: capitalize;
+  white-space: nowrap;
 }
 
 .tc-profile-tabs__trigger:hover {
-  background-color: hsl(240 5% 92%);
   color: hsl(240 5% 20%);
-  border-color: hsl(240 5% 80%);
+  background-color: hsl(0 0% 98%);
 }
 
 .tc-profile-tabs__trigger[data-selected] {
-  background-color: hsl(200 98% 39%);
-  color: white;
+  color: hsl(200 98% 39%);
   font-weight: 600;
-  border-color: hsl(200 98% 39%);
-  box-shadow: 0 2px 4px rgba(0, 123, 200, 0.2);
+  background-color: transparent;
+  border: none;
+  border-bottom: 2px solid hsl(200 98% 39%);
+  margin-bottom: -1px;
+  box-shadow: none;
 }
 
 .tc-profile-tabs__trigger:focus-visible {
@@ -144,9 +159,5 @@ html {
 }
 
 .tc-profile-tabs__indicator {
-  position: absolute;
-  bottom: -2px;
-  height: 2px;
-  background-color: hsl(200 98% 39%);
-  transition: all 250ms;
+  display: none;
 }
