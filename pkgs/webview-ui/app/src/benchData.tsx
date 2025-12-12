@@ -309,6 +309,8 @@ export interface ComparisonRunData {
   // Connection timings are stored as VPN -> machine -> time string
   connectionTimings?: ConnectionTimings;
   rebootConnectionTimings?: ConnectionTimings;
+  // TC settings for this profile
+  tcSettings?: TCSettingsData | null;
 }
 
 // Maps run alias (TC profile) to comparison data
@@ -328,11 +330,29 @@ function loadTCSettings(
   vpnName: string,
   runAlias: string,
 ): TCSettingsData | null {
-  const tcSettingsPath = `@/bench/${vpnName}/${runAlias}/tc_settings.json`;
-
   // Search for the tc_settings.json file in benchFiles
   for (const [path, rawModule] of Object.entries(benchFiles)) {
     if (path.includes(`/${vpnName}/${runAlias}/tc_settings.json`)) {
+      if (rawModule && typeof rawModule === "object" && "alias" in rawModule) {
+        return rawModule as TCSettingsData;
+      }
+    }
+  }
+
+  return null;
+}
+
+// Helper to load TC settings for a run alias from any VPN (all VPNs share the same TC settings per profile)
+function loadTCSettingsForRunAlias(
+  benchFiles: Record<string, unknown>,
+  runAlias: string,
+): TCSettingsData | null {
+  // Search for any tc_settings.json file with this run alias
+  for (const [path, rawModule] of Object.entries(benchFiles)) {
+    if (
+      path.includes(`/${runAlias}/tc_settings.json`) &&
+      !path.includes("/General/")
+    ) {
       if (rawModule && typeof rawModule === "object" && "alias" in rawModule) {
         return rawModule as TCSettingsData;
       }
@@ -715,7 +735,9 @@ export function generateComparisonData(): ComparisonData {
 
     // Initialize run alias if needed
     if (!result[runAlias]) {
-      result[runAlias] = {};
+      result[runAlias] = {
+        tcSettings: loadTCSettingsForRunAlias(benchFiles, runAlias),
+      };
     }
 
     // Assign data based on file name

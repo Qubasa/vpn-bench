@@ -1,6 +1,6 @@
 import { Echart } from "../Echarts";
 import { Show, createSignal, createEffect, createMemo, For } from "solid-js";
-import { ComparisonData } from "@/src/benchData";
+import { ComparisonData, TCSettingsData } from "@/src/benchData";
 import { Tabs } from "@kobalte/core/tabs";
 import {
   TcpComparisonSection,
@@ -139,6 +139,13 @@ const createConnectionTimingsOption = (
     });
   }
 
+  // Create markPoint data for max values on top of each boxplot
+  const maxMarkPoints = boxplotData.map((data, index) => ({
+    xAxis: index,
+    yAxis: data[4], // max value is at index 4
+    value: data[4],
+  }));
+
   return {
     title: {
       text: title,
@@ -220,6 +227,20 @@ const createConnectionTimingsOption = (
           borderWidth: 2,
           borderColor: "#1890ff",
         },
+        markPoint: {
+          data: maxMarkPoints,
+          symbol: "circle",
+          symbolSize: 1,
+          label: {
+            show: true,
+            position: "top",
+            formatter: function (params: { value: number }) {
+              return (params.value / 1000).toFixed(2) + "s";
+            },
+            fontSize: 11,
+            color: "#333",
+          },
+        },
       },
       {
         name: "Nodes",
@@ -272,6 +293,184 @@ const FallbackMessage = (props: { message?: string }) => (
     </p>
   </div>
 );
+
+// TC Settings Display Component for showing network conditions
+const TCSettingsDisplay = (props: { tcSettings: TCSettingsData | null | undefined }) => {
+  const getTotalLatency = () => props.tcSettings?.settings?.latency_ms ?? null;
+  const getTotalJitter = () => props.tcSettings?.settings?.jitter_ms ?? null;
+  const getTotalPacketLoss = () =>
+    props.tcSettings?.settings?.packet_loss_percent ?? null;
+  const getTotalReorder = () =>
+    props.tcSettings?.settings?.reorder_percent ?? null;
+
+  const hasSettings = () =>
+    props.tcSettings?.settings &&
+    (props.tcSettings.settings.latency_ms != null ||
+      props.tcSettings.settings.jitter_ms != null ||
+      props.tcSettings.settings.packet_loss_percent != null ||
+      props.tcSettings.settings.reorder_percent != null ||
+      props.tcSettings.settings.bandwidth_mbit != null);
+
+  return (
+    <div
+      style={{
+        "margin-bottom": "1.5rem",
+        "border-radius": "0.5rem",
+        border: "2px solid #e5e7eb",
+        "background-color": "#f9fafb",
+        padding: "1rem",
+      }}
+    >
+      <h3
+        style={{
+          "margin-bottom": "0.5rem",
+          "font-size": "1.125rem",
+          "font-weight": "600",
+          color: "#111827",
+        }}
+      >
+        Network Conditions
+      </h3>
+      {hasSettings() ? (
+        <>
+          <p
+            style={{
+              "font-size": "0.75rem",
+              "font-style": "italic",
+              color: "#6b7280",
+            }}
+          >
+            Total round-trip impairment (half applied to each endpoint)
+          </p>
+          <div
+            style={{
+              "margin-top": "0.75rem",
+              display: "grid",
+              "grid-template-columns": "repeat(auto-fit, minmax(100px, 1fr))",
+              gap: "0.75rem",
+              "font-size": "0.875rem",
+            }}
+          >
+            {getTotalLatency() !== null && (
+              <div
+                style={{
+                  "border-radius": "0.25rem",
+                  "background-color": "white",
+                  padding: "0.5rem",
+                }}
+              >
+                <div style={{ "font-weight": "500", color: "#4b5563" }}>
+                  Latency
+                </div>
+                <div
+                  style={{
+                    "font-size": "1.125rem",
+                    "font-weight": "600",
+                    color: "#111827",
+                  }}
+                >
+                  {getTotalLatency()}ms
+                </div>
+              </div>
+            )}
+            {getTotalJitter() !== null && (
+              <div
+                style={{
+                  "border-radius": "0.25rem",
+                  "background-color": "white",
+                  padding: "0.5rem",
+                }}
+              >
+                <div style={{ "font-weight": "500", color: "#4b5563" }}>
+                  Jitter
+                </div>
+                <div
+                  style={{
+                    "font-size": "1.125rem",
+                    "font-weight": "600",
+                    color: "#111827",
+                  }}
+                >
+                  {getTotalJitter()}ms
+                </div>
+              </div>
+            )}
+            {getTotalPacketLoss() !== null && (
+              <div
+                style={{
+                  "border-radius": "0.25rem",
+                  "background-color": "white",
+                  padding: "0.5rem",
+                }}
+              >
+                <div style={{ "font-weight": "500", color: "#4b5563" }}>
+                  Packet Loss
+                </div>
+                <div
+                  style={{
+                    "font-size": "1.125rem",
+                    "font-weight": "600",
+                    color: "#111827",
+                  }}
+                >
+                  {getTotalPacketLoss()}%
+                </div>
+              </div>
+            )}
+            {getTotalReorder() !== null && (
+              <div
+                style={{
+                  "border-radius": "0.25rem",
+                  "background-color": "white",
+                  padding: "0.5rem",
+                }}
+              >
+                <div style={{ "font-weight": "500", color: "#4b5563" }}>
+                  Reordering
+                </div>
+                <div
+                  style={{
+                    "font-size": "1.125rem",
+                    "font-weight": "600",
+                    color: "#111827",
+                  }}
+                >
+                  {getTotalReorder()}%
+                </div>
+              </div>
+            )}
+            {props.tcSettings?.settings?.bandwidth_mbit != null && (
+              <div
+                style={{
+                  "border-radius": "0.25rem",
+                  "background-color": "white",
+                  padding: "0.5rem",
+                }}
+              >
+                <div style={{ "font-weight": "500", color: "#4b5563" }}>
+                  Bandwidth
+                </div>
+                <div
+                  style={{
+                    "font-size": "1.125rem",
+                    "font-weight": "600",
+                    color: "#111827",
+                  }}
+                >
+                  {props.tcSettings.settings.bandwidth_mbit} Mbit/s
+                </div>
+              </div>
+            )}
+          </div>
+        </>
+      ) : (
+        <p style={{ "font-size": "1rem", color: "#374151" }}>
+          No network impairment applied
+        </p>
+      )}
+    </div>
+  );
+};
 
 export const GeneralDashboard = (props: GeneralDashboardProps) => {
   // Get URL search params for state sync
@@ -368,6 +567,9 @@ export const GeneralDashboard = (props: GeneralDashboardProps) => {
           </Tabs.List>
         </Tabs>
       </Show>
+
+      {/* Display TC settings for current profile */}
+      <TCSettingsDisplay tcSettings={currentProfileData()?.tcSettings} />
 
       {/* Benchmark Type Tabs */}
       <Tabs
