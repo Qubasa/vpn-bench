@@ -550,24 +550,23 @@ def install_vpn(
             bmachines = get_vpn_ips(config, machines, vpn)
             save_machine_layout(config, vpn, bmachines)
 
-        # Install nix cache and connection timings with real IPs
+        # Install nix cache with real IPs
         with timed_op("install_nix_cache"):
             install_nix_cache(config, tr_machines, bmachines)
 
+        # Always install connection timings service (needed for wait_for_vpn_connectivity)
         with timed_op("install_connection_timings_service"):
             install_connection_timings_conf(config, tr_machines, vpn, bmachines)
 
+        # Need to redeploy to apply nix cache and connection timings config
+        machines = [bmachine.cmachine for bmachine in bmachines]
+        for machine in machines:
+            machine.flake.invalidate_cache()
+
+        with timed_op("deploy_vpn_machines_with_cache"):
+            deploy_machines(machines, build_host=build_host, ssh_key=config.ssh_keys[0])
+
         if get_con_times:
-            # Need to redeploy to apply nix cache and connection timings config
-            machines = [bmachine.cmachine for bmachine in bmachines]
-            for machine in machines:
-                machine.flake.invalidate_cache()
-
-            with timed_op("deploy_vpn_machines_with_cache"):
-                deploy_machines(
-                    machines, build_host=build_host, ssh_key=config.ssh_keys[0]
-                )
-
             with timed_op("initial_connection_timings"):
                 download_connection_timings(
                     config, vpn, machines, benchmark_run_alias=benchmark_run_alias
@@ -590,7 +589,7 @@ def install_vpn(
         install_nix_cache(config, tr_machines, bmachines)
 
     # Always install connection timings service (needed for wait_for_vpn_connectivity)
-    if vpn != VPN.Internal or vpn == VPN.Wireguard:
+    if vpn != VPN.Internal:
         with timed_op("install_connection_timings_service"):
             install_connection_timings_conf(config, tr_machines, vpn, bmachines)
 
