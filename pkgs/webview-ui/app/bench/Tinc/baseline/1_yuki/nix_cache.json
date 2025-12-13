@@ -1,29 +1,35 @@
 {
-  "status": "success",
-  "data": {
-    "results": [
-      {
-        "command": "nix copy --from http://cache.vpn.luna --to file:///tmp/cache?compression=none /nix/store/8y3bzk5rmdl9dqxnvii0cnx5rigi8vym-firefox-144.0.2",
-        "mean": 9.975936047240001,
-        "stddev": 0.1701348575644082,
-        "median": 9.975936047240001,
-        "user": 13.10705184,
-        "system": 3.2161777799999998,
-        "min": 9.85563253574,
-        "max": 10.09623955874,
-        "times": [10.09623955874, 9.85563253574],
-        "exit_codes": [0, 0],
-        "parameters": {
-          "url": "http://cache.vpn.luna"
-        }
-      }
-    ]
-  },
-  "meta": {
-    "duration_seconds": 37.133965253829956,
-    "test_attempts": 1,
-    "vpn_restart_attempts": 0,
-    "source": "yuki",
-    "target": "luna"
-  }
+    "status": "success",
+    "data": {
+        "results": [
+            {
+                "command": "nix copy --from http://cache.vpn.luna --to file:///tmp/cache?compression=none /nix/store/8y3bzk5rmdl9dqxnvii0cnx5rigi8vym-firefox-144.0.2",
+                "mean": 9.975936047240001,
+                "stddev": 0.1701348575644082,
+                "median": 9.975936047240001,
+                "user": 13.10705184,
+                "system": 3.2161777799999998,
+                "min": 9.85563253574,
+                "max": 10.09623955874,
+                "times": [
+                    10.09623955874,
+                    9.85563253574
+                ],
+                "exit_codes": [
+                    0,
+                    0
+                ],
+                "parameters": {
+                    "url": "http://cache.vpn.luna"
+                }
+            }
+        ]
+    },
+    "meta": {
+        "duration_seconds": 37.133965253829956,
+        "test_attempts": 1,
+        "vpn_restart_attempts": 0,
+        "source": "yuki",
+        "target": "luna"
+    }
 }

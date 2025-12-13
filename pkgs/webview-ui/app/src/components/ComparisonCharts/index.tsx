@@ -23,6 +23,7 @@ interface BarChartData {
   min: number;
   max: number;
   isIncomplete?: boolean; // VPN exists but didn't complete this test
+  isCrashed?: boolean; // True if benchmark crashed with error, false/undefined if not run
   errorMessage?: string; // Error message for failed VPNs
   machineName?: string; // Machine that failed (if applicable)
 }
@@ -102,20 +103,33 @@ const createBarChartOption = (
         const originalData = sortedData[item.dataIndex];
 
         if (originalData.isIncomplete) {
-          const machineInfo = originalData.machineName
-            ? `<div style="font-size: 11px; color: #888; margin-top: 2px;">Machine: ${originalData.machineName}</div>`
-            : "";
-          const errorInfo = originalData.errorMessage
-            ? `<div style="font-size: 12px; color: #666; margin-top: 4px; white-space: pre-wrap; word-break: break-word;">${originalData.errorMessage}</div>`
-            : `<div style="font-size: 12px; color: #666; margin-top: 4px;">Benchmark did not complete for this VPN</div>`;
+          if (originalData.isCrashed) {
+            // Crashed benchmark - show error details
+            const machineInfo = originalData.machineName
+              ? `<div style="font-size: 11px; color: #888; margin-top: 2px;">Machine: ${originalData.machineName}</div>`
+              : "";
+            const errorInfo = originalData.errorMessage
+              ? `<div style="font-size: 12px; color: #666; margin-top: 4px; white-space: pre-wrap; word-break: break-word;">${originalData.errorMessage}</div>`
+              : `<div style="font-size: 12px; color: #666; margin-top: 4px;">Benchmark crashed during execution</div>`;
 
-          return `<div style="padding: 8px; max-width: 400px;">
-                    <div style="font-weight: bold; color: #d32f2f;">
-                      ⚠️ ${item.name} - FAILED
-                    </div>
-                    ${machineInfo}
-                    ${errorInfo}
-                  </div>`;
+            return `<div style="padding: 8px; max-width: 400px;">
+                      <div style="font-weight: bold; color: #d32f2f;">
+                        ⚠️ ${item.name} - CRASHED
+                      </div>
+                      ${machineInfo}
+                      ${errorInfo}
+                    </div>`;
+          } else {
+            // Not run benchmark - show neutral message
+            return `<div style="padding: 8px; max-width: 400px;">
+                      <div style="font-weight: bold; color: #666;">
+                        ⊘ ${item.name} - NOT RUN
+                      </div>
+                      <div style="font-size: 12px; color: #888; margin-top: 4px;">
+                        ${originalData.errorMessage || "Benchmark was not executed for this VPN"}
+                      </div>
+                    </div>`;
+          }
         }
 
         return `${item.name}<br/>
@@ -150,41 +164,83 @@ const createBarChartOption = (
         type: "bar",
         data: sortedData.map((d) => {
           if (d.isIncomplete) {
-            // Incomplete VPN - show gray bar with diagonal pattern
-            return {
-              value: incompleteBarHeight,
-              itemStyle: {
-                color: {
-                  type: "pattern",
-                  image: (() => {
-                    const canvas = document.createElement("canvas");
-                    canvas.width = 10;
-                    canvas.height = 10;
-                    const ctx = canvas.getContext("2d");
-                    if (ctx) {
-                      ctx.fillStyle = "#e0e0e0";
-                      ctx.fillRect(0, 0, 10, 10);
-                      ctx.strokeStyle = "#999";
-                      ctx.lineWidth = 2;
-                      ctx.beginPath();
-                      ctx.moveTo(0, 10);
-                      ctx.lineTo(10, 0);
-                      ctx.stroke();
-                    }
-                    return canvas;
-                  })(),
-                  repeat: "repeat",
+            if (d.isCrashed) {
+              // Crashed VPN - red-tinted diagonal pattern with warning icon
+              return {
+                value: incompleteBarHeight,
+                itemStyle: {
+                  color: {
+                    type: "pattern",
+                    image: (() => {
+                      const canvas = document.createElement("canvas");
+                      canvas.width = 10;
+                      canvas.height = 10;
+                      const ctx = canvas.getContext("2d");
+                      if (ctx) {
+                        ctx.fillStyle = "#ffebee"; // Light red background
+                        ctx.fillRect(0, 0, 10, 10);
+                        ctx.strokeStyle = "#d32f2f"; // Red diagonal lines
+                        ctx.lineWidth = 2;
+                        ctx.beginPath();
+                        ctx.moveTo(0, 10);
+                        ctx.lineTo(10, 0);
+                        ctx.stroke();
+                      }
+                      return canvas;
+                    })(),
+                    repeat: "repeat",
+                  },
+                  borderColor: "#d32f2f",
+                  borderWidth: 2,
                 },
-                borderColor: "#d32f2f",
-                borderWidth: 2,
-              },
-              label: {
-                show: true,
-                position: "top",
-                formatter: "⚠️",
-                fontSize: 14,
-              },
-            };
+                label: {
+                  show: true,
+                  position: "top",
+                  formatter: "⚠️",
+                  fontSize: 14,
+                },
+              };
+            } else {
+              // Not run VPN - gray horizontal dashed pattern with N/A label
+              return {
+                value: incompleteBarHeight,
+                itemStyle: {
+                  color: {
+                    type: "pattern",
+                    image: (() => {
+                      const canvas = document.createElement("canvas");
+                      canvas.width = 10;
+                      canvas.height = 10;
+                      const ctx = canvas.getContext("2d");
+                      if (ctx) {
+                        ctx.fillStyle = "#f5f5f5"; // Light gray background
+                        ctx.fillRect(0, 0, 10, 10);
+                        ctx.strokeStyle = "#9e9e9e"; // Gray horizontal dashed lines
+                        ctx.lineWidth = 2;
+                        ctx.setLineDash([3, 3]);
+                        ctx.beginPath();
+                        ctx.moveTo(0, 5);
+                        ctx.lineTo(10, 5);
+                        ctx.stroke();
+                      }
+                      return canvas;
+                    })(),
+                    repeat: "repeat",
+                  },
+                  borderColor: "#9e9e9e",
+                  borderWidth: 2,
+                  borderType: "dashed",
+                },
+                label: {
+                  show: true,
+                  position: "top",
+                  formatter: "N/A",
+                  fontSize: 11,
+                  color: "#666",
+                  fontWeight: "bold",
+                },
+              };
+            }
           }
           // Normal VPN
           return {
@@ -260,13 +316,14 @@ function metricToBarData<T>(
         isIncomplete: false,
       });
     } else {
-      // VPN failed - show error information
+      // VPN failed/crashed - show error information
       result.push({
         name: vpnName,
         value: 0,
         min: 0,
         max: 0,
         isIncomplete: true,
+        isCrashed: true,
         errorMessage: getComparisonErrorMessage(entry),
         machineName: entry.machine,
       });
@@ -284,6 +341,7 @@ function metricToBarData<T>(
           min: 0,
           max: 0,
           isIncomplete: true,
+          isCrashed: false, // Not crashed, just not run
           errorMessage: "Benchmark not run for this VPN",
         });
       }

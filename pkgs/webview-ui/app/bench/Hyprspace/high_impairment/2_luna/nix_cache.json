@@ -1,0 +1,40 @@
+{
+    "status": "error",
+    "error_type": "CmdOut",
+    "error": {
+        "stdout": "",
+        "stderr": "kex_exchange_identification: read: Connection reset by peer\r\nConnection reset by 138.201.33.111 port 22\r\n",
+        "cwd": "/home/lhebendanz/Projects/vpn-benchmark-suite/pkgs/vpn-bench",
+        "command_list": [
+            "ssh",
+            "root@138.201.33.111",
+            "-A",
+            "-o",
+            "StrictHostKeyChecking=no",
+            "-o",
+            "UserKnownHostsFile=/dev/null",
+            "-o",
+            "ControlMaster=auto",
+            "-o",
+            "ControlPersist=1m",
+            "-o",
+            "ControlPath=/tmp/clan-sshmri3lr8y/socket",
+            "--",
+            "bash",
+            "-c",
+            "'exec \"$@\"'",
+            "--",
+            "systemctl restart harmonia.service"
+        ],
+        "returncode": 255
+    },
+    "meta": {
+        "duration_seconds": 555.6099672317505,
+        "test_attempts": 3,
+        "vpn_restart_attempts": 0,
+        "vpn_restart_duration_seconds": 3.319862127304077,
+        "connectivity_wait_duration_seconds": 4.575031042098999,
+        "source": "luna",
+        "target": "lom"
+    }
+}
