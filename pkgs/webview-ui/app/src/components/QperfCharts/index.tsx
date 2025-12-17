@@ -869,7 +869,7 @@ export const QperfChartsDashboard: Component<QperfChartsDashboardProps> = (
         }}
       >
         <p style={{ margin: 0 }}>
-          No HTTP3 performance data available. Run the benchmark to generate
+          No QUIC performance data available. Run the benchmark to generate
           qperf data.
         </p>
       </div>

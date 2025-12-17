@@ -10,6 +10,8 @@ import {
   VideoStreamingComparisonData,
   NixCacheComparisonData,
   ParallelTcpComparisonData,
+  BenchmarkStatsData,
+  TimeBreakdownData,
   VpnComparisonError,
   CmdOutError,
   ClanError,
@@ -969,7 +971,7 @@ export const QperfBandwidthComparisonChart = (props: {
   return (
     <ComparisonBarChart
       data={chartData()}
-      title="HTTP3 Bandwidth"
+      title="QUIC Bandwidth"
       yAxisLabel="Bandwidth (Mbps)"
       height={props.height ?? 400}
       color="#52c41a"
@@ -1148,8 +1150,8 @@ export const PingComparisonSection = (props: {
   return (
     <div
       style={{
-        display: "grid",
-        "grid-template-columns": "1fr 1fr",
+        display: "flex",
+        "flex-direction": "column",
         gap: "20px",
       }}
     >
@@ -1176,8 +1178,8 @@ export const QperfComparisonSection = (props: {
   return (
     <div
       style={{
-        display: "grid",
-        "grid-template-columns": "1fr 1fr",
+        display: "flex",
+        "flex-direction": "column",
         gap: "20px",
       }}
     >
@@ -1204,8 +1206,8 @@ export const VideoStreamingComparisonSection = (props: {
   return (
     <div
       style={{
-        display: "grid",
-        "grid-template-columns": "1fr 1fr",
+        display: "flex",
+        "flex-direction": "column",
         gap: "20px",
       }}
     >
@@ -1444,5 +1446,619 @@ export const ParallelTcpComparisonSection = (props: {
         allVpnNames={props.allVpnNames}
       />
     </div>
+  );
+};
+
+// --- Benchmark Stats Charts ---
+
+interface SimpleBarData {
+  vpnName: string;
+  value: number;
+  hasError: boolean;
+}
+
+// Helper to extract simple numeric values from benchmark stats
+const statsToBarData = (
+  data: VpnComparisonResultMap<BenchmarkStatsData>,
+  extractor: (d: BenchmarkStatsData) => number,
+  allVpnNames?: string[],
+): SimpleBarData[] => {
+  const vpnNames = allVpnNames ?? Object.keys(data);
+  return vpnNames.map((vpn) => {
+    const entry = data[vpn];
+    if (!entry || entry.status !== "success") {
+      return { vpnName: vpn, value: 0, hasError: true };
+    }
+    const value = extractor(entry.data);
+    return { vpnName: vpn, value, hasError: false };
+  });
+};
+
+export const TestDurationComparisonChart = (props: {
+  data: VpnComparisonResultMap<BenchmarkStatsData>;
+  height?: number;
+  allVpnNames?: string[];
+}) => {
+  // Create a stacked bar chart showing all test type durations, sorted by total duration
+  const chartData = () => {
+    const vpnNames = props.allVpnNames ?? Object.keys(props.data);
+
+    // Build data for each VPN with total duration for sorting
+    const vpnData = vpnNames.map((vpn) => {
+      const entry = props.data[vpn];
+      if (entry?.status === "success") {
+        const tcp = entry.data.tcp_test_duration_seconds.average;
+        const udp = entry.data.udp_test_duration_seconds.average;
+        const parallelTcp = entry.data.parallel_tcp_test_duration_seconds.average;
+        const ping = entry.data.ping_test_duration_seconds.average;
+        const qperf = entry.data.qperf_test_duration_seconds.average;
+        const video = entry.data.video_test_duration_seconds.average;
+        const nixCache = entry.data.nix_cache_test_duration_seconds.average;
+        const total = tcp + udp + parallelTcp + ping + qperf + video + nixCache;
+        return { vpn, tcp, udp, parallelTcp, ping, qperf, video, nixCache, total };
+      } else {
+        return { vpn, tcp: 0, udp: 0, parallelTcp: 0, ping: 0, qperf: 0, video: 0, nixCache: 0, total: 0 };
+      }
+    });
+
+    // Sort by total duration descending
+    vpnData.sort((a, b) => b.total - a.total);
+
+    // Calculate grand total across all VPNs
+    const grandTotal = vpnData.reduce((sum, d) => sum + d.total, 0);
+
+    return {
+      vpnNames: vpnData.map((d) => d.vpn),
+      tcpData: vpnData.map((d) => d.tcp),
+      udpData: vpnData.map((d) => d.udp),
+      parallelTcpData: vpnData.map((d) => d.parallelTcp),
+      pingData: vpnData.map((d) => d.ping),
+      qperfData: vpnData.map((d) => d.qperf),
+      videoData: vpnData.map((d) => d.video),
+      nixCacheData: vpnData.map((d) => d.nixCache),
+      grandTotalHours: grandTotal / 3600,
+    };
+  };
+
+  // Check if a series has any non-zero values
+  const hasData = (arr: number[]) => arr.some((v) => v > 0);
+
+  const option = () => {
+    const data = chartData();
+
+    // Build series array, only including tests with data
+    const series: {
+      name: string;
+      type: string;
+      stack: string;
+      data: number[];
+      itemStyle: { color: string };
+    }[] = [];
+    const legendData: string[] = [];
+
+    if (hasData(data.tcpData)) {
+      series.push({
+        name: "TCP",
+        type: "bar",
+        stack: "duration",
+        data: data.tcpData,
+        itemStyle: { color: "#1890ff" },
+      });
+      legendData.push("TCP");
+    }
+    if (hasData(data.udpData)) {
+      series.push({
+        name: "UDP",
+        type: "bar",
+        stack: "duration",
+        data: data.udpData,
+        itemStyle: { color: "#52c41a" },
+      });
+      legendData.push("UDP");
+    }
+    if (hasData(data.parallelTcpData)) {
+      series.push({
+        name: "Parallel TCP",
+        type: "bar",
+        stack: "duration",
+        data: data.parallelTcpData,
+        itemStyle: { color: "#722ed1" },
+      });
+      legendData.push("Parallel TCP");
+    }
+    if (hasData(data.pingData)) {
+      series.push({
+        name: "Ping",
+        type: "bar",
+        stack: "duration",
+        data: data.pingData,
+        itemStyle: { color: "#fa8c16" },
+      });
+      legendData.push("Ping");
+    }
+    if (hasData(data.qperfData)) {
+      series.push({
+        name: "QUIC",
+        type: "bar",
+        stack: "duration",
+        data: data.qperfData,
+        itemStyle: { color: "#13c2c2" },
+      });
+      legendData.push("QUIC");
+    }
+    if (hasData(data.videoData)) {
+      series.push({
+        name: "Video",
+        type: "bar",
+        stack: "duration",
+        data: data.videoData,
+        itemStyle: { color: "#eb2f96" },
+      });
+      legendData.push("Video");
+    }
+    if (hasData(data.nixCacheData)) {
+      series.push({
+        name: "Nix Cache",
+        type: "bar",
+        stack: "duration",
+        data: data.nixCacheData,
+        itemStyle: { color: "#faad14" },
+      });
+      legendData.push("Nix Cache");
+    }
+
+    return {
+      title: {
+        text: "Average Test Duration per Machine",
+        subtext: "Lower is better",
+        left: "center",
+        top: 0,
+      },
+      tooltip: {
+        trigger: "axis",
+        axisPointer: { type: "shadow" },
+        formatter: (
+          params: { name: string; seriesName: string; value: number }[],
+        ) => {
+          const vpn = params[0]?.name || "";
+          const lines = params
+            .filter((p) => p.value > 0)
+            .map(
+              (p: { seriesName: string; value: number }) =>
+                `${p.seriesName}: ${p.value.toFixed(1)}s`,
+            );
+          return `${vpn}<br/>${lines.join("<br/>")}`;
+        },
+      },
+      legend: {
+        top: 45,
+        data: legendData,
+      },
+      grid: {
+        left: "3%",
+        right: "4%",
+        bottom: "3%",
+        top: 100,
+        containLabel: true,
+      },
+      xAxis: {
+        type: "category",
+        data: data.vpnNames,
+        axisLabel: { rotate: 45, interval: 0 },
+      },
+      yAxis: {
+        type: "value",
+        name: "Duration (seconds)",
+      },
+      series,
+    };
+  };
+
+  return (
+    <div>
+      <div
+        style={{
+          "text-align": "center",
+          "margin-bottom": "0.5rem",
+          "font-size": "1rem",
+          color: "#4b5563",
+        }}
+      >
+        Total: <strong style={{ color: "#059669" }}>{chartData().grandTotalHours.toFixed(2)} hours</strong>
+      </div>
+      <Echart option={option()} height={props.height ?? 400} />
+    </div>
+  );
+};
+
+export const SuccessRateComparisonChart = (props: {
+  data: VpnComparisonResultMap<BenchmarkStatsData>;
+  height?: number;
+  allVpnNames?: string[];
+}) => {
+  const chartData = () => {
+    const rawData = statsToBarData(
+      props.data,
+      (d) => d.success_rate_percent,
+      props.allVpnNames,
+    );
+    // Sort by success rate descending, round to 1 decimal
+    return rawData
+      .map((d) => ({ ...d, value: Math.round(d.value * 10) / 10 }))
+      .sort((a, b) => b.value - a.value);
+  };
+
+  // Custom chart since success rate is a percentage (0-100)
+  const option = () => {
+    const data = chartData();
+    const vpnNames = data.map((d) => d.vpnName);
+    const colors = data.map((d) => {
+      if (d.hasError) return "#d9d9d9";
+      if (d.value >= 90) return "#52c41a"; // Green for high success
+      if (d.value >= 70) return "#faad14"; // Yellow for medium
+      return "#ff4d4f"; // Red for low
+    });
+
+    return {
+      title: {
+        text: "Benchmark Success Rate",
+        subtext: "Higher is better",
+        left: "center",
+        top: 0,
+      },
+      tooltip: {
+        trigger: "axis",
+        axisPointer: { type: "shadow" },
+        formatter: (params: { name: string; value: number }[]) => {
+          const p = params[0];
+          return `${p.name}: ${Math.round(p.value)}%`;
+        },
+      },
+      grid: {
+        left: "3%",
+        right: "4%",
+        bottom: "3%",
+        top: 80,
+        containLabel: true,
+      },
+      xAxis: {
+        type: "category",
+        data: vpnNames,
+        axisLabel: { rotate: 45, interval: 0 },
+      },
+      yAxis: {
+        type: "value",
+        name: "Success Rate (%)",
+        nameGap: 40,
+        min: 0,
+        max: 100,
+      },
+      series: [
+        {
+          type: "bar",
+          data: data.map((d, i) => ({
+            value: d.value,
+            itemStyle: { color: colors[i] },
+          })),
+          label: {
+            show: true,
+            position: "top",
+            formatter: (params: { value: number }) => `${Math.round(params.value)}%`,
+          },
+        },
+      ],
+    };
+  };
+
+  return (
+    <div>
+      <Echart option={option()} height={props.height ?? 400} />
+    </div>
+  );
+};
+
+export const FailureCountComparisonChart = (props: {
+  data: VpnComparisonResultMap<BenchmarkStatsData>;
+  height?: number;
+  allVpnNames?: string[];
+}) => {
+  const chartData = () => {
+    const vpnNames = props.allVpnNames ?? Object.keys(props.data);
+    const successData: number[] = [];
+    const failedData: number[] = [];
+
+    vpnNames.forEach((vpn) => {
+      const entry = props.data[vpn];
+      if (entry?.status === "success") {
+        successData.push(entry.data.successful_tests);
+        failedData.push(entry.data.failed_tests);
+      } else {
+        successData.push(0);
+        failedData.push(0);
+      }
+    });
+
+    return { vpnNames, successData, failedData };
+  };
+
+  const option = () => {
+    const data = chartData();
+    return {
+      title: {
+        text: "Test Results by VPN",
+        subtext: "More successes is better",
+        left: "center",
+      },
+      tooltip: {
+        trigger: "axis",
+        axisPointer: { type: "shadow" },
+      },
+      legend: {
+        top: 45,
+        data: ["Successful", "Failed"],
+      },
+      grid: {
+        left: "3%",
+        right: "4%",
+        bottom: "3%",
+        top: 80,
+        containLabel: true,
+      },
+      xAxis: {
+        type: "category",
+        data: data.vpnNames,
+        axisLabel: { rotate: 45, interval: 0 },
+      },
+      yAxis: {
+        type: "value",
+        name: "Number of Tests",
+      },
+      series: [
+        {
+          name: "Successful",
+          type: "bar",
+          stack: "tests",
+          data: data.successData,
+          itemStyle: { color: "#52c41a" },
+        },
+        {
+          name: "Failed",
+          type: "bar",
+          stack: "tests",
+          data: data.failedData,
+          itemStyle: { color: "#ff4d4f" },
+        },
+      ],
+    };
+  };
+
+  return (
+    <div>
+      <Echart option={option()} height={props.height ?? 400} />
+    </div>
+  );
+};
+
+export const RetryComparisonChart = (props: {
+  data: VpnComparisonResultMap<BenchmarkStatsData>;
+  height?: number;
+  allVpnNames?: string[];
+}) => {
+  // Create a grouped bar chart showing retries per benchmark type
+  const chartData = () => {
+    const benchmarkTypes = [
+      { name: "TCP", key: "tcp_retries" as const },
+      { name: "UDP", key: "udp_retries" as const },
+      { name: "Parallel TCP", key: "parallel_tcp_retries" as const },
+      { name: "Ping", key: "ping_retries" as const },
+      { name: "QUIC", key: "qperf_retries" as const },
+      { name: "Video", key: "video_retries" as const },
+      { name: "Nix Cache", key: "nix_cache_retries" as const },
+    ];
+
+    const vpnNames = props.allVpnNames ?? Object.keys(props.data);
+
+    // Sum retries across all VPNs for each benchmark type
+    const retryData = benchmarkTypes.map((bt) => {
+      let totalRetries = 0;
+      vpnNames.forEach((vpn) => {
+        const entry = props.data[vpn];
+        if (entry?.status === "success") {
+          totalRetries += entry.data[bt.key] ?? 0;
+        }
+      });
+      return { name: bt.name, retries: totalRetries };
+    });
+
+    // Sort by retries descending
+    retryData.sort((a, b) => b.retries - a.retries);
+
+    return retryData;
+  };
+
+  const option = () => {
+    const data = chartData();
+    const totalRetries = data.reduce((sum, d) => sum + d.retries, 0);
+
+    return {
+      title: {
+        text: "Test Retries by Benchmark Type",
+        subtext: `Lower is better (Total: ${totalRetries} retries)`,
+        left: "center",
+      },
+      tooltip: {
+        trigger: "axis",
+        axisPointer: { type: "shadow" },
+        formatter: (params: { name: string; value: number }[]) => {
+          const p = params[0];
+          return `${p.name}: ${p.value} retries`;
+        },
+      },
+      grid: {
+        left: "3%",
+        right: "4%",
+        bottom: "3%",
+        top: 80,
+        containLabel: true,
+      },
+      xAxis: {
+        type: "category",
+        data: data.map((d) => d.name),
+        axisLabel: { rotate: 45, interval: 0 },
+      },
+      yAxis: {
+        type: "value",
+        name: "Number of Retries",
+        minInterval: 1,
+      },
+      series: [
+        {
+          type: "bar",
+          data: data.map((d) => ({
+            value: d.retries,
+            itemStyle: {
+              color: d.retries === 0 ? "#52c41a" : d.retries <= 2 ? "#faad14" : "#ff4d4f",
+            },
+          })),
+          label: {
+            show: true,
+            position: "top",
+            formatter: (params: { value: number }) => (params.value > 0 ? `${params.value}` : ""),
+          },
+        },
+      ],
+    };
+  };
+
+  return (
+    <div>
+      <Echart option={option()} height={props.height ?? 400} />
+    </div>
+  );
+};
+
+export const BenchmarkStatsSection = (props: {
+  data: VpnComparisonResultMap<BenchmarkStatsData>;
+  allVpnNames?: string[];
+}) => {
+  return (
+    <div
+      style={{
+        display: "flex",
+        "flex-direction": "column",
+        gap: "20px",
+      }}
+    >
+      <SuccessRateComparisonChart
+        data={props.data}
+        allVpnNames={props.allVpnNames}
+      />
+      <TestDurationComparisonChart
+        data={props.data}
+        allVpnNames={props.allVpnNames}
+      />
+      <RetryComparisonChart
+        data={props.data}
+        allVpnNames={props.allVpnNames}
+      />
+    </div>
+  );
+};
+
+// --- Time Breakdown Pie Chart ---
+
+export const TimeBreakdownPieChart = (props: {
+  data: TimeBreakdownData;
+  height?: number;
+}) => {
+  const chartData = () => {
+    const d = props.data;
+    return [
+      {
+        name: "VPN Installation",
+        value: d.vpn_installation_seconds ?? 0,
+        color: "#1890ff",
+      },
+      {
+        name: "TC Stabilization",
+        value: d.tc_stabilization_seconds ?? 0,
+        color: "#722ed1",
+      },
+      {
+        name: "Test Execution",
+        value: d.test_execution_seconds ?? 0,
+        color: "#52c41a",
+      },
+      {
+        name: "VPN Restarts",
+        value: d.vpn_restart_seconds ?? 0,
+        color: "#eb2f96",
+      },
+      {
+        name: "Connectivity Waits",
+        value: d.connectivity_wait_seconds ?? 0,
+        color: "#fa8c16",
+      },
+      {
+        name: "Other Overhead",
+        value: d.other_overhead_seconds ?? 0,
+        color: "#8c8c8c",
+      },
+    ].filter((item) => item.value > 0 && !isNaN(item.value));
+  };
+
+  const formatTime = (seconds: number) => {
+    if (!seconds || isNaN(seconds)) return "0m";
+    const hours = Math.floor(seconds / 3600);
+    const mins = Math.floor((seconds % 3600) / 60);
+    if (hours > 0) return `${hours}h ${mins}m`;
+    return `${mins}m`;
+  };
+
+  // Don't render if no valid data
+  const hasValidData = () => chartData().length > 0;
+
+  const option = () => ({
+    title: {
+      text: "Total Time Breakdown",
+      subtext: `Total: ${formatTime(props.data.total_seconds)}`,
+      left: "center",
+      top: 0,
+    },
+    tooltip: {
+      trigger: "item",
+      formatter: (params: { name: string; value: number; percent: number }) =>
+        `${params.name}: ${formatTime(params.value)} (${params.percent.toFixed(1)}%)`,
+    },
+    legend: {
+      orient: "vertical",
+      left: "left",
+      top: "middle",
+    },
+    series: [
+      {
+        type: "pie",
+        radius: ["35%", "60%"],
+        center: ["55%", "55%"],
+        avoidLabelOverlap: true,
+        itemStyle: { borderRadius: 4, borderColor: "#fff", borderWidth: 2 },
+        label: {
+          show: true,
+          formatter: (params: { name: string; percent: number }) =>
+            `${params.name}\n${params.percent.toFixed(1)}%`,
+        },
+        data: chartData().map((d) => ({
+          name: d.name,
+          value: d.value,
+          itemStyle: { color: d.color },
+        })),
+      },
+    ],
+  });
+
+  return (
+    <Show when={hasValidData()} fallback={null}>
+      <Echart option={option()} height={props.height ?? 400} />
+    </Show>
   );
 };

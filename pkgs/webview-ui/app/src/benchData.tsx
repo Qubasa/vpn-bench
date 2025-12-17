@@ -288,6 +288,47 @@ export interface ParallelTcpComparisonData {
   duration_seconds: MetricStats;
 }
 
+export interface TimingComparisonData {
+  total_duration_seconds: MetricStats;
+  vpn_installation_seconds: MetricStats;
+  benchmarking_seconds: MetricStats;
+}
+
+export interface BenchmarkStatsData {
+  // Per-test durations in seconds
+  tcp_test_duration_seconds: MetricStats;
+  udp_test_duration_seconds: MetricStats;
+  parallel_tcp_test_duration_seconds: MetricStats;
+  ping_test_duration_seconds: MetricStats;
+  qperf_test_duration_seconds: MetricStats;
+  video_test_duration_seconds: MetricStats;
+  nix_cache_test_duration_seconds: MetricStats;
+  // Per-test retry counts (test_attempts - 1, summed across machines)
+  tcp_retries: number;
+  udp_retries: number;
+  parallel_tcp_retries: number;
+  ping_retries: number;
+  qperf_retries: number;
+  video_retries: number;
+  nix_cache_retries: number;
+  // Failure statistics
+  total_tests: number;
+  successful_tests: number;
+  failed_tests: number;
+  success_rate_percent: number;
+}
+
+// Aggregated time breakdown for pie chart visualization
+export interface TimeBreakdownData {
+  vpn_installation_seconds: number;
+  tc_stabilization_seconds: number;
+  test_execution_seconds: number;
+  vpn_restart_seconds: number;
+  connectivity_wait_seconds: number;
+  other_overhead_seconds: number;
+  total_seconds: number;
+}
+
 // Maps VPN name to its comparison data
 export type VpnComparisonMap<T> = Record<string, T>;
 
@@ -319,6 +360,10 @@ export interface ComparisonRunData {
   udpIperf?: VpnComparisonResultMap<UdpIperfComparisonData>;
   nixCache?: VpnComparisonResultMap<NixCacheComparisonData>;
   parallelTcp?: VpnComparisonResultMap<ParallelTcpComparisonData>;
+  timingComparison?: VpnComparisonResultMap<TimingComparisonData>;
+  benchmarkStats?: VpnComparisonResultMap<BenchmarkStatsData>;
+  // Aggregated time breakdown for pie chart
+  timeBreakdown?: { status: string; data: TimeBreakdownData };
   // Connection timings are stored as VPN -> machine -> time string
   connectionTimings?: ConnectionTimings;
   rebootConnectionTimings?: ConnectionTimings;
@@ -328,6 +373,14 @@ export interface ComparisonRunData {
 
 // Maps run alias (TC profile) to comparison data
 export type ComparisonData = Record<string, ComparisonRunData>;
+
+// --- Timing Breakdown Data for Total Runtime Display ---
+
+// Maps VPN name to its timing breakdown for a specific profile
+export type VpnTimingMap = Record<string, TimingBreakdown>;
+
+// Maps run alias (TC profile) to VPN timing data
+export type ProfileTimingData = Record<string, VpnTimingMap>;
 
 // --- Data Generation Logic ---
 
@@ -775,6 +828,17 @@ export function generateComparisonData(): ComparisonData {
     } else if (fileName === "parallel_tcp_iperf3.json") {
       result[runAlias].parallelTcp =
         moduleData.data as VpnComparisonResultMap<ParallelTcpComparisonData>;
+    } else if (fileName === "timing_comparison.json") {
+      result[runAlias].timingComparison =
+        moduleData.data as VpnComparisonResultMap<TimingComparisonData>;
+    } else if (fileName === "benchmark_stats.json") {
+      result[runAlias].benchmarkStats =
+        moduleData.data as VpnComparisonResultMap<BenchmarkStatsData>;
+    } else if (fileName === "time_breakdown.json") {
+      result[runAlias].timeBreakdown = moduleData as {
+        status: string;
+        data: TimeBreakdownData;
+      };
     } else if (fileName === "connection_timings.json") {
       result[runAlias].connectionTimings = moduleData.data as ConnectionTimings;
     } else if (fileName === "reboot_connection_timings.json") {
@@ -788,3 +852,84 @@ export function generateComparisonData(): ComparisonData {
 
 export const comparisonData = generateComparisonData();
 console.log("Comparison data:", comparisonData);
+
+// --- Timing Breakdown Loading ---
+
+const timingFiles = import.meta.glob("@/bench/**/timing_breakdown.json", {
+  eager: true,
+});
+
+export function generateTimingData(): ProfileTimingData {
+  const result: ProfileTimingData = {};
+
+  Object.entries(timingFiles).forEach(([path, rawModule]) => {
+    // Path format: @/bench/<VPN>/<run_alias>/timing_breakdown.json
+    // or @/bench/<VPN>/timing_breakdown.json (baseline)
+    const pathParts = path.split("/");
+
+    if (pathParts.length < 4) {
+      return;
+    }
+
+    // Skip General folder
+    if (path.includes("/General/")) {
+      return;
+    }
+
+    const fileName = pathParts[pathParts.length - 1];
+    if (fileName !== "timing_breakdown.json") {
+      return;
+    }
+
+    // Determine if this is a profile-specific timing or a VPN-level timing
+    let vpnName: string;
+    let runAlias: string;
+
+    if (pathParts.length >= 5) {
+      // Profile-specific: @/bench/<VPN>/<run_alias>/timing_breakdown.json
+      vpnName = pathParts[pathParts.length - 3];
+      runAlias = pathParts[pathParts.length - 2];
+    } else {
+      // VPN-level (baseline): @/bench/<VPN>/timing_breakdown.json
+      vpnName = pathParts[pathParts.length - 2];
+      runAlias = "baseline";
+    }
+
+    if (
+      !rawModule ||
+      typeof rawModule !== "object" ||
+      !("total_duration_seconds" in rawModule)
+    ) {
+      return;
+    }
+
+    const timingData = rawModule as TimingBreakdown;
+
+    // Initialize run alias if needed
+    if (!result[runAlias]) {
+      result[runAlias] = {};
+    }
+
+    result[runAlias][vpnName] = timingData;
+  });
+
+  return result;
+}
+
+export const timingData = generateTimingData();
+console.log("Timing data:", timingData);
+
+// Helper function to calculate total runtime for a profile
+export function getTotalRuntimeForProfile(
+  timingMap: VpnTimingMap | undefined,
+): number | null {
+  if (!timingMap || Object.keys(timingMap).length === 0) {
+    return null;
+  }
+
+  let total = 0;
+  for (const vpnTiming of Object.values(timingMap)) {
+    total += vpnTiming.total_duration_seconds;
+  }
+  return total;
+}

@@ -104,6 +104,52 @@ class ParallelTcpComparisonDict(TypedDict):
     duration_seconds: MetricStatsDict  # Test duration in seconds
 
 
+class TimingComparisonDict(TypedDict):
+    """Comparison data for benchmark timing across VPNs."""
+
+    total_duration_seconds: MetricStatsDict
+    vpn_installation_seconds: MetricStatsDict
+    benchmarking_seconds: MetricStatsDict
+
+
+class BenchmarkStatsDict(TypedDict):
+    """Statistics about benchmark tests per VPN."""
+
+    # Per-test durations in seconds
+    tcp_test_duration_seconds: MetricStatsDict
+    udp_test_duration_seconds: MetricStatsDict
+    parallel_tcp_test_duration_seconds: MetricStatsDict
+    ping_test_duration_seconds: MetricStatsDict
+    qperf_test_duration_seconds: MetricStatsDict
+    video_test_duration_seconds: MetricStatsDict
+    nix_cache_test_duration_seconds: MetricStatsDict
+    # Per-test retry counts (test_attempts - 1, summed across machines)
+    tcp_retries: int
+    udp_retries: int
+    parallel_tcp_retries: int
+    ping_retries: int
+    qperf_retries: int
+    video_retries: int
+    nix_cache_retries: int
+    # Failure statistics
+    total_tests: int
+    successful_tests: int
+    failed_tests: int
+    success_rate_percent: float
+
+
+class TimeBreakdownDict(TypedDict):
+    """Aggregated time breakdown for pie chart visualization."""
+
+    vpn_installation_seconds: float
+    tc_stabilization_seconds: float
+    test_execution_seconds: float  # Sum of all test durations
+    vpn_restart_seconds: float  # Sum of vpn_restart_duration_seconds from test metadata
+    connectivity_wait_seconds: float  # Sum of connectivity_wait_duration_seconds
+    other_overhead_seconds: float  # Remaining unexplained time
+    total_seconds: float
+
+
 # --- Helper Functions ---
 
 
@@ -755,6 +801,375 @@ def get_vpn_error_for_run_level_test(
     return None
 
 
+def aggregate_timing_data(
+    bench_dir: Path, vpn_name: str, run_alias: str
+) -> TimingComparisonDict | None:
+    """Load timing_breakdown.json and extract key timing metrics."""
+    vpn_dir = bench_dir / vpn_name
+
+    # Try run_alias specific path first, then VPN root (for baseline)
+    timing_file = vpn_dir / run_alias / "timing_breakdown.json"
+    if not timing_file.exists():
+        timing_file = vpn_dir / "timing_breakdown.json"
+
+    if not timing_file.exists():
+        return None
+
+    try:
+        with timing_file.open() as f:
+            data = json.load(f)
+    except (json.JSONDecodeError, OSError) as e:
+        log.warning(f"Failed to load timing data from {timing_file}: {e}")
+        return None
+
+    # Extract phase durations
+    total = data.get("total_duration_seconds", 0)
+    installation = 0.0
+    benchmarking = 0.0
+
+    for phase in data.get("phases", []):
+        phase_name = phase.get("phase", "")
+        if phase_name == "vpn_installation":
+            installation = phase.get("duration_seconds", 0)
+        elif phase_name == "benchmarking":
+            benchmarking = phase.get("duration_seconds", 0)
+
+    # Create single-value MetricStatsDict (one value per VPN, no cross-machine aggregation)
+    def single_metric(value: float) -> MetricStatsDict:
+        return {
+            "min": value,
+            "average": value,
+            "max": value,
+            "percentiles": {"p25": value, "p50": value, "p75": value},
+        }
+
+    return {
+        "total_duration_seconds": single_metric(total),
+        "vpn_installation_seconds": single_metric(installation),
+        "benchmarking_seconds": single_metric(benchmarking),
+    }
+
+
+def extract_tc_stabilization_time(
+    bench_dir: Path, vpn_name: str, run_alias: str
+) -> float:
+    """Extract tc_stabilization duration from timing_breakdown.json."""
+    vpn_dir = bench_dir / vpn_name
+    timing_file = vpn_dir / run_alias / "timing_breakdown.json"
+    if not timing_file.exists():
+        timing_file = vpn_dir / "timing_breakdown.json"
+    if not timing_file.exists():
+        return 0.0
+
+    try:
+        with timing_file.open() as f:
+            data = json.load(f)
+        for phase in data.get("phases", []):
+            if phase.get("phase") == "benchmarking":
+                for op in phase.get("operations", []):
+                    if op.get("name") == "tc_stabilization":
+                        return op.get("duration_seconds", 0.0)
+    except (json.JSONDecodeError, OSError):
+        pass
+    return 0.0
+
+
+def extract_test_metadata_timings(
+    bench_dir: Path, vpn_name: str, run_alias: str
+) -> tuple[float, float, float]:
+    """Extract timing sums from all test metadata.
+
+    Returns (vpn_restart_sum, connectivity_wait_sum, test_duration_sum)
+    """
+    vpn_run_dir = bench_dir / vpn_name / run_alias
+    if not vpn_run_dir.exists():
+        return 0.0, 0.0, 0.0
+
+    total_restart = 0.0
+    total_wait = 0.0
+    total_duration = 0.0
+    skip_files = {
+        "tc_settings.json",
+        "timing_breakdown.json",
+        "connection_timings.json",
+        "reboot_connection_timings.json",
+    }
+
+    # Scan machine directories for test JSON files
+    for machine_dir in vpn_run_dir.iterdir():
+        if not machine_dir.is_dir():
+            continue
+        for test_file in machine_dir.glob("*.json"):
+            if test_file.name in skip_files:
+                continue
+            try:
+                with test_file.open() as f:
+                    data = json.load(f)
+                meta = data.get("meta", {})
+                total_restart += meta.get("vpn_restart_duration_seconds", 0.0)
+                total_wait += meta.get("connectivity_wait_duration_seconds", 0.0)
+                total_duration += meta.get("duration_seconds", 0.0)
+            except (json.JSONDecodeError, OSError):
+                pass
+
+    # Also check run-level files (parallel_tcp_iperf3.json)
+    for test_file in vpn_run_dir.glob("*.json"):
+        if test_file.name in skip_files:
+            continue
+        try:
+            with test_file.open() as f:
+                data = json.load(f)
+            meta = data.get("meta", {})
+            total_restart += meta.get("vpn_restart_duration_seconds", 0.0)
+            total_wait += meta.get("connectivity_wait_duration_seconds", 0.0)
+            total_duration += meta.get("duration_seconds", 0.0)
+        except (json.JSONDecodeError, OSError):
+            pass
+
+    return total_restart, total_wait, total_duration
+
+
+def aggregate_time_breakdown(
+    bench_dir: Path,
+    vpn_dirs: list[Path],
+    run_alias: str,
+    benchmark_stats: dict[str, Any],
+) -> TimeBreakdownDict:
+    """Aggregate time breakdown across all VPNs for pie chart."""
+    total_installation = 0.0
+    total_tc_stab = 0.0
+    total_test_execution = 0.0
+    total_vpn_restart = 0.0
+    total_connectivity_wait = 0.0
+    total_benchmarking = 0.0
+    total_duration = 0.0
+
+    for vpn_dir in vpn_dirs:
+        vpn_name = vpn_dir.name
+
+        # Get timing data
+        timing_data = aggregate_timing_data(bench_dir, vpn_name, run_alias)
+        if timing_data:
+            total_installation += timing_data["vpn_installation_seconds"]["average"]
+            total_benchmarking += timing_data["benchmarking_seconds"]["average"]
+            total_duration += timing_data["total_duration_seconds"]["average"]
+
+        # Get tc_stabilization
+        total_tc_stab += extract_tc_stabilization_time(bench_dir, vpn_name, run_alias)
+
+        # Get VPN restart, connectivity wait, and test duration sums from metadata
+        # Note: test_time is the SUM of all test durations (not average like benchmark_stats)
+        restart_time, wait_time, test_time = extract_test_metadata_timings(
+            bench_dir, vpn_name, run_alias
+        )
+        total_vpn_restart += restart_time
+        total_connectivity_wait += wait_time
+        total_test_execution += test_time
+
+    # Calculate remaining overhead (benchmarking minus all accounted time)
+    accounted_time = (
+        total_tc_stab
+        + total_test_execution
+        + total_vpn_restart
+        + total_connectivity_wait
+    )
+    other_overhead = max(0.0, total_benchmarking - accounted_time)
+
+    return {
+        "vpn_installation_seconds": total_installation,
+        "tc_stabilization_seconds": total_tc_stab,
+        "test_execution_seconds": total_test_execution,
+        "vpn_restart_seconds": total_vpn_restart,
+        "connectivity_wait_seconds": total_connectivity_wait,
+        "other_overhead_seconds": other_overhead,
+        "total_seconds": total_duration,
+    }
+
+
+def aggregate_benchmark_stats(
+    bench_dir: Path,
+    vpn_name: str,
+    run_alias: str,
+    tcp_comparison: dict[str, Any],
+    udp_comparison: dict[str, Any],
+    ping_comparison: dict[str, Any],
+    qperf_comparison: dict[str, Any],
+    video_comparison: dict[str, Any],
+    nix_cache_comparison: dict[str, Any],
+    parallel_tcp_comparison: dict[str, Any],
+) -> BenchmarkStatsDict | None:
+    """Aggregate benchmark statistics for a VPN including test durations and failure rates."""
+
+    def zero_metric() -> MetricStatsDict:
+        return {
+            "min": 0.0,
+            "average": 0.0,
+            "max": 0.0,
+            "percentiles": {"p25": 0.0, "p50": 0.0, "p75": 0.0},
+        }
+
+    def extract_duration(comparison: dict[str, Any], vpn: str) -> MetricStatsDict:
+        """Extract duration from comparison data if available."""
+        entry = comparison.get(vpn, {})
+        if entry.get("status") == "success" and "data" in entry:
+            duration = entry["data"].get("duration_seconds")
+            if duration:
+                return duration
+        return zero_metric()
+
+    def extract_nix_cache_duration(comparison: dict[str, Any], vpn: str) -> MetricStatsDict:
+        """Extract Nix cache duration (uses mean_seconds field)."""
+        entry = comparison.get(vpn, {})
+        if entry.get("status") == "success" and "data" in entry:
+            # Nix cache uses mean_seconds for the fetch duration
+            mean_seconds = entry["data"].get("mean_seconds")
+            if mean_seconds:
+                return mean_seconds
+        return zero_metric()
+
+    def extract_duration_from_raw_files(test_filename: str) -> MetricStatsDict:
+        """Extract duration from raw test files' meta.duration_seconds field."""
+        vpn_dir = bench_dir / vpn_name / run_alias
+        if not vpn_dir.exists():
+            return zero_metric()
+
+        durations: list[float] = []
+        for machine_dir in sorted(vpn_dir.iterdir()):
+            if not machine_dir.is_dir():
+                continue
+            test_file = machine_dir / test_filename
+            if not test_file.exists():
+                continue
+            try:
+                with test_file.open("r") as f:
+                    data = json.load(f)
+                    # Extract duration regardless of success/failure status
+                    # Duration is tracked even for failed tests
+                    meta = data.get("meta", {})
+                    duration = meta.get("duration_seconds")
+                    if duration is not None:
+                        durations.append(float(duration))
+            except (json.JSONDecodeError, OSError, ValueError):
+                continue
+
+        if not durations:
+            return zero_metric()
+
+        # Aggregate durations into MetricStatsDict
+        durations.sort()
+        avg = sum(durations) / len(durations)
+        n = len(durations)
+
+        def percentile(data: list[float], p: float) -> float:
+            idx = int(p * (n - 1))
+            return data[idx] if n > 0 else 0.0
+
+        return {
+            "min": min(durations),
+            "average": avg,
+            "max": max(durations),
+            "percentiles": {
+                "p25": percentile(durations, 0.25),
+                "p50": percentile(durations, 0.50),
+                "p75": percentile(durations, 0.75),
+            },
+        }
+
+    def extract_retries_from_raw_files(test_filename: str) -> int:
+        """Extract total retries (test_attempts - 1) from raw test files, summed across machines."""
+        vpn_dir = bench_dir / vpn_name / run_alias
+        if not vpn_dir.exists():
+            return 0
+
+        total_retries = 0
+        for machine_dir in sorted(vpn_dir.iterdir()):
+            if not machine_dir.is_dir():
+                continue
+            test_file = machine_dir / test_filename
+            if not test_file.exists():
+                continue
+            try:
+                with test_file.open("r") as f:
+                    data = json.load(f)
+                    meta = data.get("meta", {})
+                    test_attempts = meta.get("test_attempts", 1)
+                    # Retries = attempts - 1 (first attempt is not a retry)
+                    if test_attempts > 1:
+                        total_retries += test_attempts - 1
+            except (json.JSONDecodeError, OSError, ValueError):
+                continue
+
+        return total_retries
+
+    # Extract duration from raw files for all tests
+    # This works for both successful and failed tests since meta.duration_seconds
+    # is recorded regardless of test outcome
+    tcp_duration = extract_duration_from_raw_files("tcp_iperf3.json")
+    udp_duration = extract_duration_from_raw_files("udp_iperf3.json")
+    parallel_tcp_duration = extract_duration_from_raw_files("parallel_tcp_iperf3.json")
+    ping_duration = extract_duration_from_raw_files("ping.json")
+    qperf_duration = extract_duration_from_raw_files("qperf.json")
+    video_duration = extract_duration_from_raw_files("rist_stream.json")
+    nix_cache_duration = extract_duration_from_raw_files("nix_cache.json")
+
+    # Extract retry counts from raw files
+    tcp_retries = extract_retries_from_raw_files("tcp_iperf3.json")
+    udp_retries = extract_retries_from_raw_files("udp_iperf3.json")
+    parallel_tcp_retries = extract_retries_from_raw_files("parallel_tcp_iperf3.json")
+    ping_retries = extract_retries_from_raw_files("ping.json")
+    qperf_retries = extract_retries_from_raw_files("qperf.json")
+    video_retries = extract_retries_from_raw_files("rist_stream.json")
+    nix_cache_retries = extract_retries_from_raw_files("nix_cache.json")
+
+    # Count successes and failures across all test types
+    test_comparisons = [
+        ("tcp", tcp_comparison),
+        ("udp", udp_comparison),
+        ("ping", ping_comparison),
+        ("qperf", qperf_comparison),
+        ("video", video_comparison),
+        ("nix_cache", nix_cache_comparison),
+        ("parallel_tcp", parallel_tcp_comparison),
+    ]
+
+    total_tests = 0
+    successful_tests = 0
+    failed_tests = 0
+
+    for _test_name, comparison in test_comparisons:
+        if vpn_name in comparison:
+            total_tests += 1
+            entry = comparison[vpn_name]
+            if entry.get("status") == "success":
+                successful_tests += 1
+            else:
+                failed_tests += 1
+
+    # Calculate success rate
+    success_rate = (successful_tests / total_tests * 100) if total_tests > 0 else 0.0
+
+    return {
+        "tcp_test_duration_seconds": tcp_duration,
+        "udp_test_duration_seconds": udp_duration,
+        "parallel_tcp_test_duration_seconds": parallel_tcp_duration,
+        "ping_test_duration_seconds": ping_duration,
+        "qperf_test_duration_seconds": qperf_duration,
+        "video_test_duration_seconds": video_duration,
+        "nix_cache_test_duration_seconds": nix_cache_duration,
+        "tcp_retries": tcp_retries,
+        "udp_retries": udp_retries,
+        "parallel_tcp_retries": parallel_tcp_retries,
+        "ping_retries": ping_retries,
+        "qperf_retries": qperf_retries,
+        "video_retries": video_retries,
+        "nix_cache_retries": nix_cache_retries,
+        "total_tests": total_tests,
+        "successful_tests": successful_tests,
+        "failed_tests": failed_tests,
+        "success_rate_percent": success_rate,
+    }
+
+
 # --- Main Generation Function ---
 
 
@@ -1025,5 +1440,60 @@ def generate_comparison_data(bench_dir: Path) -> None:
             log.info(
                 f"  Saved Parallel TCP comparison ({success_count} success, {error_count} errors)"
             )
+
+        # Aggregate timing data
+        timing_comparison: dict[str, Any] = {}
+        for vpn_dir in vpn_dirs:
+            timing_data = aggregate_timing_data(bench_dir, vpn_dir.name, run_alias)
+            if timing_data:
+                timing_comparison[vpn_dir.name] = {
+                    "status": "success",
+                    "data": timing_data,
+                }
+
+        if timing_comparison:
+            save_bench_report(
+                run_comparison_dir, timing_comparison, "timing_comparison.json"
+            )
+            log.info(f"  Saved timing comparison ({len(timing_comparison)} VPNs)")
+
+        # Aggregate benchmark stats (test durations and failure rates)
+        benchmark_stats: dict[str, Any] = {}
+        for vpn_dir in vpn_dirs:
+            stats = aggregate_benchmark_stats(
+                bench_dir,
+                vpn_dir.name,
+                run_alias,
+                tcp_comparison,
+                udp_comparison,
+                ping_comparison,
+                qperf_comparison,
+                rist_comparison,
+                nix_cache_comparison,
+                parallel_tcp_comparison,
+            )
+            if stats:
+                benchmark_stats[vpn_dir.name] = {
+                    "status": "success",
+                    "data": stats,
+                }
+
+        if benchmark_stats:
+            save_bench_report(
+                run_comparison_dir, benchmark_stats, "benchmark_stats.json"
+            )
+            log.info(f"  Saved benchmark stats ({len(benchmark_stats)} VPNs)")
+
+            # Generate time breakdown for pie chart
+            time_breakdown = aggregate_time_breakdown(
+                bench_dir, vpn_dirs, run_alias, benchmark_stats
+            )
+            # Pass the dict directly - save_bench_report wraps it with {"status": "success", "data": ...}
+            save_bench_report(
+                run_comparison_dir,
+                time_breakdown,
+                "time_breakdown.json",
+            )
+            log.info("  Saved time breakdown")
 
     log.info("Comparison data generation complete")

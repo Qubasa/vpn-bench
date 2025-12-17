@@ -1,6 +1,11 @@
 import { Echart } from "../Echarts";
 import { Show, createSignal, createEffect, createMemo, For } from "solid-js";
-import { ComparisonData, TCSettingsData } from "@/src/benchData";
+import {
+  ComparisonData,
+  TCSettingsData,
+  timingData,
+  getTotalRuntimeForProfile,
+} from "@/src/benchData";
 import { Tabs } from "@kobalte/core/tabs";
 import {
   TcpComparisonSection,
@@ -10,6 +15,8 @@ import {
   VideoStreamingComparisonSection,
   NixCacheComparisonSection,
   ParallelTcpComparisonSection,
+  BenchmarkStatsSection,
+  TimeBreakdownPieChart,
 } from "../ComparisonCharts";
 import { useSearchParams } from "@solidjs/router";
 import "../VpnBenchDashboard/style.css";
@@ -406,6 +413,99 @@ const TCSettingsDisplay = (props: {
   );
 };
 
+// Total Runtime Display Component
+const TotalRuntimeDisplay = (props: {
+  totalSeconds: number | null;
+  vpnCount: number;
+}) => {
+  if (props.totalSeconds === null) return null;
+
+  // Format duration nicely
+  const formatDuration = (seconds: number) => {
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    const secs = Math.floor(seconds % 60);
+
+    if (hours > 0) {
+      return `${hours}h ${minutes}m ${secs}s`;
+    } else if (minutes > 0) {
+      return `${minutes}m ${secs}s`;
+    } else {
+      return `${secs}s`;
+    }
+  };
+
+  return (
+    <div
+      style={{
+        "margin-bottom": "1.5rem",
+        "border-radius": "0.5rem",
+        border: "2px solid #d1fae5",
+        "background-color": "#ecfdf5",
+        padding: "1rem",
+      }}
+    >
+      <h3
+        style={{
+          "margin-bottom": "0.5rem",
+          "font-size": "1.125rem",
+          "font-weight": "600",
+          color: "#111827",
+        }}
+      >
+        Total Test Runtime
+      </h3>
+      <div
+        style={{
+          display: "flex",
+          gap: "2rem",
+          "align-items": "center",
+          "font-size": "0.875rem",
+        }}
+      >
+        <div
+          style={{
+            "border-radius": "0.25rem",
+            "background-color": "white",
+            padding: "0.5rem 1rem",
+          }}
+        >
+          <div style={{ "font-weight": "500", color: "#4b5563" }}>Duration</div>
+          <div
+            style={{
+              "font-size": "1.25rem",
+              "font-weight": "600",
+              color: "#059669",
+            }}
+          >
+            {formatDuration(props.totalSeconds)}
+          </div>
+        </div>
+        <div
+          style={{
+            "border-radius": "0.25rem",
+            "background-color": "white",
+            padding: "0.5rem 1rem",
+          }}
+        >
+          <div style={{ "font-weight": "500", color: "#4b5563" }}>
+            VPNs Tested
+          </div>
+          <div
+            style={{
+              "font-size": "1.25rem",
+              "font-weight": "600",
+              color: "#059669",
+            }}
+          >
+            {props.vpnCount}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 export const GeneralDashboard = (props: GeneralDashboardProps) => {
   // Get URL search params for state sync
   const [searchParams, setSearchParams] = useSearchParams();
@@ -448,6 +548,7 @@ export const GeneralDashboard = (props: GeneralDashboardProps) => {
     "video-comparison",
     "nix-cache-comparison",
     "parallel-tcp-comparison",
+    "benchmark-stats",
   ] as const;
 
   type ValidTab = (typeof validTabs)[number];
@@ -505,6 +606,12 @@ export const GeneralDashboard = (props: GeneralDashboardProps) => {
       {/* Display TC settings for current profile */}
       <TCSettingsDisplay tcSettings={currentProfileData()?.tcSettings} />
 
+      {/* Display total runtime for current profile */}
+      <TotalRuntimeDisplay
+        totalSeconds={getTotalRuntimeForProfile(timingData[selectedProfile()])}
+        vpnCount={Object.keys(timingData[selectedProfile()] ?? {}).length}
+      />
+
       {/* Benchmark Type Tabs */}
       <Tabs
         aria-label="VPN Comparison Dashboard"
@@ -526,7 +633,7 @@ export const GeneralDashboard = (props: GeneralDashboardProps) => {
             Ping Latency
           </Tabs.Trigger>
           <Tabs.Trigger class="tabs__trigger" value="qperf-comparison">
-            HTTP3 Performance
+            QUIC Performance
           </Tabs.Trigger>
           <Tabs.Trigger class="tabs__trigger" value="video-comparison">
             Video Streaming
@@ -536,6 +643,9 @@ export const GeneralDashboard = (props: GeneralDashboardProps) => {
           </Tabs.Trigger>
           <Tabs.Trigger class="tabs__trigger" value="parallel-tcp-comparison">
             Parallel TCP
+          </Tabs.Trigger>
+          <Tabs.Trigger class="tabs__trigger" value="benchmark-stats">
+            Test Results
           </Tabs.Trigger>
           <Tabs.Indicator class="tabs__indicator" />
         </Tabs.List>
@@ -663,6 +773,28 @@ export const GeneralDashboard = (props: GeneralDashboardProps) => {
                 allVpnNames={props.allVpnNames}
               />
             )}
+          </Show>
+        </Tabs.Content>
+
+        <Tabs.Content class="tabs__content" value="benchmark-stats">
+          <Show
+            when={currentProfileData()?.benchmarkStats}
+            fallback={<FallbackMessage message="No benchmark statistics available. Run the compare command to generate benchmark stats." />}
+          >
+            {(data) => (
+              <BenchmarkStatsSection
+                data={data()}
+                allVpnNames={props.allVpnNames}
+              />
+            )}
+          </Show>
+          <Show
+            when={currentProfileData()?.timeBreakdown?.data}
+            fallback={
+              <FallbackMessage message="No time breakdown data available. Re-run 'vpn-bench compare' to generate time breakdown." />
+            }
+          >
+            {(data) => <TimeBreakdownPieChart data={data()} />}
           </Show>
         </Tabs.Content>
       </Tabs>

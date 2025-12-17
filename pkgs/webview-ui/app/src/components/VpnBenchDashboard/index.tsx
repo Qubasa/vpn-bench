@@ -490,7 +490,7 @@ export const VpnDashboard = (props: VpnDashboardProps) => {
     tcp: props.tabLabels?.tcp || "TCP Performance",
     udp: props.tabLabels?.udp || "UDP Performance",
     parallelTcp: props.tabLabels?.parallelTcp || "Parallel TCP",
-    qperf: props.tabLabels?.qperf || "HTTP3 Performance",
+    qperf: props.tabLabels?.qperf || "QUIC Performance",
     nixCache: props.tabLabels?.nixCache || "Nix Cache",
     ping: props.tabLabels?.ping || "Ping Latency",
     ristStream: props.tabLabels?.ristStream || "Video Streaming",
@@ -822,7 +822,7 @@ export const VpnDashboard = (props: VpnDashboardProps) => {
                 <MixedReportMetadataDisplay mixedReports={mixedReports()} />
                 <ErrorDetailsPanel
                   mixedReports={mixedReports()}
-                  title="HTTP3 Performance Errors"
+                  title="QUIC Performance Errors"
                 />
                 <Show
                   when={successfulReports().length > 0}
@@ -841,7 +841,7 @@ export const VpnDashboard = (props: VpnDashboardProps) => {
                         }}
                       >
                         <p style={{ margin: 0 }}>
-                          All HTTP3 performance tests failed. See errors above.
+                          All QUIC performance tests failed. See errors above.
                         </p>
                       </div>
                     </Show>
