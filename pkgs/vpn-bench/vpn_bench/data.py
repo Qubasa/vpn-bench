@@ -44,15 +44,15 @@ class TrMachine(TypedDict):
 class VPN(Enum):
     Internal = "internal"
     Zerotier = "zerotier"
-    Mycelium = "mycelium"  #
-    Hyprspace = "hyprspace"  #
-    Yggdrasil = "yggdrasil"  #
-    VpnCloud = "vpncloud"  #
-    Wireguard = "wireguard"  #
-    Easytier = "easytier"  #
-    Nebula = "nebula"  #
-    Tinc = "tinc"  #
-    Headscale = "headscale"  #
+    Mycelium = "mycelium"
+    Hyprspace = "hyprspace"
+    Yggdrasil = "yggdrasil"
+    VpnCloud = "vpncloud"
+    Wireguard = "wireguard"
+    Easytier = "easytier"
+    Nebula = "nebula"
+    Tinc = "tinc"
+    Headscale = "headscale"
 
     @staticmethod
     def from_str(label: str) -> "VPN":
@@ -60,6 +60,46 @@ class VPN(Enum):
             return VPN(VPN._value2member_map_[label])
         msg = f"Unknown VPN: {label}"
         raise ValueError(msg)
+
+    def get_state_dirs(self) -> list[str]:
+        """Get the state directories for this VPN that need to be cleaned up.
+
+        Returns a list of paths that store persistent state for the VPN.
+        """
+        match self:
+            case VPN.Internal:
+                return []
+            case VPN.Zerotier:
+                return ["/var/lib/zerotier-one", "/etc/zerotier"]
+            case VPN.Mycelium:
+                return ["/var/lib/mycelium", "/var/lib/private/mycelium/"]
+            case VPN.Hyprspace:
+                return ["/var/lib/hyprspace"]
+            case VPN.Yggdrasil:
+                return ["/var/lib/yggdrasil"]
+            case VPN.VpnCloud:
+                return ["/var/lib/vpncloud"]
+            case VPN.Wireguard:
+                return []  # Wireguard uses kernel module, no persistent state dirs
+            case VPN.Easytier:
+                return ["/var/lib/easytier"]
+            case VPN.Nebula:
+                return ["/var/lib/nebula"]
+            case VPN.Tinc:
+                return ["/etc/tinc"]
+            case VPN.Headscale:
+                return ["/var/lib/headscale", "/var/lib/tailscale"]
+            case _:
+                msg = f"Missing state directories for VPN: {self}"
+                raise NotImplementedError(msg)
+
+    @staticmethod
+    def get_all_vpn_state_dirs() -> list[str]:
+        """Get all unique state directories for all VPN types."""
+        all_dirs: set[str] = set()
+        for vpn in VPN:
+            all_dirs.update(vpn.get_state_dirs())
+        return sorted(all_dirs)
 
 
 class TestType(Enum):

@@ -484,17 +484,15 @@ def install_vpn(
             deploy_machines(machines, build_host=build_host, ssh_key=config.ssh_keys[0])
 
         with timed_op("clean_state_dirs"):
-            state_dirs = [
+            # Benchmark-specific directories
+            benchmark_dirs = [
                 "/root/qperf",
                 "/var/lib/qperf/qperf",
-                "/etc/zerotier",
-                "/etc/tinc",
-                "/var/lib/zerotier-one",
-                "/var/lib/mycelium",
-                "/var/lib/private/mycelium/",
                 "/var/lib/connection-check",
             ]
-            delete_dirs(state_dirs, machines)
+            # VPN state directories (from VPN enum)
+            vpn_state_dirs = VPN.get_all_vpn_state_dirs()
+            delete_dirs(benchmark_dirs + vpn_state_dirs, machines)
 
     # Setup VPN configuration
     with timed_op(f"install_{vpn.value.lower()}_config"):

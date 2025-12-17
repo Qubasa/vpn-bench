@@ -1,6 +1,51 @@
 {
     "status": "success",
     "data": {
+        "Tinc": {
+            "status": "success",
+            "data": {
+                "total_bandwidth_mbps": {
+                    "min": 21.409,
+                    "average": 23.357566666666667,
+                    "max": 25.538999999999998,
+                    "percentiles": {
+                        "p25": 22.808583333333335,
+                        "p50": 23.369333333333334,
+                        "p75": 23.891583333333337
+                    }
+                },
+                "cpu_usage_percent": {
+                    "min": 0.0,
+                    "average": 3.5806944444444446,
+                    "max": 34.41,
+                    "percentiles": {
+                        "p25": 2.006666666666667,
+                        "p50": 2.973333333333333,
+                        "p75": 4.383333333333333
+                    }
+                },
+                "ttfb_ms": {
+                    "min": 32.0,
+                    "average": 90.20833333333333,
+                    "max": 228.0,
+                    "percentiles": {
+                        "p25": 62.25,
+                        "p50": 86.83333333333333,
+                        "p75": 111.83333333333333
+                    }
+                },
+                "conn_time_ms": {
+                    "min": 32.0,
+                    "average": 84.54166666666667,
+                    "max": 226.0,
+                    "percentiles": {
+                        "p25": 58.333333333333336,
+                        "p50": 78.5,
+                        "p75": 109.5
+                    }
+                }
+            }
+        },
         "Mycelium": {
             "status": "success",
             "data": {
@@ -45,6 +90,16 @@
                     }
                 }
             }
+        },
+        "Headscale": {
+            "status": "error",
+            "error_type": "ClanError",
+            "error": {
+                "description": "list index out of range",
+                "msg": "Unexpected general Exception occured",
+                "location": "NoneType: None\n"
+            },
+            "machine": "0_lom"
         },
         "Hyprspace": {
             "status": "success",
@@ -181,47 +236,57 @@
                 }
             }
         },
+        "Nebula": {
+            "status": "error",
+            "error_type": "ClanError",
+            "error": {
+                "description": "list index out of range",
+                "msg": "Unexpected general Exception occured",
+                "location": "NoneType: None\n"
+            },
+            "machine": "0_lom"
+        },
         "Wireguard": {
             "status": "success",
             "data": {
                 "total_bandwidth_mbps": {
                     "min": 21.629,
-                    "average": 23.237516666666664,
+                    "average": 23.197499999999998,
                     "max": 24.794999999999998,
                     "percentiles": {
-                        "p25": 22.5965,
-                        "p50": 23.14025,
-                        "p75": 23.7245
+                        "p25": 22.635166666666667,
+                        "p50": 23.14816666666667,
+                        "p75": 23.64633333333333
                     }
                 },
                 "cpu_usage_percent": {
                     "min": 0.0,
-                    "average": 5.293854166666667,
+                    "average": 5.122152777777778,
                     "max": 11.58,
                     "percentiles": {
-                        "p25": 3.615,
-                        "p50": 5.1899999999999995,
-                        "p75": 6.733750000000001
+                        "p25": 3.453333333333333,
+                        "p50": 5.1433333333333335,
+                        "p75": 6.5525
                     }
                 },
                 "ttfb_ms": {
                     "min": 27.0,
-                    "average": 95.5625,
+                    "average": 83.0,
                     "max": 236.0,
                     "percentiles": {
-                        "p25": 36.875,
-                        "p50": 91.25,
-                        "p75": 138.625
+                        "p25": 36.5,
+                        "p50": 76.0,
+                        "p75": 122.91666666666667
                     }
                 },
                 "conn_time_ms": {
                     "min": 14.0,
-                    "average": 84.5,
+                    "average": 72.75,
                     "max": 222.0,
                     "percentiles": {
-                        "p25": 27.875,
-                        "p50": 85.5,
-                        "p75": 119.875
+                        "p25": 27.666666666666668,
+                        "p50": 68.66666666666667,
+                        "p75": 108.0
                     }
                 }
             }
@@ -267,6 +332,51 @@
                         "p25": 70.08333333333333,
                         "p50": 217.16666666666666,
                         "p75": 389.3333333333333
+                    }
+                }
+            }
+        },
+        "Easytier": {
+            "status": "success",
+            "data": {
+                "total_bandwidth_mbps": {
+                    "min": 0.75468,
+                    "average": 4.736102833333334,
+                    "max": 21.915699999999994,
+                    "percentiles": {
+                        "p25": 2.201179166666667,
+                        "p50": 3.8811458333333335,
+                        "p75": 6.847187500000001
+                    }
+                },
+                "cpu_usage_percent": {
+                    "min": 0.0,
+                    "average": 0.9412086781526583,
+                    "max": 7.69,
+                    "percentiles": {
+                        "p25": 0.0,
+                        "p50": 1.0,
+                        "p75": 1.34
+                    }
+                },
+                "ttfb_ms": {
+                    "min": 100.0,
+                    "average": 1450.875,
+                    "max": 9381.0,
+                    "percentiles": {
+                        "p25": 575.1666666666666,
+                        "p50": 746.5,
+                        "p75": 2857.5
+                    }
+                },
+                "conn_time_ms": {
+                    "min": 32.0,
+                    "average": 380.125,
+                    "max": 2171.0,
+                    "percentiles": {
+                        "p25": 192.58333333333334,
+                        "p50": 217.33333333333334,
+                        "p75": 601.8333333333334
                     }
                 }
             }

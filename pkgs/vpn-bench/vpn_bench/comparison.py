@@ -61,6 +61,11 @@ class TcpIperfComparisonDict(TypedDict):
     sender_throughput_mbps: MetricStatsDict
     receiver_throughput_mbps: MetricStatsDict
     retransmits: MetricStatsDict
+    max_snd_cwnd_bytes: MetricStatsDict  # Max congestion window in bytes
+    max_snd_wnd_bytes: MetricStatsDict  # Max send window in bytes
+    total_bytes_sent: MetricStatsDict  # Total bytes sent during test
+    total_bytes_received: MetricStatsDict  # Total bytes received during test
+    duration_seconds: MetricStatsDict  # Test duration in seconds
 
 
 class UdpIperfComparisonDict(TypedDict):
@@ -70,6 +75,9 @@ class UdpIperfComparisonDict(TypedDict):
     receiver_throughput_mbps: MetricStatsDict
     jitter_ms: MetricStatsDict
     lost_percent: MetricStatsDict
+    total_bytes_sent: MetricStatsDict  # Total bytes sent during test
+    total_bytes_received: MetricStatsDict  # Total bytes received during test
+    duration_seconds: MetricStatsDict  # Test duration in seconds
 
 
 class NixCacheComparisonDict(TypedDict):
@@ -84,9 +92,16 @@ class NixCacheComparisonDict(TypedDict):
 class ParallelTcpComparisonDict(TypedDict):
     """Comparison data for Parallel TCP iperf3 benchmarks across VPNs."""
 
-    total_throughput_mbps: MetricStatsDict  # Sum of all pairs
-    avg_throughput_mbps: MetricStatsDict  # Average per pair
+    sender_throughput_mbps: MetricStatsDict  # Total sender throughput (sum_sent)
+    receiver_throughput_mbps: (
+        MetricStatsDict  # Total receiver throughput (sum_received)
+    )
     total_retransmits: MetricStatsDict  # Sum of retransmits
+    max_snd_cwnd_bytes: MetricStatsDict  # Max congestion window across all pairs
+    max_snd_wnd_bytes: MetricStatsDict  # Max send window across all pairs
+    total_bytes_sent: MetricStatsDict  # Total bytes sent across all pairs
+    total_bytes_received: MetricStatsDict  # Total bytes received across all pairs
+    duration_seconds: MetricStatsDict  # Test duration in seconds
 
 
 # --- Helper Functions ---
@@ -164,6 +179,34 @@ def load_json_with_errors(file_path: Path) -> LoadResult | None:
     except (json.JSONDecodeError, OSError) as e:
         log.warning(f"Failed to load {file_path}: {e}")
         return None
+
+
+def check_duration_consistency(
+    comparison_data: dict[str, Any], test_name: str, tolerance: float = 1.0
+) -> None:
+    """Check that all VPNs have consistent test durations.
+
+    Logs a warning if durations differ by more than the tolerance.
+
+    Args:
+        comparison_data: Dict of VPN name -> comparison result
+        test_name: Name of the test for logging
+        tolerance: Maximum allowed difference in seconds
+    """
+    durations: list[float] = []
+    for _vpn_name, vpn_data in comparison_data.items():
+        if vpn_data.get("status") == "success":
+            duration = vpn_data["data"].get("duration_seconds", {}).get("average", 0)
+            if duration > 0:
+                durations.append(duration)
+
+    if len(durations) >= 2:
+        min_dur, max_dur = min(durations), max(durations)
+        if max_dur - min_dur > tolerance:
+            log.warning(
+                f"Duration mismatch in {test_name}: min={min_dur:.2f}s, max={max_dur:.2f}s "
+                f"(tolerance={tolerance}s). This may indicate inconsistent test configurations."
+            )
 
 
 def get_vpn_error_for_test(
@@ -325,6 +368,21 @@ def extract_tcp_iperf_metrics(data: dict[str, Any]) -> TcpIperfComparisonDict | 
         sender_mbps = sender_bps / 1_000_000
         receiver_mbps = receiver_bps / 1_000_000
 
+        # Extract total bytes and duration
+        bytes_sent = sum_sent.get("bytes", 0)
+        bytes_received = sum_received.get("bytes", 0)
+        duration_seconds = sum_sent.get("seconds", 0)
+
+        # Extract max window sizes from streams (sender stream has window data)
+        max_snd_cwnd = 0
+        max_snd_wnd = 0
+        streams = end.get("streams", [])
+        for stream in streams:
+            sender_data = stream.get("sender", {})
+            if sender_data.get("sender", False):  # This is the sender stream
+                max_snd_cwnd = max(max_snd_cwnd, sender_data.get("max_snd_cwnd", 0))
+                max_snd_wnd = max(max_snd_wnd, sender_data.get("max_snd_wnd", 0))
+
         # Create MetricStatsDict for single values
         def single_value_stats(value: float) -> MetricStatsDict:
             return {
@@ -338,6 +396,11 @@ def extract_tcp_iperf_metrics(data: dict[str, Any]) -> TcpIperfComparisonDict | 
             "sender_throughput_mbps": single_value_stats(sender_mbps),
             "receiver_throughput_mbps": single_value_stats(receiver_mbps),
             "retransmits": single_value_stats(float(retransmits)),
+            "max_snd_cwnd_bytes": single_value_stats(float(max_snd_cwnd)),
+            "max_snd_wnd_bytes": single_value_stats(float(max_snd_wnd)),
+            "total_bytes_sent": single_value_stats(float(bytes_sent)),
+            "total_bytes_received": single_value_stats(float(bytes_received)),
+            "duration_seconds": single_value_stats(float(duration_seconds)),
         }
     except (KeyError, TypeError) as e:
         log.warning(f"Failed to extract TCP iperf metrics: {e}")
@@ -376,23 +439,53 @@ def aggregate_tcp_iperf_data(
             [m["receiver_throughput_mbps"] for m in metrics_list]
         ),
         "retransmits": aggregate_metric_stats([m["retransmits"] for m in metrics_list]),
+        "max_snd_cwnd_bytes": aggregate_metric_stats(
+            [m["max_snd_cwnd_bytes"] for m in metrics_list]
+        ),
+        "max_snd_wnd_bytes": aggregate_metric_stats(
+            [m["max_snd_wnd_bytes"] for m in metrics_list]
+        ),
+        "total_bytes_sent": aggregate_metric_stats(
+            [m["total_bytes_sent"] for m in metrics_list]
+        ),
+        "total_bytes_received": aggregate_metric_stats(
+            [m["total_bytes_received"] for m in metrics_list]
+        ),
+        "duration_seconds": aggregate_metric_stats(
+            [m["duration_seconds"] for m in metrics_list]
+        ),
     }
 
 
 def extract_udp_iperf_metrics(data: dict[str, Any]) -> UdpIperfComparisonDict | None:
-    """Extract key metrics from iperf3 UDP JSON output."""
+    """Extract key metrics from iperf3 UDP JSON output.
+
+    For bidirectional UDP tests, we extract:
+    - sender_throughput_mbps: from end.sum_sent (client sending to server)
+    - receiver_throughput_mbps: from end.sum_received (what server actually received)
+    - jitter_ms: from end.sum_received (receiver-side jitter measurement)
+    - lost_percent: from end.sum_received (receiver-side packet loss)
+    """
     try:
         end = data.get("end", {})
-        sum_data = end.get("sum", {})
 
-        # Convert bits_per_second to Mbps
-        sender_bps = sum_data.get("bits_per_second", 0)
-        jitter_ms = sum_data.get("jitter_ms", 0)
-        lost_percent = sum_data.get("lost_percent", 0)
-
+        # Get sender stats from sum_sent (client sending primary direction)
+        sum_sent = end.get("sum_sent", {})
+        sender_bps = sum_sent.get("bits_per_second", 0)
         sender_mbps = sender_bps / 1_000_000
-        # For UDP, receiver might be in a different location
-        receiver_mbps = sender_mbps  # Approximate
+
+        # Get receiver stats from sum_received (what server actually received)
+        # This contains the actual received throughput, jitter, and packet loss
+        sum_received = end.get("sum_received", {})
+        receiver_bps = sum_received.get("bits_per_second", 0)
+        receiver_mbps = receiver_bps / 1_000_000
+        jitter_ms = sum_received.get("jitter_ms", 0)
+        lost_percent = sum_received.get("lost_percent", 0)
+
+        # Extract total bytes and duration
+        bytes_sent = sum_sent.get("bytes", 0)
+        bytes_received = sum_received.get("bytes", 0)
+        duration_seconds = sum_sent.get("seconds", 0)
 
         def single_value_stats(value: float) -> MetricStatsDict:
             return {
@@ -407,6 +500,9 @@ def extract_udp_iperf_metrics(data: dict[str, Any]) -> UdpIperfComparisonDict | 
             "receiver_throughput_mbps": single_value_stats(receiver_mbps),
             "jitter_ms": single_value_stats(jitter_ms),
             "lost_percent": single_value_stats(lost_percent),
+            "total_bytes_sent": single_value_stats(float(bytes_sent)),
+            "total_bytes_received": single_value_stats(float(bytes_received)),
+            "duration_seconds": single_value_stats(float(duration_seconds)),
         }
     except (KeyError, TypeError) as e:
         log.warning(f"Failed to extract UDP iperf metrics: {e}")
@@ -447,6 +543,15 @@ def aggregate_udp_iperf_data(
         "jitter_ms": aggregate_metric_stats([m["jitter_ms"] for m in metrics_list]),
         "lost_percent": aggregate_metric_stats(
             [m["lost_percent"] for m in metrics_list]
+        ),
+        "total_bytes_sent": aggregate_metric_stats(
+            [m["total_bytes_sent"] for m in metrics_list]
+        ),
+        "total_bytes_received": aggregate_metric_stats(
+            [m["total_bytes_received"] for m in metrics_list]
+        ),
+        "duration_seconds": aggregate_metric_stats(
+            [m["duration_seconds"] for m in metrics_list]
         ),
     }
 
@@ -523,14 +628,31 @@ def aggregate_nix_cache_data(
 def extract_parallel_tcp_metrics(
     data: dict[str, Any],
 ) -> ParallelTcpComparisonDict | None:
-    """Extract key metrics from parallel TCP iperf3 JSON output."""
+    """Extract key metrics from parallel TCP iperf3 JSON output.
+
+    For bidirectional TCP tests, we extract:
+    - sender_throughput_mbps: from sum_sent (total sent across all pairs)
+    - receiver_throughput_mbps: from sum_received (total received across all pairs)
+    - total_retransmits: sum of retransmits across all pairs
+    - max_snd_cwnd_bytes: max congestion window across all pairs
+    - max_snd_wnd_bytes: max send window across all pairs
+    - total_bytes_sent: sum of bytes sent across all pairs
+    - total_bytes_received: sum of bytes received across all pairs
+    - duration_seconds: test duration (from first successful pair)
+    """
     try:
         pairs = data.get("pairs", [])
         if not pairs:
             return None
 
-        total_throughput = 0.0
+        total_sender_throughput = 0.0
+        total_receiver_throughput = 0.0
         total_retransmits = 0
+        max_snd_cwnd = 0
+        max_snd_wnd = 0
+        total_bytes_sent = 0
+        total_bytes_received = 0
+        duration_seconds = 0.0  # Use duration from first successful pair
         successful_pairs = 0
 
         for pair in pairs:
@@ -539,19 +661,39 @@ def extract_parallel_tcp_metrics(
                 continue  # Skip failed pairs
 
             end = result.get("end", {})
-            sum_sent = end.get("sum_sent", {})
 
+            # Get sender stats from sum_sent
+            sum_sent = end.get("sum_sent", {})
             sender_bps = sum_sent.get("bits_per_second", 0)
             retransmits = sum_sent.get("retransmits", 0)
+            bytes_sent = sum_sent.get("bytes", 0)
 
-            total_throughput += sender_bps / 1_000_000
+            # Get receiver stats from sum_received
+            sum_received = end.get("sum_received", {})
+            receiver_bps = sum_received.get("bits_per_second", 0)
+            bytes_received = sum_received.get("bytes", 0)
+
+            # Get duration from first successful pair (all pairs run same duration)
+            if successful_pairs == 0:
+                duration_seconds = sum_sent.get("seconds", 0)
+
+            # Extract max window sizes from streams
+            streams = end.get("streams", [])
+            for stream in streams:
+                sender_data = stream.get("sender", {})
+                if sender_data.get("sender", False):  # This is the sender stream
+                    max_snd_cwnd = max(max_snd_cwnd, sender_data.get("max_snd_cwnd", 0))
+                    max_snd_wnd = max(max_snd_wnd, sender_data.get("max_snd_wnd", 0))
+
+            total_sender_throughput += sender_bps / 1_000_000
+            total_receiver_throughput += receiver_bps / 1_000_000
             total_retransmits += retransmits
+            total_bytes_sent += bytes_sent
+            total_bytes_received += bytes_received
             successful_pairs += 1
 
         if successful_pairs == 0:
             return None
-
-        avg_throughput = total_throughput / successful_pairs
 
         def single_value_stats(value: float) -> MetricStatsDict:
             return {
@@ -562,9 +704,14 @@ def extract_parallel_tcp_metrics(
             }
 
         return {
-            "total_throughput_mbps": single_value_stats(total_throughput),
-            "avg_throughput_mbps": single_value_stats(avg_throughput),
+            "sender_throughput_mbps": single_value_stats(total_sender_throughput),
+            "receiver_throughput_mbps": single_value_stats(total_receiver_throughput),
             "total_retransmits": single_value_stats(float(total_retransmits)),
+            "max_snd_cwnd_bytes": single_value_stats(float(max_snd_cwnd)),
+            "max_snd_wnd_bytes": single_value_stats(float(max_snd_wnd)),
+            "total_bytes_sent": single_value_stats(float(total_bytes_sent)),
+            "total_bytes_received": single_value_stats(float(total_bytes_received)),
+            "duration_seconds": single_value_stats(float(duration_seconds)),
         }
     except (KeyError, TypeError) as e:
         log.warning(f"Failed to extract Parallel TCP metrics: {e}")
@@ -768,6 +915,7 @@ def generate_comparison_data(bench_dir: Path) -> None:
 
         if tcp_comparison:
             save_bench_report(run_comparison_dir, tcp_comparison, "tcp_iperf3.json")
+            check_duration_consistency(tcp_comparison, "TCP iperf3")
             success_count = sum(
                 1 for v in tcp_comparison.values() if v.get("status") == "success"
             )
@@ -796,6 +944,7 @@ def generate_comparison_data(bench_dir: Path) -> None:
 
         if udp_comparison:
             save_bench_report(run_comparison_dir, udp_comparison, "udp_iperf3.json")
+            check_duration_consistency(udp_comparison, "UDP iperf3")
             success_count = sum(
                 1 for v in udp_comparison.values() if v.get("status") == "success"
             )
@@ -866,6 +1015,7 @@ def generate_comparison_data(bench_dir: Path) -> None:
             save_bench_report(
                 run_comparison_dir, parallel_tcp_comparison, "parallel_tcp_iperf3.json"
             )
+            check_duration_consistency(parallel_tcp_comparison, "Parallel TCP iperf3")
             success_count = sum(
                 1
                 for v in parallel_tcp_comparison.values()

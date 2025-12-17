@@ -46,19 +46,24 @@ const timeToMs = (timeStr: string) => {
   }
 };
 
-// Process data for boxplot visualization
-const processDataForBoxplot = (report: ConnectionTimings) => {
-  const services = Object.keys(report);
-  const boxplotData = [];
-  const categories = [];
+// Process data for bar chart visualization
+interface ConnectionBarData {
+  name: string;
+  average: number;
+  min: number;
+  max: number;
+}
 
-  for (const service of services) {
-    const machineData = report[service];
+const processDataForBarChart = (report: ConnectionTimings): ConnectionBarData[] => {
+  const result: ConnectionBarData[] = [];
+
+  for (const vpnName of Object.keys(report)) {
+    const machineData = report[vpnName];
 
     // Get time values and ensure we have valid data
     const timeValues = Object.values(machineData);
     if (timeValues.length === 0) {
-      continue; // Skip empty services
+      continue;
     }
 
     // Convert and filter out any invalid times
@@ -67,7 +72,7 @@ const processDataForBoxplot = (report: ConnectionTimings) => {
         try {
           return timeToMs(time);
         } catch (e) {
-          console.warn(`Invalid time format for service ${service}:`, time);
+          console.warn(`Invalid time format for VPN ${vpnName}:`, time);
           return null;
         }
       })
@@ -75,76 +80,35 @@ const processDataForBoxplot = (report: ConnectionTimings) => {
         (time) => time !== null && !isNaN(time) && isFinite(time),
       ) as number[];
 
-    // Skip if we don't have valid timings
     if (timings.length === 0) {
-      console.warn(`No valid timing data for service ${service}`);
+      console.warn(`No valid timing data for VPN ${vpnName}`);
       continue;
     }
 
-    // Sort for calculations
-    timings.sort((a, b) => a - b);
+    // Calculate statistics
+    const min = Math.min(...timings);
+    const max = Math.max(...timings);
+    const average = timings.reduce((a, b) => a + b, 0) / timings.length;
 
-    // Calculate boxplot statistics safely
-    const min = timings[0];
-    const max = timings[timings.length - 1];
-
-    let median;
-    if (timings.length === 1) {
-      median = timings[0];
-    } else if (timings.length % 2 === 0) {
-      median =
-        (timings[timings.length / 2 - 1] + timings[timings.length / 2]) / 2;
-    } else {
-      median = timings[Math.floor(timings.length / 2)];
-    }
-
-    // Q1 and Q3 calculation with better handling of small datasets
-    let q1, q3;
-    if (timings.length <= 2) {
-      q1 = min;
-      q3 = max;
-    } else {
-      q1 = timings[Math.floor(timings.length / 4)];
-      q3 = timings[Math.floor((3 * timings.length) / 4)];
-    }
-
-    boxplotData.push([min, q1, median, q3, max]);
-    categories.push(service);
+    result.push({
+      name: vpnName,
+      average,
+      min,
+      max,
+    });
   }
 
-  return { boxplotData, categories };
+  // Sort by average time (lower is better, so ascending)
+  result.sort((a, b) => a.average - b.average);
+
+  return result;
 };
 
 const createConnectionTimingsOption = (
   report: ConnectionTimings,
   title: string,
 ) => {
-  const { boxplotData, categories } = processDataForBoxplot(report);
-
-  // Add raw data points as scatter plot
-  const scatterData: (string | number)[][] = [];
-  for (let i = 0; i < categories.length; i++) {
-    const service = categories[i];
-    const nodeData = report[service];
-
-    Object.entries(nodeData).forEach(([node, timeStr]) => {
-      try {
-        const ms = timeToMs(timeStr);
-        if (!isNaN(ms) && isFinite(ms)) {
-          scatterData.push([i, ms, node]); // [category index, value, node name]
-        }
-      } catch (e) {
-        console.warn(`Could not process node ${node} for service ${service}`);
-      }
-    });
-  }
-
-  // Create markPoint data for max values on top of each boxplot
-  const maxMarkPoints = boxplotData.map((data, index) => ({
-    xAxis: index,
-    yAxis: data[4], // max value is at index 4
-    value: data[4],
-  }));
+  const data = processDataForBarChart(report);
 
   return {
     title: {
@@ -160,57 +124,40 @@ const createConnectionTimingsOption = (
       },
     },
     tooltip: {
-      trigger: "item",
+      trigger: "axis",
       axisPointer: {
         type: "shadow",
       },
-      formatter: function (params: {
-        seriesIndex: number;
-        name: string;
-        data: number[];
-      }) {
-        if (params.seriesIndex === 0) {
-          // Boxplot tooltip
-          return `${params.name}<br/>
-                 Min: ${(params.data[0] / 1000).toFixed(2)}s<br/>
-                 Q1: ${(params.data[1] / 1000).toFixed(2)}s<br/>
-                 Median: ${(params.data[2] / 1000).toFixed(2)}s<br/>
-                 Q3: ${(params.data[3] / 1000).toFixed(2)}s<br/>
-                 Max: ${(params.data[4] / 1000).toFixed(2)}s`;
-        } else {
-          // Scatter tooltip
-          return `${categories[params.data[0]]}<br/>
-                 Node: ${params.data[2]}<br/>
-                 Time: ${(params.data[1] / 1000).toFixed(2)}s`;
-        }
+      formatter: function (
+        params: { name: string; value: number; dataIndex: number }[],
+      ) {
+        const item = params[0];
+        const originalData = data[item.dataIndex];
+        return `${item.name}<br/>
+                Average: ${(originalData.average / 1000).toFixed(2)}s<br/>
+                Min: ${(originalData.min / 1000).toFixed(2)}s<br/>
+                Max: ${(originalData.max / 1000).toFixed(2)}s`;
       },
     },
     grid: {
-      left: "10%",
+      left: "15%",
       right: "10%",
       bottom: "15%",
+      top: "15%",
     },
     xAxis: {
       type: "category",
-      data: categories,
-      boundaryGap: true,
-      nameGap: 30,
-      splitArea: {
-        show: false,
-      },
+      data: data.map((d) => d.name),
       axisLabel: {
-        show: true,
-      },
-      splitLine: {
-        show: false,
+        rotate: 45,
+        interval: 0,
       },
     },
     yAxis: {
       type: "value",
       name: "Time (seconds)",
-      splitArea: {
-        show: true,
-      },
+      nameLocation: "middle",
+      nameGap: 50,
       axisLabel: {
         formatter: function (value: number) {
           return (value / 1000).toFixed(1) + "s";
@@ -220,35 +167,20 @@ const createConnectionTimingsOption = (
     series: [
       {
         name: "Connection Times",
-        type: "boxplot",
-        data: boxplotData,
-        tooltip: { trigger: "item" },
-        itemStyle: {
-          borderWidth: 2,
-          borderColor: "#1890ff",
-        },
-        markPoint: {
-          data: maxMarkPoints,
-          symbol: "circle",
-          symbolSize: 1,
-          label: {
-            show: true,
-            position: "top",
-            formatter: function (params: { value: number }) {
-              return (params.value / 1000).toFixed(2) + "s";
-            },
-            fontSize: 11,
-            color: "#333",
+        type: "bar",
+        data: data.map((d) => ({
+          value: d.average,
+          itemStyle: {
+            color: "#1890ff",
           },
-        },
-      },
-      {
-        name: "Nodes",
-        type: "scatter",
-        data: scatterData,
-        symbolSize: 10,
-        itemStyle: {
-          color: "#ff5722",
+        })),
+        label: {
+          show: true,
+          position: "top",
+          formatter: (params: { value: number }) =>
+            (params.value / 1000).toFixed(2) + "s",
+          color: "#555",
+          fontSize: 10,
         },
       },
     ],
@@ -263,7 +195,7 @@ export const ConnectionTimingsChart = (props: {
   return (
     <Echart
       option={createConnectionTimingsOption(props.report, props.title)}
-      height={props.height ?? 700}
+      height={props.height ?? 400}
     />
   );
 };
@@ -621,7 +553,6 @@ export const GeneralDashboard = (props: GeneralDashboardProps) => {
               {(timings) => (
                 <ConnectionTimingsChart
                   report={timings()}
-                  height={700}
                   title="Bootstrap Connection Times"
                 />
               )}
@@ -630,7 +561,6 @@ export const GeneralDashboard = (props: GeneralDashboardProps) => {
               {(timings) => (
                 <ConnectionTimingsChart
                   report={timings()}
-                  height={700}
                   title="Reboot Connection Times"
                 />
               )}

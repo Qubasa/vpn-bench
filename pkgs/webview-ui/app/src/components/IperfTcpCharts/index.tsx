@@ -16,9 +16,13 @@ export interface IperfTcpReportData {
     sum_sent: {
       bits_per_second: number;
       retransmits: number;
+      bytes?: number;
+      seconds?: number;
     };
     sum_received: {
       bits_per_second: number;
+      bytes?: number;
+      seconds?: number;
     };
     cpu_utilization_percent: {
       host_total: number;
@@ -69,6 +73,85 @@ interface IperfTcpChartsProps {
     maxSendWindow?: number;
   };
 }
+
+// Test Summary Banner - shows total data transferred and duration
+const IperfTestSummary = (props: { reports: IperfTcpReport[] }) => {
+  // Calculate totals from all reports
+  const totals = () => {
+    let totalBytesSent = 0;
+    let totalBytesReceived = 0;
+    let maxDuration = 0;
+
+    for (const report of props.reports) {
+      const sent = report.data.end.sum_sent;
+      const received = report.data.end.sum_received;
+
+      if (sent.bytes) totalBytesSent += sent.bytes;
+      if (received.bytes) totalBytesReceived += received.bytes;
+      if (sent.seconds && sent.seconds > maxDuration) {
+        maxDuration = sent.seconds;
+      }
+    }
+
+    return {
+      bytesSent: totalBytesSent,
+      bytesReceived: totalBytesReceived,
+      duration: maxDuration,
+    };
+  };
+
+  const formatBytes = (bytes: number) => {
+    const gb = bytes / 1_000_000_000;
+    if (gb >= 1) return `${gb.toFixed(2)} GB`;
+    const mb = bytes / 1_000_000;
+    return `${mb.toFixed(2)} MB`;
+  };
+
+  const t = totals();
+
+  if (t.duration === 0 && t.bytesSent === 0) return null;
+
+  return (
+    <div
+      style={{
+        background: "#f0f5ff",
+        border: "1px solid #adc6ff",
+        "border-radius": "6px",
+        padding: "12px 16px",
+        "margin-bottom": "16px",
+        display: "flex",
+        "flex-wrap": "wrap",
+        gap: "24px",
+      }}
+    >
+      {t.duration > 0 && (
+        <div style={{ display: "flex", "align-items": "center", gap: "8px" }}>
+          <span style={{ "font-weight": "500", color: "#1890ff" }}>
+            Duration:
+          </span>
+          <span style={{ color: "#333" }}>{t.duration.toFixed(1)}s</span>
+        </div>
+      )}
+      {t.bytesSent > 0 && (
+        <div style={{ display: "flex", "align-items": "center", gap: "8px" }}>
+          <span style={{ "font-weight": "500", color: "#722ed1" }}>
+            Data Sent:
+          </span>
+          <span style={{ color: "#333" }}>{formatBytes(t.bytesSent)}</span>
+        </div>
+      )}
+      {t.bytesReceived > 0 && (
+        <div style={{ display: "flex", "align-items": "center", gap: "8px" }}>
+          <span style={{ "font-weight": "500", color: "#13c2c2" }}>
+            Data Received:
+          </span>
+          <span style={{ color: "#333" }}>{formatBytes(t.bytesReceived)}</span>
+        </div>
+      )}
+    </div>
+  );
+};
+
 // RTT Boxplot Chart Creator - USING ONLY MIN/MEAN/MAX for data
 const createRttOption = (reports: IperfTcpReport[]) => {
   const boxplotData = reports.map((report) => {
@@ -791,6 +874,7 @@ export const IperfTcpCharts = (props: IperfTcpChartsProps) => {
 
   return (
     <div style={{ display: "flex", "flex-direction": "column", gap: "20px" }}>
+      <IperfTestSummary reports={props.reports} />
       <IperfThroughputChart
         reports={props.reports}
         height={height().throughput}

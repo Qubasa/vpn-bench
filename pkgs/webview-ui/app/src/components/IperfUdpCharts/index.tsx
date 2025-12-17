@@ -206,6 +206,84 @@ interface IperfUdpChartsProps {
   };
 }
 
+// Test Summary Banner - shows total data transferred and duration
+const IperfUdpTestSummary = (props: { reports: IperfUdpReport[] }) => {
+  // Calculate totals from all reports
+  const totals = () => {
+    let totalBytesSent = 0;
+    let totalBytesReceived = 0;
+    let maxDuration = 0;
+
+    for (const report of props.reports) {
+      const sent = report.data.end?.sum_sent;
+      const received = report.data.end?.sum_received;
+
+      if (sent?.bytes) totalBytesSent += sent.bytes;
+      if (received?.bytes) totalBytesReceived += received.bytes;
+      if (sent?.seconds && sent.seconds > maxDuration) {
+        maxDuration = sent.seconds;
+      }
+    }
+
+    return {
+      bytesSent: totalBytesSent,
+      bytesReceived: totalBytesReceived,
+      duration: maxDuration,
+    };
+  };
+
+  const formatBytes = (bytes: number) => {
+    const gb = bytes / 1_000_000_000;
+    if (gb >= 1) return `${gb.toFixed(2)} GB`;
+    const mb = bytes / 1_000_000;
+    return `${mb.toFixed(2)} MB`;
+  };
+
+  const t = totals();
+
+  if (t.duration === 0 && t.bytesSent === 0) return null;
+
+  return (
+    <div
+      style={{
+        background: "#f0f5ff",
+        border: "1px solid #adc6ff",
+        "border-radius": "6px",
+        padding: "12px 16px",
+        "margin-bottom": "16px",
+        display: "flex",
+        "flex-wrap": "wrap",
+        gap: "24px",
+      }}
+    >
+      {t.duration > 0 && (
+        <div style={{ display: "flex", "align-items": "center", gap: "8px" }}>
+          <span style={{ "font-weight": "500", color: "#1890ff" }}>
+            Duration:
+          </span>
+          <span style={{ color: "#333" }}>{t.duration.toFixed(1)}s</span>
+        </div>
+      )}
+      {t.bytesSent > 0 && (
+        <div style={{ display: "flex", "align-items": "center", gap: "8px" }}>
+          <span style={{ "font-weight": "500", color: "#722ed1" }}>
+            Data Sent:
+          </span>
+          <span style={{ color: "#333" }}>{formatBytes(t.bytesSent)}</span>
+        </div>
+      )}
+      {t.bytesReceived > 0 && (
+        <div style={{ display: "flex", "align-items": "center", gap: "8px" }}>
+          <span style={{ "font-weight": "500", color: "#13c2c2" }}>
+            Data Received:
+          </span>
+          <span style={{ color: "#333" }}>{formatBytes(t.bytesReceived)}</span>
+        </div>
+      )}
+    </div>
+  );
+};
+
 // --- Helper Function for UDP Throughput Stats ---
 const getUdpThroughputStats = (reportData: IperfUdpReportData) => {
   // Averages from the 'end' summary (Client's perspective)
@@ -1125,6 +1203,9 @@ export const IperfUdpCharts = ({
         padding: "10px",
       }}
     >
+      {/* Test Summary Banner */}
+      <IperfUdpTestSummary reports={reports} />
+
       {/* Throughput */}
       <IperfUdpThroughputChart
         reports={reports}

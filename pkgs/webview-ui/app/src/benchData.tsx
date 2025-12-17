@@ -253,6 +253,11 @@ export interface TcpIperfComparisonData {
   sender_throughput_mbps: MetricStats;
   receiver_throughput_mbps: MetricStats;
   retransmits: MetricStats;
+  max_snd_cwnd_bytes: MetricStats;
+  max_snd_wnd_bytes: MetricStats;
+  total_bytes_sent: MetricStats;
+  total_bytes_received: MetricStats;
+  duration_seconds: MetricStats;
 }
 
 export interface UdpIperfComparisonData {
@@ -260,6 +265,9 @@ export interface UdpIperfComparisonData {
   receiver_throughput_mbps: MetricStats;
   jitter_ms: MetricStats;
   lost_percent: MetricStats;
+  total_bytes_sent: MetricStats;
+  total_bytes_received: MetricStats;
+  duration_seconds: MetricStats;
 }
 
 export interface NixCacheComparisonData {
@@ -270,9 +278,14 @@ export interface NixCacheComparisonData {
 }
 
 export interface ParallelTcpComparisonData {
-  total_throughput_mbps: MetricStats;
-  avg_throughput_mbps: MetricStats;
+  sender_throughput_mbps: MetricStats;
+  receiver_throughput_mbps: MetricStats;
   total_retransmits: MetricStats;
+  max_snd_cwnd_bytes: MetricStats;
+  max_snd_wnd_bytes: MetricStats;
+  total_bytes_sent: MetricStats;
+  total_bytes_received: MetricStats;
+  duration_seconds: MetricStats;
 }
 
 // Maps VPN name to its comparison data

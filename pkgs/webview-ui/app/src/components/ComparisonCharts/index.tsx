@@ -351,6 +351,289 @@ function metricToBarData<T>(
   return result;
 }
 
+// --- Dual Series Bar Chart for Sender/Receiver ---
+
+interface DualBarChartData {
+  name: string;
+  senderValue: number;
+  senderMin: number;
+  senderMax: number;
+  receiverValue: number;
+  receiverMin: number;
+  receiverMax: number;
+  isIncomplete?: boolean;
+  isCrashed?: boolean;
+  errorMessage?: string;
+  machineName?: string;
+}
+
+function metricsToDualBarData<T>(
+  vpnMap: VpnComparisonResultMap<T>,
+  getSenderMetric: (data: T) => MetricStats,
+  getReceiverMetric: (data: T) => MetricStats,
+  allVpnNames?: string[],
+): DualBarChartData[] {
+  const result: DualBarChartData[] = [];
+
+  Object.entries(vpnMap).forEach(([vpnName, entry]) => {
+    if (entry.status === "success") {
+      const senderMetric = getSenderMetric(entry.data);
+      const receiverMetric = getReceiverMetric(entry.data);
+      result.push({
+        name: vpnName,
+        senderValue: senderMetric.average,
+        senderMin: senderMetric.min,
+        senderMax: senderMetric.max,
+        receiverValue: receiverMetric.average,
+        receiverMin: receiverMetric.min,
+        receiverMax: receiverMetric.max,
+        isIncomplete: false,
+      });
+    } else {
+      result.push({
+        name: vpnName,
+        senderValue: 0,
+        senderMin: 0,
+        senderMax: 0,
+        receiverValue: 0,
+        receiverMin: 0,
+        receiverMax: 0,
+        isIncomplete: true,
+        isCrashed: true,
+        errorMessage: getComparisonErrorMessage(entry),
+        machineName: entry.machine,
+      });
+    }
+  });
+
+  if (allVpnNames) {
+    const vpnsInData = new Set(Object.keys(vpnMap));
+    allVpnNames.forEach((vpnName) => {
+      if (!vpnsInData.has(vpnName)) {
+        result.push({
+          name: vpnName,
+          senderValue: 0,
+          senderMin: 0,
+          senderMax: 0,
+          receiverValue: 0,
+          receiverMin: 0,
+          receiverMax: 0,
+          isIncomplete: true,
+          isCrashed: false,
+          errorMessage: "Benchmark not run for this VPN",
+        });
+      }
+    });
+  }
+
+  return result;
+}
+
+const createDualBarChartOption = (
+  data: DualBarChartData[],
+  title: string,
+  yAxisLabel: string,
+  firstColor = "#52c41a",
+  secondColor = "#1890ff",
+  firstLabel = "Sender",
+  secondLabel = "Receiver",
+) => {
+  // Sort by average of both values for better visualization (incomplete items at end)
+  const sortedData = [...data].sort((a, b) => {
+    if (a.isIncomplete && !b.isIncomplete) return 1;
+    if (!a.isIncomplete && b.isIncomplete) return -1;
+    const aAvg = (a.senderValue + a.receiverValue) / 2;
+    const bAvg = (b.senderValue + b.receiverValue) / 2;
+    return bAvg - aAvg;
+  });
+
+  const maxValue = Math.max(
+    ...sortedData
+      .filter((d) => !d.isIncomplete)
+      .flatMap((d) => [d.senderValue, d.receiverValue]),
+    100,
+  );
+  const incompleteBarHeight = maxValue * 0.3;
+
+  return {
+    title: {
+      text: title,
+      subtext: "Higher is better",
+      left: "center",
+      subtextStyle: {
+        color: "#888",
+        fontSize: 12,
+      },
+    },
+    toolbox: {
+      feature: {
+        saveAsImage: {},
+        dataView: { show: true, readOnly: false },
+      },
+    },
+    tooltip: {
+      trigger: "axis",
+      axisPointer: {
+        type: "shadow",
+      },
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      formatter: function (params: any) {
+        const tooltipParams = Array.isArray(params) ? params : [params];
+        if (!tooltipParams || tooltipParams.length === 0) return "";
+        const dataIndex = tooltipParams[0].dataIndex;
+        const item = sortedData[dataIndex];
+
+        if (item.isIncomplete) {
+          if (item.isCrashed) {
+            const machineInfo = item.machineName
+              ? `<div style="font-size: 11px; color: #888; margin-top: 2px;">Machine: ${item.machineName}</div>`
+              : "";
+            const errorInfo = item.errorMessage
+              ? `<div style="font-size: 12px; color: #666; margin-top: 4px; white-space: pre-wrap; word-break: break-word;">${item.errorMessage}</div>`
+              : `<div style="font-size: 12px; color: #666; margin-top: 4px;">Benchmark crashed during execution</div>`;
+            return `<div style="padding: 8px; max-width: 400px;">
+                      <div style="font-weight: bold; color: #d32f2f;">⚠️ ${item.name} - CRASHED</div>
+                      ${machineInfo}${errorInfo}
+                    </div>`;
+          } else {
+            return `<div style="padding: 8px; max-width: 400px;">
+                      <div style="font-weight: bold; color: #666;">⊘ ${item.name} - NOT RUN</div>
+                      <div style="font-size: 12px; color: #888; margin-top: 4px;">
+                        ${item.errorMessage || "Benchmark was not executed for this VPN"}
+                      </div>
+                    </div>`;
+          }
+        }
+
+        let tooltipText = `<b>${item.name}</b><br/>`;
+        tooltipText += `<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${firstColor};margin-right:5px;"></span>`;
+        tooltipText += `${firstLabel}: ${item.senderValue.toFixed(2)} (Min: ${item.senderMin.toFixed(2)}, Max: ${item.senderMax.toFixed(2)})<br/>`;
+        tooltipText += `<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${secondColor};margin-right:5px;"></span>`;
+        tooltipText += `${secondLabel}: ${item.receiverValue.toFixed(2)} (Min: ${item.receiverMin.toFixed(2)}, Max: ${item.receiverMax.toFixed(2)})`;
+        return tooltipText;
+      },
+    },
+    legend: {
+      data: [firstLabel, secondLabel],
+      top: 50,
+    },
+    grid: {
+      left: "15%",
+      right: "10%",
+      bottom: "50px",
+      top: "20%",
+    },
+    xAxis: {
+      type: "category",
+      data: sortedData.map((d) => d.name),
+      axisLabel: {
+        rotate: 45,
+        interval: 0,
+      },
+    },
+    yAxis: {
+      type: "value",
+      name: yAxisLabel,
+      nameLocation: "middle",
+      nameGap: 50,
+    },
+    series: [
+      {
+        name: firstLabel,
+        type: "bar",
+        color: firstColor,
+        data: sortedData.map((d) => {
+          if (d.isIncomplete) {
+            return {
+              value: incompleteBarHeight,
+              itemStyle: {
+                color: d.isCrashed ? "#ffebee" : "#f5f5f5",
+                borderColor: d.isCrashed ? "#d32f2f" : "#9e9e9e",
+                borderWidth: 2,
+              },
+            };
+          }
+          return {
+            value: d.senderValue,
+            itemStyle: { color: firstColor },
+          };
+        }),
+        label: {
+          show: true,
+          position: "top",
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          formatter: (params: any) => {
+            const item = sortedData[params.dataIndex];
+            if (item.isIncomplete) return item.isCrashed ? "⚠️" : "N/A";
+            return params.value.toFixed(1);
+          },
+          fontSize: 10,
+        },
+      },
+      {
+        name: secondLabel,
+        type: "bar",
+        color: secondColor,
+        data: sortedData.map((d) => {
+          if (d.isIncomplete) {
+            return {
+              value: incompleteBarHeight,
+              itemStyle: {
+                color: d.isCrashed ? "#ffebee" : "#f5f5f5",
+                borderColor: d.isCrashed ? "#d32f2f" : "#9e9e9e",
+                borderWidth: 2,
+              },
+            };
+          }
+          return {
+            value: d.receiverValue,
+            itemStyle: { color: secondColor },
+          };
+        }),
+        label: {
+          show: true,
+          position: "top",
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          formatter: (params: any) => {
+            const item = sortedData[params.dataIndex];
+            if (item.isIncomplete) return "";
+            return params.value.toFixed(1);
+          },
+          fontSize: 10,
+        },
+      },
+    ],
+  };
+};
+
+export const DualComparisonBarChart = (props: {
+  data: DualBarChartData[];
+  title: string;
+  yAxisLabel: string;
+  height?: number;
+  firstColor?: string;
+  secondColor?: string;
+  firstLabel?: string;
+  secondLabel?: string;
+}) => {
+  return (
+    <Show when={props.data.length > 0} fallback={<div>No data available</div>}>
+      <Echart
+        option={createDualBarChartOption(
+          props.data,
+          props.title,
+          props.yAxisLabel,
+          props.firstColor,
+          props.secondColor,
+          props.firstLabel,
+          props.secondLabel,
+        )}
+        height={props.height ?? 400}
+      />
+    </Show>
+  );
+};
+
 // --- TCP Performance Comparison Charts ---
 
 export const TcpThroughputComparisonChart = (props: {
@@ -359,42 +642,20 @@ export const TcpThroughputComparisonChart = (props: {
   allVpnNames?: string[];
 }) => {
   const chartData = () =>
-    metricToBarData(
+    metricsToDualBarData(
       props.data,
       (d) => d.sender_throughput_mbps,
-      props.allVpnNames,
-    );
-  return (
-    <ComparisonBarChart
-      data={chartData()}
-      title="TCP Throughput (Sender)"
-      yAxisLabel="Throughput (Mbps)"
-      height={props.height ?? 400}
-      color="#52c41a"
-      higherIsBetter={true}
-    />
-  );
-};
-
-export const TcpReceiverThroughputComparisonChart = (props: {
-  data: VpnComparisonResultMap<TcpIperfComparisonData>;
-  height?: number;
-  allVpnNames?: string[];
-}) => {
-  const chartData = () =>
-    metricToBarData(
-      props.data,
       (d) => d.receiver_throughput_mbps,
       props.allVpnNames,
     );
   return (
-    <ComparisonBarChart
+    <DualComparisonBarChart
       data={chartData()}
-      title="TCP Throughput (Receiver)"
+      title="TCP Throughput"
       yAxisLabel="Throughput (Mbps)"
       height={props.height ?? 400}
-      color="#1890ff"
-      higherIsBetter={true}
+      firstColor="#52c41a"
+      secondColor="#1890ff"
     />
   );
 };
@@ -418,6 +679,117 @@ export const TcpRetransmitsComparisonChart = (props: {
   );
 };
 
+export const TcpWindowSizeComparisonChart = (props: {
+  data: VpnComparisonResultMap<TcpIperfComparisonData>;
+  height?: number;
+  allVpnNames?: string[];
+}) => {
+  const chartData = () =>
+    metricsToDualBarData(
+      props.data,
+      (d) => ({
+        ...d.max_snd_wnd_bytes,
+        average: d.max_snd_wnd_bytes.average / 1024, // Convert to KB
+        min: d.max_snd_wnd_bytes.min / 1024,
+        max: d.max_snd_wnd_bytes.max / 1024,
+      }),
+      (d) => ({
+        ...d.max_snd_cwnd_bytes,
+        average: d.max_snd_cwnd_bytes.average / 1024,
+        min: d.max_snd_cwnd_bytes.min / 1024,
+        max: d.max_snd_cwnd_bytes.max / 1024,
+      }),
+      props.allVpnNames,
+    );
+  return (
+    <DualComparisonBarChart
+      data={chartData()}
+      title="Max TCP Window Size"
+      yAxisLabel="Size (KB)"
+      height={props.height ?? 400}
+      firstColor="#f39c12"
+      secondColor="#9b59b6"
+      firstLabel="Send Window"
+      secondLabel="Congestion Window"
+    />
+  );
+};
+
+export const TcpTotalDataComparisonChart = (props: {
+  data: VpnComparisonResultMap<TcpIperfComparisonData>;
+  height?: number;
+  allVpnNames?: string[];
+}) => {
+  const chartData = () =>
+    metricsToDualBarData(
+      props.data,
+      (d) => ({
+        ...d.total_bytes_sent,
+        average: d.total_bytes_sent.average / 1_000_000_000, // Convert to GB
+        min: d.total_bytes_sent.min / 1_000_000_000,
+        max: d.total_bytes_sent.max / 1_000_000_000,
+      }),
+      (d) => ({
+        ...d.total_bytes_received,
+        average: d.total_bytes_received.average / 1_000_000_000,
+        min: d.total_bytes_received.min / 1_000_000_000,
+        max: d.total_bytes_received.max / 1_000_000_000,
+      }),
+      props.allVpnNames,
+    );
+  return (
+    <DualComparisonBarChart
+      data={chartData()}
+      title="Total Data Transferred"
+      yAxisLabel="Data (GB)"
+      height={props.height ?? 400}
+      firstColor="#722ed1"
+      secondColor="#13c2c2"
+      firstLabel="Sent"
+      secondLabel="Received"
+    />
+  );
+};
+
+// --- Helper to get test duration from comparison data ---
+
+function getTestDuration<T extends { duration_seconds: MetricStats }>(
+  data: VpnComparisonResultMap<T>,
+): number | null {
+  for (const entry of Object.values(data)) {
+    if (entry.status === "success") {
+      return entry.data.duration_seconds.average;
+    }
+  }
+  return null;
+}
+
+// --- Test Info Banner Component ---
+
+const TestInfoBanner = (props: { durationSeconds: number | null }) => {
+  if (props.durationSeconds === null) return null;
+
+  return (
+    <div
+      style={{
+        background: "#f0f5ff",
+        border: "1px solid #adc6ff",
+        "border-radius": "6px",
+        padding: "12px 16px",
+        "margin-bottom": "16px",
+        display: "flex",
+        "align-items": "center",
+        gap: "8px",
+      }}
+    >
+      <span style={{ "font-weight": "500", color: "#1890ff" }}>
+        Test Duration:
+      </span>
+      <span style={{ color: "#333" }}>{props.durationSeconds.toFixed(1)}s</span>
+    </div>
+  );
+};
+
 // --- UDP Performance Comparison Charts ---
 
 export const UdpThroughputComparisonChart = (props: {
@@ -426,19 +798,20 @@ export const UdpThroughputComparisonChart = (props: {
   allVpnNames?: string[];
 }) => {
   const chartData = () =>
-    metricToBarData(
+    metricsToDualBarData(
       props.data,
       (d) => d.sender_throughput_mbps,
+      (d) => d.receiver_throughput_mbps,
       props.allVpnNames,
     );
   return (
-    <ComparisonBarChart
+    <DualComparisonBarChart
       data={chartData()}
       title="UDP Throughput"
       yAxisLabel="Throughput (Mbps)"
       height={props.height ?? 400}
-      color="#52c41a"
-      higherIsBetter={true}
+      firstColor="#52c41a"
+      secondColor="#1890ff"
     />
   );
 };
@@ -477,6 +850,42 @@ export const UdpPacketLossComparisonChart = (props: {
       height={props.height ?? 400}
       color="#ff4d4f"
       higherIsBetter={false}
+    />
+  );
+};
+
+export const UdpTotalDataComparisonChart = (props: {
+  data: VpnComparisonResultMap<UdpIperfComparisonData>;
+  height?: number;
+  allVpnNames?: string[];
+}) => {
+  const chartData = () =>
+    metricsToDualBarData(
+      props.data,
+      (d) => ({
+        ...d.total_bytes_sent,
+        average: d.total_bytes_sent.average / 1_000_000_000, // Convert to GB
+        min: d.total_bytes_sent.min / 1_000_000_000,
+        max: d.total_bytes_sent.max / 1_000_000_000,
+      }),
+      (d) => ({
+        ...d.total_bytes_received,
+        average: d.total_bytes_received.average / 1_000_000_000,
+        min: d.total_bytes_received.min / 1_000_000_000,
+        max: d.total_bytes_received.max / 1_000_000_000,
+      }),
+      props.allVpnNames,
+    );
+  return (
+    <DualComparisonBarChart
+      data={chartData()}
+      title="Total Data Transferred"
+      yAxisLabel="Data (GB)"
+      height={props.height ?? 400}
+      firstColor="#722ed1"
+      secondColor="#13c2c2"
+      firstLabel="Sent"
+      secondLabel="Received"
     />
   );
 };
@@ -672,23 +1081,29 @@ export const TcpComparisonSection = (props: {
   data: VpnComparisonResultMap<TcpIperfComparisonData>;
   allVpnNames?: string[];
 }) => {
+  const duration = () => getTestDuration(props.data);
   return (
     <div
       style={{
-        display: "grid",
-        "grid-template-columns": "1fr 1fr",
+        display: "flex",
+        "flex-direction": "column",
         gap: "20px",
       }}
     >
+      <TestInfoBanner durationSeconds={duration()} />
       <TcpThroughputComparisonChart
         data={props.data}
         allVpnNames={props.allVpnNames}
       />
-      <TcpReceiverThroughputComparisonChart
+      <TcpTotalDataComparisonChart
         data={props.data}
         allVpnNames={props.allVpnNames}
       />
       <TcpRetransmitsComparisonChart
+        data={props.data}
+        allVpnNames={props.allVpnNames}
+      />
+      <TcpWindowSizeComparisonChart
         data={props.data}
         allVpnNames={props.allVpnNames}
       />
@@ -700,19 +1115,21 @@ export const UdpComparisonSection = (props: {
   data: VpnComparisonResultMap<UdpIperfComparisonData>;
   allVpnNames?: string[];
 }) => {
+  const duration = () => getTestDuration(props.data);
   return (
     <div
       style={{
-        display: "grid",
-        "grid-template-columns": "1fr 1fr",
+        display: "flex",
+        "flex-direction": "column",
         gap: "20px",
       }}
     >
+      <TestInfoBanner durationSeconds={duration()} />
       <UdpThroughputComparisonChart
         data={props.data}
         allVpnNames={props.allVpnNames}
       />
-      <UdpJitterComparisonChart
+      <UdpTotalDataComparisonChart
         data={props.data}
         allVpnNames={props.allVpnNames}
       />
@@ -872,73 +1289,35 @@ export const NixCacheComparisonSection = (props: {
   allVpnNames?: string[];
 }) => {
   return (
-    <div
-      style={{
-        display: "grid",
-        "grid-template-columns": "1fr 1fr",
-        gap: "20px",
-      }}
-    >
-      <NixCacheMeanTimeComparisonChart
-        data={props.data}
-        allVpnNames={props.allVpnNames}
-      />
-      <NixCacheMinTimeComparisonChart
-        data={props.data}
-        allVpnNames={props.allVpnNames}
-      />
-      <NixCacheMaxTimeComparisonChart
-        data={props.data}
-        allVpnNames={props.allVpnNames}
-      />
-    </div>
+    <NixCacheMeanTimeComparisonChart
+      data={props.data}
+      allVpnNames={props.allVpnNames}
+    />
   );
 };
 
 // --- Parallel TCP Comparison Charts ---
 
-export const ParallelTcpTotalThroughputComparisonChart = (props: {
+export const ParallelTcpThroughputComparisonChart = (props: {
   data: VpnComparisonResultMap<ParallelTcpComparisonData>;
   height?: number;
   allVpnNames?: string[];
 }) => {
   const chartData = () =>
-    metricToBarData(
+    metricsToDualBarData(
       props.data,
-      (d) => d.total_throughput_mbps,
+      (d) => d.sender_throughput_mbps,
+      (d) => d.receiver_throughput_mbps,
       props.allVpnNames,
     );
   return (
-    <ComparisonBarChart
+    <DualComparisonBarChart
       data={chartData()}
-      title="Parallel TCP Total Throughput"
+      title="Parallel TCP Throughput"
       yAxisLabel="Throughput (Mbps)"
       height={props.height ?? 400}
-      color="#52c41a"
-      higherIsBetter={true}
-    />
-  );
-};
-
-export const ParallelTcpAvgThroughputComparisonChart = (props: {
-  data: VpnComparisonResultMap<ParallelTcpComparisonData>;
-  height?: number;
-  allVpnNames?: string[];
-}) => {
-  const chartData = () =>
-    metricToBarData(
-      props.data,
-      (d) => d.avg_throughput_mbps,
-      props.allVpnNames,
-    );
-  return (
-    <ComparisonBarChart
-      data={chartData()}
-      title="Parallel TCP Average Throughput per Pair"
-      yAxisLabel="Throughput (Mbps)"
-      height={props.height ?? 400}
-      color="#1890ff"
-      higherIsBetter={true}
+      firstColor="#52c41a"
+      secondColor="#1890ff"
     />
   );
 };
@@ -962,27 +1341,105 @@ export const ParallelTcpRetransmitsComparisonChart = (props: {
   );
 };
 
+export const ParallelTcpWindowSizeComparisonChart = (props: {
+  data: VpnComparisonResultMap<ParallelTcpComparisonData>;
+  height?: number;
+  allVpnNames?: string[];
+}) => {
+  const chartData = () =>
+    metricsToDualBarData(
+      props.data,
+      (d) => ({
+        ...d.max_snd_wnd_bytes,
+        average: d.max_snd_wnd_bytes.average / 1024, // Convert to KB
+        min: d.max_snd_wnd_bytes.min / 1024,
+        max: d.max_snd_wnd_bytes.max / 1024,
+      }),
+      (d) => ({
+        ...d.max_snd_cwnd_bytes,
+        average: d.max_snd_cwnd_bytes.average / 1024,
+        min: d.max_snd_cwnd_bytes.min / 1024,
+        max: d.max_snd_cwnd_bytes.max / 1024,
+      }),
+      props.allVpnNames,
+    );
+  return (
+    <DualComparisonBarChart
+      data={chartData()}
+      title="Parallel TCP Max Window Size"
+      yAxisLabel="Size (KB)"
+      height={props.height ?? 400}
+      firstColor="#f39c12"
+      secondColor="#9b59b6"
+      firstLabel="Send Window"
+      secondLabel="Congestion Window"
+    />
+  );
+};
+
+export const ParallelTcpTotalDataComparisonChart = (props: {
+  data: VpnComparisonResultMap<ParallelTcpComparisonData>;
+  height?: number;
+  allVpnNames?: string[];
+}) => {
+  const chartData = () =>
+    metricsToDualBarData(
+      props.data,
+      (d) => ({
+        ...d.total_bytes_sent,
+        average: d.total_bytes_sent.average / 1_000_000_000, // Convert to GB
+        min: d.total_bytes_sent.min / 1_000_000_000,
+        max: d.total_bytes_sent.max / 1_000_000_000,
+      }),
+      (d) => ({
+        ...d.total_bytes_received,
+        average: d.total_bytes_received.average / 1_000_000_000,
+        min: d.total_bytes_received.min / 1_000_000_000,
+        max: d.total_bytes_received.max / 1_000_000_000,
+      }),
+      props.allVpnNames,
+    );
+  return (
+    <DualComparisonBarChart
+      data={chartData()}
+      title="Total Data Transferred"
+      yAxisLabel="Data (GB)"
+      height={props.height ?? 400}
+      firstColor="#722ed1"
+      secondColor="#13c2c2"
+      firstLabel="Sent"
+      secondLabel="Received"
+    />
+  );
+};
+
 export const ParallelTcpComparisonSection = (props: {
   data: VpnComparisonResultMap<ParallelTcpComparisonData>;
   allVpnNames?: string[];
 }) => {
+  const duration = () => getTestDuration(props.data);
   return (
     <div
       style={{
-        display: "grid",
-        "grid-template-columns": "1fr 1fr",
+        display: "flex",
+        "flex-direction": "column",
         gap: "20px",
       }}
     >
-      <ParallelTcpTotalThroughputComparisonChart
+      <TestInfoBanner durationSeconds={duration()} />
+      <ParallelTcpThroughputComparisonChart
         data={props.data}
         allVpnNames={props.allVpnNames}
       />
-      <ParallelTcpAvgThroughputComparisonChart
+      <ParallelTcpTotalDataComparisonChart
         data={props.data}
         allVpnNames={props.allVpnNames}
       />
       <ParallelTcpRetransmitsComparisonChart
+        data={props.data}
+        allVpnNames={props.allVpnNames}
+      />
+      <ParallelTcpWindowSizeComparisonChart
         data={props.data}
         allVpnNames={props.allVpnNames}
       />

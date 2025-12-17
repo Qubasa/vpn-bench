@@ -1,6 +1,81 @@
 {
     "status": "success",
     "data": {
+        "Tinc": {
+            "status": "success",
+            "data": {
+                "sender_throughput_mbps": {
+                    "min": 4220.456316426623,
+                    "average": 4220.456316426623,
+                    "max": 4220.456316426623,
+                    "percentiles": {
+                        "p25": 4220.456316426623,
+                        "p50": 4220.456316426623,
+                        "p75": 4220.456316426623
+                    }
+                },
+                "receiver_throughput_mbps": {
+                    "min": 85.72295262017144,
+                    "average": 85.72295262017144,
+                    "max": 85.72295262017144,
+                    "percentiles": {
+                        "p25": 85.72295262017144,
+                        "p50": 85.72295262017144,
+                        "p75": 85.72295262017144
+                    }
+                },
+                "jitter_ms": {
+                    "min": 2.781007969358366,
+                    "average": 2.781007969358366,
+                    "max": 2.781007969358366,
+                    "percentiles": {
+                        "p25": 2.781007969358366,
+                        "p50": 2.781007969358366,
+                        "p75": 2.781007969358366
+                    }
+                },
+                "lost_percent": {
+                    "min": 97.95164635261814,
+                    "average": 97.95164635261814,
+                    "max": 97.95164635261814,
+                    "percentiles": {
+                        "p25": 97.95164635261814,
+                        "p50": 97.95164635261814,
+                        "p75": 97.95164635261814
+                    }
+                },
+                "total_bytes_sent": {
+                    "min": 15827366940.0,
+                    "average": 15827366940.0,
+                    "max": 15827366940.0,
+                    "percentiles": {
+                        "p25": 15827366940.0,
+                        "p50": 15827366940.0,
+                        "p75": 15827366940.0
+                    }
+                },
+                "total_bytes_received": {
+                    "min": 323850021.0,
+                    "average": 323850021.0,
+                    "max": 323850021.0,
+                    "percentiles": {
+                        "p25": 323850021.0,
+                        "p50": 323850021.0,
+                        "p75": 323850021.0
+                    }
+                },
+                "duration_seconds": {
+                    "min": 30.001243,
+                    "average": 30.001243,
+                    "max": 30.001243,
+                    "percentiles": {
+                        "p25": 30.001243,
+                        "p50": 30.001243,
+                        "p75": 30.001243
+                    }
+                }
+            }
+        },
         "Mycelium": {
             "status": "error",
             "error_type": "CmdOut",
@@ -31,6 +106,38 @@
                 ],
                 "returncode": -1,
                 "msg": "Command timed out after 120 seconds"
+            },
+            "machine": "0_lom"
+        },
+        "Headscale": {
+            "status": "error",
+            "error_type": "CmdOut",
+            "error": {
+                "stdout": "{\n\t\"start\":\t{\n\t\t\"connected\":\t[{\n\t\t\t\t\"socket\":\t5,\n\t\t\t\t\"local_host\":\t\"fd7a:115c:a1e0::3\",\n\t\t\t\t\"local_port\":\t54503,\n\t\t\t\t\"remote_host\":\t\"fd7a:115c:a1e0::1\",\n\t\t\t\t\"remote_port\":\t5201\n\t\t\t}],\n\t\t\"version\":\t\"iperf 3.20\",\n\t\t\"system_info\":\t\"Linux lom 6.12.57 #1-NixOS SMP PREEMPT_DYNAMIC Sun Nov  2 13:15:23 UTC 2025 x86_64\",\n\t\t\"timestamp\":\t{\n\t\t\t\"time\":\t\"Sat, 13 Dec 2025 20:20:06 GMT\",\n\t\t\t\"timesecs\":\t1765657206,\n\t\t\t\"timemillisecs\":\t1765657206108\n\t\t},\n\t\t\"connecting_to\":\t{\n\t\t\t\"host\":\t\"vpn.yuki\",\n\t\t\t\"port\":\t5201\n\t\t},\n\t\t\"cookie\":\t\"lhxwtjbicy2alxrggdgkcoloq7xmrae3sc2r\",\n\t\t\"target_bitrate\":\t0,\n\t\t\"fq_rate\":\t0,\n\t\t\"sock_bufsize\":\t0,\n\t\t\"sndbuf_actual\":\t212992,\n\t\t\"rcvbuf_actual\":\t212992\n\t},\n\t\"intervals\":\t[],\n\t\"end\":\t{\n\t},\n\t\"error\":\t\"unable to read from stream socket: No such file or directory\"\n}\n",
+                "stderr": "Warning: Permanently added '138.201.33.111' (ED25519) to the list of known hosts.\r\n",
+                "cwd": "/home/lhebendanz/Projects/vpn-benchmark-suite/pkgs/vpn-bench",
+                "command_list": [
+                    "ssh",
+                    "root@138.201.33.111",
+                    "-A",
+                    "-o",
+                    "StrictHostKeyChecking=no",
+                    "-o",
+                    "UserKnownHostsFile=/dev/null",
+                    "-o",
+                    "ControlMaster=auto",
+                    "-o",
+                    "ControlPersist=1m",
+                    "-o",
+                    "ControlPath=/tmp/clan-sshw4kxrdq7/socket",
+                    "--",
+                    "bash",
+                    "-c",
+                    "'export IPERF3_PASSWORD=mambaBudo; exec \"$@\"'",
+                    "--",
+                    "iperf --bidir --connect-timeout 600 --time 30 --json -Z -c vpn.yuki --username mario --rsa-public-key-path /tmp/iperf3.public -u --udp-counters-64bit -b 0"
+                ],
+                "returncode": 1
             },
             "machine": "0_lom"
         },
@@ -81,13 +188,13 @@
                     }
                 },
                 "receiver_throughput_mbps": {
-                    "min": 8272.533052189632,
-                    "average": 8663.501056217305,
-                    "max": 9054.469060244975,
+                    "min": 15.88000174353004,
+                    "average": 24.26259444650576,
+                    "max": 32.64518714948148,
                     "percentiles": {
-                        "p25": 8663.501056217305,
-                        "p50": 8663.501056217305,
-                        "p75": 8663.501056217305
+                        "p25": 24.26259444650576,
+                        "p50": 24.26259444650576,
+                        "p75": 24.26259444650576
                     }
                 },
                 "jitter_ms": {
@@ -109,6 +216,36 @@
                         "p50": 99.71247555681177,
                         "p75": 99.71247555681177
                     }
+                },
+                "total_bytes_sent": {
+                    "min": 31023307040.0,
+                    "average": 32489457000.0,
+                    "max": 33955606960.0,
+                    "percentiles": {
+                        "p25": 32489457000.0,
+                        "p50": 32489457000.0,
+                        "p75": 32489457000.0
+                    }
+                },
+                "total_bytes_received": {
+                    "min": 60021456.0,
+                    "average": 91716724.0,
+                    "max": 123411992.0,
+                    "percentiles": {
+                        "p25": 91716724.0,
+                        "p50": 91716724.0,
+                        "p75": 91716724.0
+                    }
+                },
+                "duration_seconds": {
+                    "min": 30.001191,
+                    "average": 30.001227999999998,
+                    "max": 30.001265,
+                    "percentiles": {
+                        "p25": 30.001227999999998,
+                        "p50": 30.001227999999998,
+                        "p75": 30.001227999999998
+                    }
                 }
             }
         },
@@ -126,13 +263,13 @@
                     }
                 },
                 "receiver_throughput_mbps": {
-                    "min": 4889.440252037926,
-                    "average": 4889.440252037926,
-                    "max": 4889.440252037926,
+                    "min": 726.0508068749945,
+                    "average": 726.0508068749945,
+                    "max": 726.0508068749945,
                     "percentiles": {
-                        "p25": 4889.440252037926,
-                        "p50": 4889.440252037926,
-                        "p75": 4889.440252037926
+                        "p25": 726.0508068749945,
+                        "p50": 726.0508068749945,
+                        "p75": 726.0508068749945
                     }
                 },
                 "jitter_ms": {
@@ -154,8 +291,70 @@
                         "p50": 85.14515157809645,
                         "p75": 85.14515157809645
                     }
+                },
+                "total_bytes_sent": {
+                    "min": 18336133750.0,
+                    "average": 18336133750.0,
+                    "max": 18336133750.0,
+                    "percentiles": {
+                        "p25": 18336133750.0,
+                        "p50": 18336133750.0,
+                        "p75": 18336133750.0
+                    }
+                },
+                "total_bytes_received": {
+                    "min": 2723590375.0,
+                    "average": 2723590375.0,
+                    "max": 2723590375.0,
+                    "percentiles": {
+                        "p25": 2723590375.0,
+                        "p50": 2723590375.0,
+                        "p75": 2723590375.0
+                    }
+                },
+                "duration_seconds": {
+                    "min": 30.001199,
+                    "average": 30.001199,
+                    "max": 30.001199,
+                    "percentiles": {
+                        "p25": 30.001199,
+                        "p50": 30.001199,
+                        "p75": 30.001199
+                    }
                 }
             }
+        },
+        "Nebula": {
+            "status": "error",
+            "error_type": "CmdOut",
+            "error": {
+                "stdout": "{\n\t\"start\":\t{\n\t\t\"connected\":\t[{\n\t\t\t\t\"socket\":\t5,\n\t\t\t\t\"local_host\":\t\"fdc4:fb93:e53a:1:eff5:d0f7:ac45:870\",\n\t\t\t\t\"local_port\":\t45988,\n\t\t\t\t\"remote_host\":\t\"fdc4:fb93:e53a:1:495b:7e7b:f01:d16e\",\n\t\t\t\t\"remote_port\":\t5201\n\t\t\t}],\n\t\t\"version\":\t\"iperf 3.20\",\n\t\t\"system_info\":\t\"Linux lom 6.12.57 #1-NixOS SMP PREEMPT_DYNAMIC Sun Nov  2 13:15:23 UTC 2025 x86_64\",\n\t\t\"timestamp\":\t{\n\t\t\t\"time\":\t\"Sat, 13 Dec 2025 16:58:08 GMT\",\n\t\t\t\"timesecs\":\t1765645088,\n\t\t\t\"timemillisecs\":\t1765645088566\n\t\t},\n\t\t\"connecting_to\":\t{\n\t\t\t\"host\":\t\"vpn.yuki\",\n\t\t\t\"port\":\t5201\n\t\t},\n\t\t\"cookie\":\t\"3ae5ra6ejkskkpalxjrz7zx4fbq6zkaftjw6\",\n\t\t\"target_bitrate\":\t0,\n\t\t\"fq_rate\":\t0,\n\t\t\"sock_bufsize\":\t0,\n\t\t\"sndbuf_actual\":\t212992,\n\t\t\"rcvbuf_actual\":\t212992\n\t},\n\t\"intervals\":\t[],\n\t\"end\":\t{\n\t},\n\t\"error\":\t\"unable to read from stream socket: No such file or directory\"\n}\n",
+                "stderr": "Warning: Permanently added '138.201.33.111' (ED25519) to the list of known hosts.\r\n",
+                "cwd": "/home/lhebendanz/Projects/vpn-benchmark-suite/pkgs/vpn-bench",
+                "command_list": [
+                    "ssh",
+                    "root@138.201.33.111",
+                    "-A",
+                    "-o",
+                    "StrictHostKeyChecking=no",
+                    "-o",
+                    "UserKnownHostsFile=/dev/null",
+                    "-o",
+                    "ControlMaster=auto",
+                    "-o",
+                    "ControlPersist=1m",
+                    "-o",
+                    "ControlPath=/tmp/clan-sshqffs6wy9/socket",
+                    "--",
+                    "bash",
+                    "-c",
+                    "'export IPERF3_PASSWORD=mambaBudo; exec \"$@\"'",
+                    "--",
+                    "iperf --bidir --connect-timeout 600 --time 30 --json -Z -c vpn.yuki --username mario --rsa-public-key-path /tmp/iperf3.public -u --udp-counters-64bit -b 0"
+                ],
+                "returncode": 1
+            },
+            "machine": "0_lom"
         },
         "Wireguard": {
             "status": "error",
@@ -221,6 +420,81 @@
             },
             "machine": "0_lom"
         },
+        "Easytier": {
+            "status": "success",
+            "data": {
+                "sender_throughput_mbps": {
+                    "min": 4629.63266316977,
+                    "average": 4679.647400821856,
+                    "max": 4729.66213847394,
+                    "percentiles": {
+                        "p25": 4679.647400821856,
+                        "p50": 4679.647400821856,
+                        "p75": 4679.647400821856
+                    }
+                },
+                "receiver_throughput_mbps": {
+                    "min": 4.760383564298745,
+                    "average": 5.1242447052277775,
+                    "max": 5.48810584615681,
+                    "percentiles": {
+                        "p25": 5.1242447052277775,
+                        "p50": 5.1242447052277775,
+                        "p75": 5.1242447052277775
+                    }
+                },
+                "jitter_ms": {
+                    "min": 2.0692595279146766,
+                    "average": 2.4181398550254842,
+                    "max": 2.7670201821362923,
+                    "percentiles": {
+                        "p25": 2.4181398550254842,
+                        "p50": 2.4181398550254842,
+                        "p75": 2.4181398550254842
+                    }
+                },
+                "lost_percent": {
+                    "min": 99.28173333246193,
+                    "average": 99.33802969787969,
+                    "max": 99.39432606329746,
+                    "percentiles": {
+                        "p25": 99.33802969787969,
+                        "p50": 99.33802969787969,
+                        "p75": 99.33802969787969
+                    }
+                },
+                "total_bytes_sent": {
+                    "min": 17361634640.0,
+                    "average": 17549296240.0,
+                    "max": 17736957840.0,
+                    "percentiles": {
+                        "p25": 17549296240.0,
+                        "p50": 17549296240.0,
+                        "p75": 17549296240.0
+                    }
+                },
+                "total_bytes_received": {
+                    "min": 18912992.0,
+                    "average": 20284712.0,
+                    "max": 21656432.0,
+                    "percentiles": {
+                        "p25": 20284712.0,
+                        "p50": 20284712.0,
+                        "p75": 20284712.0
+                    }
+                },
+                "duration_seconds": {
+                    "min": 30.000885,
+                    "average": 30.0010555,
+                    "max": 30.001226,
+                    "percentiles": {
+                        "p25": 30.0010555,
+                        "p50": 30.0010555,
+                        "p75": 30.0010555
+                    }
+                }
+            }
+        },
         "Internal": {
             "status": "success",
             "data": {
@@ -235,13 +509,13 @@
                     }
                 },
                 "receiver_throughput_mbps": {
-                    "min": 5471.345299092367,
-                    "average": 5471.345299092367,
-                    "max": 5471.345299092367,
+                    "min": 948.350341921026,
+                    "average": 948.350341921026,
+                    "max": 948.350341921026,
                     "percentiles": {
-                        "p25": 5471.345299092367,
-                        "p50": 5471.345299092367,
-                        "p75": 5471.345299092367
+                        "p25": 948.350341921026,
+                        "p50": 948.350341921026,
+                        "p75": 948.350341921026
                     }
                 },
                 "jitter_ms": {
@@ -262,6 +536,36 @@
                         "p25": 82.6597813008331,
                         "p50": 82.6597813008331,
                         "p75": 82.6597813008331
+                    }
+                },
+                "total_bytes_sent": {
+                    "min": 20518377200.0,
+                    "average": 20518377200.0,
+                    "max": 20518377200.0,
+                    "percentiles": {
+                        "p25": 20518377200.0,
+                        "p50": 20518377200.0,
+                        "p75": 20518377200.0
+                    }
+                },
+                "total_bytes_received": {
+                    "min": 3557793920.0,
+                    "average": 3557793920.0,
+                    "max": 3557793920.0,
+                    "percentiles": {
+                        "p25": 3557793920.0,
+                        "p50": 3557793920.0,
+                        "p75": 3557793920.0
+                    }
+                },
+                "duration_seconds": {
+                    "min": 30.001217,
+                    "average": 30.001217,
+                    "max": 30.001217,
+                    "percentiles": {
+                        "p25": 30.001217,
+                        "p50": 30.001217,
+                        "p75": 30.001217
                     }
                 }
             }
