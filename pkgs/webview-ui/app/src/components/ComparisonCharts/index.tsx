@@ -784,9 +784,7 @@ const TestInfoBanner = (props: { durationSeconds: number | null }) => {
         gap: "8px",
       }}
     >
-      <span style={{ "font-weight": "500", color: "#1890ff" }}>
-        Test Duration:
-      </span>
+      <span style={{ "font-weight": "500", color: "#1890ff" }}>Run Time:</span>
       <span style={{ color: "#333" }}>{props.durationSeconds.toFixed(1)}s</span>
     </div>
   );

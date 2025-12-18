@@ -804,7 +804,12 @@ def get_vpn_error_for_run_level_test(
 def aggregate_timing_data(
     bench_dir: Path, vpn_name: str, run_alias: str
 ) -> TimingComparisonDict | None:
-    """Load timing_breakdown.json and extract key timing metrics."""
+    """Calculate timing metrics from component data.
+
+    Instead of reading total_duration_seconds from the file (which may be stale
+    when VPNs are run separately), we calculate it from component timings derived
+    from individual test metadata files that persist across runs.
+    """
     vpn_dir = bench_dir / vpn_name
 
     # Try run_alias specific path first, then VPN root (for baseline)
@@ -812,27 +817,34 @@ def aggregate_timing_data(
     if not timing_file.exists():
         timing_file = vpn_dir / "timing_breakdown.json"
 
-    if not timing_file.exists():
-        return None
-
-    try:
-        with timing_file.open() as f:
-            data = json.load(f)
-    except (json.JSONDecodeError, OSError) as e:
-        log.warning(f"Failed to load timing data from {timing_file}: {e}")
-        return None
-
-    # Extract phase durations
-    total = data.get("total_duration_seconds", 0)
+    # Get installation time from timing_breakdown.json (stable, written once per VPN deploy)
     installation = 0.0
-    benchmarking = 0.0
+    if timing_file.exists():
+        try:
+            with timing_file.open() as f:
+                data = json.load(f)
+            for phase in data.get("phases", []):
+                if phase.get("phase") == "vpn_installation":
+                    installation = phase.get("duration_seconds", 0)
+                    break
+        except (json.JSONDecodeError, OSError) as e:
+            log.warning(f"Failed to load timing data from {timing_file}: {e}")
 
-    for phase in data.get("phases", []):
-        phase_name = phase.get("phase", "")
-        if phase_name == "vpn_installation":
-            installation = phase.get("duration_seconds", 0)
-        elif phase_name == "benchmarking":
-            benchmarking = phase.get("duration_seconds", 0)
+    # Get component timings from test metadata (accumulates correctly across runs)
+    tc_stab = extract_tc_stabilization_time(bench_dir, vpn_name, run_alias)
+    vpn_restart, connectivity_wait, test_duration = extract_test_metadata_timings(
+        bench_dir, vpn_name, run_alias
+    )
+
+    # Calculate benchmarking time from components
+    benchmarking = tc_stab + test_duration + vpn_restart + connectivity_wait
+
+    # Calculate total as sum of installation and benchmarking
+    total = installation + benchmarking
+
+    # Return None if we have no meaningful data
+    if total == 0.0 and installation == 0.0 and benchmarking == 0.0:
+        return None
 
     # Create single-value MetricStatsDict (one value per VPN, no cross-machine aggregation)
     def single_metric(value: float) -> MetricStatsDict:

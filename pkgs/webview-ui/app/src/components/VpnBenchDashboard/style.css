@@ -42,6 +42,10 @@
   display: inline-block;
   padding: 8px 16px;
   outline: none;
+  color: hsl(240 5% 46%);
+  cursor: pointer;
+  border-radius: 4px 4px 0 0;
+  transition: background-color 150ms, color 150ms;
 }
 .tabs__trigger:hover {
   background-color: hsl(0 0% 98%);
@@ -49,6 +53,11 @@
 }
 .tabs__trigger:focus-visible {
   background-color: hsl(240 5% 96%);
+}
+.tabs__trigger[data-selected] {
+  color: hsl(200 98% 39%);
+  font-weight: 500;
+  background-color: hsl(200 98% 97%);
 }
 .tabs__trigger[data-disabled],
 .tabs__trigger[data-disabled]:hover {

@@ -1,11 +1,6 @@
 import { Echart } from "../Echarts";
 import { Show, createSignal, createEffect, createMemo, For } from "solid-js";
-import {
-  ComparisonData,
-  TCSettingsData,
-  timingData,
-  getTotalRuntimeForProfile,
-} from "@/src/benchData";
+import { ComparisonData, TCSettingsData } from "@/src/benchData";
 import { Tabs } from "@kobalte/core/tabs";
 import {
   TcpComparisonSection,
@@ -506,6 +501,28 @@ const TotalRuntimeDisplay = (props: {
   );
 };
 
+// Run Time Banner for individual benchmark tabs (shows benchmark command duration)
+// Styled to match TestInfoBanner in ComparisonCharts
+const RunTimeBanner = (props: { seconds: number }) => {
+  return (
+    <div
+      style={{
+        background: "#f0f5ff",
+        border: "1px solid #adc6ff",
+        "border-radius": "6px",
+        padding: "12px 16px",
+        "margin-bottom": "16px",
+        display: "flex",
+        "align-items": "center",
+        gap: "8px",
+      }}
+    >
+      <span style={{ "font-weight": "500", color: "#1890ff" }}>Run Time:</span>
+      <span style={{ color: "#333" }}>{props.seconds}s</span>
+    </div>
+  );
+};
+
 export const GeneralDashboard = (props: GeneralDashboardProps) => {
   // Get URL search params for state sync
   const [searchParams, setSearchParams] = useSearchParams();
@@ -608,8 +625,8 @@ export const GeneralDashboard = (props: GeneralDashboardProps) => {
 
       {/* Display total runtime for current profile */}
       <TotalRuntimeDisplay
-        totalSeconds={getTotalRuntimeForProfile(timingData[selectedProfile()])}
-        vpnCount={Object.keys(timingData[selectedProfile()] ?? {}).length}
+        totalSeconds={currentProfileData()?.timeBreakdown?.data?.total_seconds ?? null}
+        vpnCount={Object.keys(currentProfileData()?.benchmarkStats ?? {}).length}
       />
 
       {/* Benchmark Type Tabs */}
@@ -645,7 +662,7 @@ export const GeneralDashboard = (props: GeneralDashboardProps) => {
             Parallel TCP
           </Tabs.Trigger>
           <Tabs.Trigger class="tabs__trigger" value="benchmark-stats">
-            Test Results
+            Test Timings
           </Tabs.Trigger>
           <Tabs.Indicator class="tabs__indicator" />
         </Tabs.List>
@@ -707,6 +724,7 @@ export const GeneralDashboard = (props: GeneralDashboardProps) => {
         </Tabs.Content>
 
         <Tabs.Content class="tabs__content" value="ping-comparison">
+          <RunTimeBanner seconds={60} />
           <Show
             when={currentProfileData()?.ping}
             fallback={<FallbackMessage />}
@@ -721,6 +739,7 @@ export const GeneralDashboard = (props: GeneralDashboardProps) => {
         </Tabs.Content>
 
         <Tabs.Content class="tabs__content" value="qperf-comparison">
+          <RunTimeBanner seconds={30} />
           <Show
             when={currentProfileData()?.qperf}
             fallback={<FallbackMessage />}
@@ -735,6 +754,7 @@ export const GeneralDashboard = (props: GeneralDashboardProps) => {
         </Tabs.Content>
 
         <Tabs.Content class="tabs__content" value="video-comparison">
+          <RunTimeBanner seconds={30} />
           <Show
             when={currentProfileData()?.videoStreaming}
             fallback={<FallbackMessage />}
