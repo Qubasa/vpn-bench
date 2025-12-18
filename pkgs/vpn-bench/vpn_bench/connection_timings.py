@@ -32,12 +32,6 @@ def install_connection_timings_conf(
     vpn: VPN,
     bmachines: list[BenchMachine],
 ) -> None:
-    match vpn:
-        case VPN.Internal:
-            return
-        case _:
-            pass
-
     pub_ips = {f"v4.{machine['name']}": machine["name"] for machine in tr_machines}
     vpn_ips = {
         f"vpn.{bmachine.cmachine.name}": bmachine.cmachine.name
@@ -83,12 +77,6 @@ def download_connection_timings(
     reboot: bool = False,
     benchmark_run_alias: str = "default",
 ) -> None:
-    match vpn:
-        case VPN.Internal:
-            return
-        case _:
-            pass
-
     def download_save(machine: Machine, dest: Path) -> None:
         host = machine.target_host().override(host_key_check="none")
         with host.host_connection() as ssh:
@@ -311,14 +299,13 @@ def reboot_connection_timings(
     )
 
 
-def analyse_connection_timings(config: Config, tr_machines: list[TrMachine]) -> None:
+def analyse_connection_timings(config: Config) -> None:
     """
     Collect connection timing information from all machines for each VPN
     and generate summary files in the General folder.
 
     Args:
         config: Configuration containing benchmark directory
-        tr_machines: List of test machines
     """
     log.info("Analyzing connection timings")
 
@@ -421,6 +408,13 @@ def process_timing_files(config: Config, timing_type: str, general_dir: Path) ->
     comparison_dir.mkdir(exist_ok=True)
 
     for run_alias, vpn_data in profiles_data.items():
+        # Skip profiles with no actual timing data
+        # (all VPN entries are empty dicts)
+        has_data = any(bool(machines) for machines in vpn_data.values())
+        if not has_data:
+            log.info(f"Skipping {timing_type} for profile {run_alias}: no data")
+            continue
+
         profile_dir = comparison_dir / run_alias
         profile_dir.mkdir(exist_ok=True)
 

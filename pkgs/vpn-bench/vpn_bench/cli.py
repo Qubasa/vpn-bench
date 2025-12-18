@@ -11,14 +11,16 @@ from clan_lib.dirs import user_cache_dir, user_data_dir
 
 from vpn_bench.bench import benchmark_vpn
 from vpn_bench.comparison import generate_comparison_data
+from vpn_bench.connection_timings import analyse_connection_timings
 from vpn_bench.data import (
     VPN,
+    BenchmarkEntry,
     Config,
     Provider,
     SSHKeyPair,
     TCProfile,
     TestType,
-    get_benchmark_runs,
+    parse_benchmark_config,
 )
 from vpn_bench.errors import VpnBenchError
 from vpn_bench.plot import build_ui, plot_data
@@ -131,6 +133,11 @@ def create_parser() -> argparse.ArgumentParser:
         "--no-tui",
         action="store_true",
         help="Disable the TUI and use standard logging output",
+    )
+    bench_parser.add_argument(
+        "--config",
+        type=Path,
+        help="TOML config file specifying per-VPN test configuration",
     )
 
     plot_parser = subparsers.add_parser("plot", help="Plot the data from benchmark")
@@ -289,53 +296,82 @@ def run_cli() -> None:
             clan_init(config, age_opts, machines)
 
     elif args.subcommand == "bench":
-        tests: list[str] = args.test
-        tests_enum: list[TestType] = []
-
-        if len(tests) == 0:
-            log.warning("No benchmark tests specified with --test, defaulting to none")
-        elif len(tests) == 1 and tests[0] == "all":
-            for btest in TestType:
-                tests_enum.append(btest)
-        else:
-            for test in tests:
-                bench_type = TestType.from_str(test)
-                tests_enum.append(bench_type)
-
         machines = tr_metadata(config)
 
-        vpns: list[str] = args.vpn
-        vpns_enum: list[VPN] = []
+        # Build list of BenchmarkEntry from config file or CLI options
+        entries: list[BenchmarkEntry] = []
 
-        if len(vpns) == 1 and vpns[0] == "all":
-            for tvpn in VPN:
-                vpns_enum.append(tvpn)
-        else:
-            for cvpn in vpns:
-                vpn_type = VPN.from_str(cvpn)
-                vpns_enum.append(vpn_type)
+        if args.config:
+            # Load entries from config file
+            entries = parse_benchmark_config(args.config)
+            log.info(f"Loaded {len(entries)} benchmark entries from {args.config}")
 
-        if len(vpns_enum) == 0:
-            msg = "No vpns specified with --vpns, defaulting to none"
+        # Parse CLI options for overrides
+        cli_vpns: list[VPN] | None = None
+        if args.vpn:
+            vpns_raw: list[str] = args.vpn
+            if len(vpns_raw) == 1 and vpns_raw[0] == "all":
+                cli_vpns = list(VPN)
+            else:
+                cli_vpns = [VPN.from_str(v) for v in vpns_raw]
+
+        cli_tests: list[TestType] | None = None
+        if args.test:
+            tests_raw: list[str] = args.test
+            if len(tests_raw) == 1 and tests_raw[0] == "all":
+                cli_tests = list(TestType)
+            else:
+                cli_tests = [TestType.from_str(t) for t in tests_raw]
+
+        cli_tc_profiles: list[TCProfile] | None = None
+        if args.tc_profile:
+            tc_raw: list[str] = args.tc_profile
+            if len(tc_raw) == 1 and tc_raw[0] == "all":
+                cli_tc_profiles = list(TCProfile)
+            else:
+                cli_tc_profiles = [TCProfile.from_str(p) for p in tc_raw]
+
+        cli_skip_con_times: bool = args.skip_con_times
+
+        # Apply CLI overrides to entries
+        if cli_vpns:
+            # Filter to only VPNs specified on CLI
+            entries = [e for e in entries if e.vpn in cli_vpns]
+            # Add any CLI VPNs not already in config
+            existing_vpns = {e.vpn for e in entries}
+            for vpn in cli_vpns:
+                if vpn not in existing_vpns:
+                    entries.append(
+                        BenchmarkEntry(
+                            vpn=vpn,
+                            tests=cli_tests or [],
+                            tc_profiles=cli_tc_profiles or [TCProfile.BASELINE],
+                            skip_con_times=cli_skip_con_times,
+                        )
+                    )
+
+        # Override tests/tc_profiles/skip_con_times if CLI specified
+        if cli_tests:
+            for entry in entries:
+                entry.tests = cli_tests
+        if cli_tc_profiles:
+            for entry in entries:
+                entry.tc_profiles = cli_tc_profiles
+        if cli_skip_con_times:
+            for entry in entries:
+                entry.skip_con_times = True
+
+        # Validate we have entries to run
+        if len(entries) == 0:
+            msg = "No VPNs specified. Use --vpn or --config to specify VPNs to benchmark."
             raise VpnBenchError(msg)
 
-        # Parse TC profiles
-        tc_profiles: list[str] = args.tc_profile
-        tc_profiles_enum: list[TCProfile] = []
-
-        if len(tc_profiles) == 0:
-            log.info("No TC profiles specified, defaulting to baseline only")
-            tc_profiles_enum.append(TCProfile.BASELINE)
-        elif len(tc_profiles) == 1 and tc_profiles[0] == "all":
-            for tc_profile in TCProfile:
-                tc_profiles_enum.append(tc_profile)
-        else:
-            for profile_str in tc_profiles:
-                tc_profile = TCProfile.from_str(profile_str)
-                tc_profiles_enum.append(tc_profile)
-
-        # Convert TC profiles to benchmark runs
-        benchmark_runs = get_benchmark_runs(tc_profiles_enum)
+        # Warn if any entries have no tests
+        for entry in entries:
+            if len(entry.tests) == 0:
+                log.warning(
+                    f"No tests specified for {entry.vpn.value}, skipping benchmark tests"
+                )
 
         # Decide whether to use TUI based on TTY detection and --no-tui flag
         use_tui = sys.stdout.isatty() and sys.stdin.isatty() and not args.no_tui
@@ -346,31 +382,35 @@ def run_cli() -> None:
 
             app = BenchmarkTUI(
                 config=config,
-                vpns=vpns_enum,
-                tests=tests_enum,
-                benchmark_runs=benchmark_runs,
+                entries=entries,
                 machines=machines,
-                skip_reboot_timings=args.skip_con_times,
             )
             app.run()
         else:
             # Run without TUI (standard logging)
             failed_vpns: list[tuple[VPN, str]] = []
-            for vpn in vpns_enum:
-                log.info(f"========== Running benchmark for {vpn} ==========")
+            for entry in entries:
+                log.info(f"========== Running benchmark for {entry.vpn} ==========")
+                log.info(
+                    f"  Tests: {[t.value for t in entry.tests]}, "
+                    f"TC profiles: {[p.value for p in entry.tc_profiles]}, "
+                    f"Skip connection times: {entry.skip_con_times}"
+                )
                 try:
                     benchmark_vpn(
                         config,
-                        vpn,
+                        entry.vpn,
                         machines,
-                        tests_enum,
-                        benchmark_runs,
-                        args.skip_con_times,
+                        entry.tests,
+                        entry.get_benchmark_runs(),
+                        entry.skip_con_times,
                     )
                 except Exception as e:
                     error_msg = str(e)
-                    log.error(f"Benchmark for {vpn} failed with error: {error_msg}")
-                    failed_vpns.append((vpn, error_msg))
+                    log.error(
+                        f"Benchmark for {entry.vpn} failed with error: {error_msg}"
+                    )
+                    failed_vpns.append((entry.vpn, error_msg))
                     log.info("Continuing with next VPN...")
                     continue
 
@@ -378,7 +418,7 @@ def run_cli() -> None:
                 log.warning("The following VPNs failed during benchmarking:")
                 for vpn, error in failed_vpns:
                     log.warning(f"  - {vpn.value}: {error}")
-                log.warning(f"Total: {len(failed_vpns)}/{len(vpns_enum)} VPNs failed")
+                log.warning(f"Total: {len(failed_vpns)}/{len(entries)} VPNs failed")
 
     elif args.subcommand == "plot":
         machines = tr_metadata(config)
@@ -387,9 +427,11 @@ def run_cli() -> None:
 
     elif args.subcommand == "compare":
         generate_comparison_data(config.bench_dir)
+        analyse_connection_timings(config)
 
     elif args.subcommand == "build-ui":
         generate_comparison_data(config.bench_dir)
+        analyse_connection_timings(config)
         website_dir = build_ui(config.bench_dir, create_symlink=not args.no_symlink)
         print(website_dir)
 

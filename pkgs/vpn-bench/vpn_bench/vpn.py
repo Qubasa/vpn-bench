@@ -478,7 +478,7 @@ def install_vpn(
     except ClanError:
         build_host = None
 
-    if get_con_times and vpn != VPN.Internal:
+    if get_con_times:
         # Update machine without VPNs to remove any previous VPN configuration
         with timed_op("deploy_base_machines"):
             deploy_machines(machines, build_host=build_host, ssh_key=config.ssh_keys[0])
@@ -587,9 +587,8 @@ def install_vpn(
         install_nix_cache(config, tr_machines, bmachines)
 
     # Always install connection timings service (needed for wait_for_vpn_connectivity)
-    if vpn != VPN.Internal:
-        with timed_op("install_connection_timings_service"):
-            install_connection_timings_conf(config, tr_machines, vpn, bmachines)
+    with timed_op("install_connection_timings_service"):
+        install_connection_timings_conf(config, tr_machines, vpn, bmachines)
 
     machines = [bmachine.cmachine for bmachine in bmachines]
 
@@ -607,7 +606,7 @@ def install_vpn(
     with timed_op("deploy_vpn_machines"):
         deploy_machines(machines, build_host=build_host, ssh_key=config.ssh_keys[0])
 
-    if get_con_times and vpn != VPN.Internal:
+    if get_con_times:
         with timed_op("initial_connection_timings"):
             download_connection_timings(
                 config, vpn, machines, benchmark_run_alias=benchmark_run_alias

@@ -1,0 +1,112 @@
+{
+  "vpn_name": "hyprspace",
+  "total_duration_seconds": 1618.545853179996,
+  "start_timestamp": 1766032654.772609,
+  "end_timestamp": 1766034273.3184636,
+  "phases": [
+    {
+      "phase": "vpn_installation",
+      "duration_seconds": 346.14244857701124,
+      "start_timestamp": 1766032654.7771156,
+      "operations": [
+        {
+          "name": "nix_flake_update",
+          "duration_seconds": 1.7587871890282258,
+          "start_timestamp": 1766032654.7771256,
+          "success": true
+        },
+        {
+          "name": "create_base_inventory",
+          "duration_seconds": 21.171831068000756,
+          "start_timestamp": 1766032656.549151,
+          "success": true
+        },
+        {
+          "name": "deploy_base_machines",
+          "duration_seconds": 26.170880462013884,
+          "start_timestamp": 1766032678.1038935,
+          "success": true
+        },
+        {
+          "name": "clean_state_dirs",
+          "duration_seconds": 0.36960953698144294,
+          "start_timestamp": 1766032704.2865605,
+          "success": true
+        },
+        {
+          "name": "install_hyprspace_config",
+          "duration_seconds": 9.658498663979117,
+          "start_timestamp": 1766032704.6693637,
+          "success": true
+        },
+        {
+          "name": "get_vpn_ips",
+          "duration_seconds": 9.51706136201392,
+          "start_timestamp": 1766032714.5085995,
+          "success": true
+        },
+        {
+          "name": "install_nix_cache",
+          "duration_seconds": 0.077474585006712,
+          "start_timestamp": 1766032724.0347548,
+          "success": true
+        },
+        {
+          "name": "install_connection_timings_service",
+          "duration_seconds": 0.28524951098370366,
+          "start_timestamp": 1766032724.1203902,
+          "success": true
+        },
+        {
+          "name": "run_generators",
+          "duration_seconds": 8.986676054977579,
+          "start_timestamp": 1766032724.774184,
+          "success": true
+        },
+        {
+          "name": "deploy_vpn_machines",
+          "duration_seconds": 95.48109348598518,
+          "start_timestamp": 1766032733.7704287,
+          "success": true
+        },
+        {
+          "name": "initial_connection_timings",
+          "duration_seconds": 0.501691549026873,
+          "start_timestamp": 1766032829.260835,
+          "success": true
+        },
+        {
+          "name": "reboot_connection_timings",
+          "duration_seconds": 171.13396757500595,
+          "start_timestamp": 1766032829.775237,
+          "success": true
+        }
+      ]
+    },
+    {
+      "phase": "benchmarking",
+      "duration_seconds": 1272.36602378299,
+      "start_timestamp": 1766033000.944672,
+      "operations": [
+        {
+          "name": "tc_stabilization",
+          "duration_seconds": 30.028616017021704,
+          "start_timestamp": 1766033001.404963,
+          "success": true
+        },
+        {
+          "name": "run_tests",
+          "duration_seconds": 1241.410416038998,
+          "start_timestamp": 1766033031.4476871,
+          "success": true,
+          "metadata": {
+            "profile": "baseline"
+          }
+        }
+      ],
+      "metadata": {
+        "profile": "baseline"
+      }
+    }
+  ]
+}

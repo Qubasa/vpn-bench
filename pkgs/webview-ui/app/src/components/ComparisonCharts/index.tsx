@@ -53,6 +53,7 @@ const createBarChartOption = (
   yAxisLabel: string,
   color = "#1890ff",
   higherIsBetter?: boolean,
+  labelFormatter: (value: number) => string = (v) => v.toFixed(1),
 ) => {
   // Sort by value for better visualization (incomplete items at end)
   const sortedData = [...data].sort((a, b) => {
@@ -253,7 +254,7 @@ const createBarChartOption = (
             label: {
               show: true,
               position: "top",
-              formatter: (params: { value: number }) => params.value.toFixed(1),
+              formatter: (params: { value: number }) => labelFormatter(params.value),
               color: "#555",
               fontSize: 10,
             },
@@ -279,6 +280,7 @@ export const ComparisonBarChart = (props: {
   height?: number;
   color?: string;
   higherIsBetter?: boolean;
+  labelFormatter?: (value: number) => string;
 }) => {
   return (
     <Show when={props.data.length > 0} fallback={<div>No data available</div>}>
@@ -289,6 +291,7 @@ export const ComparisonBarChart = (props: {
           props.yAxisLabel,
           props.color,
           props.higherIsBetter,
+          props.labelFormatter,
         )}
         height={props.height ?? 400}
       />
@@ -439,6 +442,7 @@ const createDualBarChartOption = (
   secondColor = "#1890ff",
   firstLabel = "Sender",
   secondLabel = "Receiver",
+  labelFormatter: (value: number) => string = (v) => v.toFixed(1),
 ) => {
   // Sort by average of both values for better visualization (incomplete items at end)
   const sortedData = [...data].sort((a, b) => {
@@ -567,7 +571,7 @@ const createDualBarChartOption = (
           formatter: (params: any) => {
             const item = sortedData[params.dataIndex];
             if (item.isIncomplete) return item.isCrashed ? "⚠️" : "N/A";
-            return params.value.toFixed(1);
+            return labelFormatter(params.value);
           },
           fontSize: 10,
         },
@@ -599,7 +603,7 @@ const createDualBarChartOption = (
           formatter: (params: any) => {
             const item = sortedData[params.dataIndex];
             if (item.isIncomplete) return "";
-            return params.value.toFixed(1);
+            return labelFormatter(params.value);
           },
           fontSize: 10,
         },
@@ -617,6 +621,7 @@ export const DualComparisonBarChart = (props: {
   secondColor?: string;
   firstLabel?: string;
   secondLabel?: string;
+  labelFormatter?: (value: number) => string;
 }) => {
   return (
     <Show when={props.data.length > 0} fallback={<div>No data available</div>}>
@@ -629,6 +634,7 @@ export const DualComparisonBarChart = (props: {
           props.secondColor,
           props.firstLabel,
           props.secondLabel,
+          props.labelFormatter,
         )}
         height={props.height ?? 400}
       />
@@ -658,6 +664,7 @@ export const TcpThroughputComparisonChart = (props: {
       height={props.height ?? 400}
       firstColor="#52c41a"
       secondColor="#1890ff"
+      labelFormatter={(v) => v.toFixed(0)}
     />
   );
 };
@@ -668,15 +675,16 @@ export const TcpRetransmitsComparisonChart = (props: {
   allVpnNames?: string[];
 }) => {
   const chartData = () =>
-    metricToBarData(props.data, (d) => d.retransmits, props.allVpnNames);
+    metricToBarData(props.data, (d) => d.retransmit_percent, props.allVpnNames);
   return (
     <ComparisonBarChart
       data={chartData()}
-      title="TCP Retransmits"
-      yAxisLabel="Retransmits"
+      title="TCP Retransmit Rate"
+      yAxisLabel="Retransmit Rate (%)"
       height={props.height ?? 400}
       color="#ff4d4f"
       higherIsBetter={false}
+      labelFormatter={(v) => v.toFixed(2) + "%"}
     />
   );
 };
@@ -713,6 +721,7 @@ export const TcpWindowSizeComparisonChart = (props: {
       secondColor="#9b59b6"
       firstLabel="Send Window"
       secondLabel="Congestion Window"
+      labelFormatter={(v) => v.toFixed(0)}
     />
   );
 };
@@ -812,6 +821,7 @@ export const UdpThroughputComparisonChart = (props: {
       height={props.height ?? 400}
       firstColor="#52c41a"
       secondColor="#1890ff"
+      labelFormatter={(v) => v.toFixed(0)}
     />
   );
 };
@@ -850,6 +860,7 @@ export const UdpPacketLossComparisonChart = (props: {
       height={props.height ?? 400}
       color="#ff4d4f"
       higherIsBetter={false}
+      labelFormatter={(v) => v.toFixed(2) + "%"}
     />
   );
 };
@@ -949,6 +960,7 @@ export const PingPacketLossComparisonChart = (props: {
       height={props.height ?? 400}
       color="#ff4d4f"
       higherIsBetter={false}
+      labelFormatter={(v) => v.toFixed(2) + "%"}
     />
   );
 };
@@ -974,6 +986,7 @@ export const QperfBandwidthComparisonChart = (props: {
       height={props.height ?? 400}
       color="#52c41a"
       higherIsBetter={true}
+      labelFormatter={(v) => v.toFixed(0)}
     />
   );
 };
@@ -1012,6 +1025,7 @@ export const QperfCpuComparisonChart = (props: {
       height={props.height ?? 400}
       color="#faad14"
       higherIsBetter={false}
+      labelFormatter={(v) => v.toFixed(2) + "%"}
     />
   );
 };
@@ -1318,6 +1332,7 @@ export const ParallelTcpThroughputComparisonChart = (props: {
       height={props.height ?? 400}
       firstColor="#52c41a"
       secondColor="#1890ff"
+      labelFormatter={(v) => v.toFixed(0)}
     />
   );
 };
@@ -1328,15 +1343,16 @@ export const ParallelTcpRetransmitsComparisonChart = (props: {
   allVpnNames?: string[];
 }) => {
   const chartData = () =>
-    metricToBarData(props.data, (d) => d.total_retransmits, props.allVpnNames);
+    metricToBarData(props.data, (d) => d.retransmit_percent, props.allVpnNames);
   return (
     <ComparisonBarChart
       data={chartData()}
-      title="Parallel TCP Total Retransmits"
-      yAxisLabel="Retransmits"
+      title="Parallel TCP Retransmit Rate"
+      yAxisLabel="Retransmit Rate (%)"
       height={props.height ?? 400}
       color="#fa8c16"
       higherIsBetter={false}
+      labelFormatter={(v) => v.toFixed(2) + "%"}
     />
   );
 };
@@ -1373,6 +1389,7 @@ export const ParallelTcpWindowSizeComparisonChart = (props: {
       secondColor="#9b59b6"
       firstLabel="Send Window"
       secondLabel="Congestion Window"
+      labelFormatter={(v) => v.toFixed(0)}
     />
   );
 };

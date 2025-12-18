@@ -1,3 +1,4 @@
+import json
 import logging
 import re
 import statistics
@@ -52,6 +53,50 @@ class RistSummaryDict(TypedDict):
     bitrate_kbps: MetricStatsDict
     fps: MetricStatsDict
     dropped_frames: MetricStatsDict
+
+
+# --- RIST Network Stats TypedDicts (from ristreceiver) ---
+
+
+class RistNetworkPerSecondDict(TypedDict):
+    """Per-second network statistics from ristreceiver."""
+
+    second: int
+    packets_received: int
+    packets_dropped: int
+    packets_recovered: int
+    packets_retransmitted: int
+    bitrate_bps: int
+    rtt_ms: float
+    quality: int  # 0-100
+
+
+class RistNetworkStatsDict(TypedDict):
+    """Aggregated network statistics from ristreceiver."""
+
+    per_second_stats: list[RistNetworkPerSecondDict]
+    total_packets_received: int
+    total_packets_dropped: int
+    total_packets_recovered: int
+    avg_rtt_ms: float
+    avg_quality: float
+
+
+class RistNetworkSummaryDict(TypedDict):
+    """Summary statistics for RIST network metrics."""
+
+    packets_dropped: MetricStatsDict
+    packets_recovered: MetricStatsDict
+    rtt_ms: MetricStatsDict
+    quality: MetricStatsDict
+    bitrate_bps: MetricStatsDict
+
+
+class RistCombinedSummaryDict(TypedDict):
+    """Combined summary with both encoding and network stats."""
+
+    encoding: RistSummaryDict  # fps, bitrate from ffmpeg sender
+    network: RistNetworkSummaryDict  # packet loss, RTT from ristreceiver
 
 
 # --- Parsing Function ---
@@ -148,6 +193,140 @@ def parse_ffmpeg_stats(
     result["dropped_frames"] = max(0, expected_frames - total_frames)
 
     return result
+
+
+# --- ristreceiver Stats Parser ---
+
+
+def parse_ristreceiver_stats(journalctl_output: str) -> RistNetworkStatsDict:
+    """
+    Parse ristreceiver JSON stats output from journalctl.
+
+    ristreceiver outputs JSON stats like:
+    {"receiver-stats":{"flowinstant":{"flow_id":...,"stats":{
+      "quality":...,"received":...,"missing":...,"recovered_total":...,
+      "lost":...,"bitrate":...},"peers":[{"stats":{"rtt":...,"avg_rtt":...}}]}}}
+    """
+    result: RistNetworkStatsDict = {
+        "per_second_stats": [],
+        "total_packets_received": 0,
+        "total_packets_dropped": 0,
+        "total_packets_recovered": 0,
+        "avg_rtt_ms": 0.0,
+        "avg_quality": 0.0,
+    }
+
+    lines = journalctl_output.strip().split("\n")
+    second = 0
+    all_rtt = []
+    all_quality = []
+
+    for line in lines:
+        # Try to find JSON in the line
+        # ristreceiver outputs: timestamp|...|[INFO] {"receiver-stats":...}
+        json_start = line.find("{")
+        if json_start == -1:
+            continue
+
+        json_str = line[json_start:]
+
+        try:
+            data = json.loads(json_str)
+        except json.JSONDecodeError:
+            continue
+
+        # Parse receiver-stats format
+        if "receiver-stats" in data:
+            receiver_stats = data["receiver-stats"]
+            # flowinstant contains per-interval stats
+            if "flowinstant" in receiver_stats:
+                flow = receiver_stats["flowinstant"]
+                second += 1
+
+                # Stats are nested under "stats" key
+                stats = flow.get("stats", {})
+
+                packets_received = int(stats.get("received", 0))
+                packets_lost = int(stats.get("lost", 0))
+                packets_recovered = int(stats.get("recovered_total", 0))
+                retries = int(stats.get("retries", 0))
+                bitrate_bps = int(stats.get("bitrate", 0))
+                quality = int(stats.get("quality", 100))
+
+                # RTT is in peers array
+                rtt_ms = 0.0
+                peers = flow.get("peers", [])
+                if peers:
+                    # Average RTT across all peers
+                    peer_rtts = []
+                    for peer in peers:
+                        peer_stats = peer.get("stats", {})
+                        avg_rtt = peer_stats.get("avg_rtt", 0.0)
+                        if avg_rtt > 0:
+                            peer_rtts.append(float(avg_rtt))
+                    if peer_rtts:
+                        rtt_ms = statistics.mean(peer_rtts)
+
+                result["per_second_stats"].append(
+                    {
+                        "second": second,
+                        "packets_received": packets_received,
+                        "packets_dropped": packets_lost,  # "lost" = permanently lost
+                        "packets_recovered": packets_recovered,
+                        "packets_retransmitted": retries,
+                        "bitrate_bps": bitrate_bps,
+                        "rtt_ms": rtt_ms,
+                        "quality": quality,
+                    }
+                )
+
+                result["total_packets_received"] += packets_received
+                result["total_packets_dropped"] += packets_lost
+                result["total_packets_recovered"] += packets_recovered
+
+                if rtt_ms > 0:
+                    all_rtt.append(rtt_ms)
+                all_quality.append(quality)
+
+    # Calculate averages
+    if all_rtt:
+        result["avg_rtt_ms"] = statistics.mean(all_rtt)
+    if all_quality:
+        result["avg_quality"] = statistics.mean(all_quality)
+
+    return result
+
+
+def calculate_network_summary(
+    network_stats: RistNetworkStatsDict,
+) -> RistNetworkSummaryDict:
+    """
+    Calculate summary statistics from network stats.
+    """
+    zero_stats = calculate_metric_stats([])
+
+    if not network_stats["per_second_stats"]:
+        return {
+            "packets_dropped": zero_stats,
+            "packets_recovered": zero_stats,
+            "rtt_ms": zero_stats,
+            "quality": zero_stats,
+            "bitrate_bps": zero_stats,
+        }
+
+    stats = network_stats["per_second_stats"]
+
+    return {
+        "packets_dropped": calculate_metric_stats(
+            [s["packets_dropped"] for s in stats]
+        ),
+        "packets_recovered": calculate_metric_stats(
+            [s["packets_recovered"] for s in stats]
+        ),
+        "rtt_ms": calculate_metric_stats([s["rtt_ms"] for s in stats]),
+        "quality": calculate_metric_stats([s["quality"] for s in stats]),
+        "bitrate_bps": calculate_metric_stats([s["bitrate_bps"] for s in stats]),
+    }
 
 
 # --- Helper Function to Calculate All Stats for a Metric ---
@@ -249,12 +428,16 @@ def run_rist_test(
     machine: Machine,
     target_host: str,
     duration: int = 30,
-    bitrate: str = "5M",
+    bitrate: str = "25M",
     profile: str = "main",
     target_machine: Machine | None = None,
-) -> RistSummaryDict:
+) -> RistCombinedSummaryDict:
     """
-    Run a RIST video streaming test and return summary statistics.
+    Run a RIST video streaming test and return combined summary statistics.
+
+    This test captures both:
+    - Encoding stats from ffmpeg sender (fps, bitrate)
+    - Network stats from ristreceiver (packet loss, RTT, quality)
 
     Args:
         machine: The machine to run the test from (sender/client)
@@ -265,15 +448,17 @@ def run_rist_test(
         target_machine: The target Machine object for SSH access (uses public IP)
 
     Returns:
-        Summary statistics with min/avg/max/percentiles for bitrate, fps, and dropped frames
+        Combined summary with encoding stats and network stats.
     """
-    # Restart the RIST receiver service on the target
+    # Set up target connection
     if target_machine:
         # Use the target machine's public IP for SSH
         target = target_machine.target_host().override(host_key_check="none")
     else:
         # Fallback for backwards compatibility
         target = Remote(target_host).override(host_key_check="none")
+
+    # Restart the RIST receiver service on the target
     with target.host_connection() as ssh:
         ssh.run(
             ["systemctl", "restart", "rist-stream.service"],
@@ -283,9 +468,9 @@ def run_rist_test(
     host = machine.target_host().override(host_key_check="none")
 
     # Build the ffmpeg command to stream test pattern
-    # Generate 1080p@30fps test pattern with H.264 encoding
+    # Generate 4K@30fps test pattern with H.264 encoding
     ffmpeg_cmd = (
-        f"ffmpeg -re -f lavfi -i testsrc=size=1920x1080:rate=30:duration={duration} "
+        f"ffmpeg -re -f lavfi -i testsrc=size=3840x2160:rate=30:duration={duration} "
         f"-f lavfi -i sine=frequency=1000:duration={duration} "
         f"-c:v libx264 -preset ultrafast -tune zerolatency "
         f"-b:v {bitrate} -maxrate {bitrate} -bufsize 2M -g 50 -pix_fmt yuv420p "
@@ -304,6 +489,7 @@ def run_rist_test(
         ffmpeg_cmd,
     ]
 
+    # Run ffmpeg sender and collect encoding stats
     with host.host_connection() as ssh:
         try:
             res = ssh.run(
@@ -321,9 +507,42 @@ def run_rist_test(
             if not stderr:
                 raise
 
-    # Parse the stderr output (ffmpeg writes stats to stderr)
-    parsed_output = parse_ffmpeg_stats(stderr, target_host, duration, profile)
+    # Parse ffmpeg encoding stats
+    parsed_encoding = parse_ffmpeg_stats(stderr, target_host, duration, profile)
+    encoding_summary = calculate_rist_summary([parsed_encoding])
 
-    # Calculate summary statistics from the single run
-    # (following the pattern used by ping and qperf benchmarks)
-    return calculate_rist_summary([parsed_output])
+    # Collect RIST network stats from the receiver via journalctl
+    with target.host_connection() as ssh:
+        try:
+            journalctl_res = ssh.run(
+                [
+                    "journalctl",
+                    "-u",
+                    "rist-stream.service",
+                    "--since",
+                    f"{duration + 10} seconds ago",
+                    "--no-pager",
+                    "-o",
+                    "cat",  # Output just the message, no timestamp prefix
+                ],
+                RunOpts(log=Log.BOTH),
+            )
+            journalctl_output = journalctl_res.stdout
+        except ClanCmdError as e:
+            log.warning(f"Failed to collect journalctl logs: {e}")
+            journalctl_output = ""
+
+    # Parse ristreceiver network stats
+    network_stats = parse_ristreceiver_stats(journalctl_output)
+    network_summary = calculate_network_summary(network_stats)
+
+    log.info(
+        f"RIST test complete: {network_stats['total_packets_received']} packets received, "
+        f"{network_stats['total_packets_dropped']} dropped, "
+        f"{network_stats['total_packets_recovered']} recovered"
+    )
+
+    return {
+        "encoding": encoding_summary,
+        "network": network_summary,
+    }

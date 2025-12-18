@@ -1,41 +1,97 @@
 {
     "status": "success",
     "data": {
-        "bitrate_kbps": {
-            "min": 1910.1,
-            "average": 1988.4137931034484,
-            "max": 2011.9,
-            "percentiles": {
-                "p25": 1981.7,
-                "p50": 1989.6,
-                "p75": 1997.75
+        "encoding": {
+            "bitrate_kbps": {
+                "min": 3304.8,
+                "average": 3348.2965517241378,
+                "max": 3496.5,
+                "percentiles": {
+                    "p25": 3320.95,
+                    "p50": 3334.6,
+                    "p75": 3357.1499999999996
+                }
+            },
+            "fps": {
+                "min": 31.0,
+                "average": 32.13793103448276,
+                "max": 45.0,
+                "percentiles": {
+                    "p25": 31.0,
+                    "p50": 31.0,
+                    "p75": 32.0
+                }
+            },
+            "dropped_frames": {
+                "min": 15.0,
+                "average": 15.0,
+                "max": 15.0,
+                "percentiles": {
+                    "p25": 15.0,
+                    "p50": 15.0,
+                    "p75": 15.0
+                }
             }
         },
-        "fps": {
-            "min": 31.0,
-            "average": 32.13793103448276,
-            "max": 45.0,
-            "percentiles": {
-                "p25": 31.0,
-                "p50": 31.0,
-                "p75": 32.0
-            }
-        },
-        "dropped_frames": {
-            "min": 15.0,
-            "average": 15.0,
-            "max": 15.0,
-            "percentiles": {
-                "p25": 15.0,
-                "p50": 15.0,
-                "p75": 15.0
+        "network": {
+            "packets_dropped": {
+                "min": 0.0,
+                "average": 0.0,
+                "max": 0.0,
+                "percentiles": {
+                    "p25": 0.0,
+                    "p50": 0.0,
+                    "p75": 0.0
+                }
+            },
+            "packets_recovered": {
+                "min": 0.0,
+                "average": 0.0,
+                "max": 0.0,
+                "percentiles": {
+                    "p25": 0.0,
+                    "p50": 0.0,
+                    "p75": 0.0
+                }
+            },
+            "rtt_ms": {
+                "min": 3.7991439456927143,
+                "average": 4.753440406282892,
+                "max": 5.5091934059097545,
+                "percentiles": {
+                    "p25": 4.464009735115543,
+                    "p50": 4.8186189498079965,
+                    "p75": 5.184498157960236
+                }
+            },
+            "quality": {
+                "min": 100.0,
+                "average": 100.0,
+                "max": 100.0,
+                "percentiles": {
+                    "p25": 100.0,
+                    "p50": 100.0,
+                    "p75": 100.0
+                }
+            },
+            "bitrate_bps": {
+                "min": 0.0,
+                "average": 3169877.3870967743,
+                "max": 5100331.0,
+                "percentiles": {
+                    "p25": 2863512.0,
+                    "p50": 3548271.0,
+                    "p75": 3600549.0
+                }
             }
         }
     },
     "meta": {
-        "duration_seconds": 31.444291591644287,
+        "duration_seconds": 31.578959465026855,
         "test_attempts": 1,
         "vpn_restart_attempts": 0,
+        "vpn_restart_duration_seconds": 6.446768760681152,
+        "connectivity_wait_duration_seconds": 3.803204298019409,
         "source": "yuki",
         "target": "luna"
     }

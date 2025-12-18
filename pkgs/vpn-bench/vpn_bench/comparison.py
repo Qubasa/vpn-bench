@@ -15,6 +15,33 @@ from vpn_bench.errors import save_bench_report
 
 log = logging.getLogger(__name__)
 
+# Default TCP MSS for Ethernet (MTU 1500 - 40 bytes IP/TCP headers)
+# Used as fallback when iperf3 doesn't report the actual MSS
+DEFAULT_TCP_MSS_BYTES = 1448
+
+
+def calculate_retransmit_percent(
+    retransmits: int, bytes_sent: int, mss: int | None = None
+) -> float:
+    """Calculate retransmit percentage from retransmits and bytes sent.
+
+    Estimates packet count from bytes using MSS, then calculates
+    what percentage of packets were retransmitted.
+
+    Args:
+        retransmits: Number of TCP retransmissions
+        bytes_sent: Total bytes sent
+        mss: TCP Maximum Segment Size (from iperf3's tcp_mss_default).
+             Falls back to DEFAULT_TCP_MSS_BYTES if not provided.
+    """
+    if bytes_sent <= 0:
+        return 0.0
+    effective_mss = mss if mss and mss > 0 else DEFAULT_TCP_MSS_BYTES
+    estimated_packets = bytes_sent / effective_mss
+    if estimated_packets <= 0:
+        return 0.0
+    return (retransmits / estimated_packets) * 100
+
 
 # --- TypedDict Definitions ---
 
@@ -61,6 +88,7 @@ class TcpIperfComparisonDict(TypedDict):
     sender_throughput_mbps: MetricStatsDict
     receiver_throughput_mbps: MetricStatsDict
     retransmits: MetricStatsDict
+    retransmit_percent: MetricStatsDict  # Retransmits as % of estimated packets
     max_snd_cwnd_bytes: MetricStatsDict  # Max congestion window in bytes
     max_snd_wnd_bytes: MetricStatsDict  # Max send window in bytes
     total_bytes_sent: MetricStatsDict  # Total bytes sent during test
@@ -97,6 +125,7 @@ class ParallelTcpComparisonDict(TypedDict):
         MetricStatsDict  # Total receiver throughput (sum_received)
     )
     total_retransmits: MetricStatsDict  # Sum of retransmits
+    retransmit_percent: MetricStatsDict  # Retransmits as % of estimated packets
     max_snd_cwnd_bytes: MetricStatsDict  # Max congestion window across all pairs
     max_snd_wnd_bytes: MetricStatsDict  # Max send window across all pairs
     total_bytes_sent: MetricStatsDict  # Total bytes sent across all pairs
@@ -402,9 +431,13 @@ def aggregate_rist_data(
 def extract_tcp_iperf_metrics(data: dict[str, Any]) -> TcpIperfComparisonDict | None:
     """Extract key metrics from iperf3 TCP JSON output."""
     try:
+        start = data.get("start", {})
         end = data.get("end", {})
         sum_sent = end.get("sum_sent", {})
         sum_received = end.get("sum_received", {})
+
+        # Get actual MSS from iperf3 (negotiated during connection)
+        tcp_mss = start.get("tcp_mss_default")
 
         # Convert bits_per_second to Mbps
         sender_bps = sum_sent.get("bits_per_second", 0)
@@ -429,6 +462,9 @@ def extract_tcp_iperf_metrics(data: dict[str, Any]) -> TcpIperfComparisonDict | 
                 max_snd_cwnd = max(max_snd_cwnd, sender_data.get("max_snd_cwnd", 0))
                 max_snd_wnd = max(max_snd_wnd, sender_data.get("max_snd_wnd", 0))
 
+        # Calculate retransmit percentage using actual MSS from iperf3
+        retransmit_pct = calculate_retransmit_percent(retransmits, bytes_sent, tcp_mss)
+
         # Create MetricStatsDict for single values
         def single_value_stats(value: float) -> MetricStatsDict:
             return {
@@ -442,6 +478,7 @@ def extract_tcp_iperf_metrics(data: dict[str, Any]) -> TcpIperfComparisonDict | 
             "sender_throughput_mbps": single_value_stats(sender_mbps),
             "receiver_throughput_mbps": single_value_stats(receiver_mbps),
             "retransmits": single_value_stats(float(retransmits)),
+            "retransmit_percent": single_value_stats(retransmit_pct),
             "max_snd_cwnd_bytes": single_value_stats(float(max_snd_cwnd)),
             "max_snd_wnd_bytes": single_value_stats(float(max_snd_wnd)),
             "total_bytes_sent": single_value_stats(float(bytes_sent)),
@@ -485,6 +522,9 @@ def aggregate_tcp_iperf_data(
             [m["receiver_throughput_mbps"] for m in metrics_list]
         ),
         "retransmits": aggregate_metric_stats([m["retransmits"] for m in metrics_list]),
+        "retransmit_percent": aggregate_metric_stats(
+            [m["retransmit_percent"] for m in metrics_list]
+        ),
         "max_snd_cwnd_bytes": aggregate_metric_stats(
             [m["max_snd_cwnd_bytes"] for m in metrics_list]
         ),
@@ -699,6 +739,7 @@ def extract_parallel_tcp_metrics(
         total_bytes_sent = 0
         total_bytes_received = 0
         duration_seconds = 0.0  # Use duration from first successful pair
+        tcp_mss: int | None = None  # Use MSS from first successful pair
         successful_pairs = 0
 
         for pair in pairs:
@@ -706,6 +747,7 @@ def extract_parallel_tcp_metrics(
             if result is None:
                 continue  # Skip failed pairs
 
+            start = result.get("start", {})
             end = result.get("end", {})
 
             # Get sender stats from sum_sent
@@ -719,9 +761,10 @@ def extract_parallel_tcp_metrics(
             receiver_bps = sum_received.get("bits_per_second", 0)
             bytes_received = sum_received.get("bytes", 0)
 
-            # Get duration from first successful pair (all pairs run same duration)
+            # Get duration and MSS from first successful pair (all pairs run same duration)
             if successful_pairs == 0:
                 duration_seconds = sum_sent.get("seconds", 0)
+                tcp_mss = start.get("tcp_mss_default")
 
             # Extract max window sizes from streams
             streams = end.get("streams", [])
@@ -741,6 +784,11 @@ def extract_parallel_tcp_metrics(
         if successful_pairs == 0:
             return None
 
+        # Calculate retransmit percentage using actual MSS from iperf3
+        retransmit_pct = calculate_retransmit_percent(
+            total_retransmits, total_bytes_sent, tcp_mss
+        )
+
         def single_value_stats(value: float) -> MetricStatsDict:
             return {
                 "min": value,
@@ -753,6 +801,7 @@ def extract_parallel_tcp_metrics(
             "sender_throughput_mbps": single_value_stats(total_sender_throughput),
             "receiver_throughput_mbps": single_value_stats(total_receiver_throughput),
             "total_retransmits": single_value_stats(float(total_retransmits)),
+            "retransmit_percent": single_value_stats(retransmit_pct),
             "max_snd_cwnd_bytes": single_value_stats(float(max_snd_cwnd)),
             "max_snd_wnd_bytes": single_value_stats(float(max_snd_wnd)),
             "total_bytes_sent": single_value_stats(float(total_bytes_sent)),
@@ -1029,7 +1078,9 @@ def aggregate_benchmark_stats(
                 return duration
         return zero_metric()
 
-    def extract_nix_cache_duration(comparison: dict[str, Any], vpn: str) -> MetricStatsDict:
+    def extract_nix_cache_duration(
+        comparison: dict[str, Any], vpn: str
+    ) -> MetricStatsDict:
         """Extract Nix cache duration (uses mean_seconds field)."""
         entry = comparison.get(vpn, {})
         if entry.get("status") == "success" and "data" in entry:

@@ -45,6 +45,12 @@ let
       description = "Maximum sending bandwidth in bytes/sec. 0 means unlimited.";
     };
 
+    statsInterval = mkOption {
+      type = types.int;
+      default = 1000;
+      description = "Interval in milliseconds at which RIST statistics are printed";
+    };
+
     openFirewall = mkOption {
       type = types.bool;
       default = false;
@@ -52,8 +58,15 @@ let
     };
   };
 
+  # Map profile name to ristreceiver profile number
+  profileNumber = {
+    simple = 0;
+    main = 1;
+    advanced = 2;
+  };
+
   imp = {
-    environment.systemPackages = [ pkgs.ffmpeg-full ];
+    environment.systemPackages = [ pkgs.librist ];
 
     users.groups.rist-stream = { };
     users.users.rist-stream = {
@@ -73,6 +86,17 @@ let
       wantedBy = [ "multi-user.target" ];
       after = [ "network.target" ];
 
+      # RIST receiver using ristreceiver from librist
+      # Outputs to a local UDP sink (no listener needed) and prints stats to stderr
+      script = ''
+        exec ${pkgs.librist}/bin/ristreceiver \
+          -i 'rist://@${cfg.address}:${toString cfg.port}?buffer=${toString cfg.buffer}' \
+          -o 'udp://127.0.0.1:1234' \
+          -S ${toString cfg.statsInterval} \
+          -p ${toString profileNumber.${cfg.profile}} \
+          -v 6
+      '';
+
       serviceConfig = {
         Slice = "benchmark.slice";
         Restart = "on-failure";
@@ -80,16 +104,6 @@ let
         User = "rist-stream";
         Group = "rist-stream";
         WorkingDirectory = "/var/lib/rist-stream";
-
-        # RIST receiver in listener mode, outputs to null (we just measure stats)
-        ExecStart = ''
-          ${pkgs.ffmpeg-full}/bin/ffmpeg \
-            -loglevel info \
-            -stats \
-            -stats_period 1 \
-            -i 'rist://@${cfg.address}:${toString cfg.port}' \
-            -f null -
-        '';
 
         # Standard hardening
         NoNewPrivileges = true;

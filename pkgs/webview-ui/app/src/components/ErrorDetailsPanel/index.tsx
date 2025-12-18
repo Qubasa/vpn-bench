@@ -6,6 +6,7 @@ import {
   getErrorMessage,
   CmdOutError,
   ClanError,
+  NotRunError,
 } from "@/src/benchData";
 
 /**
@@ -37,46 +38,90 @@ const codeBlockClass =
   "block whitespace-pre-wrap bg-gray-800 text-gray-100 p-3 rounded text-xs font-mono my-2 overflow-x-auto max-h-96 overflow-y-auto";
 const labelClass = "font-semibold text-gray-700 mt-2 mb-1";
 
+// Style classes for NotRun panel (neutral gray)
+const notRunPanelClass =
+  "mt-4 border border-gray-300 bg-gray-50 rounded-lg overflow-hidden";
+const notRunHeaderClass =
+  "bg-gray-100 px-4 py-3 font-semibold text-gray-600 flex items-center gap-2";
+const notRunItemClass =
+  "px-4 py-2 text-gray-600 border-t border-gray-200 flex items-center gap-2";
+
 export function ErrorDetailsPanel<T>(
   props: ErrorDetailsPanelProps<T>,
 ): ReturnType<Component> {
-  // Filter to only failed reports
+  // Filter to only failed reports (excluding NotRun)
   const failedReports = () =>
-    props.mixedReports.filter((r) => !r.result.ok) as {
+    props.mixedReports.filter(
+      (r) => !r.result.ok && r.result.error.type !== "NotRun",
+    ) as {
       name: string;
       result: Err;
     }[];
 
-  // Don't render anything if there are no failures
-  if (failedReports().length === 0) {
-    return null;
-  }
+  // Filter to NotRun reports
+  const notRunReports = () =>
+    props.mixedReports.filter(
+      (r) => !r.result.ok && r.result.error.type === "NotRun",
+    ) as {
+      name: string;
+      result: Err;
+    }[];
 
   return (
-    <Show when={failedReports().length > 0}>
-      <div class={panelClass}>
-        <div class={headerClass}>
-          <span>&#9888;</span>
-          <span>{props.title || "Failed Tests"}</span>
-          <span class="ml-auto text-sm font-normal">
-            ({failedReports().length} failed)
-          </span>
-        </div>
-
-        <Accordion.Root collapsible class="w-full">
-          <For each={failedReports()}>
-            {(report, index) => {
-              const error = report.result.error;
-              const meta = report.result.meta;
-              const isCmdOut = error.type === "CmdOut";
-              const cmdOutDetails = isCmdOut
-                ? (error.details as CmdOutError)
-                : null;
-              const clanErrorDetails = !isCmdOut
-                ? (error.details as ClanError)
-                : null;
-
+    <>
+      {/* NotRun Tests - Neutral gray panel */}
+      <Show when={notRunReports().length > 0}>
+        <div class={notRunPanelClass}>
+          <div class={notRunHeaderClass}>
+            <span>⊘</span>
+            <span>Tests Not Run</span>
+            <span class="ml-auto text-sm font-normal">
+              ({notRunReports().length} skipped)
+            </span>
+          </div>
+          <For each={notRunReports()}>
+            {(report) => {
+              const notRunDetails = report.result.error
+                .details as NotRunError;
               return (
+                <div class={notRunItemClass}>
+                  <span class="font-medium">{report.name}</span>
+                  <span class="text-gray-400">—</span>
+                  <span class="text-sm text-gray-500">
+                    {notRunDetails?.reason || "Benchmark was not executed"}
+                  </span>
+                </div>
+              );
+            }}
+          </For>
+        </div>
+      </Show>
+
+      {/* Actual Errors - Orange warning panel */}
+      <Show when={failedReports().length > 0}>
+        <div class={panelClass}>
+          <div class={headerClass}>
+            <span>&#9888;</span>
+            <span>{props.title || "Failed Tests"}</span>
+            <span class="ml-auto text-sm font-normal">
+              ({failedReports().length} failed)
+            </span>
+          </div>
+
+          <Accordion.Root collapsible class="w-full">
+            <For each={failedReports()}>
+              {(report, index) => {
+                const error = report.result.error;
+                const meta = report.result.meta;
+                const isCmdOut = error.type === "CmdOut";
+                const cmdOutDetails = isCmdOut
+                  ? (error.details as CmdOutError)
+                  : null;
+                const clanErrorDetails = !isCmdOut
+                  ? (error.details as ClanError)
+                  : null;
+
+                return (
                 <Accordion.Item
                   value={`error-${index()}`}
                   class={accordionItemClass}
@@ -189,9 +234,10 @@ export function ErrorDetailsPanel<T>(
               );
             }}
           </For>
-        </Accordion.Root>
-      </div>
-    </Show>
+          </Accordion.Root>
+        </div>
+      </Show>
+    </>
   );
 }
 

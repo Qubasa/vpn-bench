@@ -67,7 +67,7 @@ def build_ui(bench_dir: Path, create_symlink: bool = False) -> Path:
 
 
 def plot_data(config: Config, tr_machines: list[TrMachine]) -> None:
-    analyse_connection_timings(config, tr_machines)
+    analyse_connection_timings(config)
 
     website_dir = build_ui(config.bench_dir)
 

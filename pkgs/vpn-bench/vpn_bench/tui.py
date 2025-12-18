@@ -13,7 +13,7 @@ from textual.events import MouseScrollDown, MouseScrollUp
 from textual.widgets import Footer, Header, Label, ProgressBar, RichLog, Static
 from textual.worker import get_current_worker
 
-from vpn_bench.data import VPN, BenchmarkRun, Config, TestType
+from vpn_bench.data import VPN, BenchmarkEntry, Config, TestType
 from vpn_bench.progress import BenchmarkProgress, ProgressTracker
 from vpn_bench.terraform import TrMachine
 
@@ -512,19 +512,13 @@ class BenchmarkTUI(App[None]):
     def __init__(
         self,
         config: Config,
-        vpns: list[VPN],
-        tests: list[TestType],
-        benchmark_runs: list[BenchmarkRun],
+        entries: list[BenchmarkEntry],
         machines: list[TrMachine],
-        skip_reboot_timings: bool = False,
     ) -> None:
         super().__init__()
         self.config = config
-        self.vpns = vpns
-        self.tests = tests
-        self.benchmark_runs = benchmark_runs
+        self.entries = entries
         self.machines = machines
-        self.skip_reboot_timings = skip_reboot_timings
         self.tracker = ProgressTracker()
         self._log_paused = False
         self._shutting_down = False
@@ -573,10 +567,22 @@ class BenchmarkTUI(App[None]):
             should_cancel=lambda: self._shutting_down,
         )
 
-        # Initialize progress tracking
-        profile_names = [run.alias for run in self.benchmark_runs]
+        # Initialize progress tracking from entries
+        # Collect unique VPNs, profiles, and tests across all entries
+        vpns = [entry.vpn for entry in self.entries]
+        # Collect all unique profile names across entries
+        all_profiles: set[str] = set()
+        for entry in self.entries:
+            for run in entry.get_benchmark_runs():
+                all_profiles.add(run.alias)
+        profile_names = sorted(all_profiles)
+        # Collect all unique tests across entries
+        all_tests: set[TestType] = set()
+        for entry in self.entries:
+            all_tests.update(entry.tests)
+        tests = list(all_tests)
         machine_names = [m["name"] for m in self.machines]
-        self.tracker.initialize(self.vpns, profile_names, self.tests, machine_names)
+        self.tracker.initialize(vpns, profile_names, tests, machine_names)
 
         # Remove existing handlers that write to stderr, add our TUI handler
         root_logger = logging.getLogger()
@@ -652,39 +658,44 @@ class BenchmarkTUI(App[None]):
 
         # Use capture_output_context to route all run() output to TUI
         with self.tracker.capture_output_context():
-            for vpn_idx, vpn in enumerate(self.vpns):
+            for entry_idx, entry in enumerate(self.entries):
                 if worker.is_cancelled:
                     break
 
                 # Tracker callbacks are thread-safe, so we can call directly
-                self.tracker.start_vpn(vpn, vpn_idx)
+                self.tracker.start_vpn(entry.vpn, entry_idx)
                 self.tracker.log(
-                    f"========== Starting benchmark for {vpn.value} =========="
+                    f"========== Starting benchmark for {entry.vpn.value} =========="
+                )
+                self.tracker.log(
+                    f"  Tests: {[t.value for t in entry.tests]}, "
+                    f"TC profiles: {[p.value for p in entry.tc_profiles]}, "
+                    f"Skip connection times: {entry.skip_con_times}"
                 )
 
                 try:
                     benchmark_vpn(
                         self.config,
-                        vpn,
+                        entry.vpn,
                         self.machines,
-                        self.tests,
-                        self.benchmark_runs,
-                        self.skip_reboot_timings,
+                        entry.tests,
+                        entry.get_benchmark_runs(),
+                        entry.skip_con_times,
                         tracker=self.tracker,
                     )
                     self.tracker.complete_vpn()
                 except Exception as e:
                     error_msg = str(e)
                     self.tracker.log(
-                        f"[ERROR] Benchmark for {vpn.value} failed: {error_msg}"
+                        f"[ERROR] Benchmark for {entry.vpn.value} failed: {error_msg}"
                     )
-                    failed_vpns.append((vpn, error_msg))
+                    failed_vpns.append((entry.vpn, error_msg))
                     self.tracker.complete_vpn()
 
         # Report failures
         if failed_vpns:
             self.tracker.log(
-                f"[WARNING] {len(failed_vpns)}/{len(self.vpns)} VPNs failed:"
+                f"[WARNING] {len(failed_vpns)}/{len(self.entries)} VPNs failed:"
             )
             for vpn, error in failed_vpns:
                 self.tracker.log(f"  - {vpn.value}: {error}")

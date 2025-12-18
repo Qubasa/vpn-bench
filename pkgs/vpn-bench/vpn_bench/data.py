@@ -1,4 +1,5 @@
-from dataclasses import dataclass
+import tomllib
+from dataclasses import dataclass, field
 from enum import Enum
 from pathlib import Path
 from typing import TypedDict
@@ -236,6 +237,57 @@ class TCProfile(Enum):
 def get_benchmark_runs(profiles: list[TCProfile]) -> list[BenchmarkRun]:
     """Convert list of TC profiles to list of BenchmarkRun configurations."""
     return [profile.to_benchmark_run() for profile in profiles]
+
+
+@dataclass
+class BenchmarkEntry:
+    """Configuration for a single VPN benchmark with its tests and settings."""
+
+    vpn: "VPN"
+    tests: list[TestType] = field(default_factory=list)
+    tc_profiles: list[TCProfile] = field(default_factory=lambda: [TCProfile.BASELINE])
+    skip_con_times: bool = False
+
+    def get_benchmark_runs(self) -> list[BenchmarkRun]:
+        """Convert tc_profiles to BenchmarkRun configurations."""
+        return get_benchmark_runs(self.tc_profiles)
+
+
+def parse_benchmark_config(config_path: Path) -> list["BenchmarkEntry"]:
+    """Parse a TOML configuration file for benchmark settings.
+
+    Expected format:
+        [[benchmark]]
+        vpn = "wireguard"
+        tests = ["ping", "iperf3"]
+        tc_profiles = ["baseline", "low"]
+        skip_con_times = false
+
+    Args:
+        config_path: Path to the TOML configuration file
+
+    Returns:
+        List of BenchmarkEntry objects
+    """
+    with config_path.open("rb") as f:
+        data = tomllib.load(f)
+
+    entries: list[BenchmarkEntry] = []
+    for item in data.get("benchmark", []):
+        vpn = VPN.from_str(item["vpn"])
+        tests = [TestType.from_str(t) for t in item.get("tests", [])]
+        tc_profiles_raw = item.get("tc_profiles", ["baseline"])
+        tc_profiles = [TCProfile.from_str(p) for p in tc_profiles_raw]
+        skip_con_times = item.get("skip_con_times", False)
+        entries.append(
+            BenchmarkEntry(
+                vpn=vpn,
+                tests=tests,
+                tc_profiles=tc_profiles,
+                skip_con_times=skip_con_times,
+            )
+        )
+    return entries
 
 
 @dataclass
