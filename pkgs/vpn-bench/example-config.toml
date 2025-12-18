@@ -1,0 +1,26 @@
+# VPN Benchmark Configuration
+# Usage: vpb bench --config /path/to/config.toml
+
+[[benchmark]]
+vpn = "wireguard"
+tests = ["ping", "iperf3", "qperf"]
+tc_profiles = ["baseline", "low", "medium", "high"]
+skip_con_times = false
+
+[[benchmark]]
+vpn = "mycelium"
+tests = ["ping", "iperf3", "iperf3-parallel-tcp"]
+tc_profiles = ["baseline", "low"]
+skip_con_times = false
+
+[[benchmark]]
+vpn = "easytier"
+tests = ["ping", "iperf3", "rist-stream"]
+tc_profiles = ["baseline"]
+skip_con_times = true
+
+[[benchmark]]
+vpn = "hyprspace"
+tests = ["ping", "qperf"]
+tc_profiles = ["baseline", "medium"]
+skip_con_times = false
