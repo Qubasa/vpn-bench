@@ -32,14 +32,14 @@ def install_connection_timings_conf(
     vpn: VPN,
     bmachines: list[BenchMachine],
 ) -> None:
-    pub_ips = {f"v4.{machine['name']}": machine["name"] for machine in tr_machines}
+    pub_ips = {f"vpn.{machine['name']}": machine["name"] for machine in tr_machines}
     vpn_ips = {
         f"vpn.{bmachine.cmachine.name}": bmachine.cmachine.name
         for bmachine in bmachines
     }
     for bmachine in bmachines:
         cpub = pub_ips.copy()
-        del cpub[f"v4.{bmachine.cmachine.name}"]
+        del cpub[f"vpn.{bmachine.cmachine.name}"]
         cvpn = vpn_ips.copy()
         del cvpn[f"vpn.{bmachine.cmachine.name}"]
         inventory_store = InventoryStore(Flake(str(config.clan_dir)))

@@ -56,7 +56,9 @@ interface ConnectionBarData {
   max: number;
 }
 
-const processDataForBarChart = (report: ConnectionTimings): ConnectionBarData[] => {
+const processDataForBarChart = (
+  report: ConnectionTimings,
+): ConnectionBarData[] => {
   const result: ConnectionBarData[] = [];
 
   for (const vpnName of Object.keys(report)) {
@@ -557,7 +559,6 @@ export const GeneralDashboard = (props: GeneralDashboardProps) => {
 
   // Valid tab values
   const validTabs = [
-    "connection-times",
     "tcp-comparison",
     "udp-comparison",
     "ping-comparison",
@@ -574,7 +575,7 @@ export const GeneralDashboard = (props: GeneralDashboardProps) => {
   const initialTab =
     searchParams.tab && validTabs.includes(searchParams.tab as ValidTab)
       ? searchParams.tab
-      : "connection-times";
+      : "tcp-comparison";
 
   const [selectedTab, setSelectedTab] = createSignal(initialTab);
 
@@ -625,8 +626,12 @@ export const GeneralDashboard = (props: GeneralDashboardProps) => {
 
       {/* Display total runtime for current profile */}
       <TotalRuntimeDisplay
-        totalSeconds={currentProfileData()?.timeBreakdown?.data?.total_seconds ?? null}
-        vpnCount={Object.keys(currentProfileData()?.benchmarkStats ?? {}).length}
+        totalSeconds={
+          currentProfileData()?.timeBreakdown?.data?.total_seconds ?? null
+        }
+        vpnCount={
+          Object.keys(currentProfileData()?.benchmarkStats ?? {}).length
+        }
       />
 
       {/* Benchmark Type Tabs */}
@@ -637,9 +642,6 @@ export const GeneralDashboard = (props: GeneralDashboardProps) => {
         onChange={handleTabChange}
       >
         <Tabs.List class="tabs__list">
-          <Tabs.Trigger class="tabs__trigger" value="connection-times">
-            Connection Times
-          </Tabs.Trigger>
           <Tabs.Trigger class="tabs__trigger" value="tcp-comparison">
             TCP Performance
           </Tabs.Trigger>
@@ -666,34 +668,6 @@ export const GeneralDashboard = (props: GeneralDashboardProps) => {
           </Tabs.Trigger>
           <Tabs.Indicator class="tabs__indicator" />
         </Tabs.List>
-
-        <Tabs.Content class="tabs__content" value="connection-times">
-          <div
-            style={{ display: "flex", "flex-direction": "column", gap: "20px" }}
-          >
-            <Show
-              when={currentProfileData()?.connectionTimings}
-              fallback={
-                <FallbackMessage message="No bootstrap connection timing data available." />
-              }
-            >
-              {(timings) => (
-                <ConnectionTimingsChart
-                  report={timings()}
-                  title="Bootstrap Connection Times"
-                />
-              )}
-            </Show>
-            <Show when={currentProfileData()?.rebootConnectionTimings}>
-              {(timings) => (
-                <ConnectionTimingsChart
-                  report={timings()}
-                  title="Reboot Connection Times"
-                />
-              )}
-            </Show>
-          </div>
-        </Tabs.Content>
 
         <Tabs.Content class="tabs__content" value="tcp-comparison">
           <Show
@@ -799,7 +773,9 @@ export const GeneralDashboard = (props: GeneralDashboardProps) => {
         <Tabs.Content class="tabs__content" value="benchmark-stats">
           <Show
             when={currentProfileData()?.benchmarkStats}
-            fallback={<FallbackMessage message="No benchmark statistics available. Run the compare command to generate benchmark stats." />}
+            fallback={
+              <FallbackMessage message="No benchmark statistics available. Run the compare command to generate benchmark stats." />
+            }
           >
             {(data) => (
               <BenchmarkStatsSection

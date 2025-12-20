@@ -931,9 +931,6 @@ export const NetworkBarChart: Component<NetworkBarChartProps> = (props) => {
 export interface RistChartsDashboardProps {
   reports: RistReport[];
   height?: {
-    bitrate?: number;
-    fps?: number;
-    droppedFrames?: number;
     rtt?: number;
     quality?: number;
     packetsDropped?: number;
@@ -995,13 +992,98 @@ const ChartCard: Component<{
   </div>
 );
 
+// Metadata info box for static encoding settings
+const EncodingMetadataBox: Component<{ reports: RistReport[] }> = (props) => {
+  // Calculate average encoding stats across all machines
+  const encodingStats = () => {
+    if (!props.reports || props.reports.length === 0) return null;
+
+    let totalBitrate = 0;
+    let totalFps = 0;
+    let totalDroppedFrames = 0;
+    let count = 0;
+
+    for (const report of props.reports) {
+      if (report.data?.encoding) {
+        totalBitrate += report.data.encoding.bitrate_kbps?.average ?? 0;
+        totalFps += report.data.encoding.fps?.average ?? 0;
+        totalDroppedFrames += report.data.encoding.dropped_frames?.average ?? 0;
+        count++;
+      }
+    }
+
+    if (count === 0) return null;
+
+    return {
+      bitrate: totalBitrate / count,
+      fps: totalFps / count,
+      droppedFrames: totalDroppedFrames / count,
+    };
+  };
+
+  const stats = encodingStats();
+  if (!stats) return null;
+
+  return (
+    <div
+      style={{
+        background: "#f6ffed",
+        border: "1px solid #b7eb8f",
+        "border-radius": "8px",
+        padding: "16px 20px",
+        "margin-bottom": "20px",
+      }}
+    >
+      <div
+        style={{
+          "font-weight": "600",
+          "font-size": "14px",
+          color: "#389e0d",
+          "margin-bottom": "12px",
+        }}
+      >
+        Encoding Settings (FFmpeg Sender)
+      </div>
+      <div
+        style={{
+          display: "flex",
+          "flex-wrap": "wrap",
+          gap: "24px",
+        }}
+      >
+        <div style={{ display: "flex", "align-items": "center", gap: "8px" }}>
+          <span style={{ color: "#666", "font-size": "13px" }}>
+            Target Bitrate:
+          </span>
+          <span style={{ "font-weight": "500", color: "#333" }}>
+            {stats.bitrate.toFixed(0)} kbps
+          </span>
+        </div>
+        <div style={{ display: "flex", "align-items": "center", gap: "8px" }}>
+          <span style={{ color: "#666", "font-size": "13px" }}>
+            Target FPS:
+          </span>
+          <span style={{ "font-weight": "500", color: "#333" }}>
+            {stats.fps.toFixed(0)} fps
+          </span>
+        </div>
+        <div style={{ display: "flex", "align-items": "center", gap: "8px" }}>
+          <span style={{ color: "#666", "font-size": "13px" }}>
+            Encoding Overhead:
+          </span>
+          <span style={{ "font-weight": "500", color: "#333" }}>
+            {stats.droppedFrames.toFixed(0)} frames
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 export const RistChartsDashboard: Component<RistChartsDashboardProps> = (
   props,
 ) => {
   const effectiveHeights = {
-    bitrate: props.height?.bitrate ?? 400,
-    fps: props.height?.fps ?? 350,
-    droppedFrames: props.height?.droppedFrames ?? 350,
     rtt: props.height?.rtt ?? 350,
     quality: props.height?.quality ?? 350,
     packetsDropped: props.height?.packetsDropped ?? 350,
@@ -1022,47 +1104,8 @@ export const RistChartsDashboard: Component<RistChartsDashboardProps> = (
         "background-color": "#f7f7f7",
       }}
     >
-      {/* Encoding Stats Section */}
-      <section>
-        <SectionHeader title="Encoding Stats (FFmpeg Sender)" />
-        <div
-          style={{
-            display: "flex",
-            "flex-direction": "column",
-            gap: "15px",
-          }}
-        >
-          {/* Bitrate Chart */}
-          <ChartCard>
-            <EncodingBarChart
-              reports={props.reports}
-              metric="bitrate_kbps"
-              title="Streaming Bitrate"
-              height={effectiveHeights.bitrate}
-            />
-          </ChartCard>
-
-          {/* Row for FPS and Dropped Frames */}
-          <div style={{ display: "flex", gap: "15px", "flex-wrap": "wrap" }}>
-            <ChartCard flex="1 1 45%">
-              <EncodingBarChart
-                reports={props.reports}
-                metric="fps"
-                title="Frame Rate"
-                height={effectiveHeights.fps}
-              />
-            </ChartCard>
-            <ChartCard flex="1 1 45%">
-              <EncodingBoxplotChart
-                reports={props.reports}
-                metric="dropped_frames"
-                title="Dropped Frames"
-                height={effectiveHeights.droppedFrames}
-              />
-            </ChartCard>
-          </div>
-        </div>
-      </section>
+      {/* Encoding Metadata Box (static values) */}
+      <EncodingMetadataBox reports={props.reports} />
 
       {/* Network Stats Section */}
       <section>

@@ -1,5 +1,6 @@
 import json
 import traceback
+from collections.abc import Mapping
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Literal, TypedDict
@@ -39,7 +40,7 @@ class VpnBenchError(ClanError):
 @dataclass
 class SucessDataClass:
     status: Literal["success"]
-    data: dict[str, Any]
+    data: Mapping[str, Any]
 
 
 class ClanErrorType(TypedDict):
@@ -57,7 +58,7 @@ class ErrorDataClass:
 
 def save_bench_report(
     result_dir: Path,
-    data: dict[str, Any] | ClanError | Exception,
+    data: Mapping[str, Any] | ClanError | Exception,
     filename: str,
     metadata: TestMetadataDict | None = None,
 ) -> None:

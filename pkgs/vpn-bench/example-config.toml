@@ -1,26 +1,88 @@
 # VPN Benchmark Configuration
 # Usage: vpb bench --config /path/to/config.toml
+#
+# Per-profile test overrides:
+# You can override tests and skip_con_times for specific profiles using
+# [[benchmark.profile]] sections. This allows running different tests
+# on different TC profiles for the same VPN.
+#
+# Example with per-profile overrides:
+#   [[benchmark]]
+#   vpn = "wireguard"
+#   tests = ["ping", "rist-stream"]  # default tests for all profiles
+#   tc_profiles = ["baseline", "low", "medium", "high"]
+#   skip_con_times = false
+#
+#   [[benchmark.profile]]
+#   name = "high"
+#   tests = ["iperf3", "rist-stream"]  # override tests for "high" profile
+#
+#   [[benchmark.profile]]
+#   name = "medium"
+#   skip_con_times = true  # override skip_con_times for "medium" profile
 
 [[benchmark]]
-vpn = "wireguard"
-tests = ["ping", "iperf3", "qperf"]
+vpn = "internal"
+tests = ["rist-stream"]
+tc_profiles = ["low", "medium", "high"]
+skip_con_times = true
+
+[[benchmark]]
+vpn = "zerotier"
+tests = ["nix-cache"]
 tc_profiles = ["baseline", "low", "medium", "high"]
-skip_con_times = false
+skip_con_times = true
 
 [[benchmark]]
 vpn = "mycelium"
-tests = ["ping", "iperf3", "iperf3-parallel-tcp"]
-tc_profiles = ["baseline", "low"]
-skip_con_times = false
-
-[[benchmark]]
-vpn = "easytier"
-tests = ["ping", "iperf3", "rist-stream"]
-tc_profiles = ["baseline"]
+tests = ["nix-cache"]
+tc_profiles = ["baseline", "low", "medium", "high"]
 skip_con_times = true
 
 [[benchmark]]
 vpn = "hyprspace"
-tests = ["ping", "qperf"]
-tc_profiles = ["baseline", "medium"]
+tests = ["nix-cache"]
+tc_profiles = ["baseline", "low", "medium", "high"]
+skip_con_times = true
+
+[[benchmark]]
+vpn = "yggdrasil"
+tests = ["iperf3", "iperf3-parallel-tcp", "qperf", "nix-cache", "ping", "nix-cache"]
+tc_profiles = ["baseline", "low", "medium", "high"]
+skip_con_times = true
+
+[[benchmark]]
+vpn = "vpncloud"
+tests = ["nix-cache"]
+tc_profiles = ["baseline", "low", "medium", "high"]
+skip_con_times = true
+
+[[benchmark]]
+vpn = "wireguard"
+tests = ["nix-cache"]
+tc_profiles = ["baseline", "low", "medium", "high"]
+skip_con_times = true
+
+[[benchmark]]
+vpn = "easytier"
+tests = ["nix-cache"]
+tc_profiles = ["baseline", "low", "medium", "high"]
+skip_con_times = true
+
+# [[benchmark]]
+# vpn = "nebula"
+# tests = ["iperf3", "iperf3-parallel-tcp", "qperf", "nix-cache", "ping", "rist-stream"]
+# tc_profiles = ["baseline", "low", "medium", "high"]
+# skip_con_times = false
+
+# [[benchmark]]
+# vpn = "tinc"
+# tests = ["iperf3", "iperf3-parallel-tcp", "qperf", "nix-cache", "ping", "rist-stream"]
+# tc_profiles = ["baseline", "low", "medium", "high"]
+# skip_con_times = false
+
+[[benchmark]]
+vpn = "headscale"
+tests = ["rist-stream"]
+tc_profiles = ["baseline", "low", "medium", "high"]
 skip_con_times = false

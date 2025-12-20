@@ -298,7 +298,7 @@ def install_headscale(config: Config, tr_machines: list[TrMachine]) -> None:
 
 
 def get_vpn_ips(
-    config: Config, machines: list[Machine], vpn: VPN
+    config: Config, machines: list[Machine], vpn: VPN, tr_machines: list[TrMachine]
 ) -> list[BenchMachine]:
     """Query and collect VPN IPs for each machine."""
     bmachines: list[BenchMachine] = []
@@ -341,8 +341,9 @@ def get_vpn_ips(
                 # We should get it from the var
                 vpn_ip = f"192.168.2.{idx + 1}"
             case VPN.Internal:
-                host = machine.target_host().override(host_key_check="none")
-                vpn_ip = host.address
+                # For Internal (no VPN), use the public IPv4 from terraform data
+                # This ensures vpn.{name} resolves to the same IP as v4.{name}
+                vpn_ip = tr_machines[idx]["ipv4"]
             case _:
                 msg = f"VPN {vpn} not supported"
                 raise VpnBenchError(msg)
@@ -545,7 +546,7 @@ def install_vpn(
 
         # NOW query IPs (tailscale is running and authenticated)
         with timed_op("get_vpn_ips"):
-            bmachines = get_vpn_ips(config, machines, vpn)
+            bmachines = get_vpn_ips(config, machines, vpn, tr_machines)
             save_machine_layout(config, vpn, bmachines)
 
         # Install nix cache with real IPs
@@ -579,7 +580,7 @@ def install_vpn(
     # Original flow for other VPNs (IPs available before deployment)
     # Get the VPN IP of each machine
     with timed_op("get_vpn_ips"):
-        bmachines = get_vpn_ips(config, machines, vpn)
+        bmachines = get_vpn_ips(config, machines, vpn, tr_machines)
         save_machine_layout(config, vpn, bmachines)
 
     # Install Nix cache (first machine is the server, others are clients)

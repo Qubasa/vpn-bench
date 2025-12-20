@@ -1,392 +1,574 @@
 {
-    "status": "success",
-    "data": {
-        "VpnCloud": {
-            "status": "error",
-            "error_type": "CmdOut",
-            "error": {
-                "stdout": "{\n\t\"start\":\t{\n\t\t\"connected\":\t[{\n\t\t\t\t\"socket\":\t5,\n\t\t\t\t\"local_host\":\t\"10.25.186.63\",\n\t\t\t\t\"local_port\":\t58386,\n\t\t\t\t\"remote_host\":\t\"10.25.112.48\",\n\t\t\t\t\"remote_port\":\t5201\n\t\t\t}],\n\t\t\"version\":\t\"iperf 3.20\",\n\t\t\"system_info\":\t\"Linux lom 6.12.57 #1-NixOS SMP PREEMPT_DYNAMIC Sun Nov  2 13:15:23 UTC 2025 x86_64\",\n\t\t\"timestamp\":\t{\n\t\t\t\"time\":\t\"Thu, 18 Dec 2025 13:41:40 GMT\",\n\t\t\t\"timesecs\":\t1766065300,\n\t\t\t\"timemillisecs\":\t1766065300883\n\t\t},\n\t\t\"connecting_to\":\t{\n\t\t\t\"host\":\t\"vpn.yuki\",\n\t\t\t\"port\":\t5201\n\t\t},\n\t\t\"cookie\":\t\"tkhs3qqzvpb5spgrs44zpgpm6brj3qfck34l\",\n\t\t\"target_bitrate\":\t0,\n\t\t\"fq_rate\":\t0,\n\t\t\"sock_bufsize\":\t0,\n\t\t\"sndbuf_actual\":\t212992,\n\t\t\"rcvbuf_actual\":\t212992\n\t},\n\t\"intervals\":\t[],\n\t\"end\":\t{\n\t},\n\t\"error\":\t\"unable to read from stream socket: No such file or directory\"\n}\n",
-                "stderr": "Warning: Permanently added '138.201.33.111' (ED25519) to the list of known hosts.\r\n",
-                "cwd": "/home/lhebendanz/Projects/vpn-benchmark-suite/pkgs/vpn-bench",
-                "command_list": [
-                    "ssh",
-                    "root@138.201.33.111",
-                    "-A",
-                    "-o",
-                    "StrictHostKeyChecking=no",
-                    "-o",
-                    "UserKnownHostsFile=/dev/null",
-                    "-o",
-                    "ControlMaster=auto",
-                    "-o",
-                    "ControlPersist=1m",
-                    "-o",
-                    "ControlPath=/tmp/clan-sshxuyjtxh5/socket",
-                    "--",
-                    "bash",
-                    "-c",
-                    "'export IPERF3_PASSWORD=mambaBudo; exec \"$@\"'",
-                    "--",
-                    "iperf --bidir --connect-timeout 600 --time 30 --json -Z -c vpn.yuki --username mario --rsa-public-key-path /tmp/iperf3.public -u --udp-counters-64bit -b 0"
-                ],
-                "returncode": 1
-            },
-            "machine": "0_lom"
+  "status": "success",
+  "data": {
+    "VpnCloud": {
+      "status": "error",
+      "error_type": "CmdOut",
+      "error": {
+        "stdout": "{\n\t\"start\":\t{\n\t\t\"connected\":\t[{\n\t\t\t\t\"socket\":\t5,\n\t\t\t\t\"local_host\":\t\"10.25.186.63\",\n\t\t\t\t\"local_port\":\t58386,\n\t\t\t\t\"remote_host\":\t\"10.25.112.48\",\n\t\t\t\t\"remote_port\":\t5201\n\t\t\t}],\n\t\t\"version\":\t\"iperf 3.20\",\n\t\t\"system_info\":\t\"Linux lom 6.12.57 #1-NixOS SMP PREEMPT_DYNAMIC Sun Nov  2 13:15:23 UTC 2025 x86_64\",\n\t\t\"timestamp\":\t{\n\t\t\t\"time\":\t\"Thu, 18 Dec 2025 13:41:40 GMT\",\n\t\t\t\"timesecs\":\t1766065300,\n\t\t\t\"timemillisecs\":\t1766065300883\n\t\t},\n\t\t\"connecting_to\":\t{\n\t\t\t\"host\":\t\"vpn.yuki\",\n\t\t\t\"port\":\t5201\n\t\t},\n\t\t\"cookie\":\t\"tkhs3qqzvpb5spgrs44zpgpm6brj3qfck34l\",\n\t\t\"target_bitrate\":\t0,\n\t\t\"fq_rate\":\t0,\n\t\t\"sock_bufsize\":\t0,\n\t\t\"sndbuf_actual\":\t212992,\n\t\t\"rcvbuf_actual\":\t212992\n\t},\n\t\"intervals\":\t[],\n\t\"end\":\t{\n\t},\n\t\"error\":\t\"unable to read from stream socket: No such file or directory\"\n}\n",
+        "stderr": "Warning: Permanently added '138.201.33.111' (ED25519) to the list of known hosts.\r\n",
+        "cwd": "/home/lhebendanz/Projects/vpn-benchmark-suite/pkgs/vpn-bench",
+        "command_list": [
+          "ssh",
+          "root@138.201.33.111",
+          "-A",
+          "-o",
+          "StrictHostKeyChecking=no",
+          "-o",
+          "UserKnownHostsFile=/dev/null",
+          "-o",
+          "ControlMaster=auto",
+          "-o",
+          "ControlPersist=1m",
+          "-o",
+          "ControlPath=/tmp/clan-sshxuyjtxh5/socket",
+          "--",
+          "bash",
+          "-c",
+          "'export IPERF3_PASSWORD=mambaBudo; exec \"$@\"'",
+          "--",
+          "iperf --bidir --connect-timeout 600 --time 30 --json -Z -c vpn.yuki --username mario --rsa-public-key-path /tmp/iperf3.public -u --udp-counters-64bit -b 0"
+        ],
+        "returncode": 1
+      },
+      "machine": "0_lom"
+    },
+    "Zerotier": {
+      "status": "success",
+      "data": {
+        "sender_throughput_mbps": {
+          "min": 8400.149475809694,
+          "average": 8400.149475809694,
+          "max": 8400.149475809694,
+          "percentiles": {
+            "p25": 8400.149475809694,
+            "p50": 8400.149475809694,
+            "p75": 8400.149475809694
+          }
         },
-        "Zerotier": {
-            "status": "success",
-            "data": {
-                "sender_throughput_mbps": {
-                    "min": 8400.149475809694,
-                    "average": 8400.149475809694,
-                    "max": 8400.149475809694,
-                    "percentiles": {
-                        "p25": 8400.149475809694,
-                        "p50": 8400.149475809694,
-                        "p75": 8400.149475809694
-                    }
-                },
-                "receiver_throughput_mbps": {
-                    "min": 31.56116410613331,
-                    "average": 31.56116410613331,
-                    "max": 31.56116410613331,
-                    "percentiles": {
-                        "p25": 31.56116410613331,
-                        "p50": 31.56116410613331,
-                        "p75": 31.56116410613331
-                    }
-                },
-                "jitter_ms": {
-                    "min": 3.642781395006848,
-                    "average": 3.642781395006848,
-                    "max": 3.642781395006848,
-                    "percentiles": {
-                        "p25": 3.642781395006848,
-                        "p50": 3.642781395006848,
-                        "p75": 3.642781395006848
-                    }
-                },
-                "lost_percent": {
-                    "min": 99.62085135679305,
-                    "average": 99.62085135679305,
-                    "max": 99.62085135679305,
-                    "percentiles": {
-                        "p25": 99.62085135679305,
-                        "p50": 99.62085135679305,
-                        "p75": 99.62085135679305
-                    }
-                },
-                "total_bytes_sent": {
-                    "min": 31501443600.0,
-                    "average": 31501443600.0,
-                    "max": 31501443600.0,
-                    "percentiles": {
-                        "p25": 31501443600.0,
-                        "p50": 31501443600.0,
-                        "p75": 31501443600.0
-                    }
-                },
-                "total_bytes_received": {
-                    "min": 119279072.0,
-                    "average": 119279072.0,
-                    "max": 119279072.0,
-                    "percentiles": {
-                        "p25": 119279072.0,
-                        "p50": 119279072.0,
-                        "p75": 119279072.0
-                    }
-                },
-                "duration_seconds": {
-                    "min": 30.000841,
-                    "average": 30.000841,
-                    "max": 30.000841,
-                    "percentiles": {
-                        "p25": 30.000841,
-                        "p50": 30.000841,
-                        "p75": 30.000841
-                    }
-                }
-            }
+        "receiver_throughput_mbps": {
+          "min": 31.56116410613331,
+          "average": 31.56116410613331,
+          "max": 31.56116410613331,
+          "percentiles": {
+            "p25": 31.56116410613331,
+            "p50": 31.56116410613331,
+            "p75": 31.56116410613331
+          }
         },
-        "Yggdrasil": {
-            "status": "error",
-            "error_type": "CmdOut",
-            "error": {
-                "stdout": "{\n\t\"start\":\t{\n\t\t\"connected\":\t[{\n\t\t\t\t\"socket\":\t5,\n\t\t\t\t\"local_host\":\t\"200:9c56:d39f:5a7d:c0a3:5356:b2ec:9338\",\n\t\t\t\t\"local_port\":\t41176,\n\t\t\t\t\"remote_host\":\t\"202:f504:6752:f41e:c27e:b223:b83b:dd0a\",\n\t\t\t\t\"remote_port\":\t5201\n\t\t\t}, {\n\t\t\t\t\"socket\":\t7,\n\t\t\t\t\"local_host\":\t\"200:9c56:d39f:5a7d:c0a3:5356:b2ec:9338\",\n\t\t\t\t\"local_port\":\t56124,\n\t\t\t\t\"remote_host\":\t\"202:f504:6752:f41e:c27e:b223:b83b:dd0a\",\n\t\t\t\t\"remote_port\":\t5201\n\t\t\t}],\n\t\t\"version\":\t\"iperf 3.20\",\n\t\t\"system_info\":\t\"Linux lom 6.12.57 #1-NixOS SMP PREEMPT_DYNAMIC Sun Nov  2 13:15:23 UTC 2025 x86_64\",\n\t\t\"timestamp\":\t{\n\t\t\t\"time\":\t\"Thu, 18 Dec 2025 10:41:43 GMT\",\n\t\t\t\"timesecs\":\t1766054503,\n\t\t\t\"timemillisecs\":\t1766054503591\n\t\t},\n\t\t\"connecting_to\":\t{\n\t\t\t\"host\":\t\"vpn.yuki\",\n\t\t\t\"port\":\t5201\n\t\t},\n\t\t\"cookie\":\t\"z4q6kze2g6nqsmlmr726rihku4hjpekehfts\",\n\t\t\"target_bitrate\":\t0,\n\t\t\"fq_rate\":\t0,\n\t\t\"sock_bufsize\":\t0,\n\t\t\"sndbuf_actual\":\t212992,\n\t\t\"rcvbuf_actual\":\t212992,\n\t\t\"test_start\":\t{\n\t\t\t\"protocol\":\t\"UDP\",\n\t\t\t\"num_streams\":\t1,\n\t\t\t\"blksize\":\t32731,\n\t\t\t\"omit\":\t0,\n\t\t\t\"duration\":\t30,\n\t\t\t\"bytes\":\t0,\n\t\t\t\"blocks\":\t0,\n\t\t\t\"reverse\":\t0,\n\t\t\t\"tos\":\t0,\n\t\t\t\"target_bitrate\":\t0,\n\t\t\t\"bidir\":\t1,\n\t\t\t\"fqrate\":\t0,\n\t\t\t\"interval\":\t1\n\t\t}\n\t},\n\t\"intervals\":\t[{\n\t\t\t\"streams\":\t[{\n\t\t\t\t\t\"socket\":\t5,\n\t\t\t\t\t\"start\":\t0,\n\t\t\t\t\t\"end\":\t1.000234,\n\t\t\t\t\t\"seconds\":\t1.0002340078353882,\n\t\t\t\t\t\"bytes\":\t7820941526,\n\t\t\t\t\t\"bits_per_second\":\t62552894340.5981,\n\t\t\t\t\t\"packets\":\t238947,\n\t\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\t\"sender\":\ttrue\n\t\t\t\t}, {\n\t\t\t\t\t\"socket\":\t7,\n\t\t\t\t\t\"start\":\t0,\n\t\t\t\t\t\"end\":\t1.000235,\n\t\t\t\t\t\"seconds\":\t1.0002349615097046,\n\t\t\t\t\t\"bytes\":\t458234,\n\t\t\t\t\t\"bits_per_second\":\t3665010.8635144248,\n\t\t\t\t\t\"jitter_ms\":\t19.076103666345574,\n\t\t\t\t\t\"lost_packets\":\t211715,\n\t\t\t\t\t\"packets\":\t211729,\n\t\t\t\t\t\"lost_percent\":\t99.9933877739941,\n\t\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\t\"sender\":\tfalse\n\t\t\t\t}],\n\t\t\t\"sum\":\t{\n\t\t\t\t\"start\":\t0,\n\t\t\t\t\"end\":\t1.000234,\n\t\t\t\t\"seconds\":\t1.0002340078353882,\n\t\t\t\t\"bytes\":\t7820941526,\n\t\t\t\t\"bits_per_second\":\t62552894340.5981,\n\t\t\t\t\"packets\":\t238947,\n\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\"sender\":\ttrue\n\t\t\t},\n\t\t\t\"sum_bidir_reverse\":\t{\n\t\t\t\t\"start\":\t0,\n\t\t\t\t\"end\":\t1.000234,\n\t\t\t\t\"seconds\":\t1.0002340078353882,\n\t\t\t\t\"bytes\":\t458234,\n\t\t\t\t\"bits_per_second\":\t3665014.3579234355,\n\t\t\t\t\"jitter_ms\":\t19.076103666345574,\n\t\t\t\t\"lost_packets\":\t211715,\n\t\t\t\t\"packets\":\t211729,\n\t\t\t\t\"lost_percent\":\t99.9933877739941,\n\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\"sender\":\tfalse\n\t\t\t}\n\t\t}, {\n\t\t\t\"streams\":\t[{\n\t\t\t\t\t\"socket\":\t5,\n\t\t\t\t\t\"start\":\t1.000234,\n\t\t\t\t\t\"end\":\t2.000247,\n\t\t\t\t\t\"seconds\":\t1.000012993812561,\n\t\t\t\t\t\"bytes\":\t8377859491,\n\t\t\t\t\t\"bits_per_second\":\t67022005056.62883,\n\t\t\t\t\t\"packets\":\t255961,\n\t\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\t\"sender\":\ttrue\n\t\t\t\t}, {\n\t\t\t\t\t\"socket\":\t7,\n\t\t\t\t\t\"start\":\t1.000235,\n\t\t\t\t\t\"end\":\t2.000248,\n\t\t\t\t\t\"seconds\":\t1.000012993812561,\n\t\t\t\t\t\"bytes\":\t392772,\n\t\t\t\t\t\"bits_per_second\":\t3142135.1716845375,\n\t\t\t\t\t\"jitter_ms\":\t31.954565677117589,\n\t\t\t\t\t\"lost_packets\":\t227047,\n\t\t\t\t\t\"packets\":\t227059,\n\t\t\t\t\t\"lost_percent\":\t99.9947150300142,\n\t\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\t\"sender\":\tfalse\n\t\t\t\t}],\n\t\t\t\"sum\":\t{\n\t\t\t\t\"start\":\t1.000234,\n\t\t\t\t\"end\":\t2.000247,\n\t\t\t\t\"seconds\":\t1.000012993812561,\n\t\t\t\t\"bytes\":\t8377859491,\n\t\t\t\t\"bits_per_second\":\t67022005056.62883,\n\t\t\t\t\"packets\":\t255961,\n\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\"sender\":\ttrue\n\t\t\t},\n\t\t\t\"sum_bidir_reverse\":\t{\n\t\t\t\t\"start\":\t1.000234,\n\t\t\t\t\"end\":\t2.000247,\n\t\t\t\t\"seconds\":\t1.000012993812561,\n\t\t\t\t\"bytes\":\t392772,\n\t\t\t\t\"bits_per_second\":\t3142135.1716845375,\n\t\t\t\t\"jitter_ms\":\t31.954565677117589,\n\t\t\t\t\"lost_packets\":\t227047,\n\t\t\t\t\"packets\":\t227059,\n\t\t\t\t\"lost_percent\":\t99.9947150300142,\n\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\"sender\":\tfalse\n\t\t\t}\n\t\t}, {\n\t\t\t\"streams\":\t[{\n\t\t\t\t\t\"socket\":\t5,\n\t\t\t\t\t\"start\":\t2.000247,\n\t\t\t\t\t\"end\":\t3.000246,\n\t\t\t\t\t\"seconds\":\t0.99999898672103882,\n\t\t\t\t\t\"bytes\":\t8158267212,\n\t\t\t\t\t\"bits_per_second\":\t65266203828.871216,\n\t\t\t\t\t\"packets\":\t249252,\n\t\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\t\"sender\":\ttrue\n\t\t\t\t}, {\n\t\t\t\t\t\"socket\":\t7,\n\t\t\t\t\t\"start\":\t2.000248,\n\t\t\t\t\t\"end\":\t3.000247,\n\t\t\t\t\t\"seconds\":\t0.99999898672103882,\n\t\t\t\t\t\"bytes\":\t392772,\n\t\t\t\t\t\"bits_per_second\":\t3142179.1839040592,\n\t\t\t\t\t\"jitter_ms\":\t38.032007044643933,\n\t\t\t\t\t\"lost_packets\":\t257272,\n\t\t\t\t\t\"packets\":\t257284,\n\t\t\t\t\t\"lost_percent\":\t99.9953358934096,\n\t\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\t\"sender\":\tfalse\n\t\t\t\t}],\n\t\t\t\"sum\":\t{\n\t\t\t\t\"start\":\t2.000247,\n\t\t\t\t\"end\":\t3.000246,\n\t\t\t\t\"seconds\":\t0.99999898672103882,\n\t\t\t\t\"bytes\":\t8158267212,\n\t\t\t\t\"bits_per_second\":\t65266203828.871216,\n\t\t\t\t\"packets\":\t249252,\n\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\"sender\":\ttrue\n\t\t\t},\n\t\t\t\"sum_bidir_reverse\":\t{\n\t\t\t\t\"start\":\t2.000247,\n\t\t\t\t\"end\":\t3.000246,\n\t\t\t\t\"seconds\":\t0.99999898672103882,\n\t\t\t\t\"bytes\":\t392772,\n\t\t\t\t\"bits_per_second\":\t3142179.1839040592,\n\t\t\t\t\"jitter_ms\":\t38.032007044643933,\n\t\t\t\t\"lost_packets\":\t257272,\n\t\t\t\t\"packets\":\t257284,\n\t\t\t\t\"lost_percent\":\t99.9953358934096,\n\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\"sender\":\tfalse\n\t\t\t}\n\t\t}, {\n\t\t\t\"streams\":\t[{\n\t\t\t\t\t\"socket\":\t5,\n\t\t\t\t\t\"start\":\t3.000246,\n\t\t\t\t\t\"end\":\t4.000233,\n\t\t\t\t\t\"seconds\":\t0.999987006187439,\n\t\t\t\t\t\"bytes\":\t8199017307,\n\t\t\t\t\t\"bits_per_second\":\t65592990759.027237,\n\t\t\t\t\t\"packets\":\t250498,\n\t\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\t\"sender\":\ttrue\n\t\t\t\t}, {\n\t\t\t\t\t\"socket\":\t7,\n\t\t\t\t\t\"start\":\t3.000247,\n\t\t\t\t\t\"end\":\t4.000234,\n\t\t\t\t\t\"seconds\":\t0.999987006187439,\n\t\t\t\t\t\"bytes\":\t392772,\n\t\t\t\t\t\"bits_per_second\":\t3142216.8293765071,\n\t\t\t\t\t\"jitter_ms\":\t41.025417562960378,\n\t\t\t\t\t\"lost_packets\":\t295723,\n\t\t\t\t\t\"packets\":\t295735,\n\t\t\t\t\t\"lost_percent\":\t99.9959423132196,\n\t\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\t\"sender\":\tfalse\n\t\t\t\t}],\n\t\t\t\"sum\":\t{\n\t\t\t\t\"start\":\t3.000246,\n\t\t\t\t\"end\":\t4.000233,\n\t\t\t\t\"seconds\":\t0.999987006187439,\n\t\t\t\t\"bytes\":\t8199017307,\n\t\t\t\t\"bits_per_second\":\t65592990759.027237,\n\t\t\t\t\"packets\":\t250498,\n\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\"sender\":\ttrue\n\t\t\t},\n\t\t\t\"sum_bidir_reverse\":\t{\n\t\t\t\t\"start\":\t3.000246,\n\t\t\t\t\"end\":\t4.000233,\n\t\t\t\t\"seconds\":\t0.999987006187439,\n\t\t\t\t\"bytes\":\t392772,\n\t\t\t\t\"bits_per_second\":\t3142216.8293765071,\n\t\t\t\t\"jitter_ms\":\t41.025417562960378,\n\t\t\t\t\"lost_packets\":\t295723,\n\t\t\t\t\"packets\":\t295735,\n\t\t\t\t\"lost_percent\":\t99.9959423132196,\n\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\"sender\":\tfalse\n\t\t\t}\n\t\t}, {\n\t\t\t\"streams\":\t[{\n\t\t\t\t\t\"socket\":\t5,\n\t\t\t\t\t\"start\":\t4.000233,\n\t\t\t\t\t\"end\":\t5.001044,\n\t\t\t\t\t\"seconds\":\t1.000810980796814,\n\t\t\t\t\t\"bytes\":\t8338975063,\n\t\t\t\t\t\"bits_per_second\":\t66657742354.991127,\n\t\t\t\t\t\"packets\":\t254773,\n\t\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\t\"sender\":\ttrue\n\t\t\t\t}, {\n\t\t\t\t\t\"socket\":\t7,\n\t\t\t\t\t\"start\":\t4.000234,\n\t\t\t\t\t\"end\":\t5.001046,\n\t\t\t\t\t\"seconds\":\t1.00081205368042,\n\t\t\t\t\t\"bytes\":\t392772,\n\t\t\t\t\t\"bits_per_second\":\t3139626.45478225,\n\t\t\t\t\t\"jitter_ms\":\t40.943889979761423,\n\t\t\t\t\t\"lost_packets\":\t228836,\n\t\t\t\t\t\"packets\":\t228848,\n\t\t\t\t\t\"lost_percent\":\t99.994756344822761,\n\t\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\t\"sender\":\tfalse\n\t\t\t\t}],\n\t\t\t\"sum\":\t{\n\t\t\t\t\"start\":\t4.000233,\n\t\t\t\t\"end\":\t5.001044,\n\t\t\t\t\"seconds\":\t1.000810980796814,\n\t\t\t\t\"bytes\":\t8338975063,\n\t\t\t\t\"bits_per_second\":\t66657742354.991127,\n\t\t\t\t\"packets\":\t254773,\n\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\"sender\":\ttrue\n\t\t\t},\n\t\t\t\"sum_bidir_reverse\":\t{\n\t\t\t\t\"start\":\t4.000233,\n\t\t\t\t\"end\":\t5.001044,\n\t\t\t\t\"seconds\":\t1.000810980796814,\n\t\t\t\t\"bytes\":\t392772,\n\t\t\t\t\"bits_per_second\":\t3139629.8205064647,\n\t\t\t\t\"jitter_ms\":\t40.943889979761423,\n\t\t\t\t\"lost_packets\":\t228836,\n\t\t\t\t\"packets\":\t228848,\n\t\t\t\t\"lost_percent\":\t99.994756344822761,\n\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\"sender\":\tfalse\n\t\t\t}\n\t\t}, {\n\t\t\t\"streams\":\t[{\n\t\t\t\t\t\"socket\":\t5,\n\t\t\t\t\t\"start\":\t5.001044,\n\t\t\t\t\t\"end\":\t6.000233,\n\t\t\t\t\t\"seconds\":\t0.999189019203186,\n\t\t\t\t\t\"bytes\":\t8276720701,\n\t\t\t\t\t\"bits_per_second\":\t66267507283.85994,\n\t\t\t\t\t\"packets\":\t252872,\n\t\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\t\"sender\":\ttrue\n\t\t\t\t}, {\n\t\t\t\t\t\"socket\":\t7,\n\t\t\t\t\t\"start\":\t5.001046,\n\t\t\t\t\t\"end\":\t6.000234,\n\t\t\t\t\t\"seconds\":\t0.999188005924225,\n\t\t\t\t\t\"bytes\":\t327310,\n\t\t\t\t\t\"bits_per_second\":\t2620607.91810443,\n\t\t\t\t\t\"jitter_ms\":\t37.5553263678935,\n\t\t\t\t\t\"lost_packets\":\t275899,\n\t\t\t\t\t\"packets\":\t275909,\n\t\t\t\t\t\"lost_percent\":\t99.996375616598229,\n\t\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\t\"sender\":\tfalse\n\t\t\t\t}],\n\t\t\t\"sum\":\t{\n\t\t\t\t\"start\":\t5.001044,\n\t\t\t\t\"end\":\t6.000233,\n\t\t\t\t\"seconds\":\t0.999189019203186,\n\t\t\t\t\"bytes\":\t8276720701,\n\t\t\t\t\"bits_per_second\":\t66267507283.85994,\n\t\t\t\t\"packets\":\t252872,\n\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\"sender\":\ttrue\n\t\t\t},\n\t\t\t\"sum_bidir_reverse\":\t{\n\t\t\t\t\"start\":\t5.001044,\n\t\t\t\t\"end\":\t6.000233,\n\t\t\t\t\"seconds\":\t0.999189019203186,\n\t\t\t\t\"bytes\":\t327310,\n\t\t\t\t\"bits_per_second\":\t2620605.26054233,\n\t\t\t\t\"jitter_ms\":\t37.5553263678935,\n\t\t\t\t\"lost_packets\":\t275899,\n\t\t\t\t\"packets\":\t275909,\n\t\t\t\t\"lost_percent\":\t99.996375616598229,\n\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\"sender\":\tfalse\n\t\t\t}\n\t\t}, {\n\t\t\t\"streams\":\t[{\n\t\t\t\t\t\"socket\":\t5,\n\t\t\t\t\t\"start\":\t6.000233,\n\t\t\t\t\t\"end\":\t7.000246,\n\t\t\t\t\t\"seconds\":\t1.000012993812561,\n\t\t\t\t\t\"bytes\":\t8318681843,\n\t\t\t\t\t\"bits_per_second\":\t66548590024.095024,\n\t\t\t\t\t\"packets\":\t254153,\n\t\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\t\"sender\":\ttrue\n\t\t\t\t}, {\n\t\t\t\t\t\"socket\":\t7,\n\t\t\t\t\t\"start\":\t6.000234,\n\t\t\t\t\t\"end\":\t7.000247,\n\t\t\t\t\t\"seconds\":\t1.000012993812561,\n\t\t\t\t\t\"bytes\":\t425503,\n\t\t\t\t\t\"bits_per_second\":\t3403979.7693249159,\n\t\t\t\t\t\"jitter_ms\":\t41.530168851652448,\n\t\t\t\t\t\"lost_packets\":\t225390,\n\t\t\t\t\t\"packets\":\t225403,\n\t\t\t\t\t\"lost_percent\":\t99.994232552361765,\n\t\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\t\"sender\":\tfalse\n\t\t\t\t}],\n\t\t\t\"sum\":\t{\n\t\t\t\t\"start\":\t6.000233,\n\t\t\t\t\"end\":\t7.000246,\n\t\t\t\t\"seconds\":\t1.000012993812561,\n\t\t\t\t\"bytes\":\t8318681843,\n\t\t\t\t\"bits_per_second\":\t66548590024.095024,\n\t\t\t\t\"packets\":\t254153,\n\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\"sender\":\ttrue\n\t\t\t},\n\t\t\t\"sum_bidir_reverse\":\t{\n\t\t\t\t\"start\":\t6.000233,\n\t\t\t\t\"end\":\t7.000246,\n\t\t\t\t\"seconds\":\t1.000012993812561,\n\t\t\t\t\"bytes\":\t425503,\n\t\t\t\t\"bits_per_second\":\t3403979.7693249159,\n\t\t\t\t\"jitter_ms\":\t41.530168851652448,\n\t\t\t\t\"lost_packets\":\t225390,\n\t\t\t\t\"packets\":\t225403,\n\t\t\t\t\"lost_percent\":\t99.994232552361765,\n\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\"sender\":\tfalse\n\t\t\t}\n\t\t}, {\n\t\t\t\"streams\":\t[{\n\t\t\t\t\t\"socket\":\t5,\n\t\t\t\t\t\"start\":\t7.000246,\n\t\t\t\t\t\"end\":\t8.000271,\n\t\t\t\t\t\"seconds\":\t1.0000250339508057,\n\t\t\t\t\t\"bytes\":\t8331479664,\n\t\t\t\t\t\"bits_per_second\":\t66650168794.9532,\n\t\t\t\t\t\"packets\":\t254545,\n\t\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\t\"sender\":\ttrue\n\t\t\t\t}, {\n\t\t\t\t\t\"socket\":\t7,\n\t\t\t\t\t\"start\":\t7.000247,\n\t\t\t\t\t\"end\":\t8.000272,\n\t\t\t\t\t\"seconds\":\t1.0000250339508057,\n\t\t\t\t\t\"bytes\":\t425503,\n\t\t\t\t\t\"bits_per_second\":\t3403938.7859638869,\n\t\t\t\t\t\"jitter_ms\":\t37.710393806291783,\n\t\t\t\t\t\"lost_packets\":\t285058,\n\t\t\t\t\t\"packets\":\t285071,\n\t\t\t\t\t\"lost_percent\":\t99.995439732557855,\n\t\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\t\"sender\":\tfalse\n\t\t\t\t}],\n\t\t\t\"sum\":\t{\n\t\t\t\t\"start\":\t7.000246,\n\t\t\t\t\"end\":\t8.000271,\n\t\t\t\t\"seconds\":\t1.0000250339508057,\n\t\t\t\t\"bytes\":\t8331479664,\n\t\t\t\t\"bits_per_second\":\t66650168794.9532,\n\t\t\t\t\"packets\":\t254545,\n\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\"sender\":\ttrue\n\t\t\t},\n\t\t\t\"sum_bidir_reverse\":\t{\n\t\t\t\t\"start\":\t7.000246,\n\t\t\t\t\"end\":\t8.000271,\n\t\t\t\t\"seconds\":\t1.0000250339508057,\n\t\t\t\t\"bytes\":\t425503,\n\t\t\t\t\"bits_per_second\":\t3403938.7859638869,\n\t\t\t\t\"jitter_ms\":\t37.710393806291783,\n\t\t\t\t\"lost_packets\":\t285058,\n\t\t\t\t\"packets\":\t285071,\n\t\t\t\t\"lost_percent\":\t99.995439732557855,\n\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\"sender\":\tfalse\n\t\t\t}\n\t\t}, {\n\t\t\t\"streams\":\t[{\n\t\t\t\t\t\"socket\":\t5,\n\t\t\t\t\t\"start\":\t8.000271,\n\t\t\t\t\t\"end\":\t9.000233,\n\t\t\t\t\t\"seconds\":\t0.9999619722366333,\n\t\t\t\t\t\"bytes\":\t8452060668,\n\t\t\t\t\t\"bits_per_second\":\t67619056745.489,\n\t\t\t\t\t\"packets\":\t258228,\n\t\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\t\"sender\":\ttrue\n\t\t\t\t}, {\n\t\t\t\t\t\"socket\":\t7,\n\t\t\t\t\t\"start\":\t8.000272,\n\t\t\t\t\t\"end\":\t9.000234,\n\t\t\t\t\t\"seconds\":\t0.9999619722366333,\n\t\t\t\t\t\"bytes\":\t360041,\n\t\t\t\t\t\"bits_per_second\":\t2880437.5365970344,\n\t\t\t\t\t\"jitter_ms\":\t46.651766179194887,\n\t\t\t\t\t\"lost_packets\":\t212236,\n\t\t\t\t\t\"packets\":\t212247,\n\t\t\t\t\t\"lost_percent\":\t99.9948173590204,\n\t\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\t\"sender\":\tfalse\n\t\t\t\t}],\n\t\t\t\"sum\":\t{\n\t\t\t\t\"start\":\t8.000271,\n\t\t\t\t\"end\":\t9.000233,\n\t\t\t\t\"seconds\":\t0.9999619722366333,\n\t\t\t\t\"bytes\":\t8452060668,\n\t\t\t\t\"bits_per_second\":\t67619056745.489,\n\t\t\t\t\"packets\":\t258228,\n\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\"sender\":\ttrue\n\t\t\t},\n\t\t\t\"sum_bidir_reverse\":\t{\n\t\t\t\t\"start\":\t8.000271,\n\t\t\t\t\"end\":\t9.000233,\n\t\t\t\t\"seconds\":\t0.9999619722366333,\n\t\t\t\t\"bytes\":\t360041,\n\t\t\t\t\"bits_per_second\":\t2880437.5365970344,\n\t\t\t\t\"jitter_ms\":\t46.651766179194887,\n\t\t\t\t\"lost_packets\":\t212236,\n\t\t\t\t\"packets\":\t212247,\n\t\t\t\t\"lost_percent\":\t99.9948173590204,\n\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\"sender\":\tfalse\n\t\t\t}\n\t\t}, {\n\t\t\t\"streams\":\t[{\n\t\t\t\t\t\"socket\":\t5,\n\t\t\t\t\t\"start\":\t9.000233,\n\t\t\t\t\t\"end\":\t10.000246,\n\t\t\t\t\t\"seconds\":\t1.000012993812561,\n\t\t\t\t\t\"bytes\":\t8602950578,\n\t\t\t\t\t\"bits_per_second\":\t68822710354.6017,\n\t\t\t\t\t\"packets\":\t262839,\n\t\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\t\"sender\":\ttrue\n\t\t\t\t}, {\n\t\t\t\t\t\"socket\":\t7,\n\t\t\t\t\t\"start\":\t9.000234,\n\t\t\t\t\t\"end\":\t10.000247,\n\t\t\t\t\t\"seconds\":\t1.000012993812561,\n\t\t\t\t\t\"bytes\":\t523696,\n\t\t\t\t\t\"bits_per_second\":\t4189513.56224605,\n\t\t\t\t\t\"jitter_ms\":\t38.492739745208524,\n\t\t\t\t\t\"lost_packets\":\t308319,\n\t\t\t\t\t\"packets\":\t308335,\n\t\t\t\t\t\"lost_percent\":\t99.994810838860332,\n\t\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\t\"sender\":\tfalse\n\t\t\t\t}],\n\t\t\t\"sum\":\t{\n\t\t\t\t\"start\":\t9.000233,\n\t\t\t\t\"end\":\t10.000246,\n\t\t\t\t\"seconds\":\t1.000012993812561,\n\t\t\t\t\"bytes\":\t8602950578,\n\t\t\t\t\"bits_per_second\":\t68822710354.6017,\n\t\t\t\t\"packets\":\t262839,\n\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\"sender\":\ttrue\n\t\t\t},\n\t\t\t\"sum_bidir_reverse\":\t{\n\t\t\t\t\"start\":\t9.000233,\n\t\t\t\t\"end\":\t10.000246,\n\t\t\t\t\"seconds\":\t1.000012993812561,\n\t\t\t\t\"bytes\":\t523696,\n\t\t\t\t\"bits_per_second\":\t4189513.56224605,\n\t\t\t\t\"jitter_ms\":\t38.492739745208524,\n\t\t\t\t\"lost_packets\":\t308319,\n\t\t\t\t\"packets\":\t308335,\n\t\t\t\t\"lost_percent\":\t99.994810838860332,\n\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\"sender\":\tfalse\n\t\t\t}\n\t\t}, {\n\t\t\t\"streams\":\t[{\n\t\t\t\t\t\"socket\":\t5,\n\t\t\t\t\t\"start\":\t10.000246,\n\t\t\t\t\t\"end\":\t11.000234,\n\t\t\t\t\t\"seconds\":\t0.9999880194664,\n\t\t\t\t\t\"bytes\":\t8212338824,\n\t\t\t\t\t\"bits_per_second\":\t65699497707.039772,\n\t\t\t\t\t\"packets\":\t250904,\n\t\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\t\"sender\":\ttrue\n\t\t\t\t}, {\n\t\t\t\t\t\"socket\":\t7,\n\t\t\t\t\t\"start\":\t10.000247,\n\t\t\t\t\t\"end\":\t11.000236,\n\t\t\t\t\t\"seconds\":\t0.99998897314071655,\n\t\t\t\t\t\"bytes\":\t490965,\n\t\t\t\t\t\"bits_per_second\":\t3927763.3108933279,\n\t\t\t\t\t\"jitter_ms\":\t38.811636526670569,\n\t\t\t\t\t\"lost_packets\":\t229788,\n\t\t\t\t\t\"packets\":\t229803,\n\t\t\t\t\t\"lost_percent\":\t99.9934726700696,\n\t\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\t\"sender\":\tfalse\n\t\t\t\t}],\n\t\t\t\"sum\":\t{\n\t\t\t\t\"start\":\t10.000246,\n\t\t\t\t\"end\":\t11.000234,\n\t\t\t\t\"seconds\":\t0.9999880194664,\n\t\t\t\t\"bytes\":\t8212338824,\n\t\t\t\t\"bits_per_second\":\t65699497707.039772,\n\t\t\t\t\"packets\":\t250904,\n\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\"sender\":\ttrue\n\t\t\t},\n\t\t\t\"sum_bidir_reverse\":\t{\n\t\t\t\t\"start\":\t10.000246,\n\t\t\t\t\"end\":\t11.000234,\n\t\t\t\t\"seconds\":\t0.9999880194664,\n\t\t\t\t\"bytes\":\t490965,\n\t\t\t\t\"bits_per_second\":\t3927767.0567451958,\n\t\t\t\t\"jitter_ms\":\t38.811636526670569,\n\t\t\t\t\"lost_packets\":\t229788,\n\t\t\t\t\"packets\":\t229803,\n\t\t\t\t\"lost_percent\":\t99.9934726700696,\n\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\"sender\":\tfalse\n\t\t\t}\n\t\t}, {\n\t\t\t\"streams\":\t[{\n\t\t\t\t\t\"socket\":\t5,\n\t\t\t\t\t\"start\":\t11.000234,\n\t\t\t\t\t\"end\":\t12.000259,\n\t\t\t\t\t\"seconds\":\t1.0000250339508057,\n\t\t\t\t\t\"bytes\":\t8205236197,\n\t\t\t\t\t\"bits_per_second\":\t65640246341.302223,\n\t\t\t\t\t\"packets\":\t250688,\n\t\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\t\"sender\":\ttrue\n\t\t\t\t}, {\n\t\t\t\t\t\"socket\":\t7,\n\t\t\t\t\t\"start\":\t11.000236,\n\t\t\t\t\t\"end\":\t12.00026,\n\t\t\t\t\t\"seconds\":\t1.0000239610672,\n\t\t\t\t\t\"bytes\":\t294579,\n\t\t\t\t\t\"bits_per_second\":\t2356575.53393527,\n\t\t\t\t\t\"jitter_ms\":\t53.5415000178319,\n\t\t\t\t\t\"lost_packets\":\t228209,\n\t\t\t\t\t\"packets\":\t228218,\n\t\t\t\t\t\"lost_percent\":\t99.9960564022119,\n\t\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\t\"sender\":\tfalse\n\t\t\t\t}],\n\t\t\t\"sum\":\t{\n\t\t\t\t\"start\":\t11.000234,\n\t\t\t\t\"end\":\t12.000259,\n\t\t\t\t\"seconds\":\t1.0000250339508057,\n\t\t\t\t\"bytes\":\t8205236197,\n\t\t\t\t\"bits_per_second\":\t65640246341.302223,\n\t\t\t\t\"packets\":\t250688,\n\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\"sender\":\ttrue\n\t\t\t},\n\t\t\t\"sum_bidir_reverse\":\t{\n\t\t\t\t\"start\":\t11.000234,\n\t\t\t\t\"end\":\t12.000259,\n\t\t\t\t\"seconds\":\t1.0000250339508057,\n\t\t\t\t\"bytes\":\t294579,\n\t\t\t\t\"bits_per_second\":\t2356573.005667306,\n\t\t\t\t\"jitter_ms\":\t53.5415000178319,\n\t\t\t\t\"lost_packets\":\t228209,\n\t\t\t\t\"packets\":\t228218,\n\t\t\t\t\"lost_percent\":\t99.9960564022119,\n\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\"sender\":\tfalse\n\t\t\t}\n\t\t}, {\n\t\t\t\"streams\":\t[{\n\t\t\t\t\t\"socket\":\t5,\n\t\t\t\t\t\"start\":\t12.000259,\n\t\t\t\t\t\"end\":\t13.000234,\n\t\t\t\t\t\"seconds\":\t0.999975025653839,\n\t\t\t\t\t\"bytes\":\t8206414513,\n\t\t\t\t\t\"bits_per_second\":\t65652955743.643227,\n\t\t\t\t\t\"packets\":\t250723,\n\t\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\t\"sender\":\ttrue\n\t\t\t\t}, {\n\t\t\t\t\t\"socket\":\t7,\n\t\t\t\t\t\"start\":\t12.00026,\n\t\t\t\t\t\"end\":\t13.000235,\n\t\t\t\t\t\"seconds\":\t0.999975025653839,\n\t\t\t\t\t\"bytes\":\t327310,\n\t\t\t\t\t\"bits_per_second\":\t2618545.3964591692,\n\t\t\t\t\t\"jitter_ms\":\t57.241273739681347,\n\t\t\t\t\t\"lost_packets\":\t292735,\n\t\t\t\t\t\"packets\":\t292745,\n\t\t\t\t\t\"lost_percent\":\t99.996584057797747,\n\t\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\t\"sender\":\tfalse\n\t\t\t\t}],\n\t\t\t\"sum\":\t{\n\t\t\t\t\"start\":\t12.000259,\n\t\t\t\t\"end\":\t13.000234,\n\t\t\t\t\"seconds\":\t0.999975025653839,\n\t\t\t\t\"bytes\":\t8206414513,\n\t\t\t\t\"bits_per_second\":\t65652955743.643227,\n\t\t\t\t\"packets\":\t250723,\n\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\"sender\":\ttrue\n\t\t\t},\n\t\t\t\"sum_bidir_reverse\":\t{\n\t\t\t\t\"start\":\t12.000259,\n\t\t\t\t\"end\":\t13.000234,\n\t\t\t\t\"seconds\":\t0.999975025653839,\n\t\t\t\t\"bytes\":\t327310,\n\t\t\t\t\"bits_per_second\":\t2618545.3964591692,\n\t\t\t\t\"jitter_ms\":\t57.241273739681347,\n\t\t\t\t\"lost_packets\":\t292735,\n\t\t\t\t\"packets\":\t292745,\n\t\t\t\t\"lost_percent\":\t99.996584057797747,\n\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\"sender\":\tfalse\n\t\t\t}\n\t\t}, {\n\t\t\t\"streams\":\t[{\n\t\t\t\t\t\"socket\":\t5,\n\t\t\t\t\t\"start\":\t13.000234,\n\t\t\t\t\t\"end\":\t14.000229,\n\t\t\t\t\t\"seconds\":\t0.999994993209839,\n\t\t\t\t\t\"bytes\":\t8058503124,\n\t\t\t\t\t\"bits_per_second\":\t64468347771.489326,\n\t\t\t\t\t\"packets\":\t246204,\n\t\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\t\"sender\":\ttrue\n\t\t\t\t}, {\n\t\t\t\t\t\"socket\":\t7,\n\t\t\t\t\t\"start\":\t13.000235,\n\t\t\t\t\t\"end\":\t14.00023,\n\t\t\t\t\t\"seconds\":\t0.999994993209839,\n\t\t\t\t\t\"bytes\":\t392772,\n\t\t\t\t\t\"bits_per_second\":\t3142191.73229465,\n\t\t\t\t\t\"jitter_ms\":\t49.843405739417449,\n\t\t\t\t\t\"lost_packets\":\t233034,\n\t\t\t\t\t\"packets\":\t233046,\n\t\t\t\t\t\"lost_percent\":\t99.9948508019876,\n\t\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\t\"sender\":\tfalse\n\t\t\t\t}],\n\t\t\t\"sum\":\t{\n\t\t\t\t\"start\":\t13.000234,\n\t\t\t\t\"end\":\t14.000229,\n\t\t\t\t\"seconds\":\t0.999994993209839,\n\t\t\t\t\"bytes\":\t8058503124,\n\t\t\t\t\"bits_per_second\":\t64468347771.489326,\n\t\t\t\t\"packets\":\t246204,\n\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\"sender\":\ttrue\n\t\t\t},\n\t\t\t\"sum_bidir_reverse\":\t{\n\t\t\t\t\"start\":\t13.000234,\n\t\t\t\t\"end\":\t14.000229,\n\t\t\t\t\"seconds\":\t0.999994993209839,\n\t\t\t\t\"bytes\":\t392772,\n\t\t\t\t\"bits_per_second\":\t3142191.73229465,\n\t\t\t\t\"jitter_ms\":\t49.843405739417449,\n\t\t\t\t\"lost_packets\":\t233034,\n\t\t\t\t\"packets\":\t233046,\n\t\t\t\t\"lost_percent\":\t99.9948508019876,\n\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\"sender\":\tfalse\n\t\t\t}\n\t\t}, {\n\t\t\t\"streams\":\t[{\n\t\t\t\t\t\"socket\":\t5,\n\t\t\t\t\t\"start\":\t14.000229,\n\t\t\t\t\t\"end\":\t15.000234,\n\t\t\t\t\t\"seconds\":\t1.0000050067901611,\n\t\t\t\t\t\"bytes\":\t8216888433,\n\t\t\t\t\t\"bits_per_second\":\t65734778343.758545,\n\t\t\t\t\t\"packets\":\t251043,\n\t\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\t\"sender\":\ttrue\n\t\t\t\t}, {\n\t\t\t\t\t\"socket\":\t7,\n\t\t\t\t\t\"start\":\t14.00023,\n\t\t\t\t\t\"end\":\t15.000236,\n\t\t\t\t\t\"seconds\":\t1.0000059604644775,\n\t\t\t\t\t\"bytes\":\t360041,\n\t\t\t\t\t\"bits_per_second\":\t2880310.8320096014,\n\t\t\t\t\t\"jitter_ms\":\t50.478946138344313,\n\t\t\t\t\t\"lost_packets\":\t251591,\n\t\t\t\t\t\"packets\":\t251602,\n\t\t\t\t\t\"lost_percent\":\t99.99562801567555,\n\t\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\t\"sender\":\tfalse\n\t\t\t\t}],\n\t\t\t\"sum\":\t{\n\t\t\t\t\"start\":\t14.000229,\n\t\t\t\t\"end\":\t15.000234,\n\t\t\t\t\"seconds\":\t1.0000050067901611,\n\t\t\t\t\"bytes\":\t8216888433,\n\t\t\t\t\"bits_per_second\":\t65734778343.758545,\n\t\t\t\t\"packets\":\t251043,\n\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\"sender\":\ttrue\n\t\t\t},\n\t\t\t\"sum_bidir_reverse\":\t{\n\t\t\t\t\"start\":\t14.000229,\n\t\t\t\t\"end\":\t15.000234,\n\t\t\t\t\"seconds\":\t1.0000050067901611,\n\t\t\t\t\"bytes\":\t360041,\n\t\t\t\t\"bits_per_second\":\t2880313.5788743123,\n\t\t\t\t\"jitter_ms\":\t50.478946138344313,\n\t\t\t\t\"lost_packets\":\t251591,\n\t\t\t\t\"packets\":\t251602,\n\t\t\t\t\"lost_percent\":\t99.99562801567555,\n\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\"sender\":\tfalse\n\t\t\t}\n\t\t}, {\n\t\t\t\"streams\":\t[{\n\t\t\t\t\t\"socket\":\t5,\n\t\t\t\t\t\"start\":\t15.000234,\n\t\t\t\t\t\"end\":\t16.000232,\n\t\t\t\t\t\"seconds\":\t0.99999797344207764,\n\t\t\t\t\t\"bytes\":\t8297504886,\n\t\t\t\t\t\"bits_per_second\":\t66380173611.266716,\n\t\t\t\t\t\"packets\":\t253506,\n\t\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\t\"sender\":\ttrue\n\t\t\t\t}, {\n\t\t\t\t\t\"socket\":\t7,\n\t\t\t\t\t\"start\":\t15.000236,\n\t\t\t\t\t\"end\":\t16.000233,\n\t\t\t\t\t\"seconds\":\t0.99999701976776123,\n\t\t\t\t\t\"bytes\":\t392772,\n\t\t\t\t\t\"bits_per_second\":\t3142185.3644421231,\n\t\t\t\t\t\"jitter_ms\":\t50.388760177838236,\n\t\t\t\t\t\"lost_packets\":\t257426,\n\t\t\t\t\t\"packets\":\t257438,\n\t\t\t\t\t\"lost_percent\":\t99.995338683488839,\n\t\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\t\"sender\":\tfalse\n\t\t\t\t}],\n\t\t\t\"sum\":\t{\n\t\t\t\t\"start\":\t15.000234,\n\t\t\t\t\"end\":\t16.000232,\n\t\t\t\t\"seconds\":\t0.99999797344207764,\n\t\t\t\t\"bytes\":\t8297504886,\n\t\t\t\t\"bits_per_second\":\t66380173611.266716,\n\t\t\t\t\"packets\":\t253506,\n\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\"sender\":\ttrue\n\t\t\t},\n\t\t\t\"sum_bidir_reverse\":\t{\n\t\t\t\t\"start\":\t15.000234,\n\t\t\t\t\"end\":\t16.000232,\n\t\t\t\t\"seconds\":\t0.99999797344207764,\n\t\t\t\t\"bytes\":\t392772,\n\t\t\t\t\"bits_per_second\":\t3142182.3678145711,\n\t\t\t\t\"jitter_ms\":\t50.388760177838236,\n\t\t\t\t\"lost_packets\":\t257426,\n\t\t\t\t\"packets\":\t257438,\n\t\t\t\t\"lost_percent\":\t99.995338683488839,\n\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\"sender\":\tfalse\n\t\t\t}\n\t\t}, {\n\t\t\t\"streams\":\t[{\n\t\t\t\t\t\"socket\":\t5,\n\t\t\t\t\t\"start\":\t16.000232,\n\t\t\t\t\t\"end\":\t17.000355,\n\t\t\t\t\t\"seconds\":\t1.0001230239868164,\n\t\t\t\t\t\"bytes\":\t8181800801,\n\t\t\t\t\t\"bits_per_second\":\t65446354936.4931,\n\t\t\t\t\t\"packets\":\t249971,\n\t\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\t\"sender\":\ttrue\n\t\t\t\t}, {\n\t\t\t\t\t\"socket\":\t7,\n\t\t\t\t\t\"start\":\t16.000233,\n\t\t\t\t\t\"end\":\t17.000356,\n\t\t\t\t\t\"seconds\":\t1.0001230239868164,\n\t\t\t\t\t\"bytes\":\t360041,\n\t\t\t\t\t\"bits_per_second\":\t2879973.6941542188,\n\t\t\t\t\t\"jitter_ms\":\t56.04380409884925,\n\t\t\t\t\t\"lost_packets\":\t284960,\n\t\t\t\t\t\"packets\":\t284971,\n\t\t\t\t\t\"lost_percent\":\t99.996139958101,\n\t\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\t\"sender\":\tfalse\n\t\t\t\t}],\n\t\t\t\"sum\":\t{\n\t\t\t\t\"start\":\t16.000232,\n\t\t\t\t\"end\":\t17.000355,\n\t\t\t\t\"seconds\":\t1.0001230239868164,\n\t\t\t\t\"bytes\":\t8181800801,\n\t\t\t\t\"bits_per_second\":\t65446354936.4931,\n\t\t\t\t\"packets\":\t249971,\n\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\"sender\":\ttrue\n\t\t\t},\n\t\t\t\"sum_bidir_reverse\":\t{\n\t\t\t\t\"start\":\t16.000232,\n\t\t\t\t\"end\":\t17.000355,\n\t\t\t\t\"seconds\":\t1.0001230239868164,\n\t\t\t\t\"bytes\":\t360041,\n\t\t\t\t\"bits_per_second\":\t2879973.6941542188,\n\t\t\t\t\"jitter_ms\":\t56.04380409884925,\n\t\t\t\t\"lost_packets\":\t284960,\n\t\t\t\t\"packets\":\t284971,\n\t\t\t\t\"lost_percent\":\t99.996139958101,\n\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\"sender\":\tfalse\n\t\t\t}\n\t\t}, {\n\t\t\t\"streams\":\t[{\n\t\t\t\t\t\"socket\":\t5,\n\t\t\t\t\t\"start\":\t17.000355,\n\t\t\t\t\t\"end\":\t18.000243,\n\t\t\t\t\t\"seconds\":\t0.999888002872467,\n\t\t\t\t\t\"bytes\":\t8166515424,\n\t\t\t\t\t\"bits_per_second\":\t65339441221.731445,\n\t\t\t\t\t\"packets\":\t249504,\n\t\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\t\"sender\":\ttrue\n\t\t\t\t}, {\n\t\t\t\t\t\"socket\":\t7,\n\t\t\t\t\t\"start\":\t17.000356,\n\t\t\t\t\t\"end\":\t18.000244,\n\t\t\t\t\t\"seconds\":\t0.999888002872467,\n\t\t\t\t\t\"bytes\":\t327310,\n\t\t\t\t\t\"bits_per_second\":\t2618773.29508671,\n\t\t\t\t\t\"jitter_ms\":\t46.7766082016556,\n\t\t\t\t\t\"lost_packets\":\t236296,\n\t\t\t\t\t\"packets\":\t236306,\n\t\t\t\t\t\"lost_percent\":\t99.9957681988608,\n\t\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\t\"sender\":\tfalse\n\t\t\t\t}],\n\t\t\t\"sum\":\t{\n\t\t\t\t\"start\":\t17.000355,\n\t\t\t\t\"end\":\t18.000243,\n\t\t\t\t\"seconds\":\t0.999888002872467,\n\t\t\t\t\"bytes\":\t8166515424,\n\t\t\t\t\"bits_per_second\":\t65339441221.731445,\n\t\t\t\t\"packets\":\t249504,\n\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\"sender\":\ttrue\n\t\t\t},\n\t\t\t\"sum_bidir_reverse\":\t{\n\t\t\t\t\"start\":\t17.000355,\n\t\t\t\t\"end\":\t18.000243,\n\t\t\t\t\"seconds\":\t0.999888002872467,\n\t\t\t\t\"bytes\":\t327310,\n\t\t\t\t\"bits_per_second\":\t2618773.29508671,\n\t\t\t\t\"jitter_ms\":\t46.7766082016556,\n\t\t\t\t\"lost_packets\":\t236296,\n\t\t\t\t\"packets\":\t236306,\n\t\t\t\t\"lost_percent\":\t99.9957681988608,\n\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\"sender\":\tfalse\n\t\t\t}\n\t\t}, {\n\t\t\t\"streams\":\t[{\n\t\t\t\t\t\"socket\":\t5,\n\t\t\t\t\t\"start\":\t18.000243,\n\t\t\t\t\t\"end\":\t19.000246,\n\t\t\t\t\t\"seconds\":\t1.0000029802322388,\n\t\t\t\t\t\"bytes\":\t8394421377,\n\t\t\t\t\t\"bits_per_second\":\t67155170877.994751,\n\t\t\t\t\t\"packets\":\t256467,\n\t\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\t\"sender\":\ttrue\n\t\t\t\t}, {\n\t\t\t\t\t\"socket\":\t7,\n\t\t\t\t\t\"start\":\t18.000244,\n\t\t\t\t\t\"end\":\t19.000247,\n\t\t\t\t\t\"seconds\":\t1.0000029802322388,\n\t\t\t\t\t\"bytes\":\t458234,\n\t\t\t\t\t\"bits_per_second\":\t3665861.0748826419,\n\t\t\t\t\t\"jitter_ms\":\t37.360607726424028,\n\t\t\t\t\t\"lost_packets\":\t272881,\n\t\t\t\t\t\"packets\":\t272895,\n\t\t\t\t\t\"lost_percent\":\t99.9948698217263,\n\t\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\t\"sender\":\tfalse\n\t\t\t\t}],\n\t\t\t\"sum\":\t{\n\t\t\t\t\"start\":\t18.000243,\n\t\t\t\t\"end\":\t19.000246,\n\t\t\t\t\"seconds\":\t1.0000029802322388,\n\t\t\t\t\"bytes\":\t8394421377,\n\t\t\t\t\"bits_per_second\":\t67155170877.994751,\n\t\t\t\t\"packets\":\t256467,\n\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\"sender\":\ttrue\n\t\t\t},\n\t\t\t\"sum_bidir_reverse\":\t{\n\t\t\t\t\"start\":\t18.000243,\n\t\t\t\t\"end\":\t19.000246,\n\t\t\t\t\"seconds\":\t1.0000029802322388,\n\t\t\t\t\"bytes\":\t458234,\n\t\t\t\t\"bits_per_second\":\t3665861.0748826419,\n\t\t\t\t\"jitter_ms\":\t37.360607726424028,\n\t\t\t\t\"lost_packets\":\t272881,\n\t\t\t\t\"packets\":\t272895,\n\t\t\t\t\"lost_percent\":\t99.9948698217263,\n\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\"sender\":\tfalse\n\t\t\t}\n\t\t}, {\n\t\t\t\"streams\":\t[{\n\t\t\t\t\t\"socket\":\t5,\n\t\t\t\t\t\"start\":\t19.000246,\n\t\t\t\t\t\"end\":\t20.00023,\n\t\t\t\t\t\"seconds\":\t0.9999840259552002,\n\t\t\t\t\t\"bytes\":\t8469899063,\n\t\t\t\t\t\"bits_per_second\":\t67760274909.667053,\n\t\t\t\t\t\"packets\":\t258774,\n\t\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\t\"sender\":\ttrue\n\t\t\t\t}, {\n\t\t\t\t\t\"socket\":\t7,\n\t\t\t\t\t\"start\":\t19.000247,\n\t\t\t\t\t\"end\":\t20.000231,\n\t\t\t\t\t\"seconds\":\t0.9999840259552002,\n\t\t\t\t\t\"bytes\":\t523696,\n\t\t\t\t\t\"bits_per_second\":\t4189634.9254159932,\n\t\t\t\t\t\"jitter_ms\":\t33.559662338650256,\n\t\t\t\t\t\"lost_packets\":\t280311,\n\t\t\t\t\t\"packets\":\t280327,\n\t\t\t\t\t\"lost_percent\":\t99.994292379970531,\n\t\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\t\"sender\":\tfalse\n\t\t\t\t}],\n\t\t\t\"sum\":\t{\n\t\t\t\t\"start\":\t19.000246,\n\t\t\t\t\"end\":\t20.00023,\n\t\t\t\t\"seconds\":\t0.9999840259552002,\n\t\t\t\t\"bytes\":\t8469899063,\n\t\t\t\t\"bits_per_second\":\t67760274909.667053,\n\t\t\t\t\"packets\":\t258774,\n\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\"sender\":\ttrue\n\t\t\t},\n\t\t\t\"sum_bidir_reverse\":\t{\n\t\t\t\t\"start\":\t19.000246,\n\t\t\t\t\"end\":\t20.00023,\n\t\t\t\t\"seconds\":\t0.9999840259552002,\n\t\t\t\t\"bytes\":\t523696,\n\t\t\t\t\"bits_per_second\":\t4189634.9254159932,\n\t\t\t\t\"jitter_ms\":\t33.559662338650256,\n\t\t\t\t\"lost_packets\":\t280311,\n\t\t\t\t\"packets\":\t280327,\n\t\t\t\t\"lost_percent\":\t99.994292379970531,\n\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\"sender\":\tfalse\n\t\t\t}\n\t\t}, {\n\t\t\t\"streams\":\t[{\n\t\t\t\t\t\"socket\":\t5,\n\t\t\t\t\t\"start\":\t20.00023,\n\t\t\t\t\t\"end\":\t21.000242,\n\t\t\t\t\t\"seconds\":\t1.0000120401382446,\n\t\t\t\t\t\"bytes\":\t8282645012,\n\t\t\t\t\t\"bits_per_second\":\t66260362312.077621,\n\t\t\t\t\t\"packets\":\t253053,\n\t\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\t\"sender\":\ttrue\n\t\t\t\t}, {\n\t\t\t\t\t\"socket\":\t7,\n\t\t\t\t\t\"start\":\t20.000231,\n\t\t\t\t\t\"end\":\t21.000243,\n\t\t\t\t\t\"seconds\":\t1.0000120401382446,\n\t\t\t\t\t\"bytes\":\t425503,\n\t\t\t\t\t\"bits_per_second\":\t3403983.01557391,\n\t\t\t\t\t\"jitter_ms\":\t33.342105730166757,\n\t\t\t\t\t\"lost_packets\":\t252963,\n\t\t\t\t\t\"packets\":\t252976,\n\t\t\t\t\t\"lost_percent\":\t99.994861172601347,\n\t\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\t\"sender\":\tfalse\n\t\t\t\t}],\n\t\t\t\"sum\":\t{\n\t\t\t\t\"start\":\t20.00023,\n\t\t\t\t\"end\":\t21.000242,\n\t\t\t\t\"seconds\":\t1.0000120401382446,\n\t\t\t\t\"bytes\":\t8282645012,\n\t\t\t\t\"bits_per_second\":\t66260362312.077621,\n\t\t\t\t\"packets\":\t253053,\n\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\"sender\":\ttrue\n\t\t\t},\n\t\t\t\"sum_bidir_reverse\":\t{\n\t\t\t\t\"start\":\t20.00023,\n\t\t\t\t\"end\":\t21.000242,\n\t\t\t\t\"seconds\":\t1.0000120401382446,\n\t\t\t\t\"bytes\":\t425503,\n\t\t\t\t\"bits_per_second\":\t3403983.01557391,\n\t\t\t\t\"jitter_ms\":\t33.342105730166757,\n\t\t\t\t\"lost_packets\":\t252963,\n\t\t\t\t\"packets\":\t252976,\n\t\t\t\t\"lost_percent\":\t99.994861172601347,\n\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\"sender\":\tfalse\n\t\t\t}\n\t\t}, {\n\t\t\t\"streams\":\t[{\n\t\t\t\t\t\"socket\":\t5,\n\t\t\t\t\t\"start\":\t21.000242,\n\t\t\t\t\t\"end\":\t22.000229,\n\t\t\t\t\t\"seconds\":\t0.999987006187439,\n\t\t\t\t\t\"bytes\":\t8089270264,\n\t\t\t\t\t\"bits_per_second\":\t64715003006.618958,\n\t\t\t\t\t\"packets\":\t247144,\n\t\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\t\"sender\":\ttrue\n\t\t\t\t}, {\n\t\t\t\t\t\"socket\":\t7,\n\t\t\t\t\t\"start\":\t21.000243,\n\t\t\t\t\t\"end\":\t22.00023,\n\t\t\t\t\t\"seconds\":\t0.999987006187439,\n\t\t\t\t\t\"bytes\":\t392772,\n\t\t\t\t\t\"bits_per_second\":\t3142216.8293765071,\n\t\t\t\t\t\"jitter_ms\":\t24.323899638980524,\n\t\t\t\t\t\"lost_packets\":\t237341,\n\t\t\t\t\t\"packets\":\t237353,\n\t\t\t\t\t\"lost_percent\":\t99.9949442391712,\n\t\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\t\"sender\":\tfalse\n\t\t\t\t}],\n\t\t\t\"sum\":\t{\n\t\t\t\t\"start\":\t21.000242,\n\t\t\t\t\"end\":\t22.000229,\n\t\t\t\t\"seconds\":\t0.999987006187439,\n\t\t\t\t\"bytes\":\t8089270264,\n\t\t\t\t\"bits_per_second\":\t64715003006.618958,\n\t\t\t\t\"packets\":\t247144,\n\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\"sender\":\ttrue\n\t\t\t},\n\t\t\t\"sum_bidir_reverse\":\t{\n\t\t\t\t\"start\":\t21.000242,\n\t\t\t\t\"end\":\t22.000229,\n\t\t\t\t\"seconds\":\t0.999987006187439,\n\t\t\t\t\"bytes\":\t392772,\n\t\t\t\t\"bits_per_second\":\t3142216.8293765071,\n\t\t\t\t\"jitter_ms\":\t24.323899638980524,\n\t\t\t\t\"lost_packets\":\t237341,\n\t\t\t\t\"packets\":\t237353,\n\t\t\t\t\"lost_percent\":\t99.9949442391712,\n\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\"sender\":\tfalse\n\t\t\t}\n\t\t}, {\n\t\t\t\"streams\":\t[{\n\t\t\t\t\t\"socket\":\t5,\n\t\t\t\t\t\"start\":\t22.000229,\n\t\t\t\t\t\"end\":\t23.000243,\n\t\t\t\t\t\"seconds\":\t1.0000139474868774,\n\t\t\t\t\t\"bytes\":\t8077094332,\n\t\t\t\t\t\"bits_per_second\":\t64615853427.232246,\n\t\t\t\t\t\"packets\":\t246773,\n\t\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\t\"sender\":\ttrue\n\t\t\t\t}, {\n\t\t\t\t\t\"socket\":\t7,\n\t\t\t\t\t\"start\":\t22.00023,\n\t\t\t\t\t\"end\":\t23.000244,\n\t\t\t\t\t\"seconds\":\t1.0000139474868774,\n\t\t\t\t\t\"bytes\":\t425503,\n\t\t\t\t\t\"bits_per_second\":\t3403976.5230821134,\n\t\t\t\t\t\"jitter_ms\":\t44.184335434849,\n\t\t\t\t\t\"lost_packets\":\t266162,\n\t\t\t\t\t\"packets\":\t266175,\n\t\t\t\t\t\"lost_percent\":\t99.995115995116,\n\t\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\t\"sender\":\tfalse\n\t\t\t\t}],\n\t\t\t\"sum\":\t{\n\t\t\t\t\"start\":\t22.000229,\n\t\t\t\t\"end\":\t23.000243,\n\t\t\t\t\"seconds\":\t1.0000139474868774,\n\t\t\t\t\"bytes\":\t8077094332,\n\t\t\t\t\"bits_per_second\":\t64615853427.232246,\n\t\t\t\t\"packets\":\t246773,\n\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\"sender\":\ttrue\n\t\t\t},\n\t\t\t\"sum_bidir_reverse\":\t{\n\t\t\t\t\"start\":\t22.000229,\n\t\t\t\t\"end\":\t23.000243,\n\t\t\t\t\"seconds\":\t1.0000139474868774,\n\t\t\t\t\"bytes\":\t425503,\n\t\t\t\t\"bits_per_second\":\t3403976.5230821134,\n\t\t\t\t\"jitter_ms\":\t44.184335434849,\n\t\t\t\t\"lost_packets\":\t266162,\n\t\t\t\t\"packets\":\t266175,\n\t\t\t\t\"lost_percent\":\t99.995115995116,\n\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\"sender\":\tfalse\n\t\t\t}\n\t\t}, {\n\t\t\t\"streams\":\t[{\n\t\t\t\t\t\"socket\":\t5,\n\t\t\t\t\t\"start\":\t23.000243,\n\t\t\t\t\t\"end\":\t24.000246,\n\t\t\t\t\t\"seconds\":\t1.0000029802322388,\n\t\t\t\t\t\"bytes\":\t8164649757,\n\t\t\t\t\t\"bits_per_second\":\t65317003396.160736,\n\t\t\t\t\t\"packets\":\t249448,\n\t\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\t\"sender\":\ttrue\n\t\t\t\t}, {\n\t\t\t\t\t\"socket\":\t7,\n\t\t\t\t\t\"start\":\t23.000244,\n\t\t\t\t\t\"end\":\t24.000247,\n\t\t\t\t\t\"seconds\":\t1.0000029802322388,\n\t\t\t\t\t\"bytes\":\t294579,\n\t\t\t\t\t\"bits_per_second\":\t2356624.97671027,\n\t\t\t\t\t\"jitter_ms\":\t44.781638349359071,\n\t\t\t\t\t\"lost_packets\":\t195224,\n\t\t\t\t\t\"packets\":\t195233,\n\t\t\t\t\t\"lost_percent\":\t99.9953901235959,\n\t\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\t\"sender\":\tfalse\n\t\t\t\t}],\n\t\t\t\"sum\":\t{\n\t\t\t\t\"start\":\t23.000243,\n\t\t\t\t\"end\":\t24.000246,\n\t\t\t\t\"seconds\":\t1.0000029802322388,\n\t\t\t\t\"bytes\":\t8164649757,\n\t\t\t\t\"bits_per_second\":\t65317003396.160736,\n\t\t\t\t\"packets\":\t249448,\n\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\"sender\":\ttrue\n\t\t\t},\n\t\t\t\"sum_bidir_reverse\":\t{\n\t\t\t\t\"start\":\t23.000243,\n\t\t\t\t\"end\":\t24.000246,\n\t\t\t\t\"seconds\":\t1.0000029802322388,\n\t\t\t\t\"bytes\":\t294579,\n\t\t\t\t\"bits_per_second\":\t2356624.97671027,\n\t\t\t\t\"jitter_ms\":\t44.781638349359071,\n\t\t\t\t\"lost_packets\":\t195224,\n\t\t\t\t\"packets\":\t195233,\n\t\t\t\t\"lost_percent\":\t99.9953901235959,\n\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\"sender\":\tfalse\n\t\t\t}\n\t\t}, {\n\t\t\t\"streams\":\t[{\n\t\t\t\t\t\"socket\":\t5,\n\t\t\t\t\t\"start\":\t24.000246,\n\t\t\t\t\t\"end\":\t25.000244,\n\t\t\t\t\t\"seconds\":\t0.99999797344207764,\n\t\t\t\t\t\"bytes\":\t8142261753,\n\t\t\t\t\t\"bits_per_second\":\t65138226030.388,\n\t\t\t\t\t\"packets\":\t248763,\n\t\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\t\"sender\":\ttrue\n\t\t\t\t}, {\n\t\t\t\t\t\"socket\":\t7,\n\t\t\t\t\t\"start\":\t24.000247,\n\t\t\t\t\t\"end\":\t25.000245,\n\t\t\t\t\t\"seconds\":\t0.99999797344207764,\n\t\t\t\t\t\"bytes\":\t327310,\n\t\t\t\t\t\"bits_per_second\":\t2618485.3065121425,\n\t\t\t\t\t\"jitter_ms\":\t39.175682370104454,\n\t\t\t\t\t\"lost_packets\":\t307047,\n\t\t\t\t\t\"packets\":\t307057,\n\t\t\t\t\t\"lost_percent\":\t99.996743275678455,\n\t\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\t\"sender\":\tfalse\n\t\t\t\t}],\n\t\t\t\"sum\":\t{\n\t\t\t\t\"start\":\t24.000246,\n\t\t\t\t\"end\":\t25.000244,\n\t\t\t\t\"seconds\":\t0.99999797344207764,\n\t\t\t\t\"bytes\":\t8142261753,\n\t\t\t\t\"bits_per_second\":\t65138226030.388,\n\t\t\t\t\"packets\":\t248763,\n\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\"sender\":\ttrue\n\t\t\t},\n\t\t\t\"sum_bidir_reverse\":\t{\n\t\t\t\t\"start\":\t24.000246,\n\t\t\t\t\"end\":\t25.000244,\n\t\t\t\t\"seconds\":\t0.99999797344207764,\n\t\t\t\t\"bytes\":\t327310,\n\t\t\t\t\"bits_per_second\":\t2618485.3065121425,\n\t\t\t\t\"jitter_ms\":\t39.175682370104454,\n\t\t\t\t\"lost_packets\":\t307047,\n\t\t\t\t\"packets\":\t307057,\n\t\t\t\t\"lost_percent\":\t99.996743275678455,\n\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\"sender\":\tfalse\n\t\t\t}\n\t\t}, {\n\t\t\t\"streams\":\t[{\n\t\t\t\t\t\"socket\":\t5,\n\t\t\t\t\t\"start\":\t25.000244,\n\t\t\t\t\t\"end\":\t26.000241,\n\t\t\t\t\t\"seconds\":\t0.99999701976776123,\n\t\t\t\t\t\"bytes\":\t8179542362,\n\t\t\t\t\t\"bits_per_second\":\t65436533912.067955,\n\t\t\t\t\t\"packets\":\t249903,\n\t\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\t\"sender\":\ttrue\n\t\t\t\t}, {\n\t\t\t\t\t\"socket\":\t7,\n\t\t\t\t\t\"start\":\t25.000245,\n\t\t\t\t\t\"end\":\t26.000242,\n\t\t\t\t\t\"seconds\":\t0.99999701976776123,\n\t\t\t\t\t\"bytes\":\t490965,\n\t\t\t\t\t\"bits_per_second\":\t3927731.7055526543,\n\t\t\t\t\t\"jitter_ms\":\t36.813626967992484,\n\t\t\t\t\t\"lost_packets\":\t268638,\n\t\t\t\t\t\"packets\":\t268653,\n\t\t\t\t\t\"lost_percent\":\t99.9944165894295,\n\t\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\t\"sender\":\tfalse\n\t\t\t\t}],\n\t\t\t\"sum\":\t{\n\t\t\t\t\"start\":\t25.000244,\n\t\t\t\t\"end\":\t26.000241,\n\t\t\t\t\"seconds\":\t0.99999701976776123,\n\t\t\t\t\"bytes\":\t8179542362,\n\t\t\t\t\"bits_per_second\":\t65436533912.067955,\n\t\t\t\t\"packets\":\t249903,\n\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\"sender\":\ttrue\n\t\t\t},\n\t\t\t\"sum_bidir_reverse\":\t{\n\t\t\t\t\"start\":\t25.000244,\n\t\t\t\t\"end\":\t26.000241,\n\t\t\t\t\"seconds\":\t0.99999701976776123,\n\t\t\t\t\"bytes\":\t490965,\n\t\t\t\t\"bits_per_second\":\t3927731.7055526543,\n\t\t\t\t\"jitter_ms\":\t36.813626967992484,\n\t\t\t\t\"lost_packets\":\t268638,\n\t\t\t\t\"packets\":\t268653,\n\t\t\t\t\"lost_percent\":\t99.9944165894295,\n\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\"sender\":\tfalse\n\t\t\t}\n\t\t}, {\n\t\t\t\"streams\":\t[{\n\t\t\t\t\t\"socket\":\t5,\n\t\t\t\t\t\"start\":\t26.000241,\n\t\t\t\t\t\"end\":\t27.000244,\n\t\t\t\t\t\"seconds\":\t1.0000029802322388,\n\t\t\t\t\t\"bytes\":\t8193616692,\n\t\t\t\t\t\"bits_per_second\":\t65548738185.537247,\n\t\t\t\t\t\"packets\":\t250332,\n\t\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\t\"sender\":\ttrue\n\t\t\t\t}, {\n\t\t\t\t\t\"socket\":\t7,\n\t\t\t\t\t\"start\":\t26.000242,\n\t\t\t\t\t\"end\":\t27.000245,\n\t\t\t\t\t\"seconds\":\t1.0000029802322388,\n\t\t\t\t\t\"bytes\":\t327310,\n\t\t\t\t\t\"bits_per_second\":\t2618472.1963447439,\n\t\t\t\t\t\"jitter_ms\":\t41.456437264721188,\n\t\t\t\t\t\"lost_packets\":\t247103,\n\t\t\t\t\t\"packets\":\t247113,\n\t\t\t\t\t\"lost_percent\":\t99.9959532683428,\n\t\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\t\"sender\":\tfalse\n\t\t\t\t}],\n\t\t\t\"sum\":\t{\n\t\t\t\t\"start\":\t26.000241,\n\t\t\t\t\"end\":\t27.000244,\n\t\t\t\t\"seconds\":\t1.0000029802322388,\n\t\t\t\t\"bytes\":\t8193616692,\n\t\t\t\t\"bits_per_second\":\t65548738185.537247,\n\t\t\t\t\"packets\":\t250332,\n\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\"sender\":\ttrue\n\t\t\t},\n\t\t\t\"sum_bidir_reverse\":\t{\n\t\t\t\t\"start\":\t26.000241,\n\t\t\t\t\"end\":\t27.000244,\n\t\t\t\t\"seconds\":\t1.0000029802322388,\n\t\t\t\t\"bytes\":\t327310,\n\t\t\t\t\"bits_per_second\":\t2618472.1963447439,\n\t\t\t\t\"jitter_ms\":\t41.456437264721188,\n\t\t\t\t\"lost_packets\":\t247103,\n\t\t\t\t\"packets\":\t247113,\n\t\t\t\t\"lost_percent\":\t99.9959532683428,\n\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\"sender\":\tfalse\n\t\t\t}\n\t\t}, {\n\t\t\t\"streams\":\t[{\n\t\t\t\t\t\"socket\":\t5,\n\t\t\t\t\t\"start\":\t27.000244,\n\t\t\t\t\t\"end\":\t28.00073,\n\t\t\t\t\t\"seconds\":\t1.0004860162734985,\n\t\t\t\t\t\"bytes\":\t8225922189,\n\t\t\t\t\t\"bits_per_second\":\t65775409592.542,\n\t\t\t\t\t\"packets\":\t251319,\n\t\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\t\"sender\":\ttrue\n\t\t\t\t}, {\n\t\t\t\t\t\"socket\":\t7,\n\t\t\t\t\t\"start\":\t27.000245,\n\t\t\t\t\t\"end\":\t28.000731,\n\t\t\t\t\t\"seconds\":\t1.0004860162734985,\n\t\t\t\t\t\"bytes\":\t294579,\n\t\t\t\t\t\"bits_per_second\":\t2355487.1948912656,\n\t\t\t\t\t\"jitter_ms\":\t36.139611901198656,\n\t\t\t\t\t\"lost_packets\":\t212569,\n\t\t\t\t\t\"packets\":\t212578,\n\t\t\t\t\t\"lost_percent\":\t99.995766259914,\n\t\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\t\"sender\":\tfalse\n\t\t\t\t}],\n\t\t\t\"sum\":\t{\n\t\t\t\t\"start\":\t27.000244,\n\t\t\t\t\"end\":\t28.00073,\n\t\t\t\t\"seconds\":\t1.0004860162734985,\n\t\t\t\t\"bytes\":\t8225922189,\n\t\t\t\t\"bits_per_second\":\t65775409592.542,\n\t\t\t\t\"packets\":\t251319,\n\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\"sender\":\ttrue\n\t\t\t},\n\t\t\t\"sum_bidir_reverse\":\t{\n\t\t\t\t\"start\":\t27.000244,\n\t\t\t\t\"end\":\t28.00073,\n\t\t\t\t\"seconds\":\t1.0004860162734985,\n\t\t\t\t\"bytes\":\t294579,\n\t\t\t\t\"bits_per_second\":\t2355487.1948912656,\n\t\t\t\t\"jitter_ms\":\t36.139611901198656,\n\t\t\t\t\"lost_packets\":\t212569,\n\t\t\t\t\"packets\":\t212578,\n\t\t\t\t\"lost_percent\":\t99.995766259914,\n\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\"sender\":\tfalse\n\t\t\t}\n\t\t}, {\n\t\t\t\"streams\":\t[{\n\t\t\t\t\t\"socket\":\t5,\n\t\t\t\t\t\"start\":\t28.00073,\n\t\t\t\t\t\"end\":\t29.000243,\n\t\t\t\t\t\"seconds\":\t0.99951297044754028,\n\t\t\t\t\t\"bytes\":\t8376124748,\n\t\t\t\t\t\"bits_per_second\":\t67041649248.429626,\n\t\t\t\t\t\"packets\":\t255908,\n\t\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\t\"sender\":\ttrue\n\t\t\t\t}, {\n\t\t\t\t\t\"socket\":\t7,\n\t\t\t\t\t\"start\":\t28.000731,\n\t\t\t\t\t\"end\":\t29.000244,\n\t\t\t\t\t\"seconds\":\t0.99951297044754028,\n\t\t\t\t\t\"bytes\":\t458234,\n\t\t\t\t\t\"bits_per_second\":\t3667658.25795995,\n\t\t\t\t\t\"jitter_ms\":\t39.181573161152279,\n\t\t\t\t\t\"lost_packets\":\t266282,\n\t\t\t\t\t\"packets\":\t266296,\n\t\t\t\t\t\"lost_percent\":\t99.994742692342356,\n\t\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\t\"sender\":\tfalse\n\t\t\t\t}],\n\t\t\t\"sum\":\t{\n\t\t\t\t\"start\":\t28.00073,\n\t\t\t\t\"end\":\t29.000243,\n\t\t\t\t\"seconds\":\t0.99951297044754028,\n\t\t\t\t\"bytes\":\t8376124748,\n\t\t\t\t\"bits_per_second\":\t67041649248.429626,\n\t\t\t\t\"packets\":\t255908,\n\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\"sender\":\ttrue\n\t\t\t},\n\t\t\t\"sum_bidir_reverse\":\t{\n\t\t\t\t\"start\":\t28.00073,\n\t\t\t\t\"end\":\t29.000243,\n\t\t\t\t\"seconds\":\t0.99951297044754028,\n\t\t\t\t\"bytes\":\t458234,\n\t\t\t\t\"bits_per_second\":\t3667658.25795995,\n\t\t\t\t\"jitter_ms\":\t39.181573161152279,\n\t\t\t\t\"lost_packets\":\t266282,\n\t\t\t\t\"packets\":\t266296,\n\t\t\t\t\"lost_percent\":\t99.994742692342356,\n\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\"sender\":\tfalse\n\t\t\t}\n\t\t}],\n\t\"end\":\t{\n\t},\n\t\"error\":\t\"unable to receive results: No such file or directory\"\n}\n",
-                "stderr": "Warning: Permanently added '138.201.33.111' (ED25519) to the list of known hosts.\r\nwarning: Failed to read JSON data size\nwarning: Failed to read JSON data size - read returned 0; errno=2\n",
-                "cwd": "/home/lhebendanz/Projects/vpn-benchmark-suite/pkgs/vpn-bench",
-                "command_list": [
-                    "ssh",
-                    "root@138.201.33.111",
-                    "-A",
-                    "-o",
-                    "StrictHostKeyChecking=no",
-                    "-o",
-                    "UserKnownHostsFile=/dev/null",
-                    "-o",
-                    "ControlMaster=auto",
-                    "-o",
-                    "ControlPersist=1m",
-                    "-o",
-                    "ControlPath=/tmp/clan-sshmws6nt1o/socket",
-                    "--",
-                    "bash",
-                    "-c",
-                    "'export IPERF3_PASSWORD=mambaBudo; exec \"$@\"'",
-                    "--",
-                    "iperf --bidir --connect-timeout 600 --time 30 --json -Z -c vpn.yuki --username mario --rsa-public-key-path /tmp/iperf3.public -u --udp-counters-64bit -b 0"
-                ],
-                "returncode": 1
-            },
-            "machine": "0_lom"
+        "jitter_ms": {
+          "min": 3.642781395006848,
+          "average": 3.642781395006848,
+          "max": 3.642781395006848,
+          "percentiles": {
+            "p25": 3.642781395006848,
+            "p50": 3.642781395006848,
+            "p75": 3.642781395006848
+          }
         },
-        "Mycelium": {
-            "status": "error",
-            "error_type": "CmdOut",
-            "error": {
-                "stdout": "",
-                "stderr": "Warning: Permanently added '138.201.33.111' (ED25519) to the list of known hosts.\r\n",
-                "cwd": "/home/lhebendanz/Projects/vpn-benchmark-suite/pkgs/vpn-bench",
-                "command_list": [
-                    "ssh",
-                    "root@138.201.33.111",
-                    "-A",
-                    "-o",
-                    "StrictHostKeyChecking=no",
-                    "-o",
-                    "UserKnownHostsFile=/dev/null",
-                    "-o",
-                    "ControlMaster=auto",
-                    "-o",
-                    "ControlPersist=1m",
-                    "-o",
-                    "ControlPath=/tmp/clan-ssh11o2u3kd/socket",
-                    "--",
-                    "bash",
-                    "-c",
-                    "'export IPERF3_PASSWORD=mambaBudo; exec \"$@\"'",
-                    "--",
-                    "iperf --bidir --connect-timeout 600 --time 30 --json -Z -c vpn.yuki --username mario --rsa-public-key-path /tmp/iperf3.public -u --udp-counters-64bit -b 0"
-                ],
-                "returncode": -1,
-                "msg": "Command timed out after 120 seconds"
-            },
-            "machine": "0_lom"
+        "lost_percent": {
+          "min": 99.62085135679305,
+          "average": 99.62085135679305,
+          "max": 99.62085135679305,
+          "percentiles": {
+            "p25": 99.62085135679305,
+            "p50": 99.62085135679305,
+            "p75": 99.62085135679305
+          }
         },
-        "Easytier": {
-            "status": "success",
-            "data": {
-                "sender_throughput_mbps": {
-                    "min": 4571.5267007615,
-                    "average": 4594.919646635122,
-                    "max": 4618.312592508744,
-                    "percentiles": {
-                        "p25": 4594.919646635122,
-                        "p50": 4594.919646635122,
-                        "p75": 4594.919646635122
-                    }
-                },
-                "receiver_throughput_mbps": {
-                    "min": 5.785089408139377,
-                    "average": 6.071014966444502,
-                    "max": 6.356940524749628,
-                    "percentiles": {
-                        "p25": 6.071014966444502,
-                        "p50": 6.071014966444502,
-                        "p75": 6.071014966444502
-                    }
-                },
-                "jitter_ms": {
-                    "min": 0.0076528728700308735,
-                    "average": 0.38834886384006195,
-                    "max": 0.769044854810093,
-                    "percentiles": {
-                        "p25": 0.38834886384006195,
-                        "p50": 0.38834886384006195,
-                        "p75": 0.38834886384006195
-                    }
-                },
-                "lost_percent": {
-                    "min": 96.31513466811916,
-                    "average": 97.99769563300535,
-                    "max": 99.68025659789153,
-                    "percentiles": {
-                        "p25": 97.99769563300535,
-                        "p50": 97.99769563300535,
-                        "p75": 97.99769563300535
-                    }
-                },
-                "total_bytes_sent": {
-                    "min": 17143924000.0,
-                    "average": 17231649680.0,
-                    "max": 17319375360.0,
-                    "percentiles": {
-                        "p25": 17231649680.0,
-                        "p50": 17231649680.0,
-                        "p75": 17231649680.0
-                    }
-                },
-                "total_bytes_received": {
-                    "min": 25377464.0,
-                    "average": 26042072.0,
-                    "max": 26706680.0,
-                    "percentiles": {
-                        "p25": 26042072.0,
-                        "p50": 26042072.0,
-                        "p75": 26042072.0
-                    }
-                },
-                "duration_seconds": {
-                    "min": 30.001218,
-                    "average": 30.001220500000002,
-                    "max": 30.001223,
-                    "percentiles": {
-                        "p25": 30.001220500000002,
-                        "p50": 30.001220500000002,
-                        "p75": 30.001220500000002
-                    }
-                }
-            }
+        "total_bytes_sent": {
+          "min": 31501443600.0,
+          "average": 31501443600.0,
+          "max": 31501443600.0,
+          "percentiles": {
+            "p25": 31501443600.0,
+            "p50": 31501443600.0,
+            "p75": 31501443600.0
+          }
         },
-        "Internal": {
-            "status": "success",
-            "data": {
-                "sender_throughput_mbps": {
-                    "min": 5373.384043406692,
-                    "average": 5373.384043406692,
-                    "max": 5373.384043406692,
-                    "percentiles": {
-                        "p25": 5373.384043406692,
-                        "p50": 5373.384043406692,
-                        "p75": 5373.384043406692
-                    }
-                },
-                "receiver_throughput_mbps": {
-                    "min": 948.5675848638156,
-                    "average": 948.5675848638156,
-                    "max": 948.5675848638156,
-                    "percentiles": {
-                        "p25": 948.5675848638156,
-                        "p50": 948.5675848638156,
-                        "p75": 948.5675848638156
-                    }
-                },
-                "jitter_ms": {
-                    "min": 1.9930758831379316,
-                    "average": 1.9930758831379316,
-                    "max": 1.9930758831379316,
-                    "percentiles": {
-                        "p25": 1.9930758831379316,
-                        "p50": 1.9930758831379316,
-                        "p75": 1.9930758831379316
-                    }
-                },
-                "lost_percent": {
-                    "min": 82.33642616721424,
-                    "average": 82.33642616721424,
-                    "max": 82.33642616721424,
-                    "percentiles": {
-                        "p25": 82.33642616721424,
-                        "p50": 82.33642616721424,
-                        "p75": 82.33642616721424
-                    }
-                },
-                "total_bytes_sent": {
-                    "min": 20150425920.0,
-                    "average": 20150425920.0,
-                    "max": 20150425920.0,
-                    "percentiles": {
-                        "p25": 20150425920.0,
-                        "p50": 20150425920.0,
-                        "p75": 20150425920.0
-                    }
-                },
-                "total_bytes_received": {
-                    "min": 3559197032.0,
-                    "average": 3559197032.0,
-                    "max": 3559197032.0,
-                    "percentiles": {
-                        "p25": 3559197032.0,
-                        "p50": 3559197032.0,
-                        "p75": 3559197032.0
-                    }
-                },
-                "duration_seconds": {
-                    "min": 30.000351,
-                    "average": 30.000351,
-                    "max": 30.000351,
-                    "percentiles": {
-                        "p25": 30.000351,
-                        "p50": 30.000351,
-                        "p75": 30.000351
-                    }
-                }
-            }
+        "total_bytes_received": {
+          "min": 119279072.0,
+          "average": 119279072.0,
+          "max": 119279072.0,
+          "percentiles": {
+            "p25": 119279072.0,
+            "p50": 119279072.0,
+            "p75": 119279072.0
+          }
         },
-        "Hyprspace": {
-            "status": "error",
-            "error_type": "CmdOut",
-            "error": {
-                "stdout": "",
-                "stderr": "Warning: Permanently added '138.201.33.111' (ED25519) to the list of known hosts.\r\n",
-                "cwd": "/home/lhebendanz/Projects/vpn-benchmark-suite/pkgs/vpn-bench",
-                "command_list": [
-                    "ssh",
-                    "root@138.201.33.111",
-                    "-A",
-                    "-o",
-                    "StrictHostKeyChecking=no",
-                    "-o",
-                    "UserKnownHostsFile=/dev/null",
-                    "-o",
-                    "ControlMaster=auto",
-                    "-o",
-                    "ControlPersist=1m",
-                    "-o",
-                    "ControlPath=/tmp/clan-ssh48uua16n/socket",
-                    "--",
-                    "bash",
-                    "-c",
-                    "'export IPERF3_PASSWORD=mambaBudo; exec \"$@\"'",
-                    "--",
-                    "iperf --bidir --connect-timeout 600 --time 30 --json -Z -c vpn.yuki --username mario --rsa-public-key-path /tmp/iperf3.public -u --udp-counters-64bit -b 0"
-                ],
-                "returncode": -1,
-                "msg": "Command timed out after 120 seconds"
-            },
-            "machine": "0_lom"
-        },
-        "Wireguard": {
-            "status": "error",
-            "error_type": "CmdOut",
-            "error": {
-                "stdout": "{\n\t\"start\":\t{\n\t\t\"connected\":\t[{\n\t\t\t\t\"socket\":\t5,\n\t\t\t\t\"local_host\":\t\"192.168.2.1\",\n\t\t\t\t\"local_port\":\t43911,\n\t\t\t\t\"remote_host\":\t\"192.168.2.2\",\n\t\t\t\t\"remote_port\":\t5201\n\t\t\t}],\n\t\t\"version\":\t\"iperf 3.20\",\n\t\t\"system_info\":\t\"Linux lom 6.12.57 #1-NixOS SMP PREEMPT_DYNAMIC Sun Nov  2 13:15:23 UTC 2025 x86_64\",\n\t\t\"timestamp\":\t{\n\t\t\t\"time\":\t\"Thu, 18 Dec 2025 14:55:29 GMT\",\n\t\t\t\"timesecs\":\t1766069729,\n\t\t\t\"timemillisecs\":\t1766069729320\n\t\t},\n\t\t\"connecting_to\":\t{\n\t\t\t\"host\":\t\"vpn.yuki\",\n\t\t\t\"port\":\t5201\n\t\t},\n\t\t\"cookie\":\t\"6xyka4xepojsq4yugwif6f7medc45c7jbtp5\",\n\t\t\"target_bitrate\":\t0,\n\t\t\"fq_rate\":\t0,\n\t\t\"sock_bufsize\":\t0,\n\t\t\"sndbuf_actual\":\t212992,\n\t\t\"rcvbuf_actual\":\t212992\n\t},\n\t\"intervals\":\t[],\n\t\"end\":\t{\n\t},\n\t\"error\":\t\"unable to read from stream socket: No such file or directory\"\n}\n",
-                "stderr": "Warning: Permanently added '138.201.33.111' (ED25519) to the list of known hosts.\r\n",
-                "cwd": "/home/lhebendanz/Projects/vpn-benchmark-suite/pkgs/vpn-bench",
-                "command_list": [
-                    "ssh",
-                    "root@138.201.33.111",
-                    "-A",
-                    "-o",
-                    "StrictHostKeyChecking=no",
-                    "-o",
-                    "UserKnownHostsFile=/dev/null",
-                    "-o",
-                    "ControlMaster=auto",
-                    "-o",
-                    "ControlPersist=1m",
-                    "-o",
-                    "ControlPath=/tmp/clan-sshw0iw8huy/socket",
-                    "--",
-                    "bash",
-                    "-c",
-                    "'export IPERF3_PASSWORD=mambaBudo; exec \"$@\"'",
-                    "--",
-                    "iperf --bidir --connect-timeout 600 --time 30 --json -Z -c vpn.yuki --username mario --rsa-public-key-path /tmp/iperf3.public -u --udp-counters-64bit -b 0"
-                ],
-                "returncode": 1
-            },
-            "machine": "0_lom"
+        "duration_seconds": {
+          "min": 30.000841,
+          "average": 30.000841,
+          "max": 30.000841,
+          "percentiles": {
+            "p25": 30.000841,
+            "p50": 30.000841,
+            "p75": 30.000841
+          }
         }
+      }
+    },
+    "Yggdrasil": {
+      "status": "error",
+      "error_type": "CmdOut",
+      "error": {
+        "stdout": "{\n\t\"start\":\t{\n\t\t\"connected\":\t[{\n\t\t\t\t\"socket\":\t5,\n\t\t\t\t\"local_host\":\t\"200:9c56:d39f:5a7d:c0a3:5356:b2ec:9338\",\n\t\t\t\t\"local_port\":\t41176,\n\t\t\t\t\"remote_host\":\t\"202:f504:6752:f41e:c27e:b223:b83b:dd0a\",\n\t\t\t\t\"remote_port\":\t5201\n\t\t\t}, {\n\t\t\t\t\"socket\":\t7,\n\t\t\t\t\"local_host\":\t\"200:9c56:d39f:5a7d:c0a3:5356:b2ec:9338\",\n\t\t\t\t\"local_port\":\t56124,\n\t\t\t\t\"remote_host\":\t\"202:f504:6752:f41e:c27e:b223:b83b:dd0a\",\n\t\t\t\t\"remote_port\":\t5201\n\t\t\t}],\n\t\t\"version\":\t\"iperf 3.20\",\n\t\t\"system_info\":\t\"Linux lom 6.12.57 #1-NixOS SMP PREEMPT_DYNAMIC Sun Nov  2 13:15:23 UTC 2025 x86_64\",\n\t\t\"timestamp\":\t{\n\t\t\t\"time\":\t\"Thu, 18 Dec 2025 10:41:43 GMT\",\n\t\t\t\"timesecs\":\t1766054503,\n\t\t\t\"timemillisecs\":\t1766054503591\n\t\t},\n\t\t\"connecting_to\":\t{\n\t\t\t\"host\":\t\"vpn.yuki\",\n\t\t\t\"port\":\t5201\n\t\t},\n\t\t\"cookie\":\t\"z4q6kze2g6nqsmlmr726rihku4hjpekehfts\",\n\t\t\"target_bitrate\":\t0,\n\t\t\"fq_rate\":\t0,\n\t\t\"sock_bufsize\":\t0,\n\t\t\"sndbuf_actual\":\t212992,\n\t\t\"rcvbuf_actual\":\t212992,\n\t\t\"test_start\":\t{\n\t\t\t\"protocol\":\t\"UDP\",\n\t\t\t\"num_streams\":\t1,\n\t\t\t\"blksize\":\t32731,\n\t\t\t\"omit\":\t0,\n\t\t\t\"duration\":\t30,\n\t\t\t\"bytes\":\t0,\n\t\t\t\"blocks\":\t0,\n\t\t\t\"reverse\":\t0,\n\t\t\t\"tos\":\t0,\n\t\t\t\"target_bitrate\":\t0,\n\t\t\t\"bidir\":\t1,\n\t\t\t\"fqrate\":\t0,\n\t\t\t\"interval\":\t1\n\t\t}\n\t},\n\t\"intervals\":\t[{\n\t\t\t\"streams\":\t[{\n\t\t\t\t\t\"socket\":\t5,\n\t\t\t\t\t\"start\":\t0,\n\t\t\t\t\t\"end\":\t1.000234,\n\t\t\t\t\t\"seconds\":\t1.0002340078353882,\n\t\t\t\t\t\"bytes\":\t7820941526,\n\t\t\t\t\t\"bits_per_second\":\t62552894340.5981,\n\t\t\t\t\t\"packets\":\t238947,\n\t\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\t\"sender\":\ttrue\n\t\t\t\t}, {\n\t\t\t\t\t\"socket\":\t7,\n\t\t\t\t\t\"start\":\t0,\n\t\t\t\t\t\"end\":\t1.000235,\n\t\t\t\t\t\"seconds\":\t1.0002349615097046,\n\t\t\t\t\t\"bytes\":\t458234,\n\t\t\t\t\t\"bits_per_second\":\t3665010.8635144248,\n\t\t\t\t\t\"jitter_ms\":\t19.076103666345574,\n\t\t\t\t\t\"lost_packets\":\t211715,\n\t\t\t\t\t\"packets\":\t211729,\n\t\t\t\t\t\"lost_percent\":\t99.9933877739941,\n\t\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\t\"sender\":\tfalse\n\t\t\t\t}],\n\t\t\t\"sum\":\t{\n\t\t\t\t\"start\":\t0,\n\t\t\t\t\"end\":\t1.000234,\n\t\t\t\t\"seconds\":\t1.0002340078353882,\n\t\t\t\t\"bytes\":\t7820941526,\n\t\t\t\t\"bits_per_second\":\t62552894340.5981,\n\t\t\t\t\"packets\":\t238947,\n\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\"sender\":\ttrue\n\t\t\t},\n\t\t\t\"sum_bidir_reverse\":\t{\n\t\t\t\t\"start\":\t0,\n\t\t\t\t\"end\":\t1.000234,\n\t\t\t\t\"seconds\":\t1.0002340078353882,\n\t\t\t\t\"bytes\":\t458234,\n\t\t\t\t\"bits_per_second\":\t3665014.3579234355,\n\t\t\t\t\"jitter_ms\":\t19.076103666345574,\n\t\t\t\t\"lost_packets\":\t211715,\n\t\t\t\t\"packets\":\t211729,\n\t\t\t\t\"lost_percent\":\t99.9933877739941,\n\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\"sender\":\tfalse\n\t\t\t}\n\t\t}, {\n\t\t\t\"streams\":\t[{\n\t\t\t\t\t\"socket\":\t5,\n\t\t\t\t\t\"start\":\t1.000234,\n\t\t\t\t\t\"end\":\t2.000247,\n\t\t\t\t\t\"seconds\":\t1.000012993812561,\n\t\t\t\t\t\"bytes\":\t8377859491,\n\t\t\t\t\t\"bits_per_second\":\t67022005056.62883,\n\t\t\t\t\t\"packets\":\t255961,\n\t\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\t\"sender\":\ttrue\n\t\t\t\t}, {\n\t\t\t\t\t\"socket\":\t7,\n\t\t\t\t\t\"start\":\t1.000235,\n\t\t\t\t\t\"end\":\t2.000248,\n\t\t\t\t\t\"seconds\":\t1.000012993812561,\n\t\t\t\t\t\"bytes\":\t392772,\n\t\t\t\t\t\"bits_per_second\":\t3142135.1716845375,\n\t\t\t\t\t\"jitter_ms\":\t31.954565677117589,\n\t\t\t\t\t\"lost_packets\":\t227047,\n\t\t\t\t\t\"packets\":\t227059,\n\t\t\t\t\t\"lost_percent\":\t99.9947150300142,\n\t\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\t\"sender\":\tfalse\n\t\t\t\t}],\n\t\t\t\"sum\":\t{\n\t\t\t\t\"start\":\t1.000234,\n\t\t\t\t\"end\":\t2.000247,\n\t\t\t\t\"seconds\":\t1.000012993812561,\n\t\t\t\t\"bytes\":\t8377859491,\n\t\t\t\t\"bits_per_second\":\t67022005056.62883,\n\t\t\t\t\"packets\":\t255961,\n\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\"sender\":\ttrue\n\t\t\t},\n\t\t\t\"sum_bidir_reverse\":\t{\n\t\t\t\t\"start\":\t1.000234,\n\t\t\t\t\"end\":\t2.000247,\n\t\t\t\t\"seconds\":\t1.000012993812561,\n\t\t\t\t\"bytes\":\t392772,\n\t\t\t\t\"bits_per_second\":\t3142135.1716845375,\n\t\t\t\t\"jitter_ms\":\t31.954565677117589,\n\t\t\t\t\"lost_packets\":\t227047,\n\t\t\t\t\"packets\":\t227059,\n\t\t\t\t\"lost_percent\":\t99.9947150300142,\n\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\"sender\":\tfalse\n\t\t\t}\n\t\t}, {\n\t\t\t\"streams\":\t[{\n\t\t\t\t\t\"socket\":\t5,\n\t\t\t\t\t\"start\":\t2.000247,\n\t\t\t\t\t\"end\":\t3.000246,\n\t\t\t\t\t\"seconds\":\t0.99999898672103882,\n\t\t\t\t\t\"bytes\":\t8158267212,\n\t\t\t\t\t\"bits_per_second\":\t65266203828.871216,\n\t\t\t\t\t\"packets\":\t249252,\n\t\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\t\"sender\":\ttrue\n\t\t\t\t}, {\n\t\t\t\t\t\"socket\":\t7,\n\t\t\t\t\t\"start\":\t2.000248,\n\t\t\t\t\t\"end\":\t3.000247,\n\t\t\t\t\t\"seconds\":\t0.99999898672103882,\n\t\t\t\t\t\"bytes\":\t392772,\n\t\t\t\t\t\"bits_per_second\":\t3142179.1839040592,\n\t\t\t\t\t\"jitter_ms\":\t38.032007044643933,\n\t\t\t\t\t\"lost_packets\":\t257272,\n\t\t\t\t\t\"packets\":\t257284,\n\t\t\t\t\t\"lost_percent\":\t99.9953358934096,\n\t\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\t\"sender\":\tfalse\n\t\t\t\t}],\n\t\t\t\"sum\":\t{\n\t\t\t\t\"start\":\t2.000247,\n\t\t\t\t\"end\":\t3.000246,\n\t\t\t\t\"seconds\":\t0.99999898672103882,\n\t\t\t\t\"bytes\":\t8158267212,\n\t\t\t\t\"bits_per_second\":\t65266203828.871216,\n\t\t\t\t\"packets\":\t249252,\n\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\"sender\":\ttrue\n\t\t\t},\n\t\t\t\"sum_bidir_reverse\":\t{\n\t\t\t\t\"start\":\t2.000247,\n\t\t\t\t\"end\":\t3.000246,\n\t\t\t\t\"seconds\":\t0.99999898672103882,\n\t\t\t\t\"bytes\":\t392772,\n\t\t\t\t\"bits_per_second\":\t3142179.1839040592,\n\t\t\t\t\"jitter_ms\":\t38.032007044643933,\n\t\t\t\t\"lost_packets\":\t257272,\n\t\t\t\t\"packets\":\t257284,\n\t\t\t\t\"lost_percent\":\t99.9953358934096,\n\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\"sender\":\tfalse\n\t\t\t}\n\t\t}, {\n\t\t\t\"streams\":\t[{\n\t\t\t\t\t\"socket\":\t5,\n\t\t\t\t\t\"start\":\t3.000246,\n\t\t\t\t\t\"end\":\t4.000233,\n\t\t\t\t\t\"seconds\":\t0.999987006187439,\n\t\t\t\t\t\"bytes\":\t8199017307,\n\t\t\t\t\t\"bits_per_second\":\t65592990759.027237,\n\t\t\t\t\t\"packets\":\t250498,\n\t\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\t\"sender\":\ttrue\n\t\t\t\t}, {\n\t\t\t\t\t\"socket\":\t7,\n\t\t\t\t\t\"start\":\t3.000247,\n\t\t\t\t\t\"end\":\t4.000234,\n\t\t\t\t\t\"seconds\":\t0.999987006187439,\n\t\t\t\t\t\"bytes\":\t392772,\n\t\t\t\t\t\"bits_per_second\":\t3142216.8293765071,\n\t\t\t\t\t\"jitter_ms\":\t41.025417562960378,\n\t\t\t\t\t\"lost_packets\":\t295723,\n\t\t\t\t\t\"packets\":\t295735,\n\t\t\t\t\t\"lost_percent\":\t99.9959423132196,\n\t\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\t\"sender\":\tfalse\n\t\t\t\t}],\n\t\t\t\"sum\":\t{\n\t\t\t\t\"start\":\t3.000246,\n\t\t\t\t\"end\":\t4.000233,\n\t\t\t\t\"seconds\":\t0.999987006187439,\n\t\t\t\t\"bytes\":\t8199017307,\n\t\t\t\t\"bits_per_second\":\t65592990759.027237,\n\t\t\t\t\"packets\":\t250498,\n\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\"sender\":\ttrue\n\t\t\t},\n\t\t\t\"sum_bidir_reverse\":\t{\n\t\t\t\t\"start\":\t3.000246,\n\t\t\t\t\"end\":\t4.000233,\n\t\t\t\t\"seconds\":\t0.999987006187439,\n\t\t\t\t\"bytes\":\t392772,\n\t\t\t\t\"bits_per_second\":\t3142216.8293765071,\n\t\t\t\t\"jitter_ms\":\t41.025417562960378,\n\t\t\t\t\"lost_packets\":\t295723,\n\t\t\t\t\"packets\":\t295735,\n\t\t\t\t\"lost_percent\":\t99.9959423132196,\n\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\"sender\":\tfalse\n\t\t\t}\n\t\t}, {\n\t\t\t\"streams\":\t[{\n\t\t\t\t\t\"socket\":\t5,\n\t\t\t\t\t\"start\":\t4.000233,\n\t\t\t\t\t\"end\":\t5.001044,\n\t\t\t\t\t\"seconds\":\t1.000810980796814,\n\t\t\t\t\t\"bytes\":\t8338975063,\n\t\t\t\t\t\"bits_per_second\":\t66657742354.991127,\n\t\t\t\t\t\"packets\":\t254773,\n\t\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\t\"sender\":\ttrue\n\t\t\t\t}, {\n\t\t\t\t\t\"socket\":\t7,\n\t\t\t\t\t\"start\":\t4.000234,\n\t\t\t\t\t\"end\":\t5.001046,\n\t\t\t\t\t\"seconds\":\t1.00081205368042,\n\t\t\t\t\t\"bytes\":\t392772,\n\t\t\t\t\t\"bits_per_second\":\t3139626.45478225,\n\t\t\t\t\t\"jitter_ms\":\t40.943889979761423,\n\t\t\t\t\t\"lost_packets\":\t228836,\n\t\t\t\t\t\"packets\":\t228848,\n\t\t\t\t\t\"lost_percent\":\t99.994756344822761,\n\t\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\t\"sender\":\tfalse\n\t\t\t\t}],\n\t\t\t\"sum\":\t{\n\t\t\t\t\"start\":\t4.000233,\n\t\t\t\t\"end\":\t5.001044,\n\t\t\t\t\"seconds\":\t1.000810980796814,\n\t\t\t\t\"bytes\":\t8338975063,\n\t\t\t\t\"bits_per_second\":\t66657742354.991127,\n\t\t\t\t\"packets\":\t254773,\n\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\"sender\":\ttrue\n\t\t\t},\n\t\t\t\"sum_bidir_reverse\":\t{\n\t\t\t\t\"start\":\t4.000233,\n\t\t\t\t\"end\":\t5.001044,\n\t\t\t\t\"seconds\":\t1.000810980796814,\n\t\t\t\t\"bytes\":\t392772,\n\t\t\t\t\"bits_per_second\":\t3139629.8205064647,\n\t\t\t\t\"jitter_ms\":\t40.943889979761423,\n\t\t\t\t\"lost_packets\":\t228836,\n\t\t\t\t\"packets\":\t228848,\n\t\t\t\t\"lost_percent\":\t99.994756344822761,\n\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\"sender\":\tfalse\n\t\t\t}\n\t\t}, {\n\t\t\t\"streams\":\t[{\n\t\t\t\t\t\"socket\":\t5,\n\t\t\t\t\t\"start\":\t5.001044,\n\t\t\t\t\t\"end\":\t6.000233,\n\t\t\t\t\t\"seconds\":\t0.999189019203186,\n\t\t\t\t\t\"bytes\":\t8276720701,\n\t\t\t\t\t\"bits_per_second\":\t66267507283.85994,\n\t\t\t\t\t\"packets\":\t252872,\n\t\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\t\"sender\":\ttrue\n\t\t\t\t}, {\n\t\t\t\t\t\"socket\":\t7,\n\t\t\t\t\t\"start\":\t5.001046,\n\t\t\t\t\t\"end\":\t6.000234,\n\t\t\t\t\t\"seconds\":\t0.999188005924225,\n\t\t\t\t\t\"bytes\":\t327310,\n\t\t\t\t\t\"bits_per_second\":\t2620607.91810443,\n\t\t\t\t\t\"jitter_ms\":\t37.5553263678935,\n\t\t\t\t\t\"lost_packets\":\t275899,\n\t\t\t\t\t\"packets\":\t275909,\n\t\t\t\t\t\"lost_percent\":\t99.996375616598229,\n\t\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\t\"sender\":\tfalse\n\t\t\t\t}],\n\t\t\t\"sum\":\t{\n\t\t\t\t\"start\":\t5.001044,\n\t\t\t\t\"end\":\t6.000233,\n\t\t\t\t\"seconds\":\t0.999189019203186,\n\t\t\t\t\"bytes\":\t8276720701,\n\t\t\t\t\"bits_per_second\":\t66267507283.85994,\n\t\t\t\t\"packets\":\t252872,\n\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\"sender\":\ttrue\n\t\t\t},\n\t\t\t\"sum_bidir_reverse\":\t{\n\t\t\t\t\"start\":\t5.001044,\n\t\t\t\t\"end\":\t6.000233,\n\t\t\t\t\"seconds\":\t0.999189019203186,\n\t\t\t\t\"bytes\":\t327310,\n\t\t\t\t\"bits_per_second\":\t2620605.26054233,\n\t\t\t\t\"jitter_ms\":\t37.5553263678935,\n\t\t\t\t\"lost_packets\":\t275899,\n\t\t\t\t\"packets\":\t275909,\n\t\t\t\t\"lost_percent\":\t99.996375616598229,\n\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\"sender\":\tfalse\n\t\t\t}\n\t\t}, {\n\t\t\t\"streams\":\t[{\n\t\t\t\t\t\"socket\":\t5,\n\t\t\t\t\t\"start\":\t6.000233,\n\t\t\t\t\t\"end\":\t7.000246,\n\t\t\t\t\t\"seconds\":\t1.000012993812561,\n\t\t\t\t\t\"bytes\":\t8318681843,\n\t\t\t\t\t\"bits_per_second\":\t66548590024.095024,\n\t\t\t\t\t\"packets\":\t254153,\n\t\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\t\"sender\":\ttrue\n\t\t\t\t}, {\n\t\t\t\t\t\"socket\":\t7,\n\t\t\t\t\t\"start\":\t6.000234,\n\t\t\t\t\t\"end\":\t7.000247,\n\t\t\t\t\t\"seconds\":\t1.000012993812561,\n\t\t\t\t\t\"bytes\":\t425503,\n\t\t\t\t\t\"bits_per_second\":\t3403979.7693249159,\n\t\t\t\t\t\"jitter_ms\":\t41.530168851652448,\n\t\t\t\t\t\"lost_packets\":\t225390,\n\t\t\t\t\t\"packets\":\t225403,\n\t\t\t\t\t\"lost_percent\":\t99.994232552361765,\n\t\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\t\"sender\":\tfalse\n\t\t\t\t}],\n\t\t\t\"sum\":\t{\n\t\t\t\t\"start\":\t6.000233,\n\t\t\t\t\"end\":\t7.000246,\n\t\t\t\t\"seconds\":\t1.000012993812561,\n\t\t\t\t\"bytes\":\t8318681843,\n\t\t\t\t\"bits_per_second\":\t66548590024.095024,\n\t\t\t\t\"packets\":\t254153,\n\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\"sender\":\ttrue\n\t\t\t},\n\t\t\t\"sum_bidir_reverse\":\t{\n\t\t\t\t\"start\":\t6.000233,\n\t\t\t\t\"end\":\t7.000246,\n\t\t\t\t\"seconds\":\t1.000012993812561,\n\t\t\t\t\"bytes\":\t425503,\n\t\t\t\t\"bits_per_second\":\t3403979.7693249159,\n\t\t\t\t\"jitter_ms\":\t41.530168851652448,\n\t\t\t\t\"lost_packets\":\t225390,\n\t\t\t\t\"packets\":\t225403,\n\t\t\t\t\"lost_percent\":\t99.994232552361765,\n\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\"sender\":\tfalse\n\t\t\t}\n\t\t}, {\n\t\t\t\"streams\":\t[{\n\t\t\t\t\t\"socket\":\t5,\n\t\t\t\t\t\"start\":\t7.000246,\n\t\t\t\t\t\"end\":\t8.000271,\n\t\t\t\t\t\"seconds\":\t1.0000250339508057,\n\t\t\t\t\t\"bytes\":\t8331479664,\n\t\t\t\t\t\"bits_per_second\":\t66650168794.9532,\n\t\t\t\t\t\"packets\":\t254545,\n\t\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\t\"sender\":\ttrue\n\t\t\t\t}, {\n\t\t\t\t\t\"socket\":\t7,\n\t\t\t\t\t\"start\":\t7.000247,\n\t\t\t\t\t\"end\":\t8.000272,\n\t\t\t\t\t\"seconds\":\t1.0000250339508057,\n\t\t\t\t\t\"bytes\":\t425503,\n\t\t\t\t\t\"bits_per_second\":\t3403938.7859638869,\n\t\t\t\t\t\"jitter_ms\":\t37.710393806291783,\n\t\t\t\t\t\"lost_packets\":\t285058,\n\t\t\t\t\t\"packets\":\t285071,\n\t\t\t\t\t\"lost_percent\":\t99.995439732557855,\n\t\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\t\"sender\":\tfalse\n\t\t\t\t}],\n\t\t\t\"sum\":\t{\n\t\t\t\t\"start\":\t7.000246,\n\t\t\t\t\"end\":\t8.000271,\n\t\t\t\t\"seconds\":\t1.0000250339508057,\n\t\t\t\t\"bytes\":\t8331479664,\n\t\t\t\t\"bits_per_second\":\t66650168794.9532,\n\t\t\t\t\"packets\":\t254545,\n\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\"sender\":\ttrue\n\t\t\t},\n\t\t\t\"sum_bidir_reverse\":\t{\n\t\t\t\t\"start\":\t7.000246,\n\t\t\t\t\"end\":\t8.000271,\n\t\t\t\t\"seconds\":\t1.0000250339508057,\n\t\t\t\t\"bytes\":\t425503,\n\t\t\t\t\"bits_per_second\":\t3403938.7859638869,\n\t\t\t\t\"jitter_ms\":\t37.710393806291783,\n\t\t\t\t\"lost_packets\":\t285058,\n\t\t\t\t\"packets\":\t285071,\n\t\t\t\t\"lost_percent\":\t99.995439732557855,\n\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\"sender\":\tfalse\n\t\t\t}\n\t\t}, {\n\t\t\t\"streams\":\t[{\n\t\t\t\t\t\"socket\":\t5,\n\t\t\t\t\t\"start\":\t8.000271,\n\t\t\t\t\t\"end\":\t9.000233,\n\t\t\t\t\t\"seconds\":\t0.9999619722366333,\n\t\t\t\t\t\"bytes\":\t8452060668,\n\t\t\t\t\t\"bits_per_second\":\t67619056745.489,\n\t\t\t\t\t\"packets\":\t258228,\n\t\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\t\"sender\":\ttrue\n\t\t\t\t}, {\n\t\t\t\t\t\"socket\":\t7,\n\t\t\t\t\t\"start\":\t8.000272,\n\t\t\t\t\t\"end\":\t9.000234,\n\t\t\t\t\t\"seconds\":\t0.9999619722366333,\n\t\t\t\t\t\"bytes\":\t360041,\n\t\t\t\t\t\"bits_per_second\":\t2880437.5365970344,\n\t\t\t\t\t\"jitter_ms\":\t46.651766179194887,\n\t\t\t\t\t\"lost_packets\":\t212236,\n\t\t\t\t\t\"packets\":\t212247,\n\t\t\t\t\t\"lost_percent\":\t99.9948173590204,\n\t\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\t\"sender\":\tfalse\n\t\t\t\t}],\n\t\t\t\"sum\":\t{\n\t\t\t\t\"start\":\t8.000271,\n\t\t\t\t\"end\":\t9.000233,\n\t\t\t\t\"seconds\":\t0.9999619722366333,\n\t\t\t\t\"bytes\":\t8452060668,\n\t\t\t\t\"bits_per_second\":\t67619056745.489,\n\t\t\t\t\"packets\":\t258228,\n\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\"sender\":\ttrue\n\t\t\t},\n\t\t\t\"sum_bidir_reverse\":\t{\n\t\t\t\t\"start\":\t8.000271,\n\t\t\t\t\"end\":\t9.000233,\n\t\t\t\t\"seconds\":\t0.9999619722366333,\n\t\t\t\t\"bytes\":\t360041,\n\t\t\t\t\"bits_per_second\":\t2880437.5365970344,\n\t\t\t\t\"jitter_ms\":\t46.651766179194887,\n\t\t\t\t\"lost_packets\":\t212236,\n\t\t\t\t\"packets\":\t212247,\n\t\t\t\t\"lost_percent\":\t99.9948173590204,\n\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\"sender\":\tfalse\n\t\t\t}\n\t\t}, {\n\t\t\t\"streams\":\t[{\n\t\t\t\t\t\"socket\":\t5,\n\t\t\t\t\t\"start\":\t9.000233,\n\t\t\t\t\t\"end\":\t10.000246,\n\t\t\t\t\t\"seconds\":\t1.000012993812561,\n\t\t\t\t\t\"bytes\":\t8602950578,\n\t\t\t\t\t\"bits_per_second\":\t68822710354.6017,\n\t\t\t\t\t\"packets\":\t262839,\n\t\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\t\"sender\":\ttrue\n\t\t\t\t}, {\n\t\t\t\t\t\"socket\":\t7,\n\t\t\t\t\t\"start\":\t9.000234,\n\t\t\t\t\t\"end\":\t10.000247,\n\t\t\t\t\t\"seconds\":\t1.000012993812561,\n\t\t\t\t\t\"bytes\":\t523696,\n\t\t\t\t\t\"bits_per_second\":\t4189513.56224605,\n\t\t\t\t\t\"jitter_ms\":\t38.492739745208524,\n\t\t\t\t\t\"lost_packets\":\t308319,\n\t\t\t\t\t\"packets\":\t308335,\n\t\t\t\t\t\"lost_percent\":\t99.994810838860332,\n\t\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\t\"sender\":\tfalse\n\t\t\t\t}],\n\t\t\t\"sum\":\t{\n\t\t\t\t\"start\":\t9.000233,\n\t\t\t\t\"end\":\t10.000246,\n\t\t\t\t\"seconds\":\t1.000012993812561,\n\t\t\t\t\"bytes\":\t8602950578,\n\t\t\t\t\"bits_per_second\":\t68822710354.6017,\n\t\t\t\t\"packets\":\t262839,\n\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\"sender\":\ttrue\n\t\t\t},\n\t\t\t\"sum_bidir_reverse\":\t{\n\t\t\t\t\"start\":\t9.000233,\n\t\t\t\t\"end\":\t10.000246,\n\t\t\t\t\"seconds\":\t1.000012993812561,\n\t\t\t\t\"bytes\":\t523696,\n\t\t\t\t\"bits_per_second\":\t4189513.56224605,\n\t\t\t\t\"jitter_ms\":\t38.492739745208524,\n\t\t\t\t\"lost_packets\":\t308319,\n\t\t\t\t\"packets\":\t308335,\n\t\t\t\t\"lost_percent\":\t99.994810838860332,\n\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\"sender\":\tfalse\n\t\t\t}\n\t\t}, {\n\t\t\t\"streams\":\t[{\n\t\t\t\t\t\"socket\":\t5,\n\t\t\t\t\t\"start\":\t10.000246,\n\t\t\t\t\t\"end\":\t11.000234,\n\t\t\t\t\t\"seconds\":\t0.9999880194664,\n\t\t\t\t\t\"bytes\":\t8212338824,\n\t\t\t\t\t\"bits_per_second\":\t65699497707.039772,\n\t\t\t\t\t\"packets\":\t250904,\n\t\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\t\"sender\":\ttrue\n\t\t\t\t}, {\n\t\t\t\t\t\"socket\":\t7,\n\t\t\t\t\t\"start\":\t10.000247,\n\t\t\t\t\t\"end\":\t11.000236,\n\t\t\t\t\t\"seconds\":\t0.99998897314071655,\n\t\t\t\t\t\"bytes\":\t490965,\n\t\t\t\t\t\"bits_per_second\":\t3927763.3108933279,\n\t\t\t\t\t\"jitter_ms\":\t38.811636526670569,\n\t\t\t\t\t\"lost_packets\":\t229788,\n\t\t\t\t\t\"packets\":\t229803,\n\t\t\t\t\t\"lost_percent\":\t99.9934726700696,\n\t\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\t\"sender\":\tfalse\n\t\t\t\t}],\n\t\t\t\"sum\":\t{\n\t\t\t\t\"start\":\t10.000246,\n\t\t\t\t\"end\":\t11.000234,\n\t\t\t\t\"seconds\":\t0.9999880194664,\n\t\t\t\t\"bytes\":\t8212338824,\n\t\t\t\t\"bits_per_second\":\t65699497707.039772,\n\t\t\t\t\"packets\":\t250904,\n\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\"sender\":\ttrue\n\t\t\t},\n\t\t\t\"sum_bidir_reverse\":\t{\n\t\t\t\t\"start\":\t10.000246,\n\t\t\t\t\"end\":\t11.000234,\n\t\t\t\t\"seconds\":\t0.9999880194664,\n\t\t\t\t\"bytes\":\t490965,\n\t\t\t\t\"bits_per_second\":\t3927767.0567451958,\n\t\t\t\t\"jitter_ms\":\t38.811636526670569,\n\t\t\t\t\"lost_packets\":\t229788,\n\t\t\t\t\"packets\":\t229803,\n\t\t\t\t\"lost_percent\":\t99.9934726700696,\n\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\"sender\":\tfalse\n\t\t\t}\n\t\t}, {\n\t\t\t\"streams\":\t[{\n\t\t\t\t\t\"socket\":\t5,\n\t\t\t\t\t\"start\":\t11.000234,\n\t\t\t\t\t\"end\":\t12.000259,\n\t\t\t\t\t\"seconds\":\t1.0000250339508057,\n\t\t\t\t\t\"bytes\":\t8205236197,\n\t\t\t\t\t\"bits_per_second\":\t65640246341.302223,\n\t\t\t\t\t\"packets\":\t250688,\n\t\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\t\"sender\":\ttrue\n\t\t\t\t}, {\n\t\t\t\t\t\"socket\":\t7,\n\t\t\t\t\t\"start\":\t11.000236,\n\t\t\t\t\t\"end\":\t12.00026,\n\t\t\t\t\t\"seconds\":\t1.0000239610672,\n\t\t\t\t\t\"bytes\":\t294579,\n\t\t\t\t\t\"bits_per_second\":\t2356575.53393527,\n\t\t\t\t\t\"jitter_ms\":\t53.5415000178319,\n\t\t\t\t\t\"lost_packets\":\t228209,\n\t\t\t\t\t\"packets\":\t228218,\n\t\t\t\t\t\"lost_percent\":\t99.9960564022119,\n\t\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\t\"sender\":\tfalse\n\t\t\t\t}],\n\t\t\t\"sum\":\t{\n\t\t\t\t\"start\":\t11.000234,\n\t\t\t\t\"end\":\t12.000259,\n\t\t\t\t\"seconds\":\t1.0000250339508057,\n\t\t\t\t\"bytes\":\t8205236197,\n\t\t\t\t\"bits_per_second\":\t65640246341.302223,\n\t\t\t\t\"packets\":\t250688,\n\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\"sender\":\ttrue\n\t\t\t},\n\t\t\t\"sum_bidir_reverse\":\t{\n\t\t\t\t\"start\":\t11.000234,\n\t\t\t\t\"end\":\t12.000259,\n\t\t\t\t\"seconds\":\t1.0000250339508057,\n\t\t\t\t\"bytes\":\t294579,\n\t\t\t\t\"bits_per_second\":\t2356573.005667306,\n\t\t\t\t\"jitter_ms\":\t53.5415000178319,\n\t\t\t\t\"lost_packets\":\t228209,\n\t\t\t\t\"packets\":\t228218,\n\t\t\t\t\"lost_percent\":\t99.9960564022119,\n\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\"sender\":\tfalse\n\t\t\t}\n\t\t}, {\n\t\t\t\"streams\":\t[{\n\t\t\t\t\t\"socket\":\t5,\n\t\t\t\t\t\"start\":\t12.000259,\n\t\t\t\t\t\"end\":\t13.000234,\n\t\t\t\t\t\"seconds\":\t0.999975025653839,\n\t\t\t\t\t\"bytes\":\t8206414513,\n\t\t\t\t\t\"bits_per_second\":\t65652955743.643227,\n\t\t\t\t\t\"packets\":\t250723,\n\t\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\t\"sender\":\ttrue\n\t\t\t\t}, {\n\t\t\t\t\t\"socket\":\t7,\n\t\t\t\t\t\"start\":\t12.00026,\n\t\t\t\t\t\"end\":\t13.000235,\n\t\t\t\t\t\"seconds\":\t0.999975025653839,\n\t\t\t\t\t\"bytes\":\t327310,\n\t\t\t\t\t\"bits_per_second\":\t2618545.3964591692,\n\t\t\t\t\t\"jitter_ms\":\t57.241273739681347,\n\t\t\t\t\t\"lost_packets\":\t292735,\n\t\t\t\t\t\"packets\":\t292745,\n\t\t\t\t\t\"lost_percent\":\t99.996584057797747,\n\t\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\t\"sender\":\tfalse\n\t\t\t\t}],\n\t\t\t\"sum\":\t{\n\t\t\t\t\"start\":\t12.000259,\n\t\t\t\t\"end\":\t13.000234,\n\t\t\t\t\"seconds\":\t0.999975025653839,\n\t\t\t\t\"bytes\":\t8206414513,\n\t\t\t\t\"bits_per_second\":\t65652955743.643227,\n\t\t\t\t\"packets\":\t250723,\n\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\"sender\":\ttrue\n\t\t\t},\n\t\t\t\"sum_bidir_reverse\":\t{\n\t\t\t\t\"start\":\t12.000259,\n\t\t\t\t\"end\":\t13.000234,\n\t\t\t\t\"seconds\":\t0.999975025653839,\n\t\t\t\t\"bytes\":\t327310,\n\t\t\t\t\"bits_per_second\":\t2618545.3964591692,\n\t\t\t\t\"jitter_ms\":\t57.241273739681347,\n\t\t\t\t\"lost_packets\":\t292735,\n\t\t\t\t\"packets\":\t292745,\n\t\t\t\t\"lost_percent\":\t99.996584057797747,\n\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\"sender\":\tfalse\n\t\t\t}\n\t\t}, {\n\t\t\t\"streams\":\t[{\n\t\t\t\t\t\"socket\":\t5,\n\t\t\t\t\t\"start\":\t13.000234,\n\t\t\t\t\t\"end\":\t14.000229,\n\t\t\t\t\t\"seconds\":\t0.999994993209839,\n\t\t\t\t\t\"bytes\":\t8058503124,\n\t\t\t\t\t\"bits_per_second\":\t64468347771.489326,\n\t\t\t\t\t\"packets\":\t246204,\n\t\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\t\"sender\":\ttrue\n\t\t\t\t}, {\n\t\t\t\t\t\"socket\":\t7,\n\t\t\t\t\t\"start\":\t13.000235,\n\t\t\t\t\t\"end\":\t14.00023,\n\t\t\t\t\t\"seconds\":\t0.999994993209839,\n\t\t\t\t\t\"bytes\":\t392772,\n\t\t\t\t\t\"bits_per_second\":\t3142191.73229465,\n\t\t\t\t\t\"jitter_ms\":\t49.843405739417449,\n\t\t\t\t\t\"lost_packets\":\t233034,\n\t\t\t\t\t\"packets\":\t233046,\n\t\t\t\t\t\"lost_percent\":\t99.9948508019876,\n\t\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\t\"sender\":\tfalse\n\t\t\t\t}],\n\t\t\t\"sum\":\t{\n\t\t\t\t\"start\":\t13.000234,\n\t\t\t\t\"end\":\t14.000229,\n\t\t\t\t\"seconds\":\t0.999994993209839,\n\t\t\t\t\"bytes\":\t8058503124,\n\t\t\t\t\"bits_per_second\":\t64468347771.489326,\n\t\t\t\t\"packets\":\t246204,\n\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\"sender\":\ttrue\n\t\t\t},\n\t\t\t\"sum_bidir_reverse\":\t{\n\t\t\t\t\"start\":\t13.000234,\n\t\t\t\t\"end\":\t14.000229,\n\t\t\t\t\"seconds\":\t0.999994993209839,\n\t\t\t\t\"bytes\":\t392772,\n\t\t\t\t\"bits_per_second\":\t3142191.73229465,\n\t\t\t\t\"jitter_ms\":\t49.843405739417449,\n\t\t\t\t\"lost_packets\":\t233034,\n\t\t\t\t\"packets\":\t233046,\n\t\t\t\t\"lost_percent\":\t99.9948508019876,\n\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\"sender\":\tfalse\n\t\t\t}\n\t\t}, {\n\t\t\t\"streams\":\t[{\n\t\t\t\t\t\"socket\":\t5,\n\t\t\t\t\t\"start\":\t14.000229,\n\t\t\t\t\t\"end\":\t15.000234,\n\t\t\t\t\t\"seconds\":\t1.0000050067901611,\n\t\t\t\t\t\"bytes\":\t8216888433,\n\t\t\t\t\t\"bits_per_second\":\t65734778343.758545,\n\t\t\t\t\t\"packets\":\t251043,\n\t\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\t\"sender\":\ttrue\n\t\t\t\t}, {\n\t\t\t\t\t\"socket\":\t7,\n\t\t\t\t\t\"start\":\t14.00023,\n\t\t\t\t\t\"end\":\t15.000236,\n\t\t\t\t\t\"seconds\":\t1.0000059604644775,\n\t\t\t\t\t\"bytes\":\t360041,\n\t\t\t\t\t\"bits_per_second\":\t2880310.8320096014,\n\t\t\t\t\t\"jitter_ms\":\t50.478946138344313,\n\t\t\t\t\t\"lost_packets\":\t251591,\n\t\t\t\t\t\"packets\":\t251602,\n\t\t\t\t\t\"lost_percent\":\t99.99562801567555,\n\t\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\t\"sender\":\tfalse\n\t\t\t\t}],\n\t\t\t\"sum\":\t{\n\t\t\t\t\"start\":\t14.000229,\n\t\t\t\t\"end\":\t15.000234,\n\t\t\t\t\"seconds\":\t1.0000050067901611,\n\t\t\t\t\"bytes\":\t8216888433,\n\t\t\t\t\"bits_per_second\":\t65734778343.758545,\n\t\t\t\t\"packets\":\t251043,\n\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\"sender\":\ttrue\n\t\t\t},\n\t\t\t\"sum_bidir_reverse\":\t{\n\t\t\t\t\"start\":\t14.000229,\n\t\t\t\t\"end\":\t15.000234,\n\t\t\t\t\"seconds\":\t1.0000050067901611,\n\t\t\t\t\"bytes\":\t360041,\n\t\t\t\t\"bits_per_second\":\t2880313.5788743123,\n\t\t\t\t\"jitter_ms\":\t50.478946138344313,\n\t\t\t\t\"lost_packets\":\t251591,\n\t\t\t\t\"packets\":\t251602,\n\t\t\t\t\"lost_percent\":\t99.99562801567555,\n\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\"sender\":\tfalse\n\t\t\t}\n\t\t}, {\n\t\t\t\"streams\":\t[{\n\t\t\t\t\t\"socket\":\t5,\n\t\t\t\t\t\"start\":\t15.000234,\n\t\t\t\t\t\"end\":\t16.000232,\n\t\t\t\t\t\"seconds\":\t0.99999797344207764,\n\t\t\t\t\t\"bytes\":\t8297504886,\n\t\t\t\t\t\"bits_per_second\":\t66380173611.266716,\n\t\t\t\t\t\"packets\":\t253506,\n\t\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\t\"sender\":\ttrue\n\t\t\t\t}, {\n\t\t\t\t\t\"socket\":\t7,\n\t\t\t\t\t\"start\":\t15.000236,\n\t\t\t\t\t\"end\":\t16.000233,\n\t\t\t\t\t\"seconds\":\t0.99999701976776123,\n\t\t\t\t\t\"bytes\":\t392772,\n\t\t\t\t\t\"bits_per_second\":\t3142185.3644421231,\n\t\t\t\t\t\"jitter_ms\":\t50.388760177838236,\n\t\t\t\t\t\"lost_packets\":\t257426,\n\t\t\t\t\t\"packets\":\t257438,\n\t\t\t\t\t\"lost_percent\":\t99.995338683488839,\n\t\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\t\"sender\":\tfalse\n\t\t\t\t}],\n\t\t\t\"sum\":\t{\n\t\t\t\t\"start\":\t15.000234,\n\t\t\t\t\"end\":\t16.000232,\n\t\t\t\t\"seconds\":\t0.99999797344207764,\n\t\t\t\t\"bytes\":\t8297504886,\n\t\t\t\t\"bits_per_second\":\t66380173611.266716,\n\t\t\t\t\"packets\":\t253506,\n\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\"sender\":\ttrue\n\t\t\t},\n\t\t\t\"sum_bidir_reverse\":\t{\n\t\t\t\t\"start\":\t15.000234,\n\t\t\t\t\"end\":\t16.000232,\n\t\t\t\t\"seconds\":\t0.99999797344207764,\n\t\t\t\t\"bytes\":\t392772,\n\t\t\t\t\"bits_per_second\":\t3142182.3678145711,\n\t\t\t\t\"jitter_ms\":\t50.388760177838236,\n\t\t\t\t\"lost_packets\":\t257426,\n\t\t\t\t\"packets\":\t257438,\n\t\t\t\t\"lost_percent\":\t99.995338683488839,\n\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\"sender\":\tfalse\n\t\t\t}\n\t\t}, {\n\t\t\t\"streams\":\t[{\n\t\t\t\t\t\"socket\":\t5,\n\t\t\t\t\t\"start\":\t16.000232,\n\t\t\t\t\t\"end\":\t17.000355,\n\t\t\t\t\t\"seconds\":\t1.0001230239868164,\n\t\t\t\t\t\"bytes\":\t8181800801,\n\t\t\t\t\t\"bits_per_second\":\t65446354936.4931,\n\t\t\t\t\t\"packets\":\t249971,\n\t\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\t\"sender\":\ttrue\n\t\t\t\t}, {\n\t\t\t\t\t\"socket\":\t7,\n\t\t\t\t\t\"start\":\t16.000233,\n\t\t\t\t\t\"end\":\t17.000356,\n\t\t\t\t\t\"seconds\":\t1.0001230239868164,\n\t\t\t\t\t\"bytes\":\t360041,\n\t\t\t\t\t\"bits_per_second\":\t2879973.6941542188,\n\t\t\t\t\t\"jitter_ms\":\t56.04380409884925,\n\t\t\t\t\t\"lost_packets\":\t284960,\n\t\t\t\t\t\"packets\":\t284971,\n\t\t\t\t\t\"lost_percent\":\t99.996139958101,\n\t\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\t\"sender\":\tfalse\n\t\t\t\t}],\n\t\t\t\"sum\":\t{\n\t\t\t\t\"start\":\t16.000232,\n\t\t\t\t\"end\":\t17.000355,\n\t\t\t\t\"seconds\":\t1.0001230239868164,\n\t\t\t\t\"bytes\":\t8181800801,\n\t\t\t\t\"bits_per_second\":\t65446354936.4931,\n\t\t\t\t\"packets\":\t249971,\n\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\"sender\":\ttrue\n\t\t\t},\n\t\t\t\"sum_bidir_reverse\":\t{\n\t\t\t\t\"start\":\t16.000232,\n\t\t\t\t\"end\":\t17.000355,\n\t\t\t\t\"seconds\":\t1.0001230239868164,\n\t\t\t\t\"bytes\":\t360041,\n\t\t\t\t\"bits_per_second\":\t2879973.6941542188,\n\t\t\t\t\"jitter_ms\":\t56.04380409884925,\n\t\t\t\t\"lost_packets\":\t284960,\n\t\t\t\t\"packets\":\t284971,\n\t\t\t\t\"lost_percent\":\t99.996139958101,\n\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\"sender\":\tfalse\n\t\t\t}\n\t\t}, {\n\t\t\t\"streams\":\t[{\n\t\t\t\t\t\"socket\":\t5,\n\t\t\t\t\t\"start\":\t17.000355,\n\t\t\t\t\t\"end\":\t18.000243,\n\t\t\t\t\t\"seconds\":\t0.999888002872467,\n\t\t\t\t\t\"bytes\":\t8166515424,\n\t\t\t\t\t\"bits_per_second\":\t65339441221.731445,\n\t\t\t\t\t\"packets\":\t249504,\n\t\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\t\"sender\":\ttrue\n\t\t\t\t}, {\n\t\t\t\t\t\"socket\":\t7,\n\t\t\t\t\t\"start\":\t17.000356,\n\t\t\t\t\t\"end\":\t18.000244,\n\t\t\t\t\t\"seconds\":\t0.999888002872467,\n\t\t\t\t\t\"bytes\":\t327310,\n\t\t\t\t\t\"bits_per_second\":\t2618773.29508671,\n\t\t\t\t\t\"jitter_ms\":\t46.7766082016556,\n\t\t\t\t\t\"lost_packets\":\t236296,\n\t\t\t\t\t\"packets\":\t236306,\n\t\t\t\t\t\"lost_percent\":\t99.9957681988608,\n\t\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\t\"sender\":\tfalse\n\t\t\t\t}],\n\t\t\t\"sum\":\t{\n\t\t\t\t\"start\":\t17.000355,\n\t\t\t\t\"end\":\t18.000243,\n\t\t\t\t\"seconds\":\t0.999888002872467,\n\t\t\t\t\"bytes\":\t8166515424,\n\t\t\t\t\"bits_per_second\":\t65339441221.731445,\n\t\t\t\t\"packets\":\t249504,\n\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\"sender\":\ttrue\n\t\t\t},\n\t\t\t\"sum_bidir_reverse\":\t{\n\t\t\t\t\"start\":\t17.000355,\n\t\t\t\t\"end\":\t18.000243,\n\t\t\t\t\"seconds\":\t0.999888002872467,\n\t\t\t\t\"bytes\":\t327310,\n\t\t\t\t\"bits_per_second\":\t2618773.29508671,\n\t\t\t\t\"jitter_ms\":\t46.7766082016556,\n\t\t\t\t\"lost_packets\":\t236296,\n\t\t\t\t\"packets\":\t236306,\n\t\t\t\t\"lost_percent\":\t99.9957681988608,\n\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\"sender\":\tfalse\n\t\t\t}\n\t\t}, {\n\t\t\t\"streams\":\t[{\n\t\t\t\t\t\"socket\":\t5,\n\t\t\t\t\t\"start\":\t18.000243,\n\t\t\t\t\t\"end\":\t19.000246,\n\t\t\t\t\t\"seconds\":\t1.0000029802322388,\n\t\t\t\t\t\"bytes\":\t8394421377,\n\t\t\t\t\t\"bits_per_second\":\t67155170877.994751,\n\t\t\t\t\t\"packets\":\t256467,\n\t\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\t\"sender\":\ttrue\n\t\t\t\t}, {\n\t\t\t\t\t\"socket\":\t7,\n\t\t\t\t\t\"start\":\t18.000244,\n\t\t\t\t\t\"end\":\t19.000247,\n\t\t\t\t\t\"seconds\":\t1.0000029802322388,\n\t\t\t\t\t\"bytes\":\t458234,\n\t\t\t\t\t\"bits_per_second\":\t3665861.0748826419,\n\t\t\t\t\t\"jitter_ms\":\t37.360607726424028,\n\t\t\t\t\t\"lost_packets\":\t272881,\n\t\t\t\t\t\"packets\":\t272895,\n\t\t\t\t\t\"lost_percent\":\t99.9948698217263,\n\t\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\t\"sender\":\tfalse\n\t\t\t\t}],\n\t\t\t\"sum\":\t{\n\t\t\t\t\"start\":\t18.000243,\n\t\t\t\t\"end\":\t19.000246,\n\t\t\t\t\"seconds\":\t1.0000029802322388,\n\t\t\t\t\"bytes\":\t8394421377,\n\t\t\t\t\"bits_per_second\":\t67155170877.994751,\n\t\t\t\t\"packets\":\t256467,\n\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\"sender\":\ttrue\n\t\t\t},\n\t\t\t\"sum_bidir_reverse\":\t{\n\t\t\t\t\"start\":\t18.000243,\n\t\t\t\t\"end\":\t19.000246,\n\t\t\t\t\"seconds\":\t1.0000029802322388,\n\t\t\t\t\"bytes\":\t458234,\n\t\t\t\t\"bits_per_second\":\t3665861.0748826419,\n\t\t\t\t\"jitter_ms\":\t37.360607726424028,\n\t\t\t\t\"lost_packets\":\t272881,\n\t\t\t\t\"packets\":\t272895,\n\t\t\t\t\"lost_percent\":\t99.9948698217263,\n\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\"sender\":\tfalse\n\t\t\t}\n\t\t}, {\n\t\t\t\"streams\":\t[{\n\t\t\t\t\t\"socket\":\t5,\n\t\t\t\t\t\"start\":\t19.000246,\n\t\t\t\t\t\"end\":\t20.00023,\n\t\t\t\t\t\"seconds\":\t0.9999840259552002,\n\t\t\t\t\t\"bytes\":\t8469899063,\n\t\t\t\t\t\"bits_per_second\":\t67760274909.667053,\n\t\t\t\t\t\"packets\":\t258774,\n\t\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\t\"sender\":\ttrue\n\t\t\t\t}, {\n\t\t\t\t\t\"socket\":\t7,\n\t\t\t\t\t\"start\":\t19.000247,\n\t\t\t\t\t\"end\":\t20.000231,\n\t\t\t\t\t\"seconds\":\t0.9999840259552002,\n\t\t\t\t\t\"bytes\":\t523696,\n\t\t\t\t\t\"bits_per_second\":\t4189634.9254159932,\n\t\t\t\t\t\"jitter_ms\":\t33.559662338650256,\n\t\t\t\t\t\"lost_packets\":\t280311,\n\t\t\t\t\t\"packets\":\t280327,\n\t\t\t\t\t\"lost_percent\":\t99.994292379970531,\n\t\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\t\"sender\":\tfalse\n\t\t\t\t}],\n\t\t\t\"sum\":\t{\n\t\t\t\t\"start\":\t19.000246,\n\t\t\t\t\"end\":\t20.00023,\n\t\t\t\t\"seconds\":\t0.9999840259552002,\n\t\t\t\t\"bytes\":\t8469899063,\n\t\t\t\t\"bits_per_second\":\t67760274909.667053,\n\t\t\t\t\"packets\":\t258774,\n\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\"sender\":\ttrue\n\t\t\t},\n\t\t\t\"sum_bidir_reverse\":\t{\n\t\t\t\t\"start\":\t19.000246,\n\t\t\t\t\"end\":\t20.00023,\n\t\t\t\t\"seconds\":\t0.9999840259552002,\n\t\t\t\t\"bytes\":\t523696,\n\t\t\t\t\"bits_per_second\":\t4189634.9254159932,\n\t\t\t\t\"jitter_ms\":\t33.559662338650256,\n\t\t\t\t\"lost_packets\":\t280311,\n\t\t\t\t\"packets\":\t280327,\n\t\t\t\t\"lost_percent\":\t99.994292379970531,\n\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\"sender\":\tfalse\n\t\t\t}\n\t\t}, {\n\t\t\t\"streams\":\t[{\n\t\t\t\t\t\"socket\":\t5,\n\t\t\t\t\t\"start\":\t20.00023,\n\t\t\t\t\t\"end\":\t21.000242,\n\t\t\t\t\t\"seconds\":\t1.0000120401382446,\n\t\t\t\t\t\"bytes\":\t8282645012,\n\t\t\t\t\t\"bits_per_second\":\t66260362312.077621,\n\t\t\t\t\t\"packets\":\t253053,\n\t\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\t\"sender\":\ttrue\n\t\t\t\t}, {\n\t\t\t\t\t\"socket\":\t7,\n\t\t\t\t\t\"start\":\t20.000231,\n\t\t\t\t\t\"end\":\t21.000243,\n\t\t\t\t\t\"seconds\":\t1.0000120401382446,\n\t\t\t\t\t\"bytes\":\t425503,\n\t\t\t\t\t\"bits_per_second\":\t3403983.01557391,\n\t\t\t\t\t\"jitter_ms\":\t33.342105730166757,\n\t\t\t\t\t\"lost_packets\":\t252963,\n\t\t\t\t\t\"packets\":\t252976,\n\t\t\t\t\t\"lost_percent\":\t99.994861172601347,\n\t\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\t\"sender\":\tfalse\n\t\t\t\t}],\n\t\t\t\"sum\":\t{\n\t\t\t\t\"start\":\t20.00023,\n\t\t\t\t\"end\":\t21.000242,\n\t\t\t\t\"seconds\":\t1.0000120401382446,\n\t\t\t\t\"bytes\":\t8282645012,\n\t\t\t\t\"bits_per_second\":\t66260362312.077621,\n\t\t\t\t\"packets\":\t253053,\n\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\"sender\":\ttrue\n\t\t\t},\n\t\t\t\"sum_bidir_reverse\":\t{\n\t\t\t\t\"start\":\t20.00023,\n\t\t\t\t\"end\":\t21.000242,\n\t\t\t\t\"seconds\":\t1.0000120401382446,\n\t\t\t\t\"bytes\":\t425503,\n\t\t\t\t\"bits_per_second\":\t3403983.01557391,\n\t\t\t\t\"jitter_ms\":\t33.342105730166757,\n\t\t\t\t\"lost_packets\":\t252963,\n\t\t\t\t\"packets\":\t252976,\n\t\t\t\t\"lost_percent\":\t99.994861172601347,\n\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\"sender\":\tfalse\n\t\t\t}\n\t\t}, {\n\t\t\t\"streams\":\t[{\n\t\t\t\t\t\"socket\":\t5,\n\t\t\t\t\t\"start\":\t21.000242,\n\t\t\t\t\t\"end\":\t22.000229,\n\t\t\t\t\t\"seconds\":\t0.999987006187439,\n\t\t\t\t\t\"bytes\":\t8089270264,\n\t\t\t\t\t\"bits_per_second\":\t64715003006.618958,\n\t\t\t\t\t\"packets\":\t247144,\n\t\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\t\"sender\":\ttrue\n\t\t\t\t}, {\n\t\t\t\t\t\"socket\":\t7,\n\t\t\t\t\t\"start\":\t21.000243,\n\t\t\t\t\t\"end\":\t22.00023,\n\t\t\t\t\t\"seconds\":\t0.999987006187439,\n\t\t\t\t\t\"bytes\":\t392772,\n\t\t\t\t\t\"bits_per_second\":\t3142216.8293765071,\n\t\t\t\t\t\"jitter_ms\":\t24.323899638980524,\n\t\t\t\t\t\"lost_packets\":\t237341,\n\t\t\t\t\t\"packets\":\t237353,\n\t\t\t\t\t\"lost_percent\":\t99.9949442391712,\n\t\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\t\"sender\":\tfalse\n\t\t\t\t}],\n\t\t\t\"sum\":\t{\n\t\t\t\t\"start\":\t21.000242,\n\t\t\t\t\"end\":\t22.000229,\n\t\t\t\t\"seconds\":\t0.999987006187439,\n\t\t\t\t\"bytes\":\t8089270264,\n\t\t\t\t\"bits_per_second\":\t64715003006.618958,\n\t\t\t\t\"packets\":\t247144,\n\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\"sender\":\ttrue\n\t\t\t},\n\t\t\t\"sum_bidir_reverse\":\t{\n\t\t\t\t\"start\":\t21.000242,\n\t\t\t\t\"end\":\t22.000229,\n\t\t\t\t\"seconds\":\t0.999987006187439,\n\t\t\t\t\"bytes\":\t392772,\n\t\t\t\t\"bits_per_second\":\t3142216.8293765071,\n\t\t\t\t\"jitter_ms\":\t24.323899638980524,\n\t\t\t\t\"lost_packets\":\t237341,\n\t\t\t\t\"packets\":\t237353,\n\t\t\t\t\"lost_percent\":\t99.9949442391712,\n\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\"sender\":\tfalse\n\t\t\t}\n\t\t}, {\n\t\t\t\"streams\":\t[{\n\t\t\t\t\t\"socket\":\t5,\n\t\t\t\t\t\"start\":\t22.000229,\n\t\t\t\t\t\"end\":\t23.000243,\n\t\t\t\t\t\"seconds\":\t1.0000139474868774,\n\t\t\t\t\t\"bytes\":\t8077094332,\n\t\t\t\t\t\"bits_per_second\":\t64615853427.232246,\n\t\t\t\t\t\"packets\":\t246773,\n\t\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\t\"sender\":\ttrue\n\t\t\t\t}, {\n\t\t\t\t\t\"socket\":\t7,\n\t\t\t\t\t\"start\":\t22.00023,\n\t\t\t\t\t\"end\":\t23.000244,\n\t\t\t\t\t\"seconds\":\t1.0000139474868774,\n\t\t\t\t\t\"bytes\":\t425503,\n\t\t\t\t\t\"bits_per_second\":\t3403976.5230821134,\n\t\t\t\t\t\"jitter_ms\":\t44.184335434849,\n\t\t\t\t\t\"lost_packets\":\t266162,\n\t\t\t\t\t\"packets\":\t266175,\n\t\t\t\t\t\"lost_percent\":\t99.995115995116,\n\t\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\t\"sender\":\tfalse\n\t\t\t\t}],\n\t\t\t\"sum\":\t{\n\t\t\t\t\"start\":\t22.000229,\n\t\t\t\t\"end\":\t23.000243,\n\t\t\t\t\"seconds\":\t1.0000139474868774,\n\t\t\t\t\"bytes\":\t8077094332,\n\t\t\t\t\"bits_per_second\":\t64615853427.232246,\n\t\t\t\t\"packets\":\t246773,\n\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\"sender\":\ttrue\n\t\t\t},\n\t\t\t\"sum_bidir_reverse\":\t{\n\t\t\t\t\"start\":\t22.000229,\n\t\t\t\t\"end\":\t23.000243,\n\t\t\t\t\"seconds\":\t1.0000139474868774,\n\t\t\t\t\"bytes\":\t425503,\n\t\t\t\t\"bits_per_second\":\t3403976.5230821134,\n\t\t\t\t\"jitter_ms\":\t44.184335434849,\n\t\t\t\t\"lost_packets\":\t266162,\n\t\t\t\t\"packets\":\t266175,\n\t\t\t\t\"lost_percent\":\t99.995115995116,\n\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\"sender\":\tfalse\n\t\t\t}\n\t\t}, {\n\t\t\t\"streams\":\t[{\n\t\t\t\t\t\"socket\":\t5,\n\t\t\t\t\t\"start\":\t23.000243,\n\t\t\t\t\t\"end\":\t24.000246,\n\t\t\t\t\t\"seconds\":\t1.0000029802322388,\n\t\t\t\t\t\"bytes\":\t8164649757,\n\t\t\t\t\t\"bits_per_second\":\t65317003396.160736,\n\t\t\t\t\t\"packets\":\t249448,\n\t\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\t\"sender\":\ttrue\n\t\t\t\t}, {\n\t\t\t\t\t\"socket\":\t7,\n\t\t\t\t\t\"start\":\t23.000244,\n\t\t\t\t\t\"end\":\t24.000247,\n\t\t\t\t\t\"seconds\":\t1.0000029802322388,\n\t\t\t\t\t\"bytes\":\t294579,\n\t\t\t\t\t\"bits_per_second\":\t2356624.97671027,\n\t\t\t\t\t\"jitter_ms\":\t44.781638349359071,\n\t\t\t\t\t\"lost_packets\":\t195224,\n\t\t\t\t\t\"packets\":\t195233,\n\t\t\t\t\t\"lost_percent\":\t99.9953901235959,\n\t\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\t\"sender\":\tfalse\n\t\t\t\t}],\n\t\t\t\"sum\":\t{\n\t\t\t\t\"start\":\t23.000243,\n\t\t\t\t\"end\":\t24.000246,\n\t\t\t\t\"seconds\":\t1.0000029802322388,\n\t\t\t\t\"bytes\":\t8164649757,\n\t\t\t\t\"bits_per_second\":\t65317003396.160736,\n\t\t\t\t\"packets\":\t249448,\n\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\"sender\":\ttrue\n\t\t\t},\n\t\t\t\"sum_bidir_reverse\":\t{\n\t\t\t\t\"start\":\t23.000243,\n\t\t\t\t\"end\":\t24.000246,\n\t\t\t\t\"seconds\":\t1.0000029802322388,\n\t\t\t\t\"bytes\":\t294579,\n\t\t\t\t\"bits_per_second\":\t2356624.97671027,\n\t\t\t\t\"jitter_ms\":\t44.781638349359071,\n\t\t\t\t\"lost_packets\":\t195224,\n\t\t\t\t\"packets\":\t195233,\n\t\t\t\t\"lost_percent\":\t99.9953901235959,\n\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\"sender\":\tfalse\n\t\t\t}\n\t\t}, {\n\t\t\t\"streams\":\t[{\n\t\t\t\t\t\"socket\":\t5,\n\t\t\t\t\t\"start\":\t24.000246,\n\t\t\t\t\t\"end\":\t25.000244,\n\t\t\t\t\t\"seconds\":\t0.99999797344207764,\n\t\t\t\t\t\"bytes\":\t8142261753,\n\t\t\t\t\t\"bits_per_second\":\t65138226030.388,\n\t\t\t\t\t\"packets\":\t248763,\n\t\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\t\"sender\":\ttrue\n\t\t\t\t}, {\n\t\t\t\t\t\"socket\":\t7,\n\t\t\t\t\t\"start\":\t24.000247,\n\t\t\t\t\t\"end\":\t25.000245,\n\t\t\t\t\t\"seconds\":\t0.99999797344207764,\n\t\t\t\t\t\"bytes\":\t327310,\n\t\t\t\t\t\"bits_per_second\":\t2618485.3065121425,\n\t\t\t\t\t\"jitter_ms\":\t39.175682370104454,\n\t\t\t\t\t\"lost_packets\":\t307047,\n\t\t\t\t\t\"packets\":\t307057,\n\t\t\t\t\t\"lost_percent\":\t99.996743275678455,\n\t\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\t\"sender\":\tfalse\n\t\t\t\t}],\n\t\t\t\"sum\":\t{\n\t\t\t\t\"start\":\t24.000246,\n\t\t\t\t\"end\":\t25.000244,\n\t\t\t\t\"seconds\":\t0.99999797344207764,\n\t\t\t\t\"bytes\":\t8142261753,\n\t\t\t\t\"bits_per_second\":\t65138226030.388,\n\t\t\t\t\"packets\":\t248763,\n\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\"sender\":\ttrue\n\t\t\t},\n\t\t\t\"sum_bidir_reverse\":\t{\n\t\t\t\t\"start\":\t24.000246,\n\t\t\t\t\"end\":\t25.000244,\n\t\t\t\t\"seconds\":\t0.99999797344207764,\n\t\t\t\t\"bytes\":\t327310,\n\t\t\t\t\"bits_per_second\":\t2618485.3065121425,\n\t\t\t\t\"jitter_ms\":\t39.175682370104454,\n\t\t\t\t\"lost_packets\":\t307047,\n\t\t\t\t\"packets\":\t307057,\n\t\t\t\t\"lost_percent\":\t99.996743275678455,\n\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\"sender\":\tfalse\n\t\t\t}\n\t\t}, {\n\t\t\t\"streams\":\t[{\n\t\t\t\t\t\"socket\":\t5,\n\t\t\t\t\t\"start\":\t25.000244,\n\t\t\t\t\t\"end\":\t26.000241,\n\t\t\t\t\t\"seconds\":\t0.99999701976776123,\n\t\t\t\t\t\"bytes\":\t8179542362,\n\t\t\t\t\t\"bits_per_second\":\t65436533912.067955,\n\t\t\t\t\t\"packets\":\t249903,\n\t\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\t\"sender\":\ttrue\n\t\t\t\t}, {\n\t\t\t\t\t\"socket\":\t7,\n\t\t\t\t\t\"start\":\t25.000245,\n\t\t\t\t\t\"end\":\t26.000242,\n\t\t\t\t\t\"seconds\":\t0.99999701976776123,\n\t\t\t\t\t\"bytes\":\t490965,\n\t\t\t\t\t\"bits_per_second\":\t3927731.7055526543,\n\t\t\t\t\t\"jitter_ms\":\t36.813626967992484,\n\t\t\t\t\t\"lost_packets\":\t268638,\n\t\t\t\t\t\"packets\":\t268653,\n\t\t\t\t\t\"lost_percent\":\t99.9944165894295,\n\t\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\t\"sender\":\tfalse\n\t\t\t\t}],\n\t\t\t\"sum\":\t{\n\t\t\t\t\"start\":\t25.000244,\n\t\t\t\t\"end\":\t26.000241,\n\t\t\t\t\"seconds\":\t0.99999701976776123,\n\t\t\t\t\"bytes\":\t8179542362,\n\t\t\t\t\"bits_per_second\":\t65436533912.067955,\n\t\t\t\t\"packets\":\t249903,\n\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\"sender\":\ttrue\n\t\t\t},\n\t\t\t\"sum_bidir_reverse\":\t{\n\t\t\t\t\"start\":\t25.000244,\n\t\t\t\t\"end\":\t26.000241,\n\t\t\t\t\"seconds\":\t0.99999701976776123,\n\t\t\t\t\"bytes\":\t490965,\n\t\t\t\t\"bits_per_second\":\t3927731.7055526543,\n\t\t\t\t\"jitter_ms\":\t36.813626967992484,\n\t\t\t\t\"lost_packets\":\t268638,\n\t\t\t\t\"packets\":\t268653,\n\t\t\t\t\"lost_percent\":\t99.9944165894295,\n\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\"sender\":\tfalse\n\t\t\t}\n\t\t}, {\n\t\t\t\"streams\":\t[{\n\t\t\t\t\t\"socket\":\t5,\n\t\t\t\t\t\"start\":\t26.000241,\n\t\t\t\t\t\"end\":\t27.000244,\n\t\t\t\t\t\"seconds\":\t1.0000029802322388,\n\t\t\t\t\t\"bytes\":\t8193616692,\n\t\t\t\t\t\"bits_per_second\":\t65548738185.537247,\n\t\t\t\t\t\"packets\":\t250332,\n\t\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\t\"sender\":\ttrue\n\t\t\t\t}, {\n\t\t\t\t\t\"socket\":\t7,\n\t\t\t\t\t\"start\":\t26.000242,\n\t\t\t\t\t\"end\":\t27.000245,\n\t\t\t\t\t\"seconds\":\t1.0000029802322388,\n\t\t\t\t\t\"bytes\":\t327310,\n\t\t\t\t\t\"bits_per_second\":\t2618472.1963447439,\n\t\t\t\t\t\"jitter_ms\":\t41.456437264721188,\n\t\t\t\t\t\"lost_packets\":\t247103,\n\t\t\t\t\t\"packets\":\t247113,\n\t\t\t\t\t\"lost_percent\":\t99.9959532683428,\n\t\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\t\"sender\":\tfalse\n\t\t\t\t}],\n\t\t\t\"sum\":\t{\n\t\t\t\t\"start\":\t26.000241,\n\t\t\t\t\"end\":\t27.000244,\n\t\t\t\t\"seconds\":\t1.0000029802322388,\n\t\t\t\t\"bytes\":\t8193616692,\n\t\t\t\t\"bits_per_second\":\t65548738185.537247,\n\t\t\t\t\"packets\":\t250332,\n\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\"sender\":\ttrue\n\t\t\t},\n\t\t\t\"sum_bidir_reverse\":\t{\n\t\t\t\t\"start\":\t26.000241,\n\t\t\t\t\"end\":\t27.000244,\n\t\t\t\t\"seconds\":\t1.0000029802322388,\n\t\t\t\t\"bytes\":\t327310,\n\t\t\t\t\"bits_per_second\":\t2618472.1963447439,\n\t\t\t\t\"jitter_ms\":\t41.456437264721188,\n\t\t\t\t\"lost_packets\":\t247103,\n\t\t\t\t\"packets\":\t247113,\n\t\t\t\t\"lost_percent\":\t99.9959532683428,\n\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\"sender\":\tfalse\n\t\t\t}\n\t\t}, {\n\t\t\t\"streams\":\t[{\n\t\t\t\t\t\"socket\":\t5,\n\t\t\t\t\t\"start\":\t27.000244,\n\t\t\t\t\t\"end\":\t28.00073,\n\t\t\t\t\t\"seconds\":\t1.0004860162734985,\n\t\t\t\t\t\"bytes\":\t8225922189,\n\t\t\t\t\t\"bits_per_second\":\t65775409592.542,\n\t\t\t\t\t\"packets\":\t251319,\n\t\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\t\"sender\":\ttrue\n\t\t\t\t}, {\n\t\t\t\t\t\"socket\":\t7,\n\t\t\t\t\t\"start\":\t27.000245,\n\t\t\t\t\t\"end\":\t28.000731,\n\t\t\t\t\t\"seconds\":\t1.0004860162734985,\n\t\t\t\t\t\"bytes\":\t294579,\n\t\t\t\t\t\"bits_per_second\":\t2355487.1948912656,\n\t\t\t\t\t\"jitter_ms\":\t36.139611901198656,\n\t\t\t\t\t\"lost_packets\":\t212569,\n\t\t\t\t\t\"packets\":\t212578,\n\t\t\t\t\t\"lost_percent\":\t99.995766259914,\n\t\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\t\"sender\":\tfalse\n\t\t\t\t}],\n\t\t\t\"sum\":\t{\n\t\t\t\t\"start\":\t27.000244,\n\t\t\t\t\"end\":\t28.00073,\n\t\t\t\t\"seconds\":\t1.0004860162734985,\n\t\t\t\t\"bytes\":\t8225922189,\n\t\t\t\t\"bits_per_second\":\t65775409592.542,\n\t\t\t\t\"packets\":\t251319,\n\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\"sender\":\ttrue\n\t\t\t},\n\t\t\t\"sum_bidir_reverse\":\t{\n\t\t\t\t\"start\":\t27.000244,\n\t\t\t\t\"end\":\t28.00073,\n\t\t\t\t\"seconds\":\t1.0004860162734985,\n\t\t\t\t\"bytes\":\t294579,\n\t\t\t\t\"bits_per_second\":\t2355487.1948912656,\n\t\t\t\t\"jitter_ms\":\t36.139611901198656,\n\t\t\t\t\"lost_packets\":\t212569,\n\t\t\t\t\"packets\":\t212578,\n\t\t\t\t\"lost_percent\":\t99.995766259914,\n\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\"sender\":\tfalse\n\t\t\t}\n\t\t}, {\n\t\t\t\"streams\":\t[{\n\t\t\t\t\t\"socket\":\t5,\n\t\t\t\t\t\"start\":\t28.00073,\n\t\t\t\t\t\"end\":\t29.000243,\n\t\t\t\t\t\"seconds\":\t0.99951297044754028,\n\t\t\t\t\t\"bytes\":\t8376124748,\n\t\t\t\t\t\"bits_per_second\":\t67041649248.429626,\n\t\t\t\t\t\"packets\":\t255908,\n\t\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\t\"sender\":\ttrue\n\t\t\t\t}, {\n\t\t\t\t\t\"socket\":\t7,\n\t\t\t\t\t\"start\":\t28.000731,\n\t\t\t\t\t\"end\":\t29.000244,\n\t\t\t\t\t\"seconds\":\t0.99951297044754028,\n\t\t\t\t\t\"bytes\":\t458234,\n\t\t\t\t\t\"bits_per_second\":\t3667658.25795995,\n\t\t\t\t\t\"jitter_ms\":\t39.181573161152279,\n\t\t\t\t\t\"lost_packets\":\t266282,\n\t\t\t\t\t\"packets\":\t266296,\n\t\t\t\t\t\"lost_percent\":\t99.994742692342356,\n\t\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\t\"sender\":\tfalse\n\t\t\t\t}],\n\t\t\t\"sum\":\t{\n\t\t\t\t\"start\":\t28.00073,\n\t\t\t\t\"end\":\t29.000243,\n\t\t\t\t\"seconds\":\t0.99951297044754028,\n\t\t\t\t\"bytes\":\t8376124748,\n\t\t\t\t\"bits_per_second\":\t67041649248.429626,\n\t\t\t\t\"packets\":\t255908,\n\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\"sender\":\ttrue\n\t\t\t},\n\t\t\t\"sum_bidir_reverse\":\t{\n\t\t\t\t\"start\":\t28.00073,\n\t\t\t\t\"end\":\t29.000243,\n\t\t\t\t\"seconds\":\t0.99951297044754028,\n\t\t\t\t\"bytes\":\t458234,\n\t\t\t\t\"bits_per_second\":\t3667658.25795995,\n\t\t\t\t\"jitter_ms\":\t39.181573161152279,\n\t\t\t\t\"lost_packets\":\t266282,\n\t\t\t\t\"packets\":\t266296,\n\t\t\t\t\"lost_percent\":\t99.994742692342356,\n\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\"sender\":\tfalse\n\t\t\t}\n\t\t}],\n\t\"end\":\t{\n\t},\n\t\"error\":\t\"unable to receive results: No such file or directory\"\n}\n",
+        "stderr": "Warning: Permanently added '138.201.33.111' (ED25519) to the list of known hosts.\r\nwarning: Failed to read JSON data size\nwarning: Failed to read JSON data size - read returned 0; errno=2\n",
+        "cwd": "/home/lhebendanz/Projects/vpn-benchmark-suite/pkgs/vpn-bench",
+        "command_list": [
+          "ssh",
+          "root@138.201.33.111",
+          "-A",
+          "-o",
+          "StrictHostKeyChecking=no",
+          "-o",
+          "UserKnownHostsFile=/dev/null",
+          "-o",
+          "ControlMaster=auto",
+          "-o",
+          "ControlPersist=1m",
+          "-o",
+          "ControlPath=/tmp/clan-sshmws6nt1o/socket",
+          "--",
+          "bash",
+          "-c",
+          "'export IPERF3_PASSWORD=mambaBudo; exec \"$@\"'",
+          "--",
+          "iperf --bidir --connect-timeout 600 --time 30 --json -Z -c vpn.yuki --username mario --rsa-public-key-path /tmp/iperf3.public -u --udp-counters-64bit -b 0"
+        ],
+        "returncode": 1
+      },
+      "machine": "0_lom"
+    },
+    "Tinc": {
+      "status": "success",
+      "data": {
+        "sender_throughput_mbps": {
+          "min": 5079.544336137062,
+          "average": 5079.544336137062,
+          "max": 5079.544336137062,
+          "percentiles": {
+            "p25": 5079.544336137062,
+            "p50": 5079.544336137062,
+            "p75": 5079.544336137062
+          }
+        },
+        "receiver_throughput_mbps": {
+          "min": 7.591036575733547,
+          "average": 7.591036575733547,
+          "max": 7.591036575733547,
+          "percentiles": {
+            "p25": 7.591036575733547,
+            "p50": 7.591036575733547,
+            "p75": 7.591036575733547
+          }
+        },
+        "jitter_ms": {
+          "min": 2.259532902167524,
+          "average": 2.259532902167524,
+          "max": 2.259532902167524,
+          "percentiles": {
+            "p25": 2.259532902167524,
+            "p50": 2.259532902167524,
+            "p75": 2.259532902167524
+          }
+        },
+        "lost_percent": {
+          "min": 99.82495845105846,
+          "average": 99.82495845105846,
+          "max": 99.82495845105846,
+          "percentiles": {
+            "p25": 99.82495845105846,
+            "p50": 99.82495845105846,
+            "p75": 99.82495845105846
+          }
+        },
+        "total_bytes_sent": {
+          "min": 19049077320.0,
+          "average": 19049077320.0,
+          "max": 19049077320.0,
+          "percentiles": {
+            "p25": 19049077320.0,
+            "p50": 19049077320.0,
+            "p75": 19049077320.0
+          }
+        },
+        "total_bytes_received": {
+          "min": 31433136.0,
+          "average": 31433136.0,
+          "max": 31433136.0,
+          "percentiles": {
+            "p25": 31433136.0,
+            "p50": 31433136.0,
+            "p75": 31433136.0
+          }
+        },
+        "duration_seconds": {
+          "min": 30.001238,
+          "average": 30.001238,
+          "max": 30.001238,
+          "percentiles": {
+            "p25": 30.001238,
+            "p50": 30.001238,
+            "p75": 30.001238
+          }
+        }
+      }
+    },
+    "Mycelium": {
+      "status": "error",
+      "error_type": "CmdOut",
+      "error": {
+        "stdout": "",
+        "stderr": "Warning: Permanently added '138.201.33.111' (ED25519) to the list of known hosts.\r\n",
+        "cwd": "/home/lhebendanz/Projects/vpn-benchmark-suite/pkgs/vpn-bench",
+        "command_list": [
+          "ssh",
+          "root@138.201.33.111",
+          "-A",
+          "-o",
+          "StrictHostKeyChecking=no",
+          "-o",
+          "UserKnownHostsFile=/dev/null",
+          "-o",
+          "ControlMaster=auto",
+          "-o",
+          "ControlPersist=1m",
+          "-o",
+          "ControlPath=/tmp/clan-ssh11o2u3kd/socket",
+          "--",
+          "bash",
+          "-c",
+          "'export IPERF3_PASSWORD=mambaBudo; exec \"$@\"'",
+          "--",
+          "iperf --bidir --connect-timeout 600 --time 30 --json -Z -c vpn.yuki --username mario --rsa-public-key-path /tmp/iperf3.public -u --udp-counters-64bit -b 0"
+        ],
+        "returncode": -1,
+        "msg": "Command timed out after 120 seconds"
+      },
+      "machine": "0_lom"
+    },
+    "Easytier": {
+      "status": "success",
+      "data": {
+        "sender_throughput_mbps": {
+          "min": 4571.5267007615,
+          "average": 4594.919646635122,
+          "max": 4618.312592508744,
+          "percentiles": {
+            "p25": 4594.919646635122,
+            "p50": 4594.919646635122,
+            "p75": 4594.919646635122
+          }
+        },
+        "receiver_throughput_mbps": {
+          "min": 5.785089408139377,
+          "average": 6.071014966444502,
+          "max": 6.356940524749628,
+          "percentiles": {
+            "p25": 6.071014966444502,
+            "p50": 6.071014966444502,
+            "p75": 6.071014966444502
+          }
+        },
+        "jitter_ms": {
+          "min": 0.0076528728700308735,
+          "average": 0.38834886384006195,
+          "max": 0.769044854810093,
+          "percentiles": {
+            "p25": 0.38834886384006195,
+            "p50": 0.38834886384006195,
+            "p75": 0.38834886384006195
+          }
+        },
+        "lost_percent": {
+          "min": 96.31513466811916,
+          "average": 97.99769563300535,
+          "max": 99.68025659789153,
+          "percentiles": {
+            "p25": 97.99769563300535,
+            "p50": 97.99769563300535,
+            "p75": 97.99769563300535
+          }
+        },
+        "total_bytes_sent": {
+          "min": 17143924000.0,
+          "average": 17231649680.0,
+          "max": 17319375360.0,
+          "percentiles": {
+            "p25": 17231649680.0,
+            "p50": 17231649680.0,
+            "p75": 17231649680.0
+          }
+        },
+        "total_bytes_received": {
+          "min": 25377464.0,
+          "average": 26042072.0,
+          "max": 26706680.0,
+          "percentiles": {
+            "p25": 26042072.0,
+            "p50": 26042072.0,
+            "p75": 26042072.0
+          }
+        },
+        "duration_seconds": {
+          "min": 30.001218,
+          "average": 30.001220500000002,
+          "max": 30.001223,
+          "percentiles": {
+            "p25": 30.001220500000002,
+            "p50": 30.001220500000002,
+            "p75": 30.001220500000002
+          }
+        }
+      }
+    },
+    "Internal": {
+      "status": "success",
+      "data": {
+        "sender_throughput_mbps": {
+          "min": 5373.384043406692,
+          "average": 5373.384043406692,
+          "max": 5373.384043406692,
+          "percentiles": {
+            "p25": 5373.384043406692,
+            "p50": 5373.384043406692,
+            "p75": 5373.384043406692
+          }
+        },
+        "receiver_throughput_mbps": {
+          "min": 948.5675848638156,
+          "average": 948.5675848638156,
+          "max": 948.5675848638156,
+          "percentiles": {
+            "p25": 948.5675848638156,
+            "p50": 948.5675848638156,
+            "p75": 948.5675848638156
+          }
+        },
+        "jitter_ms": {
+          "min": 1.9930758831379316,
+          "average": 1.9930758831379316,
+          "max": 1.9930758831379316,
+          "percentiles": {
+            "p25": 1.9930758831379316,
+            "p50": 1.9930758831379316,
+            "p75": 1.9930758831379316
+          }
+        },
+        "lost_percent": {
+          "min": 82.33642616721424,
+          "average": 82.33642616721424,
+          "max": 82.33642616721424,
+          "percentiles": {
+            "p25": 82.33642616721424,
+            "p50": 82.33642616721424,
+            "p75": 82.33642616721424
+          }
+        },
+        "total_bytes_sent": {
+          "min": 20150425920.0,
+          "average": 20150425920.0,
+          "max": 20150425920.0,
+          "percentiles": {
+            "p25": 20150425920.0,
+            "p50": 20150425920.0,
+            "p75": 20150425920.0
+          }
+        },
+        "total_bytes_received": {
+          "min": 3559197032.0,
+          "average": 3559197032.0,
+          "max": 3559197032.0,
+          "percentiles": {
+            "p25": 3559197032.0,
+            "p50": 3559197032.0,
+            "p75": 3559197032.0
+          }
+        },
+        "duration_seconds": {
+          "min": 30.000351,
+          "average": 30.000351,
+          "max": 30.000351,
+          "percentiles": {
+            "p25": 30.000351,
+            "p50": 30.000351,
+            "p75": 30.000351
+          }
+        }
+      }
+    },
+    "Hyprspace": {
+      "status": "error",
+      "error_type": "CmdOut",
+      "error": {
+        "stdout": "",
+        "stderr": "Warning: Permanently added '138.201.33.111' (ED25519) to the list of known hosts.\r\n",
+        "cwd": "/home/lhebendanz/Projects/vpn-benchmark-suite/pkgs/vpn-bench",
+        "command_list": [
+          "ssh",
+          "root@138.201.33.111",
+          "-A",
+          "-o",
+          "StrictHostKeyChecking=no",
+          "-o",
+          "UserKnownHostsFile=/dev/null",
+          "-o",
+          "ControlMaster=auto",
+          "-o",
+          "ControlPersist=1m",
+          "-o",
+          "ControlPath=/tmp/clan-ssh48uua16n/socket",
+          "--",
+          "bash",
+          "-c",
+          "'export IPERF3_PASSWORD=mambaBudo; exec \"$@\"'",
+          "--",
+          "iperf --bidir --connect-timeout 600 --time 30 --json -Z -c vpn.yuki --username mario --rsa-public-key-path /tmp/iperf3.public -u --udp-counters-64bit -b 0"
+        ],
+        "returncode": -1,
+        "msg": "Command timed out after 120 seconds"
+      },
+      "machine": "0_lom"
+    },
+    "Nebula": {
+      "status": "error",
+      "error_type": "CmdOut",
+      "error": {
+        "stdout": "{\n\t\"start\":\t{\n\t\t\"connected\":\t[{\n\t\t\t\t\"socket\":\t5,\n\t\t\t\t\"local_host\":\t\"fdc4:fb93:e53a:1:eff5:d0f7:ac45:870\",\n\t\t\t\t\"local_port\":\t59987,\n\t\t\t\t\"remote_host\":\t\"fdc4:fb93:e53a:1:495b:7e7b:f01:d16e\",\n\t\t\t\t\"remote_port\":\t5201\n\t\t\t}],\n\t\t\"version\":\t\"iperf 3.20\",\n\t\t\"system_info\":\t\"Linux lom 6.12.57 #1-NixOS SMP PREEMPT_DYNAMIC Sun Nov  2 13:15:23 UTC 2025 x86_64\",\n\t\t\"timestamp\":\t{\n\t\t\t\"time\":\t\"Fri, 19 Dec 2025 01:44:25 GMT\",\n\t\t\t\"timesecs\":\t1766108665,\n\t\t\t\"timemillisecs\":\t1766108665041\n\t\t},\n\t\t\"connecting_to\":\t{\n\t\t\t\"host\":\t\"vpn.yuki\",\n\t\t\t\"port\":\t5201\n\t\t},\n\t\t\"cookie\":\t\"7uwpbgyss56bvysa2kkotv6re5x5g2co5as6\",\n\t\t\"target_bitrate\":\t0,\n\t\t\"fq_rate\":\t0,\n\t\t\"sock_bufsize\":\t0,\n\t\t\"sndbuf_actual\":\t212992,\n\t\t\"rcvbuf_actual\":\t212992\n\t},\n\t\"intervals\":\t[],\n\t\"end\":\t{\n\t},\n\t\"error\":\t\"unable to read from stream socket: No such file or directory\"\n}\n",
+        "stderr": "Warning: Permanently added '138.201.33.111' (ED25519) to the list of known hosts.\r\n",
+        "cwd": "/home/lhebendanz/Projects/vpn-benchmark-suite/pkgs/vpn-bench",
+        "command_list": [
+          "ssh",
+          "root@138.201.33.111",
+          "-A",
+          "-o",
+          "StrictHostKeyChecking=no",
+          "-o",
+          "UserKnownHostsFile=/dev/null",
+          "-o",
+          "ControlMaster=auto",
+          "-o",
+          "ControlPersist=1m",
+          "-o",
+          "ControlPath=/tmp/clan-sshf1g1d2z5/socket",
+          "--",
+          "bash",
+          "-c",
+          "'export IPERF3_PASSWORD=mambaBudo; exec \"$@\"'",
+          "--",
+          "iperf --bidir --connect-timeout 600 --time 30 --json -Z -c vpn.yuki --username mario --rsa-public-key-path /tmp/iperf3.public -u --udp-counters-64bit -b 0"
+        ],
+        "returncode": 1
+      },
+      "machine": "0_lom"
+    },
+    "Headscale": {
+      "status": "success",
+      "data": {
+        "sender_throughput_mbps": {
+          "min": 3046.67431306265,
+          "average": 3061.1617468741597,
+          "max": 3075.6491806856698,
+          "percentiles": {
+            "p25": 3061.1617468741597,
+            "p50": 3061.1617468741597,
+            "p75": 3061.1617468741597
+          }
+        },
+        "receiver_throughput_mbps": {
+          "min": 712.6250924548947,
+          "average": 713.7230662269578,
+          "max": 714.8210399990211,
+          "percentiles": {
+            "p25": 713.7230662269578,
+            "p50": 713.7230662269578,
+            "p75": 713.7230662269578
+          }
+        },
+        "jitter_ms": {
+          "min": 1.162031880795045,
+          "average": 1.8068705368376343,
+          "max": 2.4517091928802235,
+          "percentiles": {
+            "p25": 1.8068705368376343,
+            "p50": 1.8068705368376343,
+            "p75": 1.8068705368376343
+          }
+        },
+        "lost_percent": {
+          "min": 76.3576453721345,
+          "average": 76.58227824628925,
+          "max": 76.806911120444,
+          "percentiles": {
+            "p25": 76.58227824628925,
+            "p50": 76.58227824628925,
+            "p75": 76.58227824628925
+          }
+        },
+        "total_bytes_sent": {
+          "min": 11425433120.0,
+          "average": 11479762920.0,
+          "max": 11534092720.0,
+          "percentiles": {
+            "p25": 11479762920.0,
+            "p50": 11479762920.0,
+            "p75": 11479762920.0
+          }
+        },
+        "total_bytes_received": {
+          "min": 2675093048.0,
+          "average": 2688155756.0,
+          "max": 2701218464.0,
+          "percentiles": {
+            "p25": 2688155756.0,
+            "p50": 2688155756.0,
+            "p75": 2688155756.0
+          }
+        },
+        "duration_seconds": {
+          "min": 30.001062,
+          "average": 30.001062,
+          "max": 30.001062,
+          "percentiles": {
+            "p25": 30.001062,
+            "p50": 30.001062,
+            "p75": 30.001062
+          }
+        }
+      }
+    },
+    "Wireguard": {
+      "status": "error",
+      "error_type": "CmdOut",
+      "error": {
+        "stdout": "{\n\t\"start\":\t{\n\t\t\"connected\":\t[{\n\t\t\t\t\"socket\":\t5,\n\t\t\t\t\"local_host\":\t\"192.168.2.1\",\n\t\t\t\t\"local_port\":\t43911,\n\t\t\t\t\"remote_host\":\t\"192.168.2.2\",\n\t\t\t\t\"remote_port\":\t5201\n\t\t\t}],\n\t\t\"version\":\t\"iperf 3.20\",\n\t\t\"system_info\":\t\"Linux lom 6.12.57 #1-NixOS SMP PREEMPT_DYNAMIC Sun Nov  2 13:15:23 UTC 2025 x86_64\",\n\t\t\"timestamp\":\t{\n\t\t\t\"time\":\t\"Thu, 18 Dec 2025 14:55:29 GMT\",\n\t\t\t\"timesecs\":\t1766069729,\n\t\t\t\"timemillisecs\":\t1766069729320\n\t\t},\n\t\t\"connecting_to\":\t{\n\t\t\t\"host\":\t\"vpn.yuki\",\n\t\t\t\"port\":\t5201\n\t\t},\n\t\t\"cookie\":\t\"6xyka4xepojsq4yugwif6f7medc45c7jbtp5\",\n\t\t\"target_bitrate\":\t0,\n\t\t\"fq_rate\":\t0,\n\t\t\"sock_bufsize\":\t0,\n\t\t\"sndbuf_actual\":\t212992,\n\t\t\"rcvbuf_actual\":\t212992\n\t},\n\t\"intervals\":\t[],\n\t\"end\":\t{\n\t},\n\t\"error\":\t\"unable to read from stream socket: No such file or directory\"\n}\n",
+        "stderr": "Warning: Permanently added '138.201.33.111' (ED25519) to the list of known hosts.\r\n",
+        "cwd": "/home/lhebendanz/Projects/vpn-benchmark-suite/pkgs/vpn-bench",
+        "command_list": [
+          "ssh",
+          "root@138.201.33.111",
+          "-A",
+          "-o",
+          "StrictHostKeyChecking=no",
+          "-o",
+          "UserKnownHostsFile=/dev/null",
+          "-o",
+          "ControlMaster=auto",
+          "-o",
+          "ControlPersist=1m",
+          "-o",
+          "ControlPath=/tmp/clan-sshw0iw8huy/socket",
+          "--",
+          "bash",
+          "-c",
+          "'export IPERF3_PASSWORD=mambaBudo; exec \"$@\"'",
+          "--",
+          "iperf --bidir --connect-timeout 600 --time 30 --json -Z -c vpn.yuki --username mario --rsa-public-key-path /tmp/iperf3.public -u --udp-counters-64bit -b 0"
+        ],
+        "returncode": 1
+      },
+      "machine": "0_lom"
     }
+  }
 }

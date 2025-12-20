@@ -77,9 +77,15 @@ class QperfComparisonDict(TypedDict):
 class RistComparisonDict(TypedDict):
     """Comparison data for RIST streaming benchmarks across VPNs."""
 
+    # Static encoding metrics (for metadata display)
     bitrate_kbps: MetricStatsDict
     fps: MetricStatsDict
     dropped_frames: MetricStatsDict
+    # Dynamic network metrics (for plots)
+    quality: MetricStatsDict
+    rtt_ms: MetricStatsDict
+    packets_recovered: MetricStatsDict
+    packets_dropped: MetricStatsDict
 
 
 class TcpIperfComparisonDict(TypedDict):
@@ -403,7 +409,8 @@ def aggregate_rist_data(
     if not vpn_dir.exists():
         return None
 
-    stats_list: list[dict[str, MetricStatsDict]] = []
+    encoding_stats_list: list[dict[str, MetricStatsDict]] = []
+    network_stats_list: list[dict[str, MetricStatsDict]] = []
 
     for machine_dir in sorted(vpn_dir.iterdir()):
         if not machine_dir.is_dir():
@@ -412,18 +419,45 @@ def aggregate_rist_data(
         rist_file = machine_dir / "rist_stream.json"
         data = load_json_data(rist_file)
         if data:
-            stats_list.append(data)
+            # Extract encoding stats (static metrics for metadata)
+            encoding = data.get("encoding", {})
+            if encoding:
+                encoding_stats_list.append(encoding)
+            # Extract network stats (dynamic metrics for plots)
+            network = data.get("network", {})
+            if network:
+                network_stats_list.append(network)
 
-    if not stats_list:
+    if not encoding_stats_list and not network_stats_list:
         return None
 
     return {
+        # Static encoding metrics (for metadata display)
         "bitrate_kbps": aggregate_metric_stats(
-            [s["bitrate_kbps"] for s in stats_list if "bitrate_kbps" in s]
+            [s["bitrate_kbps"] for s in encoding_stats_list if "bitrate_kbps" in s]
         ),
-        "fps": aggregate_metric_stats([s["fps"] for s in stats_list if "fps" in s]),
+        "fps": aggregate_metric_stats(
+            [s["fps"] for s in encoding_stats_list if "fps" in s]
+        ),
         "dropped_frames": aggregate_metric_stats(
-            [s["dropped_frames"] for s in stats_list if "dropped_frames" in s]
+            [s["dropped_frames"] for s in encoding_stats_list if "dropped_frames" in s]
+        ),
+        # Dynamic network metrics (for plots)
+        "quality": aggregate_metric_stats(
+            [s["quality"] for s in network_stats_list if "quality" in s]
+        ),
+        "rtt_ms": aggregate_metric_stats(
+            [s["rtt_ms"] for s in network_stats_list if "rtt_ms" in s]
+        ),
+        "packets_recovered": aggregate_metric_stats(
+            [
+                s["packets_recovered"]
+                for s in network_stats_list
+                if "packets_recovered" in s
+            ]
+        ),
+        "packets_dropped": aggregate_metric_stats(
+            [s["packets_dropped"] for s in network_stats_list if "packets_dropped" in s]
         ),
     }
 

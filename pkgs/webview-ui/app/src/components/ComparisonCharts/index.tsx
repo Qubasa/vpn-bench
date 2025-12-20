@@ -254,7 +254,8 @@ const createBarChartOption = (
             label: {
               show: true,
               position: "top",
-              formatter: (params: { value: number }) => labelFormatter(params.value),
+              formatter: (params: { value: number }) =>
+                labelFormatter(params.value),
               color: "#555",
               fontSize: 10,
             },
@@ -1032,18 +1033,78 @@ export const QperfCpuComparisonChart = (props: {
 
 // --- Video Streaming Comparison Charts ---
 
-export const VideoStreamingBitrateComparisonChart = (props: {
+// Metadata info box for static encoding settings
+const VideoStreamingMetadataBox = (props: {
+  data: VpnComparisonResultMap<VideoStreamingComparisonData>;
+}) => {
+  // Extract encoding metadata from the first successful VPN result
+  const metadata = () => {
+    for (const entry of Object.values(props.data)) {
+      if (entry.status === "success") {
+        return {
+          bitrate: entry.data.bitrate_kbps?.average ?? 0,
+          fps: entry.data.fps?.average ?? 0,
+          droppedFrames: entry.data.dropped_frames?.average ?? 0,
+        };
+      }
+    }
+    return null;
+  };
+
+  const data = metadata();
+  if (!data) return null;
+
+  return (
+    <div
+      style={{
+        background: "#f6ffed",
+        border: "1px solid #b7eb8f",
+        "border-radius": "6px",
+        padding: "12px 16px",
+        "margin-bottom": "16px",
+        display: "flex",
+        "flex-wrap": "wrap",
+        "align-items": "center",
+        gap: "16px",
+      }}
+    >
+      <div style={{ display: "flex", "align-items": "center", gap: "8px" }}>
+        <span style={{ "font-weight": "500", color: "#52c41a" }}>
+          Target Bitrate:
+        </span>
+        <span style={{ color: "#333" }}>{data.bitrate.toFixed(0)} kbps</span>
+      </div>
+      <div style={{ display: "flex", "align-items": "center", gap: "8px" }}>
+        <span style={{ "font-weight": "500", color: "#52c41a" }}>
+          Target FPS:
+        </span>
+        <span style={{ color: "#333" }}>{data.fps.toFixed(0)} fps</span>
+      </div>
+      <div style={{ display: "flex", "align-items": "center", gap: "8px" }}>
+        <span style={{ "font-weight": "500", color: "#52c41a" }}>
+          Encoding Overhead:
+        </span>
+        <span style={{ color: "#333" }}>
+          {data.droppedFrames.toFixed(0)} frames
+        </span>
+      </div>
+    </div>
+  );
+};
+
+// Dynamic network metric charts
+export const VideoStreamingQualityChart = (props: {
   data: VpnComparisonResultMap<VideoStreamingComparisonData>;
   height?: number;
   allVpnNames?: string[];
 }) => {
   const chartData = () =>
-    metricToBarData(props.data, (d) => d.bitrate_kbps, props.allVpnNames);
+    metricToBarData(props.data, (d) => d.quality, props.allVpnNames);
   return (
     <ComparisonBarChart
       data={chartData()}
-      title="Video Streaming Bitrate"
-      yAxisLabel="Bitrate (kbps)"
+      title="RIST Quality"
+      yAxisLabel="Quality (%)"
       height={props.height ?? 400}
       color="#52c41a"
       higherIsBetter={true}
@@ -1051,37 +1112,56 @@ export const VideoStreamingBitrateComparisonChart = (props: {
   );
 };
 
-export const VideoStreamingFpsComparisonChart = (props: {
+export const VideoStreamingRttChart = (props: {
   data: VpnComparisonResultMap<VideoStreamingComparisonData>;
   height?: number;
   allVpnNames?: string[];
 }) => {
   const chartData = () =>
-    metricToBarData(props.data, (d) => d.fps, props.allVpnNames);
+    metricToBarData(props.data, (d) => d.rtt_ms, props.allVpnNames);
   return (
     <ComparisonBarChart
       data={chartData()}
-      title="Video Streaming FPS"
-      yAxisLabel="FPS"
+      title="RIST Round Trip Time"
+      yAxisLabel="RTT (ms)"
       height={props.height ?? 400}
       color="#1890ff"
-      higherIsBetter={true}
+      higherIsBetter={false}
     />
   );
 };
 
-export const VideoStreamingDroppedFramesComparisonChart = (props: {
+export const VideoStreamingPacketsRecoveredChart = (props: {
   data: VpnComparisonResultMap<VideoStreamingComparisonData>;
   height?: number;
   allVpnNames?: string[];
 }) => {
   const chartData = () =>
-    metricToBarData(props.data, (d) => d.dropped_frames, props.allVpnNames);
+    metricToBarData(props.data, (d) => d.packets_recovered, props.allVpnNames);
   return (
     <ComparisonBarChart
       data={chartData()}
-      title="Dropped Frames"
-      yAxisLabel="Frames"
+      title="Packets Recovered"
+      yAxisLabel="Packets"
+      height={props.height ?? 400}
+      color="#faad14"
+      higherIsBetter={false}
+    />
+  );
+};
+
+export const VideoStreamingPacketsDroppedChart = (props: {
+  data: VpnComparisonResultMap<VideoStreamingComparisonData>;
+  height?: number;
+  allVpnNames?: string[];
+}) => {
+  const chartData = () =>
+    metricToBarData(props.data, (d) => d.packets_dropped, props.allVpnNames);
+  return (
+    <ComparisonBarChart
+      data={chartData()}
+      title="Packets Dropped"
+      yAxisLabel="Packets"
       height={props.height ?? 400}
       color="#ff4d4f"
       higherIsBetter={false}
@@ -1223,15 +1303,20 @@ export const VideoStreamingComparisonSection = (props: {
         gap: "20px",
       }}
     >
-      <VideoStreamingBitrateComparisonChart
+      <VideoStreamingMetadataBox data={props.data} />
+      <VideoStreamingQualityChart
         data={props.data}
         allVpnNames={props.allVpnNames}
       />
-      <VideoStreamingFpsComparisonChart
+      <VideoStreamingRttChart
         data={props.data}
         allVpnNames={props.allVpnNames}
       />
-      <VideoStreamingDroppedFramesComparisonChart
+      <VideoStreamingPacketsRecoveredChart
+        data={props.data}
+        allVpnNames={props.allVpnNames}
+      />
+      <VideoStreamingPacketsDroppedChart
         data={props.data}
         allVpnNames={props.allVpnNames}
       />
@@ -1504,15 +1589,36 @@ export const TestDurationComparisonChart = (props: {
       if (entry?.status === "success") {
         const tcp = entry.data.tcp_test_duration_seconds.average;
         const udp = entry.data.udp_test_duration_seconds.average;
-        const parallelTcp = entry.data.parallel_tcp_test_duration_seconds.average;
+        const parallelTcp =
+          entry.data.parallel_tcp_test_duration_seconds.average;
         const ping = entry.data.ping_test_duration_seconds.average;
         const qperf = entry.data.qperf_test_duration_seconds.average;
         const video = entry.data.video_test_duration_seconds.average;
         const nixCache = entry.data.nix_cache_test_duration_seconds.average;
         const total = tcp + udp + parallelTcp + ping + qperf + video + nixCache;
-        return { vpn, tcp, udp, parallelTcp, ping, qperf, video, nixCache, total };
+        return {
+          vpn,
+          tcp,
+          udp,
+          parallelTcp,
+          ping,
+          qperf,
+          video,
+          nixCache,
+          total,
+        };
       } else {
-        return { vpn, tcp: 0, udp: 0, parallelTcp: 0, ping: 0, qperf: 0, video: 0, nixCache: 0, total: 0 };
+        return {
+          vpn,
+          tcp: 0,
+          udp: 0,
+          parallelTcp: 0,
+          ping: 0,
+          qperf: 0,
+          video: 0,
+          nixCache: 0,
+          total: 0,
+        };
       }
     });
 
@@ -1679,7 +1785,10 @@ export const TestDurationComparisonChart = (props: {
           color: "#4b5563",
         }}
       >
-        Total: <strong style={{ color: "#059669" }}>{chartData().grandTotalHours.toFixed(2)} hours</strong>
+        Total:{" "}
+        <strong style={{ color: "#059669" }}>
+          {chartData().grandTotalHours.toFixed(2)} hours
+        </strong>
       </div>
       <Echart option={option()} height={props.height ?? 400} />
     </div>
@@ -1758,7 +1867,8 @@ export const SuccessRateComparisonChart = (props: {
           label: {
             show: true,
             position: "top",
-            formatter: (params: { value: number }) => `${Math.round(params.value)}%`,
+            formatter: (params: { value: number }) =>
+              `${Math.round(params.value)}%`,
           },
         },
       ],
@@ -1859,66 +1969,189 @@ export const RetryComparisonChart = (props: {
   height?: number;
   allVpnNames?: string[];
 }) => {
-  // Create a grouped bar chart showing retries per benchmark type
+  // Create a stacked bar chart showing retries per VPN, segmented by test type
   const chartData = () => {
-    const benchmarkTypes = [
-      { name: "TCP", key: "tcp_retries" as const },
-      { name: "UDP", key: "udp_retries" as const },
-      { name: "Parallel TCP", key: "parallel_tcp_retries" as const },
-      { name: "Ping", key: "ping_retries" as const },
-      { name: "QUIC", key: "qperf_retries" as const },
-      { name: "Video", key: "video_retries" as const },
-      { name: "Nix Cache", key: "nix_cache_retries" as const },
-    ];
-
     const vpnNames = props.allVpnNames ?? Object.keys(props.data);
 
-    // Sum retries across all VPNs for each benchmark type
-    const retryData = benchmarkTypes.map((bt) => {
-      let totalRetries = 0;
-      vpnNames.forEach((vpn) => {
-        const entry = props.data[vpn];
-        if (entry?.status === "success") {
-          totalRetries += entry.data[bt.key] ?? 0;
-        }
-      });
-      return { name: bt.name, retries: totalRetries };
+    // Build data for each VPN with individual retry counts
+    const vpnData = vpnNames.map((vpn) => {
+      const entry = props.data[vpn];
+      if (entry?.status === "success") {
+        const tcp = entry.data.tcp_retries ?? 0;
+        const udp = entry.data.udp_retries ?? 0;
+        const parallelTcp = entry.data.parallel_tcp_retries ?? 0;
+        const ping = entry.data.ping_retries ?? 0;
+        const qperf = entry.data.qperf_retries ?? 0;
+        const video = entry.data.video_retries ?? 0;
+        const nixCache = entry.data.nix_cache_retries ?? 0;
+        const total = tcp + udp + parallelTcp + ping + qperf + video + nixCache;
+        return {
+          vpn,
+          tcp,
+          udp,
+          parallelTcp,
+          ping,
+          qperf,
+          video,
+          nixCache,
+          total,
+        };
+      } else {
+        return {
+          vpn,
+          tcp: 0,
+          udp: 0,
+          parallelTcp: 0,
+          ping: 0,
+          qperf: 0,
+          video: 0,
+          nixCache: 0,
+          total: 0,
+        };
+      }
     });
 
-    // Sort by retries descending
-    retryData.sort((a, b) => b.retries - a.retries);
+    // Sort by total retries descending
+    vpnData.sort((a, b) => b.total - a.total);
 
-    return retryData;
+    // Calculate grand total
+    const grandTotal = vpnData.reduce((sum, d) => sum + d.total, 0);
+
+    return {
+      vpnNames: vpnData.map((d) => d.vpn),
+      tcpData: vpnData.map((d) => d.tcp),
+      udpData: vpnData.map((d) => d.udp),
+      parallelTcpData: vpnData.map((d) => d.parallelTcp),
+      pingData: vpnData.map((d) => d.ping),
+      qperfData: vpnData.map((d) => d.qperf),
+      videoData: vpnData.map((d) => d.video),
+      nixCacheData: vpnData.map((d) => d.nixCache),
+      grandTotal,
+    };
   };
+
+  // Check if a series has any non-zero values
+  const hasData = (arr: number[]) => arr.some((v) => v > 0);
 
   const option = () => {
     const data = chartData();
-    const totalRetries = data.reduce((sum, d) => sum + d.retries, 0);
+
+    // Build series array, only including tests with retries
+    const series: {
+      name: string;
+      type: string;
+      stack: string;
+      data: number[];
+      itemStyle: { color: string };
+    }[] = [];
+    const legendData: string[] = [];
+
+    if (hasData(data.tcpData)) {
+      series.push({
+        name: "TCP",
+        type: "bar",
+        stack: "retries",
+        data: data.tcpData,
+        itemStyle: { color: "#1890ff" },
+      });
+      legendData.push("TCP");
+    }
+    if (hasData(data.udpData)) {
+      series.push({
+        name: "UDP",
+        type: "bar",
+        stack: "retries",
+        data: data.udpData,
+        itemStyle: { color: "#52c41a" },
+      });
+      legendData.push("UDP");
+    }
+    if (hasData(data.parallelTcpData)) {
+      series.push({
+        name: "Parallel TCP",
+        type: "bar",
+        stack: "retries",
+        data: data.parallelTcpData,
+        itemStyle: { color: "#722ed1" },
+      });
+      legendData.push("Parallel TCP");
+    }
+    if (hasData(data.pingData)) {
+      series.push({
+        name: "Ping",
+        type: "bar",
+        stack: "retries",
+        data: data.pingData,
+        itemStyle: { color: "#fa8c16" },
+      });
+      legendData.push("Ping");
+    }
+    if (hasData(data.qperfData)) {
+      series.push({
+        name: "QUIC",
+        type: "bar",
+        stack: "retries",
+        data: data.qperfData,
+        itemStyle: { color: "#13c2c2" },
+      });
+      legendData.push("QUIC");
+    }
+    if (hasData(data.videoData)) {
+      series.push({
+        name: "Video",
+        type: "bar",
+        stack: "retries",
+        data: data.videoData,
+        itemStyle: { color: "#eb2f96" },
+      });
+      legendData.push("Video");
+    }
+    if (hasData(data.nixCacheData)) {
+      series.push({
+        name: "Nix Cache",
+        type: "bar",
+        stack: "retries",
+        data: data.nixCacheData,
+        itemStyle: { color: "#faad14" },
+      });
+      legendData.push("Nix Cache");
+    }
 
     return {
       title: {
-        text: "Test Retries by Benchmark Type",
-        subtext: `Lower is better (Total: ${totalRetries} retries)`,
+        text: "Test Retries by VPN",
+        subtext: `Lower is better (Total: ${data.grandTotal} retries)`,
         left: "center",
+        top: 0,
       },
       tooltip: {
         trigger: "axis",
         axisPointer: { type: "shadow" },
-        formatter: (params: { name: string; value: number }[]) => {
-          const p = params[0];
-          return `${p.name}: ${p.value} retries`;
+        formatter: (
+          params: { name: string; seriesName: string; value: number }[],
+        ) => {
+          const vpn = params[0]?.name || "";
+          const lines = params
+            .filter((p) => p.value > 0)
+            .map((p) => `${p.seriesName}: ${p.value}`);
+          const total = params.reduce((sum, p) => sum + p.value, 0);
+          return `${vpn}<br/>${lines.join("<br/>")}<br/><strong>Total: ${total}</strong>`;
         },
+      },
+      legend: {
+        top: 45,
+        data: legendData,
       },
       grid: {
         left: "3%",
         right: "4%",
         bottom: "3%",
-        top: 80,
+        top: 100,
         containLabel: true,
       },
       xAxis: {
         type: "category",
-        data: data.map((d) => d.name),
+        data: data.vpnNames,
         axisLabel: { rotate: 45, interval: 0 },
       },
       yAxis: {
@@ -1926,22 +2159,7 @@ export const RetryComparisonChart = (props: {
         name: "Number of Retries",
         minInterval: 1,
       },
-      series: [
-        {
-          type: "bar",
-          data: data.map((d) => ({
-            value: d.retries,
-            itemStyle: {
-              color: d.retries === 0 ? "#52c41a" : d.retries <= 2 ? "#faad14" : "#ff4d4f",
-            },
-          })),
-          label: {
-            show: true,
-            position: "top",
-            formatter: (params: { value: number }) => (params.value > 0 ? `${params.value}` : ""),
-          },
-        },
-      ],
+      series,
     };
   };
 
@@ -1972,10 +2190,7 @@ export const BenchmarkStatsSection = (props: {
         data={props.data}
         allVpnNames={props.allVpnNames}
       />
-      <RetryComparisonChart
-        data={props.data}
-        allVpnNames={props.allVpnNames}
-      />
+      <RetryComparisonChart data={props.data} allVpnNames={props.allVpnNames} />
     </div>
   );
 };

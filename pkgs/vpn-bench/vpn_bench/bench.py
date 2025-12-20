@@ -12,7 +12,15 @@ from clan_lib.ssh.upload import upload
 from vpn_bench.assets import get_iperf_asset
 from vpn_bench.comparison import generate_comparison_data
 from vpn_bench.connection_timings import wait_for_vpn_connectivity
-from vpn_bench.data import VPN, BenchMachine, BenchmarkRun, Config, TCSettings, TestType
+from vpn_bench.data import (
+    VPN,
+    BenchMachine,
+    BenchmarkEntry,
+    Config,
+    TCProfile,
+    TCSettings,
+    TestType,
+)
 from vpn_bench.errors import TestMetadataDict, save_bench_report
 from vpn_bench.iperf3 import IperfCreds, run_iperf_test, run_parallel_iperf_test
 from vpn_bench.nix_cache import run_nix_cache_test
@@ -298,7 +306,7 @@ def run_benchmarks(
                 lambda: func(*args, **kwargs),
                 max_retries=2,
                 initial_delay=5.0,
-                max_total_time=1800.0,  # 30 minutes max across all retries
+                max_total_time=800.0,  # 12 minutes max across all retries
                 operation_name=f"{func.__name__}",
             )
             return result.result, result.attempts
@@ -527,11 +535,8 @@ def run_benchmarks(
 
 def benchmark_vpn(
     config: Config,
-    vpn: VPN,
+    entry: BenchmarkEntry,
     tr_machines: list[TrMachine],
-    tests: list[TestType],
-    benchmark_runs: list[BenchmarkRun],
-    skip_reboot_timings: bool = False,
     tracker: ProgressTracker | None = None,
 ) -> None:
     """
@@ -539,14 +544,14 @@ def benchmark_vpn(
 
     Args:
         config: Configuration object
-        vpn: VPN to benchmark
+        entry: BenchmarkEntry containing VPN, tests, profiles, and overrides
         tr_machines: List of terraform machines
-        tests: List of tests to run
-        benchmark_runs: List of benchmark run configurations with TC settings
-        skip_reboot_timings: Whether to skip reboot timing measurements
         tracker: Optional progress tracker for TUI updates
     """
     from vpn_bench.tc import apply_tc_settings
+
+    vpn = entry.vpn
+    benchmark_runs = entry.get_benchmark_runs()
 
     log.info(
         f"Benchmarking VPN {vpn} with {len(benchmark_runs)} different configurations"
@@ -571,6 +576,10 @@ def benchmark_vpn(
     if tracker is not None:
         tracker.set_phase("installing VPN")
 
+    # Determine skip_reboot_timings from first profile (for initial install)
+    first_profile = entry.tc_profiles[0] if entry.tc_profiles else TCProfile.BASELINE
+    skip_reboot_timings = entry.get_skip_con_times_for_profile(first_profile)
+
     # Install VPN once (connection timings collected for baseline if enabled)
     with timing.phase("vpn_installation"):
         bmachines = install_vpn(
@@ -587,7 +596,12 @@ def benchmark_vpn(
     # Get list of machines for TC application
     machines = [bm.cmachine for bm in bmachines]
     for profile_idx, run_config in enumerate(benchmark_runs):
+        # Get per-profile tests and settings
+        profile = entry.tc_profiles[profile_idx]
+        tests = entry.get_tests_for_profile(profile)
+
         log.info(f"========== Running benchmark: {run_config.alias} ==========")
+        log.info(f"  Tests for this profile: {[t.value for t in tests]}")
 
         # Track profile progress
         if tracker is not None:
@@ -601,7 +615,7 @@ def benchmark_vpn(
                 log.info("TC settings applied, waiting 30 seconds for stabilization")
                 time.sleep(30)
 
-            # Run benchmarks with this configuration
+            # Run benchmarks with this configuration using per-profile tests
             with timing.operation("run_tests", profile=run_config.alias):
                 run_benchmarks(
                     config,

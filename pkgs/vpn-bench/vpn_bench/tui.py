@@ -10,7 +10,16 @@ from textual import work
 from textual.app import App, ComposeResult
 from textual.containers import Container, Horizontal
 from textual.events import MouseScrollDown, MouseScrollUp
-from textual.widgets import Footer, Header, Label, ProgressBar, RichLog, Static
+from textual.widgets import (
+    Footer,
+    Header,
+    Label,
+    ProgressBar,
+    RichLog,
+    Static,
+    TabbedContent,
+    TabPane,
+)
 from textual.worker import get_current_worker
 
 from vpn_bench.data import VPN, BenchmarkEntry, Config, TestType
@@ -373,7 +382,7 @@ class UpcomingPanel(Static):
     DEFAULT_CSS = """
     UpcomingPanel {
         height: auto;
-        max-height: 8;
+        max-height: 20;
         padding: 1;
         background: $surface;
         border: solid $secondary;
@@ -414,7 +423,9 @@ class UpcomingPanel(Static):
         yield Container(id="upcoming-list")
 
     def update_upcoming(self, upcoming: list[tuple[VPN, str, list[TestType]]]) -> None:
-        """Update the upcoming list."""
+        """Update the upcoming list with grouped VPN display."""
+        from collections import defaultdict
+
         container = self.query_one("#upcoming-list", Container)
         empty_label = self.query_one("#upcoming-empty-label", Label)
         container.remove_children()
@@ -429,19 +440,181 @@ class UpcomingPanel(Static):
         empty_label.update("")
         self.remove_class("collapsed")
 
-        max_display = 5
-        for vpn, profile, tests in upcoming[:max_display]:
-            test_names = ", ".join(t.value for t in tests[:4])
-            if len(tests) > 4:
-                test_names += "..."
-            item = Label(
-                f"{vpn.value}/{profile}: {test_names}", classes="upcoming-item"
-            )
-            container.mount(item)
+        # Group by VPN
+        vpn_groups: dict[VPN, list[tuple[str, list[TestType]]]] = defaultdict(list)
+        for vpn, profile, tests in upcoming:
+            vpn_groups[vpn].append((profile, tests))
 
-        if len(upcoming) > max_display:
-            remaining = len(upcoming) - max_display
-            container.mount(Label(f"... and {remaining} more", classes="upcoming-item"))
+        max_vpns = 4
+        max_profiles_per_vpn = 3
+
+        vpn_list = list(vpn_groups.items())
+        for i, (vpn, profiles) in enumerate(vpn_list[:max_vpns]):
+            # VPN header with box drawing
+            prefix = "┌" if i == 0 else "├"
+            text = Text()
+            text.append(f"{prefix}─ ", style="dim")
+            text.append(vpn.value, style="bold green")
+            text.append(" " + "─" * (30 - len(vpn.value)), style="dim")
+            container.mount(Label(text, classes="upcoming-vpn"))
+
+            # Profile items
+            for profile, tests in profiles[:max_profiles_per_vpn]:
+                test_str = ", ".join(t.value for t in tests[:4])
+                if len(tests) > 4:
+                    test_str += f" +{len(tests) - 4}"
+
+                ptext = Text()
+                ptext.append("│  ", style="dim")
+                ptext.append(profile, style="cyan")
+                ptext.append(f": {test_str}")
+                container.mount(Label(ptext, classes="upcoming-item"))
+
+            if len(profiles) > max_profiles_per_vpn:
+                remaining = len(profiles) - max_profiles_per_vpn
+                container.mount(
+                    Label(
+                        Text(f"│  ... +{remaining} profiles", style="dim"),
+                        classes="upcoming-item",
+                    )
+                )
+
+        if len(vpn_list) > max_vpns:
+            remaining = len(vpn_list) - max_vpns
+            container.mount(
+                Label(
+                    Text(f"└─ +{remaining} more VPNs", style="dim"),
+                    classes="upcoming-item",
+                )
+            )
+        else:
+            container.mount(
+                Label(Text("└" + "─" * 35, style="dim"), classes="upcoming-item")
+            )
+
+
+class CompletedPanel(Static):
+    """Widget displaying completed benchmarks."""
+
+    DEFAULT_CSS = """
+    CompletedPanel {
+        height: auto;
+        max-height: 20;
+        padding: 1;
+        background: $surface;
+        border: solid $secondary;
+    }
+
+    CompletedPanel.collapsed {
+        height: auto;
+        max-height: 3;
+        padding: 0 1;
+        border: none;
+        background: transparent;
+    }
+
+    CompletedPanel .completed-header {
+        height: auto;
+    }
+
+    CompletedPanel .completed-title {
+        text-style: bold;
+    }
+
+    CompletedPanel .completed-empty {
+        color: $text-muted;
+        text-style: italic;
+    }
+
+    CompletedPanel .completed-item {
+        height: auto;
+        color: $text-muted;
+        padding-left: 2;
+    }
+    """
+
+    def compose(self) -> ComposeResult:
+        with Horizontal(classes="completed-header"):
+            yield Label("Completed: ", classes="completed-title")
+            yield Label("", id="completed-empty-label", classes="completed-empty")
+        yield Container(id="completed-list")
+
+    def update_completed(
+        self, completed: list[tuple[VPN, str, list[TestType]]]
+    ) -> None:
+        """Update the completed list with grouped VPN display."""
+        from collections import defaultdict
+
+        container = self.query_one("#completed-list", Container)
+        empty_label = self.query_one("#completed-empty-label", Label)
+        container.remove_children()
+
+        if not completed:
+            # Show collapsed state
+            empty_label.update("(none)")
+            self.add_class("collapsed")
+            return
+
+        # Show expanded state with items
+        empty_label.update("")
+        self.remove_class("collapsed")
+
+        # Group by VPN
+        vpn_groups: dict[VPN, list[tuple[str, list[TestType]]]] = defaultdict(list)
+        for vpn, profile, tests in completed:
+            vpn_groups[vpn].append((profile, tests))
+
+        max_vpns = 4
+        max_profiles_per_vpn = 3
+
+        vpn_list = list(vpn_groups.items())
+        # Show most recent first (reverse order)
+        vpn_list = vpn_list[::-1]
+
+        for i, (vpn, profiles) in enumerate(vpn_list[:max_vpns]):
+            # VPN header with checkmark
+            prefix = "┌" if i == 0 else "├"
+            text = Text()
+            text.append(f"{prefix}─ ", style="dim")
+            text.append("✓ ", style="bold green")
+            text.append(vpn.value, style="bold green strike")
+            text.append(" " + "─" * (28 - len(vpn.value)), style="dim")
+            container.mount(Label(text, classes="completed-vpn"))
+
+            # Profile items (most recent first)
+            for profile, tests in profiles[::-1][:max_profiles_per_vpn]:
+                test_str = ", ".join(t.value for t in tests[:4])
+                if len(tests) > 4:
+                    test_str += f" +{len(tests) - 4}"
+
+                ptext = Text()
+                ptext.append("│  ", style="dim")
+                ptext.append("✓ ", style="green")
+                ptext.append(profile, style="cyan strike")
+                ptext.append(f": {test_str}", style="dim strike")
+                container.mount(Label(ptext, classes="completed-item"))
+
+            if len(profiles) > max_profiles_per_vpn:
+                remaining = len(profiles) - max_profiles_per_vpn
+                container.mount(
+                    Label(
+                        Text(f"│  ... +{remaining} profiles", style="dim"),
+                        classes="completed-item",
+                    )
+                )
+
+        if len(vpn_list) > max_vpns:
+            remaining = len(vpn_list) - max_vpns
+            container.mount(
+                Label(
+                    Text(f"└─ +{remaining} more VPNs", style="dim"),
+                    classes="completed-item",
+                )
+            )
+        else:
+            container.mount(
+                Label(Text("└" + "─" * 35, style="dim"), classes="completed-item")
+            )
 
 
 class TUILogHandler(logging.Handler):
@@ -475,8 +648,8 @@ class BenchmarkTUI(App[None]):
 
     #top-panels {
         height: auto;
-        max-height: 50%;
-        overflow: hidden hidden;
+        max-height: 60%;
+        overflow-y: auto;
     }
 
     #progress-panel {
@@ -489,9 +662,19 @@ class BenchmarkTUI(App[None]):
         max-height: 4;
     }
 
+    #queue-tabs {
+        height: auto;
+        max-height: 24;
+    }
+
     #upcoming-panel {
         height: auto;
-        max-height: 8;
+        max-height: 18;
+    }
+
+    #completed-panel {
+        height: auto;
+        max-height: 18;
     }
 
     #log-panel {
@@ -532,7 +715,11 @@ class BenchmarkTUI(App[None]):
         with Container(id="top-panels"):
             yield ProgressPanel(id="progress-panel")
             yield MachineRingPanel(id="machine-ring-panel")
-            yield UpcomingPanel(id="upcoming-panel")
+            with TabbedContent(id="queue-tabs"):
+                with TabPane("Upcoming", id="upcoming-tab"):
+                    yield UpcomingPanel(id="upcoming-panel")
+                with TabPane("Completed", id="completed-tab"):
+                    yield CompletedPanel(id="completed-panel")
         yield SmartRichLog(
             id="log-panel", auto_scroll=True, highlight=True, markup=True
         )
@@ -568,21 +755,42 @@ class BenchmarkTUI(App[None]):
         )
 
         # Initialize progress tracking from entries
-        # Collect unique VPNs, profiles, and tests across all entries
+        # Build upcoming queue with correct per-profile tests
+        upcoming: list[tuple[VPN, str, list[TestType]]] = []
+        total_test_steps = 0
+        machine_count = len(self.machines)
+
+        for entry in self.entries:
+            for profile in entry.tc_profiles:
+                tests = entry.get_tests_for_profile(profile)
+                run = profile.to_benchmark_run()
+                upcoming.append((entry.vpn, run.alias, tests))
+                # Each test runs on each machine
+                total_test_steps += len(tests) * machine_count
+
+        # Collect unique values for progress display
         vpns = [entry.vpn for entry in self.entries]
-        # Collect all unique profile names across entries
         all_profiles: set[str] = set()
         for entry in self.entries:
             for run in entry.get_benchmark_runs():
                 all_profiles.add(run.alias)
         profile_names = sorted(all_profiles)
-        # Collect all unique tests across entries
-        all_tests: set[TestType] = set()
-        for entry in self.entries:
-            all_tests.update(entry.tests)
-        tests = list(all_tests)
+        # Use max tests across all entries for progress bar (approximation)
+        max_tests_per_profile = (
+            max(
+                len(entry.get_tests_for_profile(p))
+                for entry in self.entries
+                for p in entry.tc_profiles
+            )
+            if self.entries
+            else 0
+        )
         machine_names = [m["name"] for m in self.machines]
-        self.tracker.initialize(vpns, profile_names, tests, machine_names)
+
+        # Initialize tracker with accurate counts
+        self.tracker.initialize_with_upcoming(
+            vpns, profile_names, max_tests_per_profile, machine_names, upcoming
+        )
 
         # Remove existing handlers that write to stderr, add our TUI handler
         root_logger = logging.getLogger()
@@ -626,6 +834,9 @@ class BenchmarkTUI(App[None]):
         )
         self.query_one("#upcoming-panel", UpcomingPanel).update_upcoming(
             progress.upcoming
+        )
+        self.query_one("#completed-panel", CompletedPanel).update_completed(
+            progress.completed
         )
 
     def _on_log_message(self, message: str) -> None:
@@ -676,11 +887,8 @@ class BenchmarkTUI(App[None]):
                 try:
                     benchmark_vpn(
                         self.config,
-                        entry.vpn,
+                        entry,
                         self.machines,
-                        entry.tests,
-                        entry.get_benchmark_runs(),
-                        entry.skip_con_times,
                         tracker=self.tracker,
                     )
                     self.tracker.complete_vpn()

@@ -321,6 +321,9 @@ class BenchmarkProgress:
     # Queue of upcoming (vpn, profile, tests) tuples
     upcoming: list[tuple[VPN, str, list[TestType]]] = field(default_factory=list)
 
+    # List of completed (vpn, profile, tests) tuples
+    completed: list[tuple[VPN, str, list[TestType]]] = field(default_factory=list)
+
     # Machine pairs for circular benchmark pattern (source, target)
     # e.g., [("A", "B"), ("B", "C"), ("C", "A")]
     machine_pairs: list[tuple[str, str]] = field(default_factory=list)
@@ -762,6 +765,53 @@ class ProgressTracker:
 
         self._notify()
 
+    def initialize_with_upcoming(
+        self,
+        vpns: list[VPN],
+        profiles: list[str],
+        max_tests_per_profile: int,
+        machines: list[str],
+        upcoming: list[tuple[VPN, str, list[TestType]]],
+    ) -> None:
+        """Initialize progress tracking with pre-built upcoming queue.
+
+        This allows for per-profile test configurations where different
+        profiles may have different tests.
+
+        Args:
+            vpns: List of VPNs to benchmark
+            profiles: List of unique profile names
+            max_tests_per_profile: Maximum tests in any single profile (for progress bar)
+            machines: List of machine names
+            upcoming: Pre-built queue of (VPN, profile, tests) tuples
+        """
+        self.progress.vpn_total = len(vpns)
+        self.progress.profile_total = len(profiles)
+        self.progress.test_total = max_tests_per_profile
+        self.progress.machine_total = len(machines)
+        self.progress.start_time = monotonic()
+        self.progress.phase = "starting"
+
+        # Store test types from first non-empty profile for ETA calculation
+        for _vpn, _profile, tests in upcoming:
+            if tests:
+                self.progress.test_types = list(tests)
+                break
+        else:
+            self.progress.test_types = []
+
+        # Use the pre-built upcoming queue (with correct per-profile tests)
+        self.progress.upcoming = list(upcoming)
+
+        # Build machine pairs for circular benchmark pattern
+        # e.g., [A, B, C] -> [(A, B), (B, C), (C, A)]
+        self.progress.machine_pairs = []
+        for i, machine in enumerate(machines):
+            next_machine = machines[(i + 1) % len(machines)]
+            self.progress.machine_pairs.append((machine, next_machine))
+
+        self._notify()
+
     def start_vpn(self, vpn: VPN, index: int) -> None:
         """Mark start of VPN installation/benchmark."""
         self.progress.current_vpn = vpn
@@ -852,6 +902,16 @@ class ProgressTracker:
             profile_duration = monotonic() - self.progress.profile_start
             self.progress.timing_history.record_profile_benchmarking(profile_duration)
             self.progress.profile_start = None
+
+        # Add to completed list
+        if self.progress.current_vpn and self.progress.current_profile:
+            self.progress.completed.append(
+                (
+                    self.progress.current_vpn,
+                    self.progress.current_profile,
+                    list(self.progress.test_types),
+                )
+            )
 
         self.progress.profile_index += 1
         self._notify()

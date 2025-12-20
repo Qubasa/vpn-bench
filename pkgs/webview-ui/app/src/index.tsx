@@ -35,6 +35,7 @@ import {
   MixedReport,
 } from "./benchData";
 import { GeneralDashboard } from "./components/GeneralDashboard";
+import { ConnectionTimesDashboard } from "./components/ConnectionTimesDashboard";
 import { QperfData, QperfReport } from "./components/QperfCharts";
 import { HyperfineData, HyperfineReport } from "./components/HyperfineCharts";
 import { PingData, PingReport } from "./components/PingCharts";
@@ -360,6 +361,20 @@ function generateAppRouteFromGeneralData(
   ];
 }
 
+function generateConnectionTimesRoute(comparison: ComparisonData): AppRoute[] {
+  if (Object.keys(comparison).length === 0) {
+    return [];
+  }
+
+  return [
+    {
+      path: "/connection-times",
+      label: "Connection Times",
+      component: () => <ConnectionTimesDashboard comparisonData={comparison} />,
+    },
+  ];
+}
+
 // Generate routes from benchData
 export const routes: AppRoute[] =
   benchData.length > 0
@@ -375,6 +390,7 @@ export const routes: AppRoute[] =
           ),
         },
         ...generateRoutesFromBenchData(benchData),
+        ...generateConnectionTimesRoute(comparisonData),
         ...generateAppRouteFromGeneralData(comparisonData),
       ]
     : [];

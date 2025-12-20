@@ -240,6 +240,15 @@ def get_benchmark_runs(profiles: list[TCProfile]) -> list[BenchmarkRun]:
 
 
 @dataclass
+class ProfileConfig:
+    """Per-profile configuration overrides."""
+
+    name: str  # Must match a TCProfile value
+    tests: list[TestType] | None = None  # If None, use parent's tests
+    skip_con_times: bool | None = None  # If None, use parent's value
+
+
+@dataclass
 class BenchmarkEntry:
     """Configuration for a single VPN benchmark with its tests and settings."""
 
@@ -247,10 +256,25 @@ class BenchmarkEntry:
     tests: list[TestType] = field(default_factory=list)
     tc_profiles: list[TCProfile] = field(default_factory=lambda: [TCProfile.BASELINE])
     skip_con_times: bool = False
+    profile_overrides: dict[str, ProfileConfig] = field(default_factory=dict)
 
     def get_benchmark_runs(self) -> list[BenchmarkRun]:
         """Convert tc_profiles to BenchmarkRun configurations."""
         return get_benchmark_runs(self.tc_profiles)
+
+    def get_tests_for_profile(self, profile: TCProfile) -> list[TestType]:
+        """Get tests for a specific profile, applying overrides if present."""
+        override = self.profile_overrides.get(profile.value)
+        if override and override.tests is not None:
+            return override.tests
+        return self.tests
+
+    def get_skip_con_times_for_profile(self, profile: TCProfile) -> bool:
+        """Get skip_con_times for a specific profile, applying overrides if present."""
+        override = self.profile_overrides.get(profile.value)
+        if override and override.skip_con_times is not None:
+            return override.skip_con_times
+        return self.skip_con_times
 
 
 def parse_benchmark_config(config_path: Path) -> list["BenchmarkEntry"]:
@@ -260,8 +284,14 @@ def parse_benchmark_config(config_path: Path) -> list["BenchmarkEntry"]:
         [[benchmark]]
         vpn = "wireguard"
         tests = ["ping", "iperf3"]
-        tc_profiles = ["baseline", "low"]
+        tc_profiles = ["baseline", "low", "high"]
         skip_con_times = false
+
+        # Optional per-profile overrides
+        [[benchmark.profile]]
+        name = "high"
+        tests = ["iperf3", "rist-stream"]  # Override tests for this profile
+        skip_con_times = true  # Override skip_con_times for this profile
 
     Args:
         config_path: Path to the TOML configuration file
@@ -279,12 +309,40 @@ def parse_benchmark_config(config_path: Path) -> list["BenchmarkEntry"]:
         tc_profiles_raw = item.get("tc_profiles", ["baseline"])
         tc_profiles = [TCProfile.from_str(p) for p in tc_profiles_raw]
         skip_con_times = item.get("skip_con_times", False)
+
+        # Parse per-profile overrides
+        profile_overrides: dict[str, ProfileConfig] = {}
+        for profile_item in item.get("profile", []):
+            profile_name = profile_item["name"]
+            # Validate profile name matches one of the tc_profiles
+            if profile_name not in [p.value for p in tc_profiles]:
+                msg = (
+                    f"Profile override '{profile_name}' not in tc_profiles "
+                    f"{[p.value for p in tc_profiles]} for VPN {vpn.value}"
+                )
+                raise ValueError(msg)
+
+            profile_tests: list[TestType] | None = None
+            if "tests" in profile_item:
+                profile_tests = [TestType.from_str(t) for t in profile_item["tests"]]
+
+            profile_skip_con_times: bool | None = None
+            if "skip_con_times" in profile_item:
+                profile_skip_con_times = profile_item["skip_con_times"]
+
+            profile_overrides[profile_name] = ProfileConfig(
+                name=profile_name,
+                tests=profile_tests,
+                skip_con_times=profile_skip_con_times,
+            )
+
         entries.append(
             BenchmarkEntry(
                 vpn=vpn,
                 tests=tests,
                 tc_profiles=tc_profiles,
                 skip_con_times=skip_con_times,
+                profile_overrides=profile_overrides,
             )
         )
     return entries

@@ -81,8 +81,7 @@ export function ErrorDetailsPanel<T>(
           </div>
           <For each={notRunReports()}>
             {(report) => {
-              const notRunDetails = report.result.error
-                .details as NotRunError;
+              const notRunDetails = report.result.error.details as NotRunError;
               return (
                 <div class={notRunItemClass}>
                   <span class="font-medium">{report.name}</span>
@@ -122,118 +121,118 @@ export function ErrorDetailsPanel<T>(
                   : null;
 
                 return (
-                <Accordion.Item
-                  value={`error-${index()}`}
-                  class={accordionItemClass}
-                >
-                  <Accordion.Header>
-                    <Accordion.Trigger class={accordionTriggerClass}>
-                      <span>
-                        <span class="mr-2 font-bold text-red-600">
-                          {report.name}
-                        </span>
-                        <span class="text-sm text-gray-500">
-                          ({error.type})
-                        </span>
-                      </span>
-                      <span class="text-gray-400">&#9660;</span>
-                    </Accordion.Trigger>
-                  </Accordion.Header>
-                  <Accordion.Content class={accordionContentClass}>
-                    {/* Error Summary */}
-                    <div class="mb-3 rounded border border-red-200 bg-red-50 p-2">
-                      <p class="text-red-700">{getErrorMessage(error)}</p>
-                    </div>
-
-                    {/* Test Metadata */}
-                    <Show when={meta}>
-                      <div class="mb-3 text-xs text-gray-500">
-                        <span>Attempts: {meta?.test_attempts || "N/A"}</span>
-                        <span class="mx-2">|</span>
+                  <Accordion.Item
+                    value={`error-${index()}`}
+                    class={accordionItemClass}
+                  >
+                    <Accordion.Header>
+                      <Accordion.Trigger class={accordionTriggerClass}>
                         <span>
-                          Duration:{" "}
-                          {meta?.duration_seconds?.toFixed(1) || "N/A"}s
+                          <span class="mr-2 font-bold text-red-600">
+                            {report.name}
+                          </span>
+                          <span class="text-sm text-gray-500">
+                            ({error.type})
+                          </span>
                         </span>
-                        <span class="mx-2">|</span>
-                        <span>
-                          VPN Restarts: {meta?.vpn_restart_attempts || 0}
-                        </span>
+                        <span class="text-gray-400">&#9660;</span>
+                      </Accordion.Trigger>
+                    </Accordion.Header>
+                    <Accordion.Content class={accordionContentClass}>
+                      {/* Error Summary */}
+                      <div class="mb-3 rounded border border-red-200 bg-red-50 p-2">
+                        <p class="text-red-700">{getErrorMessage(error)}</p>
                       </div>
-                    </Show>
 
-                    {/* CmdOut Error Details */}
-                    <Show when={isCmdOut && cmdOutDetails}>
-                      <div class={labelClass}>Command:</div>
-                      <pre class={codeBlockClass}>
-                        {cmdOutDetails?.command_list
-                          ?.map((part) =>
-                            part.includes(" ") ? `"${part}"` : part,
-                          )
-                          .join(" ") || "N/A"}
-                      </pre>
-
-                      <Show when={cmdOutDetails?.stderr?.trim()}>
-                        <div class={labelClass}>Stderr:</div>
-                        <pre class={codeBlockClass}>
-                          {cmdOutDetails?.stderr}
-                        </pre>
-                      </Show>
-
-                      <Show when={cmdOutDetails?.stdout?.trim()}>
-                        <div class={labelClass}>Stdout:</div>
-                        <pre class={codeBlockClass}>
-                          {cmdOutDetails?.stdout}
-                        </pre>
-                      </Show>
-                    </Show>
-
-                    {/* ClanError Details */}
-                    <Show when={!isCmdOut && clanErrorDetails}>
-                      <div class={labelClass}>Error Message:</div>
-                      <p class="text-gray-700">{clanErrorDetails?.msg}</p>
-
-                      <Show when={clanErrorDetails?.description}>
-                        <div class={labelClass}>Description:</div>
-                        <p class="text-gray-600">
-                          {clanErrorDetails?.description}
-                        </p>
-                      </Show>
-
-                      <Show when={clanErrorDetails?.location}>
-                        <div class={labelClass}>Location:</div>
-                        <pre class={codeBlockClass}>
-                          {clanErrorDetails?.location}
-                        </pre>
-                      </Show>
-                    </Show>
-
-                    {/* Service Logs Section */}
-                    <Show when={meta?.service_logs}>
-                      <div class="mt-4 border-t border-gray-200 pt-4">
-                        <div class={labelClass}>
-                          <span class="text-blue-700">
-                            &#128196; Service Logs (last 5 minutes)
+                      {/* Test Metadata */}
+                      <Show when={meta}>
+                        <div class="mb-3 text-xs text-gray-500">
+                          <span>Attempts: {meta?.test_attempts || "N/A"}</span>
+                          <span class="mx-2">|</span>
+                          <span>
+                            Duration:{" "}
+                            {meta?.duration_seconds?.toFixed(1) || "N/A"}s
+                          </span>
+                          <span class="mx-2">|</span>
+                          <span>
+                            VPN Restarts: {meta?.vpn_restart_attempts || 0}
                           </span>
                         </div>
-                        <p class="mb-2 text-xs text-gray-500">
-                          Logs collected from the target service after all
-                          retries failed:
-                        </p>
-                        <pre class={codeBlockClass}>{meta?.service_logs}</pre>
-                      </div>
-                    </Show>
+                      </Show>
 
-                    {/* Source File Path */}
-                    <Show when={error.filePath}>
-                      <div class="mt-3 text-xs text-gray-400">
-                        Source: {error.filePath}
-                      </div>
-                    </Show>
-                  </Accordion.Content>
-                </Accordion.Item>
-              );
-            }}
-          </For>
+                      {/* CmdOut Error Details */}
+                      <Show when={isCmdOut && cmdOutDetails}>
+                        <div class={labelClass}>Command:</div>
+                        <pre class={codeBlockClass}>
+                          {cmdOutDetails?.command_list
+                            ?.map((part) =>
+                              part.includes(" ") ? `"${part}"` : part,
+                            )
+                            .join(" ") || "N/A"}
+                        </pre>
+
+                        <Show when={cmdOutDetails?.stderr?.trim()}>
+                          <div class={labelClass}>Stderr:</div>
+                          <pre class={codeBlockClass}>
+                            {cmdOutDetails?.stderr}
+                          </pre>
+                        </Show>
+
+                        <Show when={cmdOutDetails?.stdout?.trim()}>
+                          <div class={labelClass}>Stdout:</div>
+                          <pre class={codeBlockClass}>
+                            {cmdOutDetails?.stdout}
+                          </pre>
+                        </Show>
+                      </Show>
+
+                      {/* ClanError Details */}
+                      <Show when={!isCmdOut && clanErrorDetails}>
+                        <div class={labelClass}>Error Message:</div>
+                        <p class="text-gray-700">{clanErrorDetails?.msg}</p>
+
+                        <Show when={clanErrorDetails?.description}>
+                          <div class={labelClass}>Description:</div>
+                          <p class="text-gray-600">
+                            {clanErrorDetails?.description}
+                          </p>
+                        </Show>
+
+                        <Show when={clanErrorDetails?.location}>
+                          <div class={labelClass}>Location:</div>
+                          <pre class={codeBlockClass}>
+                            {clanErrorDetails?.location}
+                          </pre>
+                        </Show>
+                      </Show>
+
+                      {/* Service Logs Section */}
+                      <Show when={meta?.service_logs}>
+                        <div class="mt-4 border-t border-gray-200 pt-4">
+                          <div class={labelClass}>
+                            <span class="text-blue-700">
+                              &#128196; Service Logs (last 5 minutes)
+                            </span>
+                          </div>
+                          <p class="mb-2 text-xs text-gray-500">
+                            Logs collected from the target service after all
+                            retries failed:
+                          </p>
+                          <pre class={codeBlockClass}>{meta?.service_logs}</pre>
+                        </div>
+                      </Show>
+
+                      {/* Source File Path */}
+                      <Show when={error.filePath}>
+                        <div class="mt-3 text-xs text-gray-400">
+                          Source: {error.filePath}
+                        </div>
+                      </Show>
+                    </Accordion.Content>
+                  </Accordion.Item>
+                );
+              }}
+            </For>
           </Accordion.Root>
         </div>
       </Show>

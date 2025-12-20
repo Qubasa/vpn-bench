@@ -142,7 +142,7 @@ def run_nix_cache_test(
             urls,
         ]
 
-        ssh.run(cmd, RunOpts(log=Log.BOTH, timeout=1800))  # 30 minutes
+        ssh.run(cmd, RunOpts(log=Log.BOTH, timeout=700))  # 11 minutes
 
         res = ssh.run(["cat", f"{vpn.value}_nix-cache.json"], RunOpts(log=Log.BOTH))
         return json.loads(res.stdout)

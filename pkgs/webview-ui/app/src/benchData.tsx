@@ -244,9 +244,15 @@ export interface QperfComparisonData {
 }
 
 export interface VideoStreamingComparisonData {
+  // Static encoding metrics (for metadata display)
   bitrate_kbps: MetricStats;
   fps: MetricStats;
   dropped_frames: MetricStats;
+  // Dynamic network metrics (for plots)
+  quality: MetricStats;
+  rtt_ms: MetricStats;
+  packets_recovered: MetricStats;
+  packets_dropped: MetricStats;
 }
 
 export interface TcpIperfComparisonData {

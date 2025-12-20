@@ -363,7 +363,9 @@ def run_cli() -> None:
 
         # Validate we have entries to run
         if len(entries) == 0:
-            msg = "No VPNs specified. Use --vpn or --config to specify VPNs to benchmark."
+            msg = (
+                "No VPNs specified. Use --vpn or --config to specify VPNs to benchmark."
+            )
             raise VpnBenchError(msg)
 
         # Warn if any entries have no tests
@@ -392,18 +394,18 @@ def run_cli() -> None:
             for entry in entries:
                 log.info(f"========== Running benchmark for {entry.vpn} ==========")
                 log.info(
-                    f"  Tests: {[t.value for t in entry.tests]}, "
+                    f"  Default tests: {[t.value for t in entry.tests]}, "
                     f"TC profiles: {[p.value for p in entry.tc_profiles]}, "
                     f"Skip connection times: {entry.skip_con_times}"
                 )
+                if entry.profile_overrides:
+                    for name, override in entry.profile_overrides.items():
+                        log.info(f"  Profile '{name}' overrides: {override}")
                 try:
                     benchmark_vpn(
                         config,
-                        entry.vpn,
+                        entry,
                         machines,
-                        entry.tests,
-                        entry.get_benchmark_runs(),
-                        entry.skip_con_times,
                     )
                 except Exception as e:
                     error_msg = str(e)

@@ -1,85 +1,85 @@
 {
   "vpn_name": "zerotier",
-  "total_duration_seconds": 274.69090397900436,
-  "start_timestamp": 1766079438.2313662,
-  "end_timestamp": 1766079712.9222713,
+  "total_duration_seconds": 492.15499867801555,
+  "start_timestamp": 1766088850.223922,
+  "end_timestamp": 1766089342.3789206,
   "phases": [
     {
       "phase": "vpn_installation",
-      "duration_seconds": 117.56860802700976,
-      "start_timestamp": 1766079438.2403471,
+      "duration_seconds": 125.449467643979,
+      "start_timestamp": 1766088850.2322388,
       "operations": [
         {
           "name": "nix_flake_update",
-          "duration_seconds": 8.138283995969687,
-          "start_timestamp": 1766079438.240366,
+          "duration_seconds": 5.738343135046307,
+          "start_timestamp": 1766088850.2322717,
           "success": true
         },
         {
           "name": "create_base_inventory",
-          "duration_seconds": 27.443381546996534,
-          "start_timestamp": 1766079446.3807042,
+          "duration_seconds": 25.081055890012067,
+          "start_timestamp": 1766088855.9849887,
           "success": true
         },
         {
           "name": "install_zerotier_config",
-          "duration_seconds": 13.78509809897514,
-          "start_timestamp": 1766079474.1779456,
+          "duration_seconds": 13.807729088992346,
+          "start_timestamp": 1766088881.5241492,
           "success": true
         },
         {
           "name": "run_zerotier_generators",
-          "duration_seconds": 7.034224794013426,
-          "start_timestamp": 1766079488.1183393,
+          "duration_seconds": 7.975630554021336,
+          "start_timestamp": 1766088895.5350242,
           "success": true
         },
         {
           "name": "get_vpn_ips",
-          "duration_seconds": 5.00885217502946,
-          "start_timestamp": 1766079495.1550052,
+          "duration_seconds": 5.795309485984035,
+          "start_timestamp": 1766088903.5284872,
           "success": true
         },
         {
           "name": "install_nix_cache",
-          "duration_seconds": 0.061062258027959615,
-          "start_timestamp": 1766079500.1713214,
+          "duration_seconds": 0.1220255009829998,
+          "start_timestamp": 1766088909.338375,
           "success": true
         },
         {
           "name": "install_connection_timings_service",
-          "duration_seconds": 0.3059754309942946,
-          "start_timestamp": 1766079500.2417884,
+          "duration_seconds": 0.37323897995520383,
+          "start_timestamp": 1766088909.4732804,
           "success": true
         },
         {
           "name": "run_generators",
-          "duration_seconds": 9.407983607030474,
-          "start_timestamp": 1766079500.8925192,
+          "duration_seconds": 10.661755712993909,
+          "start_timestamp": 1766088910.2429056,
           "success": true
         },
         {
           "name": "deploy_vpn_machines",
-          "duration_seconds": 45.495695994002745,
-          "start_timestamp": 1766079510.3083806,
+          "duration_seconds": 54.75589981803205,
+          "start_timestamp": 1766088920.916863,
           "success": true
         }
       ]
     },
     {
       "phase": "benchmarking",
-      "duration_seconds": 157.09937956399517,
-      "start_timestamp": 1766079555.814361,
+      "duration_seconds": 366.64434133295435,
+      "start_timestamp": 1766088975.7173972,
       "operations": [
         {
           "name": "tc_stabilization",
-          "duration_seconds": 30.005196134967264,
-          "start_timestamp": 1766079556.2924652,
+          "duration_seconds": 30.03075302002253,
+          "start_timestamp": 1766088976.174753,
           "success": true
         },
         {
           "name": "run_tests",
-          "duration_seconds": 126.15150390804047,
-          "start_timestamp": 1766079586.3057494,
+          "duration_seconds": 335.6557892819983,
+          "start_timestamp": 1766089006.220425,
           "success": true,
           "metadata": {
             "profile": "baseline"
