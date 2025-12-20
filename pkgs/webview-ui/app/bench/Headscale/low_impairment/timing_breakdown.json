@@ -1,0 +1,143 @@
+{
+  "vpn_name": "headscale",
+  "total_duration_seconds": 2610.3259144740296,
+  "start_timestamp": 1766123965.1118295,
+  "end_timestamp": 1766126575.4377441,
+  "phases": [
+    {
+      "phase": "vpn_installation",
+      "duration_seconds": 272.754432043992,
+      "start_timestamp": 1766123965.1160228,
+      "operations": [
+        {
+          "name": "nix_flake_update",
+          "duration_seconds": 1.7511520140105858,
+          "start_timestamp": 1766123965.1160326,
+          "success": true
+        },
+        {
+          "name": "create_base_inventory",
+          "duration_seconds": 20.95842038502451,
+          "start_timestamp": 1766123966.8776112,
+          "success": true
+        },
+        {
+          "name": "deploy_base_machines",
+          "duration_seconds": 28.083102291973773,
+          "start_timestamp": 1766123988.1897218,
+          "success": true
+        },
+        {
+          "name": "clean_state_dirs",
+          "duration_seconds": 0.3968944540247321,
+          "start_timestamp": 1766124016.2862403,
+          "success": true
+        },
+        {
+          "name": "install_headscale_config",
+          "duration_seconds": 9.590781343984418,
+          "start_timestamp": 1766124016.6975698,
+          "success": true
+        },
+        {
+          "name": "run_generators",
+          "duration_seconds": 9.139887947007082,
+          "start_timestamp": 1766124026.4680932,
+          "success": true
+        },
+        {
+          "name": "deploy_vpn_machines",
+          "duration_seconds": 56.30566665297374,
+          "start_timestamp": 1766124035.613559,
+          "success": true
+        },
+        {
+          "name": "get_vpn_ips",
+          "duration_seconds": 1.5610547380056232,
+          "start_timestamp": 1766124091.924944,
+          "success": true
+        },
+        {
+          "name": "install_nix_cache",
+          "duration_seconds": 0.09916941699339077,
+          "start_timestamp": 1766124093.4955156,
+          "success": true
+        },
+        {
+          "name": "install_connection_timings_service",
+          "duration_seconds": 0.3513569699716754,
+          "start_timestamp": 1766124093.6076212,
+          "success": true
+        },
+        {
+          "name": "deploy_vpn_machines_with_cache",
+          "duration_seconds": 56.69807325198781,
+          "start_timestamp": 1766124094.190062,
+          "success": true
+        },
+        {
+          "name": "initial_connection_timings",
+          "duration_seconds": 3.113401958020404,
+          "start_timestamp": 1766124150.894323,
+          "success": true
+        },
+        {
+          "name": "reboot_connection_timings",
+          "duration_seconds": 83.83637660800014,
+          "start_timestamp": 1766124154.0210114,
+          "success": true
+        }
+      ]
+    },
+    {
+      "phase": "benchmarking",
+      "duration_seconds": 1207.3943842820008,
+      "start_timestamp": 1766124237.8969884,
+      "operations": [
+        {
+          "name": "tc_stabilization",
+          "duration_seconds": 30.008149556990247,
+          "start_timestamp": 1766124238.339984,
+          "success": true
+        },
+        {
+          "name": "run_tests",
+          "duration_seconds": 1176.4744247859926,
+          "start_timestamp": 1766124268.3615968,
+          "success": true,
+          "metadata": {
+            "profile": "baseline"
+          }
+        }
+      ],
+      "metadata": {
+        "profile": "baseline"
+      }
+    },
+    {
+      "phase": "benchmarking",
+      "duration_seconds": 1130.1033699429827,
+      "start_timestamp": 1766125445.3264217,
+      "operations": [
+        {
+          "name": "tc_stabilization",
+          "duration_seconds": 30.006595414015464,
+          "start_timestamp": 1766125445.903092,
+          "success": true
+        },
+        {
+          "name": "run_tests",
+          "duration_seconds": 1099.0006955270073,
+          "start_timestamp": 1766125475.9226654,
+          "success": true,
+          "metadata": {
+            "profile": "low_impairment"
+          }
+        }
+      ],
+      "metadata": {
+        "profile": "low_impairment"
+      }
+    }
+  ]
+}
