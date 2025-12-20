@@ -306,7 +306,7 @@ def run_benchmarks(
                 lambda: func(*args, **kwargs),
                 max_retries=2,
                 initial_delay=5.0,
-                max_total_time=800.0,  # 12 minutes max across all retries
+                max_total_time=700.0,  # 11 minutes max across all retries
                 operation_name=f"{func.__name__}",
             )
             return result.result, result.attempts

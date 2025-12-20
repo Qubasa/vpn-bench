@@ -34,6 +34,9 @@ interface BarChartData {
 function getComparisonErrorMessage(error: VpnComparisonError): string {
   if (error.error_type === "CmdOut") {
     const cmdError = error.error as CmdOutError;
+    if (cmdError.msg) {
+      return cmdError.msg;
+    }
     if (cmdError.stderr.trim()) {
       return cmdError.stderr.trim().slice(0, 500);
     }

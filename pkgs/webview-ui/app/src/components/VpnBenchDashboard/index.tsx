@@ -60,9 +60,10 @@ interface VpnDashboardProps {
     jitter?: number;
   };
   ristStreamHeight?: {
-    bitrate?: number;
-    fps?: number;
-    droppedFrames?: number;
+    rtt?: number;
+    quality?: number;
+    packetsDropped?: number;
+    packetsRecovered?: number;
   };
   defaultTab?:
     | "info"

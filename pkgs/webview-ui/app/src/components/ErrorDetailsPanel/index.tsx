@@ -171,6 +171,11 @@ export function ErrorDetailsPanel<T>(
                             .join(" ") || "N/A"}
                         </pre>
 
+                        <Show when={cmdOutDetails?.msg}>
+                          <div class={labelClass}>Error Message:</div>
+                          <p class="text-gray-700">{cmdOutDetails?.msg}</p>
+                        </Show>
+
                         <Show when={cmdOutDetails?.stderr?.trim()}>
                           <div class={labelClass}>Stderr:</div>
                           <pre class={codeBlockClass}>

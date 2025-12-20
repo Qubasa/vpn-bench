@@ -31,6 +31,7 @@ export interface CmdOutError {
   cwd: string;
   command_list: string[];
   returncode: number;
+  msg: string | null;
 }
 
 export interface ClanError {
@@ -150,7 +151,10 @@ export interface MixedReport<TData> {
 export function getErrorMessage(error: BenchmarkRunError): string {
   if (error.type === "CmdOut") {
     const cmdError = error.details as CmdOutError;
-    // Return stderr if available, otherwise stdout, otherwise a generic message
+    // Return msg if available, then stderr, then stdout, otherwise a generic message
+    if (cmdError.msg) {
+      return cmdError.msg;
+    }
     if (cmdError.stderr.trim()) {
       return cmdError.stderr.trim().slice(0, 500); // Limit length
     }
