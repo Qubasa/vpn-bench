@@ -18,19 +18,21 @@ const VPN_COLORS = [
   "#66bb6a",
 ];
 
-
 /**
  * Creates the ECharts option for the heatmap showing throughput
  * across VPNs and TC profiles.
  */
-const createThroughputHeatmapOption = (data: Bar3DData, title: string): EChartsCoreOption => {
+const createThroughputHeatmapOption = (
+  data: Bar3DData,
+  title: string,
+): EChartsCoreOption => {
   // Find baseline profile index
   const baselineIdx = data.tc_profiles.indexOf("baseline");
 
   // Get baseline throughput for each VPN and create sorted order (high to low)
   const vpnBaselineThroughput = data.vpn_names.map((vpnName, vpnIdx) => {
     const baselineData = data.throughput_data.find(
-      (d) => d[0] === vpnIdx && d[1] === baselineIdx
+      (d) => d[0] === vpnIdx && d[1] === baselineIdx,
     );
     return {
       originalIdx: vpnIdx,
@@ -45,22 +47,22 @@ const createThroughputHeatmapOption = (data: Bar3DData, title: string): EChartsC
   // Create mapping from original index to sorted index
   const sortedVpnNames = vpnBaselineThroughput.map((v) => v.name);
   const originalToSorted = new Map(
-    vpnBaselineThroughput.map((v, sortedIdx) => [v.originalIdx, sortedIdx])
+    vpnBaselineThroughput.map((v, sortedIdx) => [v.originalIdx, sortedIdx]),
   );
 
   // Transform data: [vpn_idx, profile_idx, throughput] -> [profile_idx, sorted_vpn_idx, throughput]
   // So X-axis is TC profiles, Y-axis is VPN names (sorted by baseline)
-  const heatmapData = data.throughput_data.map(([vpnIdx, profileIdx, value]) => [
-    profileIdx,
-    originalToSorted.get(vpnIdx) ?? vpnIdx,
-    value,
-  ]);
+  const heatmapData = data.throughput_data.map(
+    ([vpnIdx, profileIdx, value]) => [
+      profileIdx,
+      originalToSorted.get(vpnIdx) ?? vpnIdx,
+      value,
+    ],
+  );
 
   // Format TC profile names for display
   const formatProfileName = (name: string) =>
-    name
-      .replace(/_/g, " ")
-      .replace(/\b\w/g, (l) => l.toUpperCase());
+    name.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase());
 
   return {
     title: {
@@ -116,16 +118,16 @@ const createThroughputHeatmapOption = (data: Bar3DData, title: string): EChartsC
       top: "center",
       text: ["High", "Low"],
       pieces: [
-        { min: 800, color: "#1a9850" },    // dark green (best)
-        { min: 500, max: 800, color: "#66bd63" },  // green
-        { min: 200, max: 500, color: "#a6d96a" },  // light green
-        { min: 100, max: 200, color: "#d9ef8b" },  // yellow-green
-        { min: 50, max: 100, color: "#ffffbf" },   // light yellow
-        { min: 30, max: 50, color: "#fee08b" },    // yellow-orange (41)
-        { min: 15, max: 30, color: "#fdae61" },    // orange (17, 30)
-        { min: 8, max: 15, color: "#f46d43" },     // orange-red (8, 9, 12)
-        { min: 4, max: 8, color: "#d73027" },      // red (4, 5, 6)
-        { max: 4, color: "#a50026" },              // dark red (1, 2, 3)
+        { min: 800, color: "#1a9850" }, // dark green (best)
+        { min: 500, max: 800, color: "#66bd63" }, // green
+        { min: 200, max: 500, color: "#a6d96a" }, // light green
+        { min: 100, max: 200, color: "#d9ef8b" }, // yellow-green
+        { min: 50, max: 100, color: "#ffffbf" }, // light yellow
+        { min: 30, max: 50, color: "#fee08b" }, // yellow-orange (41)
+        { min: 15, max: 30, color: "#fdae61" }, // orange (17, 30)
+        { min: 8, max: 15, color: "#f46d43" }, // orange-red (8, 9, 12)
+        { min: 4, max: 8, color: "#d73027" }, // red (4, 5, 6)
+        { max: 4, color: "#a50026" }, // dark red (1, 2, 3)
       ],
     },
     series: [
@@ -156,12 +158,13 @@ const createThroughputHeatmapOption = (data: Bar3DData, title: string): EChartsC
  * throughput vs window size across TC profiles (one plot per profile).
  * Point size represents congestion window (cwnd).
  */
-const createSmallMultiplesScatterOption = (data: Scatter3DData, title: string): EChartsCoreOption => {
+const createSmallMultiplesScatterOption = (
+  data: Scatter3DData,
+  title: string,
+): EChartsCoreOption => {
   // Format TC profile names for display
   const formatProfileName = (name: string) =>
-    name
-      .replace(/_/g, " ")
-      .replace(/\b\w/g, (l) => l.toUpperCase());
+    name.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase());
 
   // Calculate cwnd range for symbol size normalization
   // Data structure: [throughput, window_size_kb, cwnd_kb, vpn_idx, profile_idx]
@@ -247,7 +250,7 @@ const createSmallMultiplesScatterOption = (data: Scatter3DData, title: string): 
       // Find data point for this VPN and profile
       // Data: [throughput, window_size_kb, cwnd_kb, vpn_idx, profile_idx]
       const point = data.data.find(
-        (d) => Math.round(d[3]) === vpnIdx && Math.round(d[4]) === profileIdx
+        (d) => Math.round(d[3]) === vpnIdx && Math.round(d[4]) === profileIdx,
       );
 
       if (point) {
@@ -286,7 +289,10 @@ const createSmallMultiplesScatterOption = (data: Scatter3DData, title: string): 
     },
     tooltip: {
       trigger: "item",
-      formatter: (params: { value: [number, number, number, string]; seriesName: string }) => {
+      formatter: (params: {
+        value: [number, number, number, string];
+        seriesName: string;
+      }) => {
         const [windowSize, throughput, cwnd, vpnName] = params.value;
         return (
           `<strong>${vpnName}</strong><br/>` +
@@ -319,10 +325,10 @@ export interface TcpCrossProfileChartsProps {
 export const TcpCrossProfileCharts = (props: TcpCrossProfileChartsProps) => {
   // Memoize chart options for TCP
   const tcpHeatmapOption = createMemo(() =>
-    createThroughputHeatmapOption(props.data.tcp.bar3d, "TCP")
+    createThroughputHeatmapOption(props.data.tcp.bar3d, "TCP"),
   );
   const tcpScatterOption = createMemo(() =>
-    createSmallMultiplesScatterOption(props.data.tcp.scatter3d, "TCP")
+    createSmallMultiplesScatterOption(props.data.tcp.scatter3d, "TCP"),
   );
 
   // Check if data is available
@@ -347,17 +353,26 @@ export const TcpCrossProfileCharts = (props: TcpCrossProfileChartsProps) => {
 /**
  * Renders Parallel TCP cross-profile charts (heatmap and scatter plot)
  */
-export const ParallelTcpCrossProfileCharts = (props: TcpCrossProfileChartsProps) => {
+export const ParallelTcpCrossProfileCharts = (
+  props: TcpCrossProfileChartsProps,
+) => {
   // Memoize chart options for Parallel TCP
   const parallelHeatmapOption = createMemo(() =>
-    createThroughputHeatmapOption(props.data.parallel_tcp.bar3d, "Parallel TCP")
+    createThroughputHeatmapOption(
+      props.data.parallel_tcp.bar3d,
+      "Parallel TCP",
+    ),
   );
   const parallelScatterOption = createMemo(() =>
-    createSmallMultiplesScatterOption(props.data.parallel_tcp.scatter3d, "Parallel TCP")
+    createSmallMultiplesScatterOption(
+      props.data.parallel_tcp.scatter3d,
+      "Parallel TCP",
+    ),
   );
 
   // Check if data is available
-  const hasParallelData = () => props.data.parallel_tcp.bar3d.throughput_data.length > 0;
+  const hasParallelData = () =>
+    props.data.parallel_tcp.bar3d.throughput_data.length > 0;
 
   return (
     <Show when={hasParallelData()}>

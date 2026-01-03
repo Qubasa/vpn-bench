@@ -39,7 +39,13 @@ interface PingChartsProps {
 
 // RTT Boxplot Chart - showing distribution of RTT metrics
 const createRttBoxplotOption = (reports: PingReport[]) => {
-  const boxplotData = reports.map((report) => {
+  // Sort by median RTT (ascending - lower is better)
+  const sortedReports = [...reports].sort(
+    (a, b) =>
+      a.data.rtt_avg_ms.percentiles.p50 - b.data.rtt_avg_ms.percentiles.p50,
+  );
+
+  const boxplotData = sortedReports.map((report) => {
     const avgMetric = report.data.rtt_avg_ms;
     // Create boxplot from percentiles: [min, p25, p50, p75, max]
     return [
@@ -51,7 +57,7 @@ const createRttBoxplotOption = (reports: PingReport[]) => {
     ];
   });
 
-  const categoryNames = reports.map((r) => r.name);
+  const categoryNames = sortedReports.map((r) => r.name);
 
   return {
     title: {
@@ -112,12 +118,25 @@ const createRttBoxplotOption = (reports: PingReport[]) => {
 
 // RTT Metrics Comparison Chart - comparing min/avg/max/mdev across VPNs
 const createRttMetricsOption = (reports: PingReport[]) => {
-  const categoryNames = reports.map((r) => r.name);
+  // Sort by average RTT (ascending - lower is better)
+  const sortedReports = [...reports].sort(
+    (a, b) => a.data.rtt_avg_ms.average - b.data.rtt_avg_ms.average,
+  );
 
-  const rttMinData = reports.map((r) => r.data.rtt_min_ms.average.toFixed(3));
-  const rttAvgData = reports.map((r) => r.data.rtt_avg_ms.average.toFixed(3));
-  const rttMaxData = reports.map((r) => r.data.rtt_max_ms.average.toFixed(3));
-  const rttMdevData = reports.map((r) => r.data.rtt_mdev_ms.average.toFixed(3));
+  const categoryNames = sortedReports.map((r) => r.name);
+
+  const rttMinData = sortedReports.map((r) =>
+    r.data.rtt_min_ms.average.toFixed(3),
+  );
+  const rttAvgData = sortedReports.map((r) =>
+    r.data.rtt_avg_ms.average.toFixed(3),
+  );
+  const rttMaxData = sortedReports.map((r) =>
+    r.data.rtt_max_ms.average.toFixed(3),
+  );
+  const rttMdevData = sortedReports.map((r) =>
+    r.data.rtt_mdev_ms.average.toFixed(3),
+  );
 
   return {
     title: {
@@ -187,8 +206,14 @@ const createRttMetricsOption = (reports: PingReport[]) => {
 
 // Packet Loss Chart
 const createPacketLossOption = (reports: PingReport[]) => {
-  const categoryNames = reports.map((r) => r.name);
-  const packetLossData = reports.map((r) =>
+  // Sort by packet loss (ascending - lower is better)
+  const sortedReports = [...reports].sort(
+    (a, b) =>
+      a.data.packet_loss_percent.average - b.data.packet_loss_percent.average,
+  );
+
+  const categoryNames = sortedReports.map((r) => r.name);
+  const packetLossData = sortedReports.map((r) =>
     r.data.packet_loss_percent.average.toFixed(2),
   );
 
@@ -251,7 +276,13 @@ const createPacketLossOption = (reports: PingReport[]) => {
 
 // Jitter (mdev) Chart - dedicated chart for jitter analysis
 const createJitterOption = (reports: PingReport[]) => {
-  const boxplotData = reports.map((report) => {
+  // Sort by median jitter (ascending - lower is better)
+  const sortedReports = [...reports].sort(
+    (a, b) =>
+      a.data.rtt_mdev_ms.percentiles.p50 - b.data.rtt_mdev_ms.percentiles.p50,
+  );
+
+  const boxplotData = sortedReports.map((report) => {
     const jitterMetric = report.data.rtt_mdev_ms;
     // Create boxplot from percentiles: [min, p25, p50, p75, max]
     return [
@@ -263,7 +294,7 @@ const createJitterOption = (reports: PingReport[]) => {
     ];
   });
 
-  const categoryNames = reports.map((r) => r.name);
+  const categoryNames = sortedReports.map((r) => r.name);
 
   return {
     title: {

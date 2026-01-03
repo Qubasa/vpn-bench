@@ -280,6 +280,35 @@ class CrossProfileQperfDict(TypedDict):
     heatmap: CrossProfileQperfHeatmapDict
 
 
+class CrossProfileVideoStreamingHeatmapDict(TypedDict):
+    """Heatmap data for Video Streaming (RIST) cross-profile visualization."""
+
+    tc_profiles: list[str]
+    quality: dict[str, dict[str, float]]  # {vpn: {profile: quality_percent}}
+    rtt_ms: dict[str, dict[str, float]]  # {vpn: {profile: rtt_ms}}
+    failed: dict[str, list[str]]  # {vpn: [failed_profiles]}
+
+
+class CrossProfileVideoStreamingDict(TypedDict):
+    """Cross-profile Video Streaming data for visualization."""
+
+    heatmap: CrossProfileVideoStreamingHeatmapDict
+
+
+class CrossProfileNixCacheHeatmapDict(TypedDict):
+    """Heatmap data for Nix Cache cross-profile visualization."""
+
+    tc_profiles: list[str]
+    mean_seconds: dict[str, dict[str, float]]  # {vpn: {profile: seconds}}
+    failed: dict[str, list[str]]  # {vpn: [failed_profiles]}
+
+
+class CrossProfileNixCacheDict(TypedDict):
+    """Cross-profile Nix Cache data for visualization."""
+
+    heatmap: CrossProfileNixCacheHeatmapDict
+
+
 # --- Helper Functions ---
 
 # Logical ordering for TC profiles (from no impairment to severe)
@@ -1563,6 +1592,122 @@ def generate_cross_profile_qperf_data(
     }
 
 
+def generate_cross_profile_video_streaming_data(
+    bench_dir: Path, vpn_dirs: list[Path], run_aliases: set[str]
+) -> CrossProfileVideoStreamingDict | None:
+    """Generate cross-profile Video Streaming (RIST) data for visualization.
+
+    Combines video streaming quality and RTT data across all VPNs and TC profiles
+    for heatmap visualization.
+
+    Args:
+        bench_dir: Base directory containing benchmark data
+        vpn_dirs: List of VPN directories
+        run_aliases: Set of run aliases (TC profiles like baseline, low_impairment, etc.)
+
+    Returns:
+        CrossProfileVideoStreamingDict with heatmap section, or None if no data available
+    """
+    # Sort VPN names and TC profiles for consistent ordering
+    vpn_names = sorted([d.name for d in vpn_dirs])
+    tc_profiles = sort_tc_profiles(run_aliases)
+
+    # Dict-based heatmap data
+    quality: dict[str, dict[str, float]] = {}
+    rtt_ms: dict[str, dict[str, float]] = {}
+    failed: dict[str, list[str]] = {}
+
+    for vpn_name in vpn_names:
+        quality[vpn_name] = {}
+        rtt_ms[vpn_name] = {}
+
+        for run_alias in tc_profiles:
+            # Get RIST data for this VPN and profile
+            rist_data = aggregate_rist_data(bench_dir, vpn_name, run_alias)
+
+            if rist_data:
+                quality[vpn_name][run_alias] = rist_data["quality"]["average"]
+                rtt_ms[vpn_name][run_alias] = rist_data["rtt_ms"]["average"]
+            else:
+                # Check if there was an error (test ran but failed)
+                error_info = get_vpn_error_for_test(
+                    bench_dir, vpn_name, run_alias, "rist_stream.json"
+                )
+                if error_info:
+                    if vpn_name not in failed:
+                        failed[vpn_name] = []
+                    failed[vpn_name].append(run_alias)
+
+    # Return None if no data available (neither success nor failure)
+    if not quality and not failed:
+        return None
+
+    return {
+        "heatmap": {
+            "tc_profiles": tc_profiles,
+            "quality": quality,
+            "rtt_ms": rtt_ms,
+            "failed": failed,
+        },
+    }
+
+
+def generate_cross_profile_nix_cache_data(
+    bench_dir: Path, vpn_dirs: list[Path], run_aliases: set[str]
+) -> CrossProfileNixCacheDict | None:
+    """Generate cross-profile Nix Cache data for visualization.
+
+    Combines Nix cache download time data across all VPNs and TC profiles
+    for heatmap visualization.
+
+    Args:
+        bench_dir: Base directory containing benchmark data
+        vpn_dirs: List of VPN directories
+        run_aliases: Set of run aliases (TC profiles like baseline, low_impairment, etc.)
+
+    Returns:
+        CrossProfileNixCacheDict with heatmap section, or None if no data available
+    """
+    # Sort VPN names and TC profiles for consistent ordering
+    vpn_names = sorted([d.name for d in vpn_dirs])
+    tc_profiles = sort_tc_profiles(run_aliases)
+
+    # Dict-based heatmap data
+    mean_seconds: dict[str, dict[str, float]] = {}
+    failed: dict[str, list[str]] = {}
+
+    for vpn_name in vpn_names:
+        mean_seconds[vpn_name] = {}
+
+        for run_alias in tc_profiles:
+            # Get Nix cache data for this VPN and profile
+            nix_data = aggregate_nix_cache_data(bench_dir, vpn_name, run_alias)
+
+            if nix_data:
+                mean_seconds[vpn_name][run_alias] = nix_data["mean_seconds"]["average"]
+            else:
+                # Check if there was an error (test ran but failed)
+                error_info = get_vpn_error_for_test(
+                    bench_dir, vpn_name, run_alias, "nix_cache.json"
+                )
+                if error_info:
+                    if vpn_name not in failed:
+                        failed[vpn_name] = []
+                    failed[vpn_name].append(run_alias)
+
+    # Return None if no data available (neither success nor failure)
+    if not mean_seconds and not failed:
+        return None
+
+    return {
+        "heatmap": {
+            "tc_profiles": tc_profiles,
+            "mean_seconds": mean_seconds,
+            "failed": failed,
+        },
+    }
+
+
 def aggregate_benchmark_stats(
     bench_dir: Path,
     vpn_name: str,
@@ -2134,6 +2279,36 @@ def generate_comparison_data(bench_dir: Path) -> None:
         log.info(
             f"Saved cross-profile QUIC data ({len(cross_profile_qperf['heatmap']['bandwidth'])} VPNs, "
             f"{len(cross_profile_qperf['heatmap']['tc_profiles'])} profiles)"
+        )
+
+    # Generate cross-profile Video Streaming data for visualization
+    cross_profile_video = generate_cross_profile_video_streaming_data(
+        bench_dir, vpn_dirs, run_aliases
+    )
+    if cross_profile_video:
+        save_bench_report(
+            comparison_dir,
+            cross_profile_video,
+            "cross_profile_video_streaming.json",
+        )
+        log.info(
+            f"Saved cross-profile Video Streaming data ({len(cross_profile_video['heatmap']['quality'])} VPNs, "
+            f"{len(cross_profile_video['heatmap']['tc_profiles'])} profiles)"
+        )
+
+    # Generate cross-profile Nix Cache data for visualization
+    cross_profile_nix = generate_cross_profile_nix_cache_data(
+        bench_dir, vpn_dirs, run_aliases
+    )
+    if cross_profile_nix:
+        save_bench_report(
+            comparison_dir,
+            cross_profile_nix,
+            "cross_profile_nix_cache.json",
+        )
+        log.info(
+            f"Saved cross-profile Nix Cache data ({len(cross_profile_nix['heatmap']['mean_seconds'])} VPNs, "
+            f"{len(cross_profile_nix['heatmap']['tc_profiles'])} profiles)"
         )
 
     log.info("Comparison data generation complete")

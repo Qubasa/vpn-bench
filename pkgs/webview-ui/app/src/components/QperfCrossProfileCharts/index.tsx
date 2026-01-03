@@ -5,26 +5,28 @@ import { CrossProfileQperfData, QperfHeatmapData } from "../../benchData";
 
 // Format TC profile names for display
 const formatProfileName = (name: string) =>
-  name
-    .replace(/_/g, " ")
-    .replace(/\b\w/g, (l) => l.toUpperCase());
+  name.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase());
 
 // Failed test marker color (dark for visibility on light/empty backgrounds)
 const FAILED_COLOR = "#555555";
 
 // Simple X symbol (smaller and cleaner)
-const X_SYMBOL_PATH = "path://M2 0L6 4L10 0L12 2L8 6L12 10L10 12L6 8L2 12L0 10L4 6L0 2Z";
+const X_SYMBOL_PATH =
+  "path://M2 0L6 4L10 0L12 2L8 6L12 10L10 12L6 8L2 12L0 10L4 6L0 2Z";
 
 /**
  * Creates the ECharts option for bandwidth heatmap.
  * Higher is better (green = high bandwidth).
  */
-const createBandwidthHeatmapOption = (data: QperfHeatmapData): EChartsCoreOption => {
+const createBandwidthHeatmapOption = (
+  data: QperfHeatmapData,
+): EChartsCoreOption => {
   const vpnNames = Object.keys(data.bandwidth);
 
   // Sort by baseline bandwidth descending (highest first)
   const sortedVpnNames = [...vpnNames].sort(
-    (a, b) => (data.bandwidth[b]?.baseline ?? 0) - (data.bandwidth[a]?.baseline ?? 0)
+    (a, b) =>
+      (data.bandwidth[b]?.baseline ?? 0) - (data.bandwidth[a]?.baseline ?? 0),
   );
 
   // Build failed markers first (need to know which cells to exclude from heatmap)
@@ -32,12 +34,12 @@ const createBandwidthHeatmapOption = (data: QperfHeatmapData): EChartsCoreOption
     (data.failed[vpn] || []).map((profile) => [
       data.tc_profiles.indexOf(profile),
       vpnIdx,
-    ])
+    ]),
   );
 
   // Create Set of failed cell keys for quick lookup
   const failedCellKeys = new Set(
-    failedScatterData.map(([profileIdx, vpnIdx]) => `${profileIdx}-${vpnIdx}`)
+    failedScatterData.map(([profileIdx, vpnIdx]) => `${profileIdx}-${vpnIdx}`),
   );
 
   // Build heatmap data, excluding failed cells (so they don't get colored)
@@ -48,7 +50,7 @@ const createBandwidthHeatmapOption = (data: QperfHeatmapData): EChartsCoreOption
         if (failedCellKeys.has(key)) return null; // Skip failed cells
         return [profileIdx, vpnIdx, data.bandwidth[vpn]?.[profile] ?? 0];
       })
-      .filter((item): item is [number, number, number] => item !== null)
+      .filter((item): item is [number, number, number] => item !== null),
   );
 
   const hasFailures = failedScatterData.length > 0;
@@ -56,7 +58,8 @@ const createBandwidthHeatmapOption = (data: QperfHeatmapData): EChartsCoreOption
   return {
     title: {
       text: "QUIC Bandwidth Heatmap",
-      subtext: "Higher is better (green)" + (hasFailures ? " | ✕ = Failed" : ""),
+      subtext:
+        "Higher is better (green)" + (hasFailures ? " | ✕ = Failed" : ""),
       left: "center",
     },
     toolbox: {
@@ -86,12 +89,14 @@ const createBandwidthHeatmapOption = (data: QperfHeatmapData): EChartsCoreOption
         return `<strong>${vpnName}</strong><br/>${profile}: ${bandwidth.toFixed(1)} Mbps`;
       },
     },
-    legend: hasFailures ? {
-      data: ["Bandwidth", "Failed"],
-      top: 60,
-      itemWidth: 14,
-      itemHeight: 14,
-    } : undefined,
+    legend: hasFailures
+      ? {
+          data: ["Bandwidth", "Failed"],
+          top: 60,
+          itemWidth: 14,
+          itemHeight: 14,
+        }
+      : undefined,
     grid: {
       top: hasFailures ? 100 : 80,
       bottom: 60,
@@ -124,7 +129,7 @@ const createBandwidthHeatmapOption = (data: QperfHeatmapData): EChartsCoreOption
       text: ["High", "Low"],
       seriesIndex: 0,
       pieces: [
-        { min: 800, color: "#1a9850" },    // dark green (best)
+        { min: 800, color: "#1a9850" }, // dark green (best)
         { min: 500, max: 800, color: "#66bd63" },
         { min: 200, max: 500, color: "#a6d96a" },
         { min: 100, max: 200, color: "#d9ef8b" },
@@ -133,7 +138,7 @@ const createBandwidthHeatmapOption = (data: QperfHeatmapData): EChartsCoreOption
         { min: 15, max: 30, color: "#fdae61" },
         { min: 8, max: 15, color: "#f46d43" },
         { min: 4, max: 8, color: "#d73027" },
-        { max: 4, color: "#a50026" },        // dark red (worst)
+        { max: 4, color: "#a50026" }, // dark red (worst)
       ],
     },
     series: [
@@ -156,20 +161,24 @@ const createBandwidthHeatmapOption = (data: QperfHeatmapData): EChartsCoreOption
         },
       },
       // Failed test markers as scatter overlay
-      ...(hasFailures ? [{
-        name: "Failed",
-        type: "scatter",
-        data: failedScatterData,
-        symbol: X_SYMBOL_PATH,
-        symbolSize: 14,
-        itemStyle: {
-          color: FAILED_COLOR,
-        },
-        label: {
-          show: false,
-        },
-        z: 10,
-      }] : []),
+      ...(hasFailures
+        ? [
+            {
+              name: "Failed",
+              type: "scatter",
+              data: failedScatterData,
+              symbol: X_SYMBOL_PATH,
+              symbolSize: 14,
+              itemStyle: {
+                color: FAILED_COLOR,
+              },
+              label: {
+                show: false,
+              },
+              z: 10,
+            },
+          ]
+        : []),
     ],
   };
 };
@@ -183,7 +192,7 @@ const createCpuHeatmapOption = (data: QperfHeatmapData): EChartsCoreOption => {
 
   // Sort by baseline CPU ascending (lowest first = best)
   const sortedVpnNames = [...vpnNames].sort(
-    (a, b) => (data.cpu[a]?.baseline ?? 100) - (data.cpu[b]?.baseline ?? 100)
+    (a, b) => (data.cpu[a]?.baseline ?? 100) - (data.cpu[b]?.baseline ?? 100),
   );
 
   // Build failed markers first (need to know which cells to exclude from heatmap)
@@ -191,12 +200,12 @@ const createCpuHeatmapOption = (data: QperfHeatmapData): EChartsCoreOption => {
     (data.failed[vpn] || []).map((profile) => [
       data.tc_profiles.indexOf(profile),
       vpnIdx,
-    ])
+    ]),
   );
 
   // Create Set of failed cell keys for quick lookup
   const failedCellKeys = new Set(
-    failedScatterData.map(([profileIdx, vpnIdx]) => `${profileIdx}-${vpnIdx}`)
+    failedScatterData.map(([profileIdx, vpnIdx]) => `${profileIdx}-${vpnIdx}`),
   );
 
   // Build heatmap data, excluding failed cells (so they don't get colored)
@@ -207,7 +216,7 @@ const createCpuHeatmapOption = (data: QperfHeatmapData): EChartsCoreOption => {
         if (failedCellKeys.has(key)) return null; // Skip failed cells
         return [profileIdx, vpnIdx, data.cpu[vpn]?.[profile] ?? 0];
       })
-      .filter((item): item is [number, number, number] => item !== null)
+      .filter((item): item is [number, number, number] => item !== null),
   );
 
   const hasFailures = failedScatterData.length > 0;
@@ -245,12 +254,14 @@ const createCpuHeatmapOption = (data: QperfHeatmapData): EChartsCoreOption => {
         return `<strong>${vpnName}</strong><br/>${profile}: ${cpu.toFixed(1)}%`;
       },
     },
-    legend: hasFailures ? {
-      data: ["CPU Usage", "Failed"],
-      top: 60,
-      itemWidth: 14,
-      itemHeight: 14,
-    } : undefined,
+    legend: hasFailures
+      ? {
+          data: ["CPU Usage", "Failed"],
+          top: 60,
+          itemWidth: 14,
+          itemHeight: 14,
+        }
+      : undefined,
     grid: {
       top: hasFailures ? 100 : 80,
       bottom: 60,
@@ -284,7 +295,7 @@ const createCpuHeatmapOption = (data: QperfHeatmapData): EChartsCoreOption => {
       seriesIndex: 0,
       pieces: [
         // Inverted: low CPU = green (good), high CPU = red (bad)
-        { max: 10, color: "#1a9850" },       // dark green (best: <10%)
+        { max: 10, color: "#1a9850" }, // dark green (best: <10%)
         { min: 10, max: 20, color: "#66bd63" },
         { min: 20, max: 30, color: "#a6d96a" },
         { min: 30, max: 40, color: "#d9ef8b" },
@@ -293,7 +304,7 @@ const createCpuHeatmapOption = (data: QperfHeatmapData): EChartsCoreOption => {
         { min: 60, max: 70, color: "#fdae61" },
         { min: 70, max: 80, color: "#f46d43" },
         { min: 80, max: 90, color: "#d73027" },
-        { min: 90, color: "#a50026" },       // dark red (worst: >90%)
+        { min: 90, color: "#a50026" }, // dark red (worst: >90%)
       ],
     },
     series: [
@@ -316,20 +327,24 @@ const createCpuHeatmapOption = (data: QperfHeatmapData): EChartsCoreOption => {
         },
       },
       // Failed test markers as scatter overlay
-      ...(hasFailures ? [{
-        name: "Failed",
-        type: "scatter",
-        data: failedScatterData,
-        symbol: X_SYMBOL_PATH,
-        symbolSize: 14,
-        itemStyle: {
-          color: FAILED_COLOR,
-        },
-        label: {
-          show: false,
-        },
-        z: 10,
-      }] : []),
+      ...(hasFailures
+        ? [
+            {
+              name: "Failed",
+              type: "scatter",
+              data: failedScatterData,
+              symbol: X_SYMBOL_PATH,
+              symbolSize: 14,
+              itemStyle: {
+                color: FAILED_COLOR,
+              },
+              label: {
+                show: false,
+              },
+              z: 10,
+            },
+          ]
+        : []),
     ],
   };
 };
@@ -341,13 +356,15 @@ export interface QperfCrossProfileChartsProps {
 /**
  * Renders QUIC/Qperf cross-profile charts (bandwidth heatmap and CPU heatmap)
  */
-export const QperfCrossProfileCharts = (props: QperfCrossProfileChartsProps) => {
+export const QperfCrossProfileCharts = (
+  props: QperfCrossProfileChartsProps,
+) => {
   // Memoize chart options
   const bandwidthHeatmapOption = createMemo(() =>
-    createBandwidthHeatmapOption(props.data.heatmap)
+    createBandwidthHeatmapOption(props.data.heatmap),
   );
   const cpuHeatmapOption = createMemo(() =>
-    createCpuHeatmapOption(props.data.heatmap)
+    createCpuHeatmapOption(props.data.heatmap),
   );
 
   // Check if data is available

@@ -1,37 +1,31 @@
 {
-    "status": "success",
-    "data": {
-        "results": [
-            {
-                "command": "nix copy --from http://cache.vpn.yuki --to file:///tmp/cache?compression=none /nix/store/8y3bzk5rmdl9dqxnvii0cnx5rigi8vym-firefox-144.0.2",
-                "mean": 9.275380303079999,
-                "stddev": 0.0627245547349645,
-                "median": 9.275380303079999,
-                "user": 13.361840579999999,
-                "system": 3.130857,
-                "min": 9.23102734508,
-                "max": 9.31973326108,
-                "times": [
-                    9.31973326108,
-                    9.23102734508
-                ],
-                "exit_codes": [
-                    0,
-                    0
-                ],
-                "parameters": {
-                    "url": "http://cache.vpn.yuki"
-                }
-            }
-        ]
-    },
-    "meta": {
-        "duration_seconds": 59.16760993003845,
-        "test_attempts": 1,
-        "vpn_restart_attempts": 0,
-        "vpn_restart_duration_seconds": 1.8814575672149658,
-        "connectivity_wait_duration_seconds": 1.9464030265808105,
-        "source": "lom",
-        "target": "yuki"
-    }
+  "status": "success",
+  "data": {
+    "results": [
+      {
+        "command": "nix copy --from http://cache.vpn.yuki --to file:///tmp/cache?compression=none /nix/store/8y3bzk5rmdl9dqxnvii0cnx5rigi8vym-firefox-144.0.2",
+        "mean": 9.275380303079999,
+        "stddev": 0.0627245547349645,
+        "median": 9.275380303079999,
+        "user": 13.361840579999999,
+        "system": 3.130857,
+        "min": 9.23102734508,
+        "max": 9.31973326108,
+        "times": [9.31973326108, 9.23102734508],
+        "exit_codes": [0, 0],
+        "parameters": {
+          "url": "http://cache.vpn.yuki"
+        }
+      }
+    ]
+  },
+  "meta": {
+    "duration_seconds": 59.16760993003845,
+    "test_attempts": 1,
+    "vpn_restart_attempts": 0,
+    "vpn_restart_duration_seconds": 1.8814575672149658,
+    "connectivity_wait_duration_seconds": 1.9464030265808105,
+    "source": "lom",
+    "target": "yuki"
+  }
 }

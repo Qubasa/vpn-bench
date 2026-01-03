@@ -518,8 +518,15 @@ const createPacketLossOption = (
 ): echarts.EChartsOption | null => {
   if (!reports || reports.length === 0) return null;
 
+  // Sort by packet loss (ascending - lower is better)
+  const sortedReports = [...reports].sort((a, b) => {
+    const aLoss = a.data?.end?.sum_received_bidir_reverse?.lost_percent ?? 0;
+    const bLoss = b.data?.end?.sum_received_bidir_reverse?.lost_percent ?? 0;
+    return aLoss - bLoss;
+  });
+
   // Plot loss for the reverse direction (client receiving) as it's often paired with jitter
-  const lossData = reports.map((report) => ({
+  const lossData = sortedReports.map((report) => ({
     name: report.name ?? "Unknown Report",
     // Use sum_received_bidir_reverse for client-received loss in bidir test
     value: (
@@ -603,8 +610,15 @@ const createJitterOption = (
 ): echarts.EChartsOption | null => {
   if (!reports || reports.length === 0) return null;
 
+  // Sort by jitter (ascending - lower is better)
+  const sortedReports = [...reports].sort((a, b) => {
+    const aJitter = a.data?.end?.sum_received_bidir_reverse?.jitter_ms ?? 0;
+    const bJitter = b.data?.end?.sum_received_bidir_reverse?.jitter_ms ?? 0;
+    return aJitter - bJitter;
+  });
+
   // Plot jitter for the reverse direction (client receiving)
-  const jitterData = reports.map((report) => ({
+  const jitterData = sortedReports.map((report) => ({
     name: report.name ?? "Unknown Report",
     // Use sum_received_bidir_reverse for client-received jitter in bidir test
     value: (
@@ -693,7 +707,18 @@ const createUdpCpuOption = (
     return null; // Return null if no CPU data is available
   }
 
-  const cpuData = reports.map((report) => ({
+  // Sort by total CPU usage (ascending - lower is better)
+  const sortedReports = [...reports].sort((a, b) => {
+    const aCpu =
+      (a.data?.end?.cpu_utilization_percent?.host_total ?? 0) +
+      (a.data?.end?.cpu_utilization_percent?.remote_total ?? 0);
+    const bCpu =
+      (b.data?.end?.cpu_utilization_percent?.host_total ?? 0) +
+      (b.data?.end?.cpu_utilization_percent?.remote_total ?? 0);
+    return aCpu - bCpu;
+  });
+
+  const cpuData = sortedReports.map((report) => ({
     name: report.name ?? "Unknown Report",
     host: (report.data?.end?.cpu_utilization_percent?.host_total ?? 0).toFixed(
       1,

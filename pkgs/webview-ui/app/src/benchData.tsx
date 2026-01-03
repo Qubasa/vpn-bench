@@ -416,6 +416,31 @@ export interface CrossProfileQperfData {
   heatmap: QperfHeatmapData;
 }
 
+// --- Cross-Profile Video Streaming (RIST) Visualization Data ---
+
+export interface VideoStreamingHeatmapData {
+  tc_profiles: string[]; // Keep for ordered iteration
+  quality: Record<string, Record<string, number>>; // {vpn: {profile: quality_percent}}
+  rtt_ms: Record<string, Record<string, number>>; // {vpn: {profile: rtt_ms}}
+  failed: Record<string, string[]>; // {vpn: [failed_profiles]}
+}
+
+export interface CrossProfileVideoStreamingData {
+  heatmap: VideoStreamingHeatmapData;
+}
+
+// --- Cross-Profile Nix Cache Visualization Data ---
+
+export interface NixCacheHeatmapData {
+  tc_profiles: string[]; // Keep for ordered iteration
+  mean_seconds: Record<string, Record<string, number>>; // {vpn: {profile: seconds}}
+  failed: Record<string, string[]>; // {vpn: [failed_profiles]}
+}
+
+export interface CrossProfileNixCacheData {
+  heatmap: NixCacheHeatmapData;
+}
+
 // Maps VPN name to its comparison data
 export type VpnComparisonMap<T> = Record<string, T>;
 
@@ -1037,11 +1062,7 @@ export function loadCrossProfileTcpData(): CrossProfileTcpData | null {
 
   const [path, rawModule] = files[0];
 
-  if (
-    !rawModule ||
-    typeof rawModule !== "object" ||
-    !("status" in rawModule)
-  ) {
+  if (!rawModule || typeof rawModule !== "object" || !("status" in rawModule)) {
     console.warn(`Cross-profile TCP file has unexpected format: ${path}`);
     return null;
   }
@@ -1076,11 +1097,7 @@ export function loadCrossProfileUdpData(): CrossProfileUdpData | null {
 
   const [path, rawModule] = files[0];
 
-  if (
-    !rawModule ||
-    typeof rawModule !== "object" ||
-    !("status" in rawModule)
-  ) {
+  if (!rawModule || typeof rawModule !== "object" || !("status" in rawModule)) {
     console.warn(`Cross-profile UDP file has unexpected format: ${path}`);
     return null;
   }
@@ -1115,11 +1132,7 @@ export function loadCrossProfilePingData(): CrossProfilePingData | null {
 
   const [path, rawModule] = files[0];
 
-  if (
-    !rawModule ||
-    typeof rawModule !== "object" ||
-    !("status" in rawModule)
-  ) {
+  if (!rawModule || typeof rawModule !== "object" || !("status" in rawModule)) {
     console.warn(`Cross-profile Ping file has unexpected format: ${path}`);
     return null;
   }
@@ -1154,11 +1167,7 @@ export function loadCrossProfileQperfData(): CrossProfileQperfData | null {
 
   const [path, rawModule] = files[0];
 
-  if (
-    !rawModule ||
-    typeof rawModule !== "object" ||
-    !("status" in rawModule)
-  ) {
+  if (!rawModule || typeof rawModule !== "object" || !("status" in rawModule)) {
     console.warn(`Cross-profile QUIC file has unexpected format: ${path}`);
     return null;
   }
@@ -1176,3 +1185,81 @@ export function loadCrossProfileQperfData(): CrossProfileQperfData | null {
 
 export const crossProfileQperfData = loadCrossProfileQperfData();
 console.log("Cross-profile QUIC data:", crossProfileQperfData);
+
+// --- Cross-Profile Video Streaming Data Loading ---
+
+const crossProfileVideoStreamingFile = import.meta.glob(
+  "@/bench/General/comparison/cross_profile_video_streaming.json",
+  { eager: true },
+);
+
+export function loadCrossProfileVideoStreamingData(): CrossProfileVideoStreamingData | null {
+  const files = Object.entries(crossProfileVideoStreamingFile);
+  if (files.length === 0) {
+    console.log("No cross-profile Video Streaming data file found");
+    return null;
+  }
+
+  const [path, rawModule] = files[0];
+
+  if (!rawModule || typeof rawModule !== "object" || !("status" in rawModule)) {
+    console.warn(
+      `Cross-profile Video Streaming file has unexpected format: ${path}`,
+    );
+    return null;
+  }
+
+  /* eslint-disable-next-line "@typescript-eslint/no-explicit-any" */
+  const moduleData = rawModule as { status: string; data?: any };
+
+  if (moduleData.status !== "success" || !moduleData.data) {
+    console.warn(
+      `Cross-profile Video Streaming data retrieval failed for ${path}`,
+    );
+    return null;
+  }
+
+  return moduleData.data as CrossProfileVideoStreamingData;
+}
+
+export const crossProfileVideoStreamingData =
+  loadCrossProfileVideoStreamingData();
+console.log(
+  "Cross-profile Video Streaming data:",
+  crossProfileVideoStreamingData,
+);
+
+// --- Cross-Profile Nix Cache Data Loading ---
+
+const crossProfileNixCacheFile = import.meta.glob(
+  "@/bench/General/comparison/cross_profile_nix_cache.json",
+  { eager: true },
+);
+
+export function loadCrossProfileNixCacheData(): CrossProfileNixCacheData | null {
+  const files = Object.entries(crossProfileNixCacheFile);
+  if (files.length === 0) {
+    console.log("No cross-profile Nix Cache data file found");
+    return null;
+  }
+
+  const [path, rawModule] = files[0];
+
+  if (!rawModule || typeof rawModule !== "object" || !("status" in rawModule)) {
+    console.warn(`Cross-profile Nix Cache file has unexpected format: ${path}`);
+    return null;
+  }
+
+  /* eslint-disable-next-line "@typescript-eslint/no-explicit-any" */
+  const moduleData = rawModule as { status: string; data?: any };
+
+  if (moduleData.status !== "success" || !moduleData.data) {
+    console.warn(`Cross-profile Nix Cache data retrieval failed for ${path}`);
+    return null;
+  }
+
+  return moduleData.data as CrossProfileNixCacheData;
+}
+
+export const crossProfileNixCacheData = loadCrossProfileNixCacheData();
+console.log("Cross-profile Nix Cache data:", crossProfileNixCacheData);

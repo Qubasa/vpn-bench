@@ -59,11 +59,14 @@ const createBarChartOption = (
   labelFormatter: (value: number) => string = (v) => v.toFixed(1),
 ) => {
   // Sort by value for better visualization (incomplete items at end)
+  // For "Lower is Better" metrics, sort ascending (lowest/best first)
+  // For "Higher is Better" metrics, sort descending (highest/best first)
   const sortedData = [...data].sort((a, b) => {
     // Put incomplete items at the end
     if (a.isIncomplete && !b.isIncomplete) return 1;
     if (!a.isIncomplete && b.isIncomplete) return -1;
-    return b.value - a.value;
+    // Default to descending if higherIsBetter is not specified
+    return higherIsBetter === false ? a.value - b.value : b.value - a.value;
   });
 
   // Calculate placeholder height for incomplete items

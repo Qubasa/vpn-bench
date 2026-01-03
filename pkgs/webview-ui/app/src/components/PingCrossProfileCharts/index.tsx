@@ -5,15 +5,14 @@ import { CrossProfilePingData, PingHeatmapData } from "../../benchData";
 
 // Format TC profile names for display
 const formatProfileName = (name: string) =>
-  name
-    .replace(/_/g, " ")
-    .replace(/\b\w/g, (l) => l.toUpperCase());
+  name.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase());
 
 // Failed test marker color (dark for visibility on light/empty backgrounds)
 const FAILED_COLOR = "#555555";
 
 // Simple X symbol (smaller and cleaner)
-const X_SYMBOL_PATH = "path://M2 0L6 4L10 0L12 2L8 6L12 10L10 12L6 8L2 12L0 10L4 6L0 2Z";
+const X_SYMBOL_PATH =
+  "path://M2 0L6 4L10 0L12 2L8 6L12 10L10 12L6 8L2 12L0 10L4 6L0 2Z";
 
 /**
  * Creates the ECharts option for RTT (latency) heatmap.
@@ -24,7 +23,7 @@ const createRttHeatmapOption = (data: PingHeatmapData): EChartsCoreOption => {
 
   // Sort by baseline RTT ascending (lowest first = best)
   const sortedVpnNames = [...vpnNames].sort(
-    (a, b) => (data.rtt[a]?.baseline ?? 1000) - (data.rtt[b]?.baseline ?? 1000)
+    (a, b) => (data.rtt[a]?.baseline ?? 1000) - (data.rtt[b]?.baseline ?? 1000),
   );
 
   // Build failed markers first (need to know which cells to exclude from heatmap)
@@ -32,12 +31,12 @@ const createRttHeatmapOption = (data: PingHeatmapData): EChartsCoreOption => {
     (data.failed[vpn] || []).map((profile) => [
       data.tc_profiles.indexOf(profile),
       vpnIdx,
-    ])
+    ]),
   );
 
   // Create Set of failed cell keys for quick lookup
   const failedCellKeys = new Set(
-    failedScatterData.map(([profileIdx, vpnIdx]) => `${profileIdx}-${vpnIdx}`)
+    failedScatterData.map(([profileIdx, vpnIdx]) => `${profileIdx}-${vpnIdx}`),
   );
 
   // Build heatmap data, excluding failed cells (so they don't get colored)
@@ -48,7 +47,7 @@ const createRttHeatmapOption = (data: PingHeatmapData): EChartsCoreOption => {
         if (failedCellKeys.has(key)) return null; // Skip failed cells
         return [profileIdx, vpnIdx, data.rtt[vpn]?.[profile] ?? 0];
       })
-      .filter((item): item is [number, number, number] => item !== null)
+      .filter((item): item is [number, number, number] => item !== null),
   );
 
   const hasFailures = failedScatterData.length > 0;
@@ -86,12 +85,14 @@ const createRttHeatmapOption = (data: PingHeatmapData): EChartsCoreOption => {
         return `<strong>${vpnName}</strong><br/>${profile}: ${rtt.toFixed(2)} ms`;
       },
     },
-    legend: hasFailures ? {
-      data: ["RTT", "Failed"],
-      top: 60,
-      itemWidth: 14,
-      itemHeight: 14,
-    } : undefined,
+    legend: hasFailures
+      ? {
+          data: ["RTT", "Failed"],
+          top: 60,
+          itemWidth: 14,
+          itemHeight: 14,
+        }
+      : undefined,
     grid: {
       top: hasFailures ? 100 : 80,
       bottom: 60,
@@ -125,7 +126,7 @@ const createRttHeatmapOption = (data: PingHeatmapData): EChartsCoreOption => {
       seriesIndex: 0,
       pieces: [
         // Inverted: low RTT = green (good), high RTT = red (bad)
-        { max: 1, color: "#1a9850" },         // dark green (best: <1ms)
+        { max: 1, color: "#1a9850" }, // dark green (best: <1ms)
         { min: 1, max: 2, color: "#66bd63" },
         { min: 2, max: 5, color: "#a6d96a" },
         { min: 5, max: 10, color: "#d9ef8b" },
@@ -134,7 +135,7 @@ const createRttHeatmapOption = (data: PingHeatmapData): EChartsCoreOption => {
         { min: 30, max: 40, color: "#fdae61" },
         { min: 40, max: 50, color: "#f46d43" },
         { min: 50, max: 100, color: "#d73027" },
-        { min: 100, color: "#a50026" },       // dark red (worst: >100ms)
+        { min: 100, color: "#a50026" }, // dark red (worst: >100ms)
       ],
     },
     series: [
@@ -161,20 +162,24 @@ const createRttHeatmapOption = (data: PingHeatmapData): EChartsCoreOption => {
         },
       },
       // Failed test markers as scatter overlay
-      ...(hasFailures ? [{
-        name: "Failed",
-        type: "scatter",
-        data: failedScatterData,
-        symbol: X_SYMBOL_PATH,
-        symbolSize: 14,
-        itemStyle: {
-          color: FAILED_COLOR,
-        },
-        label: {
-          show: false,
-        },
-        z: 10,
-      }] : []),
+      ...(hasFailures
+        ? [
+            {
+              name: "Failed",
+              type: "scatter",
+              data: failedScatterData,
+              symbol: X_SYMBOL_PATH,
+              symbolSize: 14,
+              itemStyle: {
+                color: FAILED_COLOR,
+              },
+              label: {
+                show: false,
+              },
+              z: 10,
+            },
+          ]
+        : []),
     ],
   };
 };
@@ -183,12 +188,16 @@ const createRttHeatmapOption = (data: PingHeatmapData): EChartsCoreOption => {
  * Creates the ECharts option for packet loss heatmap.
  * Lower is better (green = no loss).
  */
-const createPacketLossHeatmapOption = (data: PingHeatmapData): EChartsCoreOption => {
+const createPacketLossHeatmapOption = (
+  data: PingHeatmapData,
+): EChartsCoreOption => {
   const vpnNames = Object.keys(data.packet_loss);
 
   // Sort by baseline packet loss ascending (lowest first = best)
   const sortedVpnNames = [...vpnNames].sort(
-    (a, b) => (data.packet_loss[a]?.baseline ?? 100) - (data.packet_loss[b]?.baseline ?? 100)
+    (a, b) =>
+      (data.packet_loss[a]?.baseline ?? 100) -
+      (data.packet_loss[b]?.baseline ?? 100),
   );
 
   // Build failed markers first (need to know which cells to exclude from heatmap)
@@ -196,12 +205,12 @@ const createPacketLossHeatmapOption = (data: PingHeatmapData): EChartsCoreOption
     (data.failed[vpn] || []).map((profile) => [
       data.tc_profiles.indexOf(profile),
       vpnIdx,
-    ])
+    ]),
   );
 
   // Create Set of failed cell keys for quick lookup
   const failedCellKeys = new Set(
-    failedScatterData.map(([profileIdx, vpnIdx]) => `${profileIdx}-${vpnIdx}`)
+    failedScatterData.map(([profileIdx, vpnIdx]) => `${profileIdx}-${vpnIdx}`),
   );
 
   // Build heatmap data, excluding failed cells (so they don't get colored)
@@ -212,7 +221,7 @@ const createPacketLossHeatmapOption = (data: PingHeatmapData): EChartsCoreOption
         if (failedCellKeys.has(key)) return null; // Skip failed cells
         return [profileIdx, vpnIdx, data.packet_loss[vpn]?.[profile] ?? 0];
       })
-      .filter((item): item is [number, number, number] => item !== null)
+      .filter((item): item is [number, number, number] => item !== null),
   );
 
   const hasFailures = failedScatterData.length > 0;
@@ -220,7 +229,9 @@ const createPacketLossHeatmapOption = (data: PingHeatmapData): EChartsCoreOption
   return {
     title: {
       text: "Ping Packet Loss Heatmap",
-      subtext: "Lower is better (green = 0% loss)" + (hasFailures ? " | ✕ = Failed" : ""),
+      subtext:
+        "Lower is better (green = 0% loss)" +
+        (hasFailures ? " | ✕ = Failed" : ""),
       left: "center",
     },
     toolbox: {
@@ -250,12 +261,14 @@ const createPacketLossHeatmapOption = (data: PingHeatmapData): EChartsCoreOption
         return `<strong>${vpnName}</strong><br/>${profile}: ${loss.toFixed(2)}%`;
       },
     },
-    legend: hasFailures ? {
-      data: ["Packet Loss", "Failed"],
-      top: 60,
-      itemWidth: 14,
-      itemHeight: 14,
-    } : undefined,
+    legend: hasFailures
+      ? {
+          data: ["Packet Loss", "Failed"],
+          top: 60,
+          itemWidth: 14,
+          itemHeight: 14,
+        }
+      : undefined,
     grid: {
       top: hasFailures ? 100 : 80,
       bottom: 60,
@@ -289,14 +302,14 @@ const createPacketLossHeatmapOption = (data: PingHeatmapData): EChartsCoreOption
       seriesIndex: 0,
       pieces: [
         // Inverted: 0% loss = dark green (best), high loss = red (bad)
-        { max: 0.01, color: "#1a9850" },      // dark green (best: ~0%)
+        { max: 0.01, color: "#1a9850" }, // dark green (best: ~0%)
         { min: 0.01, max: 1, color: "#66bd63" },
         { min: 1, max: 2, color: "#a6d96a" },
         { min: 2, max: 5, color: "#d9ef8b" },
         { min: 5, max: 10, color: "#fee08b" },
         { min: 10, max: 20, color: "#fdae61" },
         { min: 20, max: 50, color: "#f46d43" },
-        { min: 50, color: "#a50026" },        // dark red (worst: >50%)
+        { min: 50, color: "#a50026" }, // dark red (worst: >50%)
       ],
     },
     series: [
@@ -321,20 +334,24 @@ const createPacketLossHeatmapOption = (data: PingHeatmapData): EChartsCoreOption
         },
       },
       // Failed test markers as scatter overlay
-      ...(hasFailures ? [{
-        name: "Failed",
-        type: "scatter",
-        data: failedScatterData,
-        symbol: X_SYMBOL_PATH,
-        symbolSize: 14,
-        itemStyle: {
-          color: FAILED_COLOR,
-        },
-        label: {
-          show: false,
-        },
-        z: 10,
-      }] : []),
+      ...(hasFailures
+        ? [
+            {
+              name: "Failed",
+              type: "scatter",
+              data: failedScatterData,
+              symbol: X_SYMBOL_PATH,
+              symbolSize: 14,
+              itemStyle: {
+                color: FAILED_COLOR,
+              },
+              label: {
+                show: false,
+              },
+              z: 10,
+            },
+          ]
+        : []),
     ],
   };
 };
@@ -349,10 +366,10 @@ export interface PingCrossProfileChartsProps {
 export const PingCrossProfileCharts = (props: PingCrossProfileChartsProps) => {
   // Memoize chart options
   const rttHeatmapOption = createMemo(() =>
-    createRttHeatmapOption(props.data.heatmap)
+    createRttHeatmapOption(props.data.heatmap),
   );
   const packetLossHeatmapOption = createMemo(() =>
-    createPacketLossHeatmapOption(props.data.heatmap)
+    createPacketLossHeatmapOption(props.data.heatmap),
   );
 
   // Check if data is available
