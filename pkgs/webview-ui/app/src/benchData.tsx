@@ -279,6 +279,9 @@ export interface UdpIperfComparisonData {
   total_bytes_sent: MetricStats;
   total_bytes_received: MetricStats;
   duration_seconds: MetricStats;
+  blksize_bytes: MetricStats; // UDP payload/datagram size
+  host_cpu_percent: MetricStats; // Host CPU utilization
+  remote_cpu_percent: MetricStats; // Remote CPU utilization
 }
 
 export interface NixCacheComparisonData {
@@ -339,6 +342,78 @@ export interface TimeBreakdownData {
   connectivity_wait_seconds: number;
   other_overhead_seconds: number;
   total_seconds: number;
+}
+
+// --- Cross-Profile TCP Visualization Data ---
+
+export interface Bar3DData {
+  vpn_names: string[];
+  tc_profiles: string[];
+  throughput_data: [number, number, number][]; // [vpn_idx, profile_idx, throughput_mbps]
+}
+
+export interface Scatter3DData {
+  dimensions: string[];
+  vpn_names: string[];
+  tc_profiles: string[];
+  data: number[][]; // [throughput, window_size_kb, cwnd_kb, vpn_idx, profile_idx]
+}
+
+export interface TcpSectionData {
+  bar3d: Bar3DData;
+  scatter3d: Scatter3DData;
+}
+
+export interface CrossProfileTcpData {
+  tcp: TcpSectionData;
+  parallel_tcp: TcpSectionData;
+}
+
+// --- Cross-Profile UDP Visualization Data ---
+
+export interface UdpHeatmapData {
+  tc_profiles: string[]; // Keep for ordered iteration
+  throughput: Record<string, Record<string, number>>; // {vpn: {profile: receiver_throughput_mbps}}
+  cpu: Record<string, Record<string, number>>; // {vpn: {profile: host_cpu_percent}}
+  failed: Record<string, string[]>; // {vpn: [failed_profiles]}
+}
+
+export interface UdpScatterData {
+  dimensions: string[];
+  vpn_names: string[];
+  tc_profiles: string[];
+  data: number[][]; // [throughput, payload_size, received_bytes_gb, vpn_idx, profile_idx]
+}
+
+export interface CrossProfileUdpData {
+  heatmap: UdpHeatmapData;
+  scatter: UdpScatterData;
+}
+
+// --- Cross-Profile Ping Visualization Data ---
+
+export interface PingHeatmapData {
+  tc_profiles: string[]; // Keep for ordered iteration
+  rtt: Record<string, Record<string, number>>; // {vpn: {profile: rtt_avg_ms}}
+  packet_loss: Record<string, Record<string, number>>; // {vpn: {profile: packet_loss_percent}}
+  failed: Record<string, string[]>; // {vpn: [failed_profiles]}
+}
+
+export interface CrossProfilePingData {
+  heatmap: PingHeatmapData;
+}
+
+// --- Cross-Profile QUIC/Qperf Visualization Data ---
+
+export interface QperfHeatmapData {
+  tc_profiles: string[]; // Keep for ordered iteration
+  bandwidth: Record<string, Record<string, number>>; // {vpn: {profile: total_bandwidth_mbps}}
+  cpu: Record<string, Record<string, number>>; // {vpn: {profile: cpu_usage_percent}}
+  failed: Record<string, string[]>; // {vpn: [failed_profiles]}
+}
+
+export interface CrossProfileQperfData {
+  heatmap: QperfHeatmapData;
 }
 
 // Maps VPN name to its comparison data
@@ -945,3 +1020,159 @@ export function getTotalRuntimeForProfile(
   }
   return total;
 }
+
+// --- Cross-Profile TCP Data Loading ---
+
+const crossProfileTcpFile = import.meta.glob(
+  "@/bench/General/comparison/cross_profile_tcp.json",
+  { eager: true },
+);
+
+export function loadCrossProfileTcpData(): CrossProfileTcpData | null {
+  const files = Object.entries(crossProfileTcpFile);
+  if (files.length === 0) {
+    console.log("No cross-profile TCP data file found");
+    return null;
+  }
+
+  const [path, rawModule] = files[0];
+
+  if (
+    !rawModule ||
+    typeof rawModule !== "object" ||
+    !("status" in rawModule)
+  ) {
+    console.warn(`Cross-profile TCP file has unexpected format: ${path}`);
+    return null;
+  }
+
+  /* eslint-disable-next-line "@typescript-eslint/no-explicit-any" */
+  const moduleData = rawModule as { status: string; data?: any };
+
+  if (moduleData.status !== "success" || !moduleData.data) {
+    console.warn(`Cross-profile TCP data retrieval failed for ${path}`);
+    return null;
+  }
+
+  return moduleData.data as CrossProfileTcpData;
+}
+
+export const crossProfileTcpData = loadCrossProfileTcpData();
+console.log("Cross-profile TCP data:", crossProfileTcpData);
+
+// --- Cross-Profile UDP Data Loading ---
+
+const crossProfileUdpFile = import.meta.glob(
+  "@/bench/General/comparison/cross_profile_udp.json",
+  { eager: true },
+);
+
+export function loadCrossProfileUdpData(): CrossProfileUdpData | null {
+  const files = Object.entries(crossProfileUdpFile);
+  if (files.length === 0) {
+    console.log("No cross-profile UDP data file found");
+    return null;
+  }
+
+  const [path, rawModule] = files[0];
+
+  if (
+    !rawModule ||
+    typeof rawModule !== "object" ||
+    !("status" in rawModule)
+  ) {
+    console.warn(`Cross-profile UDP file has unexpected format: ${path}`);
+    return null;
+  }
+
+  /* eslint-disable-next-line "@typescript-eslint/no-explicit-any" */
+  const moduleData = rawModule as { status: string; data?: any };
+
+  if (moduleData.status !== "success" || !moduleData.data) {
+    console.warn(`Cross-profile UDP data retrieval failed for ${path}`);
+    return null;
+  }
+
+  return moduleData.data as CrossProfileUdpData;
+}
+
+export const crossProfileUdpData = loadCrossProfileUdpData();
+console.log("Cross-profile UDP data:", crossProfileUdpData);
+
+// --- Cross-Profile Ping Data Loading ---
+
+const crossProfilePingFile = import.meta.glob(
+  "@/bench/General/comparison/cross_profile_ping.json",
+  { eager: true },
+);
+
+export function loadCrossProfilePingData(): CrossProfilePingData | null {
+  const files = Object.entries(crossProfilePingFile);
+  if (files.length === 0) {
+    console.log("No cross-profile Ping data file found");
+    return null;
+  }
+
+  const [path, rawModule] = files[0];
+
+  if (
+    !rawModule ||
+    typeof rawModule !== "object" ||
+    !("status" in rawModule)
+  ) {
+    console.warn(`Cross-profile Ping file has unexpected format: ${path}`);
+    return null;
+  }
+
+  /* eslint-disable-next-line "@typescript-eslint/no-explicit-any" */
+  const moduleData = rawModule as { status: string; data?: any };
+
+  if (moduleData.status !== "success" || !moduleData.data) {
+    console.warn(`Cross-profile Ping data retrieval failed for ${path}`);
+    return null;
+  }
+
+  return moduleData.data as CrossProfilePingData;
+}
+
+export const crossProfilePingData = loadCrossProfilePingData();
+console.log("Cross-profile Ping data:", crossProfilePingData);
+
+// --- Cross-Profile QUIC/Qperf Data Loading ---
+
+const crossProfileQperfFile = import.meta.glob(
+  "@/bench/General/comparison/cross_profile_qperf.json",
+  { eager: true },
+);
+
+export function loadCrossProfileQperfData(): CrossProfileQperfData | null {
+  const files = Object.entries(crossProfileQperfFile);
+  if (files.length === 0) {
+    console.log("No cross-profile QUIC data file found");
+    return null;
+  }
+
+  const [path, rawModule] = files[0];
+
+  if (
+    !rawModule ||
+    typeof rawModule !== "object" ||
+    !("status" in rawModule)
+  ) {
+    console.warn(`Cross-profile QUIC file has unexpected format: ${path}`);
+    return null;
+  }
+
+  /* eslint-disable-next-line "@typescript-eslint/no-explicit-any" */
+  const moduleData = rawModule as { status: string; data?: any };
+
+  if (moduleData.status !== "success" || !moduleData.data) {
+    console.warn(`Cross-profile QUIC data retrieval failed for ${path}`);
+    return null;
+  }
+
+  return moduleData.data as CrossProfileQperfData;
+}
+
+export const crossProfileQperfData = loadCrossProfileQperfData();
+console.log("Cross-profile QUIC data:", crossProfileQperfData);

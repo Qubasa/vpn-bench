@@ -36,6 +36,7 @@ import {
 } from "./benchData";
 import { GeneralDashboard } from "./components/GeneralDashboard";
 import { ConnectionTimesDashboard } from "./components/ConnectionTimesDashboard";
+import { TcpCrossProfileDashboard } from "./components/TcpCrossProfileDashboard";
 import { QperfData, QperfReport } from "./components/QperfCharts";
 import { HyperfineData, HyperfineReport } from "./components/HyperfineCharts";
 import { PingData, PingReport } from "./components/PingCharts";
@@ -43,6 +44,26 @@ import { RistData, RistReport } from "./components/RistStreamCharts";
 import { TCSettingsData } from "./benchData";
 
 export const client = new QueryClient();
+
+// Logical ordering for TC profiles (from no impairment to severe)
+const TC_PROFILE_ORDER = [
+  "baseline",
+  "low_impairment",
+  "medium_impairment",
+  "high_impairment",
+];
+
+function sortTcProfiles(profiles: string[]): string[] {
+  return [...profiles].sort((a, b) => {
+    const aIndex = TC_PROFILE_ORDER.indexOf(a);
+    const bIndex = TC_PROFILE_ORDER.indexOf(b);
+    // Known profiles sorted by order, unknown profiles go at the end alphabetically
+    if (aIndex === -1 && bIndex === -1) return a.localeCompare(b);
+    if (aIndex === -1) return 1;
+    if (bIndex === -1) return -1;
+    return aIndex - bIndex;
+  });
+}
 
 // TC Settings Display Component
 function TCSettingsDisplay(props: { tcSettings: TCSettingsData | null }) {
@@ -211,8 +232,8 @@ function processCategoryReportsMixed<TData>(
 
 // Wrapper component that handles TC profile selection
 function VpnDashboardWithProfiles(props: { category: BenchData[0] }) {
-  // Get the list of TC profile aliases
-  const runAliases = Object.keys(props.category.runs);
+  // Get the list of TC profile aliases, sorted in logical order
+  const runAliases = sortTcProfiles(Object.keys(props.category.runs));
 
   // Get URL search params for state sync
   const [searchParams, setSearchParams] = useSearchParams();
@@ -375,6 +396,16 @@ function generateConnectionTimesRoute(comparison: ComparisonData): AppRoute[] {
   ];
 }
 
+function generateCrossProfileRoute(): AppRoute[] {
+  return [
+    {
+      path: "/cross-profile",
+      label: "Cross Profile",
+      component: () => <TcpCrossProfileDashboard />,
+    },
+  ];
+}
+
 // Generate routes from benchData
 export const routes: AppRoute[] =
   benchData.length > 0
@@ -390,6 +421,7 @@ export const routes: AppRoute[] =
           ),
         },
         ...generateRoutesFromBenchData(benchData),
+        ...generateCrossProfileRoute(),
         ...generateConnectionTimesRoute(comparisonData),
         ...generateAppRouteFromGeneralData(comparisonData),
       ]

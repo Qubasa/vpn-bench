@@ -213,6 +213,7 @@ const IperfUdpTestSummary = (props: { reports: IperfUdpReport[] }) => {
     let totalBytesSent = 0;
     let totalBytesReceived = 0;
     let maxDuration = 0;
+    let payloadSize: number | null = null;
 
     for (const report of props.reports) {
       const sent = report.data.end?.sum_sent;
@@ -223,12 +224,17 @@ const IperfUdpTestSummary = (props: { reports: IperfUdpReport[] }) => {
       if (sent?.seconds && sent.seconds > maxDuration) {
         maxDuration = sent.seconds;
       }
+      // Get blksize from test_start (should be same across all reports)
+      if (payloadSize === null && report.data.start?.test_start?.blksize) {
+        payloadSize = report.data.start.test_start.blksize;
+      }
     }
 
     return {
       bytesSent: totalBytesSent,
       bytesReceived: totalBytesReceived,
       duration: maxDuration,
+      payloadSize,
     };
   };
 
@@ -278,6 +284,14 @@ const IperfUdpTestSummary = (props: { reports: IperfUdpReport[] }) => {
             Data Received:
           </span>
           <span style={{ color: "#333" }}>{formatBytes(t.bytesReceived)}</span>
+        </div>
+      )}
+      {t.payloadSize !== null && t.payloadSize > 0 && (
+        <div style={{ display: "flex", "align-items": "center", gap: "8px" }}>
+          <span style={{ "font-weight": "500", color: "#fa8c16" }}>
+            Payload Size:
+          </span>
+          <span style={{ color: "#333" }}>{t.payloadSize} bytes</span>
         </div>
       )}
     </div>

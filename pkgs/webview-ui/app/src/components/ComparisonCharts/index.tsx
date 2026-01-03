@@ -905,6 +905,25 @@ export const UdpTotalDataComparisonChart = (props: {
   );
 };
 
+export const UdpPacketSizeComparisonChart = (props: {
+  data: VpnComparisonResultMap<UdpIperfComparisonData>;
+  height?: number;
+  allVpnNames?: string[];
+}) => {
+  const chartData = () =>
+    metricToBarData(props.data, (d) => d.blksize_bytes, props.allVpnNames);
+  return (
+    <ComparisonBarChart
+      data={chartData()}
+      title="UDP Payload Size"
+      yAxisLabel="Bytes"
+      height={props.height ?? 400}
+      color="#fa8c16"
+      labelFormatter={(v) => `${v.toFixed(0)} B`}
+    />
+  );
+};
+
 // --- Ping Comparison Charts ---
 
 export const PingLatencyComparisonChart = (props: {
@@ -1227,6 +1246,10 @@ export const UdpComparisonSection = (props: {
         allVpnNames={props.allVpnNames}
       />
       <UdpTotalDataComparisonChart
+        data={props.data}
+        allVpnNames={props.allVpnNames}
+      />
+      <UdpPacketSizeComparisonChart
         data={props.data}
         allVpnNames={props.allVpnNames}
       />

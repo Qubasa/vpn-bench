@@ -23,51 +23,51 @@
 
 [[benchmark]]
 vpn = "internal"
-tests = ["rist-stream"]
+tests = ["nix-cache"]
 tc_profiles = ["low", "medium", "high"]
-skip_con_times = true
+skip_con_times = false
 
-[[benchmark]]
-vpn = "zerotier"
-tests = ["nix-cache"]
-tc_profiles = ["baseline", "low", "medium", "high"]
-skip_con_times = true
+# [[benchmark]]
+# vpn = "zerotier"
+# tests = ["nix-cache"]
+# tc_profiles = ["baseline", "low", "medium", "high"]
+# skip_con_times = true
 
-[[benchmark]]
-vpn = "mycelium"
-tests = ["nix-cache"]
-tc_profiles = ["baseline", "low", "medium", "high"]
-skip_con_times = true
+# [[benchmark]]
+# vpn = "mycelium"
+# tests = ["nix-cache"]
+# tc_profiles = ["baseline", "low", "medium", "high"]
+# skip_con_times = true
 
-[[benchmark]]
-vpn = "hyprspace"
-tests = ["nix-cache"]
-tc_profiles = ["baseline", "low", "medium", "high"]
-skip_con_times = true
+# [[benchmark]]
+# vpn = "hyprspace"
+# tests = ["nix-cache"]
+# tc_profiles = ["baseline", "low", "medium", "high"]
+# skip_con_times = true
 
-[[benchmark]]
-vpn = "yggdrasil"
-tests = ["nix-cache"]
-tc_profiles = ["baseline", "low", "medium", "high"]
-skip_con_times = true
+# [[benchmark]]
+# vpn = "yggdrasil"
+# tests = ["nix-cache"]
+# tc_profiles = ["baseline", "low", "medium", "high"]
+# skip_con_times = true
 
-[[benchmark]]
-vpn = "vpncloud"
-tests = ["nix-cache"]
-tc_profiles = ["baseline", "low", "medium", "high"]
-skip_con_times = true
+# [[benchmark]]
+# vpn = "vpncloud"
+# tests = ["nix-cache"]
+# tc_profiles = ["baseline", "low", "medium", "high"]
+# skip_con_times = true
 
-[[benchmark]]
-vpn = "wireguard"
-tests = ["nix-cache"]
-tc_profiles = ["baseline", "low", "medium", "high"]
-skip_con_times = true
+# [[benchmark]]
+# vpn = "wireguard"
+# tests = ["nix-cache"]
+# tc_profiles = ["baseline", "low", "medium", "high"]
+# skip_con_times = true
 
 [[benchmark]]
 vpn = "easytier"
 tests = ["nix-cache"]
 tc_profiles = ["baseline", "low", "medium", "high"]
-skip_con_times = true
+skip_con_times = false
 
 # [[benchmark]]
 # vpn = "nebula"
@@ -81,8 +81,8 @@ skip_con_times = true
 # tc_profiles = ["baseline", "low", "medium", "high"]
 # skip_con_times = false
 
-[[benchmark]]
-vpn = "headscale"
-tests = ["rist-stream"]
-tc_profiles = ["baseline", "low", "medium", "high"]
-skip_con_times = false
+# [[benchmark]]
+# vpn = "headscale"
+# tests = ["rist-stream"]
+# tc_profiles = ["baseline", "low", "medium", "high"]
+# skip_con_times = false

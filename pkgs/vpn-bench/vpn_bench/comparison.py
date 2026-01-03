@@ -112,6 +112,9 @@ class UdpIperfComparisonDict(TypedDict):
     total_bytes_sent: MetricStatsDict  # Total bytes sent during test
     total_bytes_received: MetricStatsDict  # Total bytes received during test
     duration_seconds: MetricStatsDict  # Test duration in seconds
+    blksize_bytes: MetricStatsDict  # UDP payload/datagram size
+    host_cpu_percent: MetricStatsDict  # Host CPU utilization
+    remote_cpu_percent: MetricStatsDict  # Remote CPU utilization
 
 
 class NixCacheComparisonDict(TypedDict):
@@ -185,7 +188,120 @@ class TimeBreakdownDict(TypedDict):
     total_seconds: float
 
 
+class Bar3DDataDict(TypedDict):
+    """Data structure for 3D bar chart visualization."""
+
+    vpn_names: list[str]
+    tc_profiles: list[str]
+    throughput_data: list[list[float]]  # [vpn_idx, profile_idx, throughput_mbps]
+
+
+class Scatter3DDataDict(TypedDict):
+    """Data structure for scatter chart visualization."""
+
+    dimensions: list[str]
+    vpn_names: list[str]
+    tc_profiles: list[str]
+    data: list[
+        list[float]
+    ]  # [throughput, window_size_kb, cwnd_kb, vpn_idx, profile_idx]
+
+
+class TcpSectionDict(TypedDict):
+    """Section data for TCP or Parallel TCP visualization."""
+
+    bar3d: Bar3DDataDict
+    scatter3d: Scatter3DDataDict
+
+
+class CrossProfileTcpDict(TypedDict):
+    """Cross-profile TCP performance data for visualization."""
+
+    tcp: TcpSectionDict
+    parallel_tcp: TcpSectionDict
+
+
+class CrossProfileUdpHeatmapDict(TypedDict):
+    """Heatmap data for UDP cross-profile visualization."""
+
+    tc_profiles: list[str]  # Keep for ordered iteration
+    throughput: dict[
+        str, dict[str, float]
+    ]  # {vpn: {profile: receiver_throughput_mbps}}
+    cpu: dict[str, dict[str, float]]  # {vpn: {profile: host_cpu_percent}}
+    failed: dict[str, list[str]]  # {vpn: [failed_profiles]}
+
+
+class CrossProfileUdpScatterDict(TypedDict):
+    """Scatter data for UDP cross-profile visualization."""
+
+    dimensions: list[str]
+    vpn_names: list[str]
+    tc_profiles: list[str]
+    data: list[
+        list[float]
+    ]  # [throughput, payload_size, received_bytes_gb, vpn_idx, profile_idx]
+
+
+class CrossProfileUdpDict(TypedDict):
+    """Cross-profile UDP performance data for visualization."""
+
+    heatmap: CrossProfileUdpHeatmapDict
+    scatter: CrossProfileUdpScatterDict
+
+
+class CrossProfilePingHeatmapDict(TypedDict):
+    """Heatmap data for Ping cross-profile visualization."""
+
+    tc_profiles: list[str]  # Keep for ordered iteration
+    rtt: dict[str, dict[str, float]]  # {vpn: {profile: rtt_avg_ms}}
+    packet_loss: dict[str, dict[str, float]]  # {vpn: {profile: packet_loss_percent}}
+    failed: dict[str, list[str]]  # {vpn: [failed_profiles]}
+
+
+class CrossProfilePingDict(TypedDict):
+    """Cross-profile Ping latency data for visualization."""
+
+    heatmap: CrossProfilePingHeatmapDict
+
+
+class CrossProfileQperfHeatmapDict(TypedDict):
+    """Heatmap data for QUIC/Qperf cross-profile visualization."""
+
+    tc_profiles: list[str]  # Keep for ordered iteration
+    bandwidth: dict[str, dict[str, float]]  # {vpn: {profile: total_bandwidth_mbps}}
+    cpu: dict[str, dict[str, float]]  # {vpn: {profile: cpu_usage_percent}}
+    failed: dict[str, list[str]]  # {vpn: [failed_profiles]}
+
+
+class CrossProfileQperfDict(TypedDict):
+    """Cross-profile QUIC/Qperf performance data for visualization."""
+
+    heatmap: CrossProfileQperfHeatmapDict
+
+
 # --- Helper Functions ---
+
+# Logical ordering for TC profiles (from no impairment to severe)
+TC_PROFILE_ORDER = [
+    "baseline",
+    "low_impairment",
+    "medium_impairment",
+    "high_impairment",
+]
+
+
+def sort_tc_profiles(profiles: set[str]) -> list[str]:
+    """Sort TC profiles in logical severity order (baseline -> low -> medium -> high)."""
+
+    def sort_key(profile: str) -> tuple[int, str]:
+        try:
+            return (TC_PROFILE_ORDER.index(profile), profile)
+        except ValueError:
+            # Unknown profiles go at the end, sorted alphabetically
+            return (len(TC_PROFILE_ORDER), profile)
+
+    return sorted(profiles, key=sort_key)
 
 
 def aggregate_metric_stats(stats_list: list[MetricStatsDict]) -> MetricStatsDict:
@@ -585,6 +701,9 @@ def extract_udp_iperf_metrics(data: dict[str, Any]) -> UdpIperfComparisonDict | 
     - receiver_throughput_mbps: from end.sum_received (what server actually received)
     - jitter_ms: from end.sum_received (receiver-side jitter measurement)
     - lost_percent: from end.sum_received (receiver-side packet loss)
+    - blksize_bytes: from start.test_start.blksize (UDP payload size)
+    - host_cpu_percent: from end.cpu_utilization_percent.host_total
+    - remote_cpu_percent: from end.cpu_utilization_percent.remote_total
     """
     try:
         end = data.get("end", {})
@@ -607,6 +726,16 @@ def extract_udp_iperf_metrics(data: dict[str, Any]) -> UdpIperfComparisonDict | 
         bytes_received = sum_received.get("bytes", 0)
         duration_seconds = sum_sent.get("seconds", 0)
 
+        # Extract blksize (UDP payload size) from test_start
+        start = data.get("start", {})
+        test_start = start.get("test_start", {})
+        blksize = test_start.get("blksize", 0)
+
+        # Extract CPU utilization
+        cpu_util = end.get("cpu_utilization_percent", {})
+        host_cpu = cpu_util.get("host_total", 0)
+        remote_cpu = cpu_util.get("remote_total", 0)
+
         def single_value_stats(value: float) -> MetricStatsDict:
             return {
                 "min": value,
@@ -623,6 +752,9 @@ def extract_udp_iperf_metrics(data: dict[str, Any]) -> UdpIperfComparisonDict | 
             "total_bytes_sent": single_value_stats(float(bytes_sent)),
             "total_bytes_received": single_value_stats(float(bytes_received)),
             "duration_seconds": single_value_stats(float(duration_seconds)),
+            "blksize_bytes": single_value_stats(float(blksize)),
+            "host_cpu_percent": single_value_stats(float(host_cpu)),
+            "remote_cpu_percent": single_value_stats(float(remote_cpu)),
         }
     except (KeyError, TypeError) as e:
         log.warning(f"Failed to extract UDP iperf metrics: {e}")
@@ -672,6 +804,15 @@ def aggregate_udp_iperf_data(
         ),
         "duration_seconds": aggregate_metric_stats(
             [m["duration_seconds"] for m in metrics_list]
+        ),
+        "blksize_bytes": aggregate_metric_stats(
+            [m["blksize_bytes"] for m in metrics_list]
+        ),
+        "host_cpu_percent": aggregate_metric_stats(
+            [m["host_cpu_percent"] for m in metrics_list]
+        ),
+        "remote_cpu_percent": aggregate_metric_stats(
+            [m["remote_cpu_percent"] for m in metrics_list]
         ),
     }
 
@@ -1078,6 +1219,347 @@ def aggregate_time_breakdown(
         "connectivity_wait_seconds": total_connectivity_wait,
         "other_overhead_seconds": other_overhead,
         "total_seconds": total_duration,
+    }
+
+
+def generate_cross_profile_tcp_data(
+    bench_dir: Path, vpn_dirs: list[Path], run_aliases: set[str]
+) -> CrossProfileTcpDict | None:
+    """Generate cross-profile TCP performance data for visualization.
+
+    Combines TCP and Parallel TCP throughput, window size, and congestion window data
+    across all VPNs and TC profiles for heatmap and scatter chart visualization.
+
+    Args:
+        bench_dir: Base directory containing benchmark data
+        vpn_dirs: List of VPN directories
+        run_aliases: Set of run aliases (TC profiles like baseline, low_impairment, etc.)
+
+    Returns:
+        CrossProfileTcpDict with tcp and parallel_tcp sections, or None if no data available
+    """
+    # Sort VPN names and TC profiles for consistent ordering
+    vpn_names = sorted([d.name for d in vpn_dirs])
+    tc_profiles = sort_tc_profiles(run_aliases)
+
+    # Collect data for TCP charts
+    tcp_bar3d_data: list[list[float]] = []
+    tcp_scatter_data: list[list[float]] = []
+
+    # Collect data for Parallel TCP charts
+    parallel_bar3d_data: list[list[float]] = []
+    parallel_scatter_data: list[list[float]] = []
+
+    for vpn_idx, vpn_name in enumerate(vpn_names):
+        for profile_idx, run_alias in enumerate(tc_profiles):
+            # Get TCP data for this VPN and profile
+            tcp_data = aggregate_tcp_iperf_data(bench_dir, vpn_name, run_alias)
+
+            if tcp_data:
+                throughput = tcp_data["sender_throughput_mbps"]["average"]
+                window_size = tcp_data["max_snd_wnd_bytes"]["average"]
+                cwnd = tcp_data["max_snd_cwnd_bytes"]["average"]
+
+                # Add to bar3D data: [vpn_idx, profile_idx, throughput]
+                tcp_bar3d_data.append([float(vpn_idx), float(profile_idx), throughput])
+
+                # Add to scatter data: [throughput, window_size_kb, cwnd_kb, vpn_idx, profile_idx]
+                window_size_kb = window_size / 1024.0
+                cwnd_kb = cwnd / 1024.0
+                tcp_scatter_data.append(
+                    [
+                        throughput,
+                        window_size_kb,
+                        cwnd_kb,
+                        float(vpn_idx),
+                        float(profile_idx),
+                    ]
+                )
+
+            # Get Parallel TCP data for this VPN and profile
+            parallel_data = aggregate_parallel_tcp_data(bench_dir, vpn_name, run_alias)
+
+            if parallel_data:
+                throughput = parallel_data["sender_throughput_mbps"]["average"]
+                window_size = parallel_data["max_snd_wnd_bytes"]["average"]
+                cwnd = parallel_data["max_snd_cwnd_bytes"]["average"]
+
+                # Add to bar3D data: [vpn_idx, profile_idx, throughput]
+                parallel_bar3d_data.append(
+                    [float(vpn_idx), float(profile_idx), throughput]
+                )
+
+                # Add to scatter data: [throughput, window_size_kb, cwnd_kb, vpn_idx, profile_idx]
+                window_size_kb = window_size / 1024.0
+                cwnd_kb = cwnd / 1024.0
+                parallel_scatter_data.append(
+                    [
+                        throughput,
+                        window_size_kb,
+                        cwnd_kb,
+                        float(vpn_idx),
+                        float(profile_idx),
+                    ]
+                )
+
+    # Return None if no data available for either type
+    if not tcp_bar3d_data and not parallel_bar3d_data:
+        return None
+
+    dimensions = [
+        "throughput",
+        "window_size",
+        "cwnd",
+        "vpn_index",
+        "profile_index",
+    ]
+
+    return {
+        "tcp": {
+            "bar3d": {
+                "vpn_names": vpn_names,
+                "tc_profiles": tc_profiles,
+                "throughput_data": tcp_bar3d_data,
+            },
+            "scatter3d": {
+                "dimensions": dimensions,
+                "vpn_names": vpn_names,
+                "tc_profiles": tc_profiles,
+                "data": tcp_scatter_data,
+            },
+        },
+        "parallel_tcp": {
+            "bar3d": {
+                "vpn_names": vpn_names,
+                "tc_profiles": tc_profiles,
+                "throughput_data": parallel_bar3d_data,
+            },
+            "scatter3d": {
+                "dimensions": dimensions,
+                "vpn_names": vpn_names,
+                "tc_profiles": tc_profiles,
+                "data": parallel_scatter_data,
+            },
+        },
+    }
+
+
+def generate_cross_profile_udp_data(
+    bench_dir: Path, vpn_dirs: list[Path], run_aliases: set[str]
+) -> CrossProfileUdpDict | None:
+    """Generate cross-profile UDP performance data for visualization.
+
+    Combines UDP throughput, payload size, and CPU usage data
+    across all VPNs and TC profiles for heatmap and scatter chart visualization.
+
+    Args:
+        bench_dir: Base directory containing benchmark data
+        vpn_dirs: List of VPN directories
+        run_aliases: Set of run aliases (TC profiles like baseline, low_impairment, etc.)
+
+    Returns:
+        CrossProfileUdpDict with heatmap and scatter sections, or None if no data available
+    """
+    # Sort VPN names and TC profiles for consistent ordering
+    vpn_names = sorted([d.name for d in vpn_dirs])
+    tc_profiles = sort_tc_profiles(run_aliases)
+
+    # Dict-based heatmap data
+    throughput: dict[str, dict[str, float]] = {}
+    cpu: dict[str, dict[str, float]] = {}
+    failed: dict[str, list[str]] = {}
+
+    # Collect data for scatter plots (keep index-based for scatter)
+    scatter_data: list[list[float]] = []
+
+    for vpn_idx, vpn_name in enumerate(vpn_names):
+        throughput[vpn_name] = {}
+        cpu[vpn_name] = {}
+
+        for profile_idx, run_alias in enumerate(tc_profiles):
+            # Get UDP data for this VPN and profile
+            udp_data = aggregate_udp_iperf_data(bench_dir, vpn_name, run_alias)
+
+            if udp_data:
+                throughput_val = udp_data["receiver_throughput_mbps"]["average"]
+                cpu_val = udp_data["host_cpu_percent"]["average"]
+                payload_size = udp_data["blksize_bytes"]["average"]
+                received_bytes = udp_data["total_bytes_received"]["average"]
+
+                # Add to dict-based heatmap data
+                throughput[vpn_name][run_alias] = throughput_val
+                cpu[vpn_name][run_alias] = cpu_val
+
+                # Add to scatter data: [throughput, payload_size, received_bytes_gb, vpn_idx, profile_idx]
+                received_bytes_gb = received_bytes / (1024 * 1024 * 1024)
+                scatter_data.append(
+                    [
+                        throughput_val,
+                        payload_size,
+                        received_bytes_gb,
+                        float(vpn_idx),
+                        float(profile_idx),
+                    ]
+                )
+            else:
+                # Check if there was an error (test ran but failed)
+                error_info = get_vpn_error_for_test(
+                    bench_dir, vpn_name, run_alias, "udp_iperf3.json"
+                )
+                if error_info:
+                    if vpn_name not in failed:
+                        failed[vpn_name] = []
+                    failed[vpn_name].append(run_alias)
+
+    # Return None if no data available (neither success nor failure)
+    if not throughput and not failed:
+        return None
+
+    dimensions = [
+        "throughput",
+        "payload_size",
+        "received_bytes_gb",
+        "vpn_index",
+        "profile_index",
+    ]
+
+    return {
+        "heatmap": {
+            "tc_profiles": tc_profiles,
+            "throughput": throughput,
+            "cpu": cpu,
+            "failed": failed,
+        },
+        "scatter": {
+            "dimensions": dimensions,
+            "vpn_names": vpn_names,
+            "tc_profiles": tc_profiles,
+            "data": scatter_data,
+        },
+    }
+
+
+def generate_cross_profile_ping_data(
+    bench_dir: Path, vpn_dirs: list[Path], run_aliases: set[str]
+) -> CrossProfilePingDict | None:
+    """Generate cross-profile Ping latency data for visualization.
+
+    Combines ping RTT and packet loss data across all VPNs and TC profiles
+    for heatmap visualization.
+
+    Args:
+        bench_dir: Base directory containing benchmark data
+        vpn_dirs: List of VPN directories
+        run_aliases: Set of run aliases (TC profiles like baseline, low_impairment, etc.)
+
+    Returns:
+        CrossProfilePingDict with heatmap section, or None if no data available
+    """
+    # Sort VPN names and TC profiles for consistent ordering
+    vpn_names = sorted([d.name for d in vpn_dirs])
+    tc_profiles = sort_tc_profiles(run_aliases)
+
+    # Dict-based heatmap data
+    rtt: dict[str, dict[str, float]] = {}
+    packet_loss: dict[str, dict[str, float]] = {}
+    failed: dict[str, list[str]] = {}
+
+    for vpn_name in vpn_names:
+        rtt[vpn_name] = {}
+        packet_loss[vpn_name] = {}
+
+        for run_alias in tc_profiles:
+            # Get Ping data for this VPN and profile
+            ping_data = aggregate_ping_data(bench_dir, vpn_name, run_alias)
+
+            if ping_data:
+                rtt[vpn_name][run_alias] = ping_data["rtt_avg_ms"]["average"]
+                packet_loss[vpn_name][run_alias] = ping_data["packet_loss_percent"][
+                    "average"
+                ]
+            else:
+                # Check if there was an error (test ran but failed)
+                error_info = get_vpn_error_for_test(
+                    bench_dir, vpn_name, run_alias, "ping.json"
+                )
+                if error_info:
+                    if vpn_name not in failed:
+                        failed[vpn_name] = []
+                    failed[vpn_name].append(run_alias)
+
+    # Return None if no data available (neither success nor failure)
+    if not rtt and not failed:
+        return None
+
+    return {
+        "heatmap": {
+            "tc_profiles": tc_profiles,
+            "rtt": rtt,
+            "packet_loss": packet_loss,
+            "failed": failed,
+        },
+    }
+
+
+def generate_cross_profile_qperf_data(
+    bench_dir: Path, vpn_dirs: list[Path], run_aliases: set[str]
+) -> CrossProfileQperfDict | None:
+    """Generate cross-profile QUIC/Qperf performance data for visualization.
+
+    Combines qperf bandwidth and CPU usage data across all VPNs and TC profiles
+    for heatmap visualization.
+
+    Args:
+        bench_dir: Base directory containing benchmark data
+        vpn_dirs: List of VPN directories
+        run_aliases: Set of run aliases (TC profiles like baseline, low_impairment, etc.)
+
+    Returns:
+        CrossProfileQperfDict with heatmap section, or None if no data available
+    """
+    # Sort VPN names and TC profiles for consistent ordering
+    vpn_names = sorted([d.name for d in vpn_dirs])
+    tc_profiles = sort_tc_profiles(run_aliases)
+
+    # Dict-based heatmap data
+    bandwidth: dict[str, dict[str, float]] = {}
+    cpu: dict[str, dict[str, float]] = {}
+    failed: dict[str, list[str]] = {}
+
+    for vpn_name in vpn_names:
+        bandwidth[vpn_name] = {}
+        cpu[vpn_name] = {}
+
+        for run_alias in tc_profiles:
+            # Get Qperf data for this VPN and profile
+            qperf_data = aggregate_qperf_data(bench_dir, vpn_name, run_alias)
+
+            if qperf_data:
+                bandwidth[vpn_name][run_alias] = qperf_data["total_bandwidth_mbps"][
+                    "average"
+                ]
+                cpu[vpn_name][run_alias] = qperf_data["cpu_usage_percent"]["average"]
+            else:
+                # Check if there was an error (test ran but failed)
+                error_info = get_vpn_error_for_test(
+                    bench_dir, vpn_name, run_alias, "qperf.json"
+                )
+                if error_info:
+                    if vpn_name not in failed:
+                        failed[vpn_name] = []
+                    failed[vpn_name].append(run_alias)
+
+    # Return None if no data available (neither success nor failure)
+    if not bandwidth and not failed:
+        return None
+
+    return {
+        "heatmap": {
+            "tc_profiles": tc_profiles,
+            "bandwidth": bandwidth,
+            "cpu": cpu,
+            "failed": failed,
+        },
     }
 
 
@@ -1592,5 +2074,66 @@ def generate_comparison_data(bench_dir: Path) -> None:
                 "time_breakdown.json",
             )
             log.info("  Saved time breakdown")
+
+    # Generate cross-profile TCP data for 3D visualization
+    # This combines data across all TC profiles for the TCP Cross-Profile dashboard
+    cross_profile_tcp = generate_cross_profile_tcp_data(
+        bench_dir, vpn_dirs, run_aliases
+    )
+    if cross_profile_tcp:
+        save_bench_report(
+            comparison_dir,
+            cross_profile_tcp,
+            "cross_profile_tcp.json",
+        )
+        log.info(
+            f"Saved cross-profile TCP data ({len(cross_profile_tcp['tcp']['bar3d']['vpn_names'])} VPNs, "
+            f"{len(cross_profile_tcp['tcp']['bar3d']['tc_profiles'])} profiles)"
+        )
+
+    # Generate cross-profile UDP data for visualization
+    cross_profile_udp = generate_cross_profile_udp_data(
+        bench_dir, vpn_dirs, run_aliases
+    )
+    if cross_profile_udp:
+        save_bench_report(
+            comparison_dir,
+            cross_profile_udp,
+            "cross_profile_udp.json",
+        )
+        log.info(
+            f"Saved cross-profile UDP data ({len(cross_profile_udp['heatmap']['throughput'])} VPNs, "
+            f"{len(cross_profile_udp['heatmap']['tc_profiles'])} profiles)"
+        )
+
+    # Generate cross-profile Ping data for visualization
+    cross_profile_ping = generate_cross_profile_ping_data(
+        bench_dir, vpn_dirs, run_aliases
+    )
+    if cross_profile_ping:
+        save_bench_report(
+            comparison_dir,
+            cross_profile_ping,
+            "cross_profile_ping.json",
+        )
+        log.info(
+            f"Saved cross-profile Ping data ({len(cross_profile_ping['heatmap']['rtt'])} VPNs, "
+            f"{len(cross_profile_ping['heatmap']['tc_profiles'])} profiles)"
+        )
+
+    # Generate cross-profile QUIC/Qperf data for visualization
+    cross_profile_qperf = generate_cross_profile_qperf_data(
+        bench_dir, vpn_dirs, run_aliases
+    )
+    if cross_profile_qperf:
+        save_bench_report(
+            comparison_dir,
+            cross_profile_qperf,
+            "cross_profile_qperf.json",
+        )
+        log.info(
+            f"Saved cross-profile QUIC data ({len(cross_profile_qperf['heatmap']['bandwidth'])} VPNs, "
+            f"{len(cross_profile_qperf['heatmap']['tc_profiles'])} profiles)"
+        )
 
     log.info("Comparison data generation complete")
