@@ -213,6 +213,9 @@ export interface BenchCategory {
 }
 export type BenchData = BenchCategory[];
 
+// Maps alias (e.g., "04.01.2026") to benchmark data for that alias
+export type AllBenchData = Record<string, BenchData>;
+
 // --- Existing GeneralData Interface ---
 export interface GeneralData {
   connection_timings?: ConnectionTimings;
@@ -486,6 +489,9 @@ export interface ComparisonRunData {
 // Maps run alias (TC profile) to comparison data
 export type ComparisonData = Record<string, ComparisonRunData>;
 
+// Maps alias (e.g., "04.01.2026") to comparison data for that alias
+export type AllComparisonData = Record<string, ComparisonData>;
+
 // --- Timing Breakdown Data for Total Runtime Display ---
 
 // Maps VPN name to its timing breakdown for a specific profile
@@ -502,15 +508,17 @@ if (Object.keys(benchFiles).length === 0) {
   console.warn("No benchmark JSON files found in '@/bench/**'.");
 }
 
-// Helper to load TC settings for a specific VPN/run combination
+// Helper to load TC settings for a specific alias/VPN/run combination
 function loadTCSettings(
   benchFiles: Record<string, unknown>,
+  alias: string,
   vpnName: string,
   runAlias: string,
 ): TCSettingsData | null {
   // Search for the tc_settings.json file in benchFiles
+  // New path: @/bench/<ALIAS>/<VPN>/<RUN_ALIAS>/tc_settings.json
   for (const [path, rawModule] of Object.entries(benchFiles)) {
-    if (path.includes(`/${vpnName}/${runAlias}/tc_settings.json`)) {
+    if (path.includes(`/${alias}/${vpnName}/${runAlias}/tc_settings.json`)) {
       if (rawModule && typeof rawModule === "object" && "alias" in rawModule) {
         return rawModule as TCSettingsData;
       }
@@ -523,11 +531,14 @@ function loadTCSettings(
 // Helper to load TC settings for a run alias from any VPN (all VPNs share the same TC settings per profile)
 function loadTCSettingsForRunAlias(
   benchFiles: Record<string, unknown>,
+  alias: string,
   runAlias: string,
 ): TCSettingsData | null {
   // Search for any tc_settings.json file with this run alias
+  // New path: @/bench/<ALIAS>/<VPN>/<RUN_ALIAS>/tc_settings.json
   for (const [path, rawModule] of Object.entries(benchFiles)) {
     if (
+      path.includes(`/${alias}/`) &&
       path.includes(`/${runAlias}/tc_settings.json`) &&
       !path.includes("/General/")
     ) {
@@ -540,32 +551,35 @@ function loadTCSettingsForRunAlias(
   return null;
 }
 
-export function generateBenchData(): BenchData {
-  const categories: Record<string, BenchCategory> = {};
+export function generateBenchData(): AllBenchData {
+  // Maps alias -> VPN name -> BenchCategory
+  const aliasData: Record<string, Record<string, BenchCategory>> = {};
 
   Object.entries(benchFiles).forEach(([path, rawModule]) => {
     const pathParts = path.split("/");
 
-    // New structure: @/bench/<VPN>/<RUN_ALIAS>/<MACHINE>/<FILE>
-    // Old structure: @/bench/<VPN>/<MACHINE>/<FILE>
-    // We support both for backward compatibility
+    // New structure: @/bench/<ALIAS>/<VPN>/<RUN_ALIAS>/<MACHINE>/<FILE> (7 parts)
+    // Run-level: @/bench/<ALIAS>/<VPN>/<RUN_ALIAS>/parallel_tcp_iperf3.json (6 parts)
 
+    let alias: string;
     let categoryName: string;
     let benchRunAlias: string;
     let machineName: string;
     let fileName: string;
 
-    if (pathParts.length >= 6) {
-      // New structure with 4-level depth
+    if (pathParts.length >= 7) {
+      // Machine-level file: @/bench/<ALIAS>/<VPN>/<RUN_ALIAS>/<MACHINE>/<FILE>
+      alias = pathParts[pathParts.length - 5];
       categoryName = pathParts[pathParts.length - 4];
       benchRunAlias = pathParts[pathParts.length - 3];
       machineName = pathParts[pathParts.length - 2];
       fileName = pathParts[pathParts.length - 1];
-    } else if (pathParts.length >= 5) {
-      // Old structure with 3-level depth (backward compatibility)
+    } else if (pathParts.length === 6) {
+      // Run-level file: @/bench/<ALIAS>/<VPN>/<RUN_ALIAS>/<FILE>
+      alias = pathParts[pathParts.length - 4];
       categoryName = pathParts[pathParts.length - 3];
-      benchRunAlias = "default"; // Use default alias for old structure
-      machineName = pathParts[pathParts.length - 2];
+      benchRunAlias = pathParts[pathParts.length - 2];
+      machineName = "";
       fileName = pathParts[pathParts.length - 1];
     } else {
       return;
@@ -579,21 +593,14 @@ export function generateBenchData(): BenchData {
     if (
       fileName === "connection_timings.json" ||
       fileName === "reboot_connection_timings.json" ||
-      fileName === "tc_settings.json"
+      fileName === "tc_settings.json" ||
+      fileName === "timing_breakdown.json"
     ) {
       return;
     }
 
     // Handle run-level files (parallel_tcp_iperf3.json is at run level, not machine level)
-    // Path: @/bench/<VPN>/<RUN_ALIAS>/parallel_tcp_iperf3.json (5 parts)
-    if (pathParts.length === 5 && fileName === "parallel_tcp_iperf3.json") {
-      const vpnName = pathParts[pathParts.length - 3];
-      const runAlias = pathParts[pathParts.length - 2];
-
-      if (vpnName === "General") {
-        return;
-      }
-
+    if (pathParts.length === 6 && fileName === "parallel_tcp_iperf3.json") {
       if (
         !rawModule ||
         typeof rawModule !== "object" ||
@@ -629,15 +636,25 @@ export function generateBenchData(): BenchData {
         return;
       }
 
+      // Initialize alias if needed
+      if (!aliasData[alias]) {
+        aliasData[alias] = {};
+      }
+
       // Initialize category if needed
-      if (!categories[vpnName]) {
-        categories[vpnName] = { name: vpnName, runs: {} };
+      if (!aliasData[alias][categoryName]) {
+        aliasData[alias][categoryName] = { name: categoryName, runs: {} };
       }
 
       // Initialize run if needed
-      if (!categories[vpnName].runs[runAlias]) {
-        const tcSettings = loadTCSettings(benchFiles, vpnName, runAlias);
-        categories[vpnName].runs[runAlias] = {
+      if (!aliasData[alias][categoryName].runs[benchRunAlias]) {
+        const tcSettings = loadTCSettings(
+          benchFiles,
+          alias,
+          categoryName,
+          benchRunAlias,
+        );
+        aliasData[alias][categoryName].runs[benchRunAlias] = {
           machines: [],
           tcSettings,
           parallelTcp: null,
@@ -645,7 +662,7 @@ export function generateBenchData(): BenchData {
       }
 
       // Assign parallel TCP result
-      categories[vpnName].runs[runAlias].parallelTcp =
+      aliasData[alias][categoryName].runs[benchRunAlias].parallelTcp =
         generatedResult as Result<ParallelTcpReportData>;
       return;
     }
@@ -663,52 +680,51 @@ export function generateBenchData(): BenchData {
     }
 
     /* eslint-disable-next-line "@typescript-eslint/no-explicit-any" */
-    const moduleData = rawModule as JsonWrapper<any>; // Use 'any' for data type initially
+    const moduleData = rawModule as JsonWrapper<any>;
 
-    // --- Create Result object (Ok or Err) ---
     /* eslint-disable-next-line "@typescript-eslint/no-explicit-any" */
-    let generatedResult: Result<any>; // Use 'any' here, specific type applied during assignment
+    let generatedResult: Result<any>;
 
     if (moduleData.status === "success") {
-      // Create an Ok result, value type depends on the file
-      // Include metadata if present
       generatedResult = {
         ok: true,
         value: moduleData.data,
         meta: moduleData.meta,
       };
     } else if (moduleData.status === "error") {
-      // Create an Err result
       const errorDetails: BenchmarkRunError = {
         type: moduleData.error_type,
         details: moduleData.error,
-        filePath: path, // Include path for context
+        filePath: path,
       };
-      // Include metadata (which may contain service_logs) for error results
       generatedResult = {
         ok: false,
         error: errorDetails,
         meta: moduleData.meta,
       };
     } else {
-      return; // Skip if status is neither 'success' nor 'error'
+      return;
     }
 
-    // --- Find or Create Category (VPN), Run, and Machine ---
-    // Group by VPN name first
-    if (!categories[categoryName]) {
-      categories[categoryName] = { name: categoryName, runs: {} };
+    // Initialize alias if needed
+    if (!aliasData[alias]) {
+      aliasData[alias] = {};
+    }
+
+    // Initialize category if needed
+    if (!aliasData[alias][categoryName]) {
+      aliasData[alias][categoryName] = { name: categoryName, runs: {} };
     }
 
     // Ensure the run alias exists
-    if (!categories[categoryName].runs[benchRunAlias]) {
-      // Load TC settings for this run (will be loaded once per VPN/run combination)
+    if (!aliasData[alias][categoryName].runs[benchRunAlias]) {
       const tcSettings = loadTCSettings(
         benchFiles,
+        alias,
         categoryName,
         benchRunAlias,
       );
-      categories[categoryName].runs[benchRunAlias] = {
+      aliasData[alias][categoryName].runs[benchRunAlias] = {
         machines: [],
         tcSettings,
         parallelTcp: null,
@@ -716,24 +732,22 @@ export function generateBenchData(): BenchData {
     }
 
     // Find or create machine within this run
-    let machine = categories[categoryName].runs[benchRunAlias].machines.find(
-      (m) => m.name === machineName,
-    );
+    let machine = aliasData[alias][categoryName].runs[
+      benchRunAlias
+    ].machines.find((m) => m.name === machineName);
     if (!machine) {
       machine = {
         name: machineName,
-        // Initialize Result fields to null
         iperf3: { tcp: null, udp: null },
         qperf: null,
         nixCache: null,
         ping: null,
         ristStream: null,
       };
-      categories[categoryName].runs[benchRunAlias].machines.push(machine);
+      aliasData[alias][categoryName].runs[benchRunAlias].machines.push(machine);
     }
 
-    // --- Assign the generated Result to the correct machine field ---
-    // The type assertion ensures the generatedResult (Ok<any> | Err) matches the expected Result<SpecificType>
+    // Assign the generated Result to the correct machine field
     if (fileName === "tcp_iperf3.json") {
       machine.iperf3.tcp = generatedResult as Result<IperfTcpReportData>;
     } else if (fileName === "udp_iperf3.json") {
@@ -747,11 +761,9 @@ export function generateBenchData(): BenchData {
     } else if (fileName === "rist_stream.json") {
       machine.ristStream = generatedResult as Result<RistData>;
     }
-    // Add more else if blocks for other potential benchmark file types
   });
 
-  // --- Fill in "Not Run" results for machines that exist but are missing tests ---
-  // This helps visualize when a benchmark run was incomplete
+  // Fill in "Not Run" results for machines that exist but are missing tests
   const createNotRunResult = (machineName: string): Err => ({
     ok: false,
     error: {
@@ -762,55 +774,103 @@ export function generateBenchData(): BenchData {
     },
   });
 
-  // For each category (VPN)
-  Object.values(categories).forEach((category) => {
-    // For each run (TC profile)
-    Object.values(category.runs).forEach((run) => {
-      // For each machine
-      run.machines.forEach((machine) => {
-        // Check if the machine has at least one test result
-        const hasAnyData =
-          machine.iperf3.tcp !== null ||
-          machine.iperf3.udp !== null ||
-          machine.qperf !== null ||
-          machine.nixCache !== null ||
-          machine.ping !== null ||
-          machine.ristStream !== null;
+  // For each alias
+  Object.values(aliasData).forEach((categories) => {
+    // For each category (VPN)
+    Object.values(categories).forEach((category) => {
+      // For each run (TC profile)
+      Object.values(category.runs).forEach((run) => {
+        // For each machine
+        run.machines.forEach((machine) => {
+          const hasAnyData =
+            machine.iperf3.tcp !== null ||
+            machine.iperf3.udp !== null ||
+            machine.qperf !== null ||
+            machine.nixCache !== null ||
+            machine.ping !== null ||
+            machine.ristStream !== null;
 
-        if (hasAnyData) {
-          // Fill in missing tests with "Not Run" results
-          if (machine.iperf3.tcp === null) {
-            machine.iperf3.tcp = createNotRunResult(machine.name);
+          if (hasAnyData) {
+            if (machine.iperf3.tcp === null) {
+              machine.iperf3.tcp = createNotRunResult(machine.name);
+            }
+            if (machine.iperf3.udp === null) {
+              machine.iperf3.udp = createNotRunResult(machine.name);
+            }
+            if (machine.qperf === null) {
+              machine.qperf = createNotRunResult(machine.name);
+            }
+            if (machine.nixCache === null) {
+              machine.nixCache = createNotRunResult(machine.name);
+            }
+            if (machine.ping === null) {
+              machine.ping = createNotRunResult(machine.name);
+            }
+            if (machine.ristStream === null) {
+              machine.ristStream = createNotRunResult(machine.name);
+            }
           }
-          if (machine.iperf3.udp === null) {
-            machine.iperf3.udp = createNotRunResult(machine.name);
-          }
-          if (machine.qperf === null) {
-            machine.qperf = createNotRunResult(machine.name);
-          }
-          if (machine.nixCache === null) {
-            machine.nixCache = createNotRunResult(machine.name);
-          }
-          if (machine.ping === null) {
-            machine.ping = createNotRunResult(machine.name);
-          }
-          if (machine.ristStream === null) {
-            machine.ristStream = createNotRunResult(machine.name);
-          }
-        }
+        });
       });
     });
   });
 
-  return Object.values(categories);
+  // Convert to AllBenchData format: alias -> BenchData (array of categories)
+  const result: AllBenchData = {};
+  for (const [alias, categories] of Object.entries(aliasData)) {
+    result[alias] = Object.values(categories);
+  }
+  return result;
 }
 
 // --- Generate and Log Data ---
-export const benchData = generateBenchData();
-console.log("Bench data:", benchData);
+export const allBenchData = generateBenchData();
+console.log("All bench data:", allBenchData);
+
+// Helper to get available aliases sorted by date (newest first)
+export function getAvailableAliases(): string[] {
+  const aliases = Object.keys(allBenchData);
+  return aliases.sort((a, b) => {
+    // Try to parse as DD.MM.YYYY date format
+    const parseDate = (s: string): Date | null => {
+      const parts = s.split(".");
+      if (parts.length === 3) {
+        const day = parseInt(parts[0], 10);
+        const month = parseInt(parts[1], 10);
+        const year = parseInt(parts[2], 10);
+        if (!isNaN(day) && !isNaN(month) && !isNaN(year)) {
+          return new Date(year, month - 1, day);
+        }
+      }
+      return null;
+    };
+    const dateA = parseDate(a);
+    const dateB = parseDate(b);
+    // Sort dates descending (newest first)
+    if (dateA && dateB) {
+      return dateB.getTime() - dateA.getTime();
+    }
+    // Dates come before non-dates
+    if (dateA) return -1;
+    if (dateB) return 1;
+    // Non-dates sorted alphabetically
+    return a.localeCompare(b);
+  });
+}
+
+// Get data for a specific alias (or first available if not specified)
+export function getBenchDataForAlias(alias?: string): BenchData {
+  const aliases = getAvailableAliases();
+  const targetAlias = alias || aliases[0] || "";
+  return allBenchData[targetAlias] || [];
+}
+
+// Backward compatible export: use first available alias
+export const benchData = getBenchDataForAlias();
 
 // --- General Data Handling (remains unchanged as it wasn't requested to use Result) ---
-const generalFiles = import.meta.glob("@/bench/General/**/*.json", {
+// Note: General data is now per-alias at @/bench/<ALIAS>/General/
+const generalFiles = import.meta.glob("@/bench/**/General/**/*.json", {
   eager: true,
 });
 
@@ -874,23 +934,27 @@ console.log("General data:", generalData);
 // --- Comparison Data Loading ---
 
 const comparisonFiles = import.meta.glob(
-  "@/bench/General/comparison/**/*.json",
+  "@/bench/**/General/comparison/**/*.json",
   {
     eager: true,
   },
 );
 
-export function generateComparisonData(): ComparisonData {
-  const result: ComparisonData = {};
+export function generateComparisonData(): AllComparisonData {
+  const result: AllComparisonData = {};
 
   Object.entries(comparisonFiles).forEach(([path, rawModule]) => {
-    // Path format: @/bench/General/comparison/<run_alias>/<benchmark>.json
+    // Path format: @/bench/<ALIAS>/General/comparison/<run_alias>/<benchmark>.json
     const pathParts = path.split("/");
-    if (pathParts.length < 6) {
+
+    // Find the "General" index to determine alias
+    const generalIndex = pathParts.indexOf("General");
+    if (generalIndex < 1 || pathParts.length < generalIndex + 4) {
       console.warn(`Skipping comparison file with unexpected path: ${path}`);
       return;
     }
 
+    const alias = pathParts[generalIndex - 1];
     const runAlias = pathParts[pathParts.length - 2];
     const fileName = pathParts[pathParts.length - 1];
 
@@ -911,50 +975,56 @@ export function generateComparisonData(): ComparisonData {
       return;
     }
 
+    // Initialize alias if needed
+    if (!result[alias]) {
+      result[alias] = {};
+    }
+
     // Initialize run alias if needed
-    if (!result[runAlias]) {
-      result[runAlias] = {
-        tcSettings: loadTCSettingsForRunAlias(benchFiles, runAlias),
+    if (!result[alias][runAlias]) {
+      result[alias][runAlias] = {
+        tcSettings: loadTCSettingsForRunAlias(benchFiles, alias, runAlias),
       };
     }
 
     // Assign data based on file name
     if (fileName === "ping.json") {
-      result[runAlias].ping =
+      result[alias][runAlias].ping =
         moduleData.data as VpnComparisonResultMap<PingComparisonData>;
     } else if (fileName === "qperf.json") {
-      result[runAlias].qperf =
+      result[alias][runAlias].qperf =
         moduleData.data as VpnComparisonResultMap<QperfComparisonData>;
     } else if (fileName === "video_streaming.json") {
-      result[runAlias].videoStreaming =
+      result[alias][runAlias].videoStreaming =
         moduleData.data as VpnComparisonResultMap<VideoStreamingComparisonData>;
     } else if (fileName === "tcp_iperf3.json") {
-      result[runAlias].tcpIperf =
+      result[alias][runAlias].tcpIperf =
         moduleData.data as VpnComparisonResultMap<TcpIperfComparisonData>;
     } else if (fileName === "udp_iperf3.json") {
-      result[runAlias].udpIperf =
+      result[alias][runAlias].udpIperf =
         moduleData.data as VpnComparisonResultMap<UdpIperfComparisonData>;
     } else if (fileName === "nix_cache.json") {
-      result[runAlias].nixCache =
+      result[alias][runAlias].nixCache =
         moduleData.data as VpnComparisonResultMap<NixCacheComparisonData>;
     } else if (fileName === "parallel_tcp_iperf3.json") {
-      result[runAlias].parallelTcp =
+      result[alias][runAlias].parallelTcp =
         moduleData.data as VpnComparisonResultMap<ParallelTcpComparisonData>;
     } else if (fileName === "timing_comparison.json") {
-      result[runAlias].timingComparison =
+      result[alias][runAlias].timingComparison =
         moduleData.data as VpnComparisonResultMap<TimingComparisonData>;
     } else if (fileName === "benchmark_stats.json") {
-      result[runAlias].benchmarkStats =
+      result[alias][runAlias].benchmarkStats =
         moduleData.data as VpnComparisonResultMap<BenchmarkStatsData>;
     } else if (fileName === "time_breakdown.json") {
-      result[runAlias].timeBreakdown = moduleData as {
+      result[alias][runAlias].timeBreakdown = moduleData as {
         status: string;
         data: TimeBreakdownData;
       };
     } else if (fileName === "connection_timings.json") {
-      result[runAlias].connectionTimings = moduleData.data as ConnectionTimings;
+      result[alias][runAlias].connectionTimings =
+        moduleData.data as ConnectionTimings;
     } else if (fileName === "reboot_connection_timings.json") {
-      result[runAlias].rebootConnectionTimings =
+      result[alias][runAlias].rebootConnectionTimings =
         moduleData.data as ConnectionTimings;
     }
   });
@@ -962,8 +1032,18 @@ export function generateComparisonData(): ComparisonData {
   return result;
 }
 
-export const comparisonData = generateComparisonData();
-console.log("Comparison data:", comparisonData);
+export const allComparisonData = generateComparisonData();
+console.log("All comparison data:", allComparisonData);
+
+// Get comparison data for a specific alias (or first available if not specified)
+export function getComparisonDataForAlias(alias?: string): ComparisonData {
+  const aliases = getAvailableAliases();
+  const targetAlias = alias || aliases[0] || "";
+  return allComparisonData[targetAlias] || {};
+}
+
+// Backward compatible export: use first available alias
+export const comparisonData = getComparisonDataForAlias();
 
 // --- Timing Breakdown Loading ---
 
@@ -1048,218 +1128,302 @@ export function getTotalRuntimeForProfile(
 
 // --- Cross-Profile TCP Data Loading ---
 
-const crossProfileTcpFile = import.meta.glob(
-  "@/bench/General/comparison/cross_profile_tcp.json",
+const crossProfileTcpFiles = import.meta.glob(
+  "@/bench/**/General/comparison/cross_profile_tcp.json",
   { eager: true },
 );
 
-export function loadCrossProfileTcpData(): CrossProfileTcpData | null {
-  const files = Object.entries(crossProfileTcpFile);
-  if (files.length === 0) {
-    console.log("No cross-profile TCP data file found");
-    return null;
-  }
+export type AllCrossProfileTcpData = Record<string, CrossProfileTcpData | null>;
 
-  const [path, rawModule] = files[0];
+export function loadAllCrossProfileTcpData(): AllCrossProfileTcpData {
+  const result: AllCrossProfileTcpData = {};
 
-  if (!rawModule || typeof rawModule !== "object" || !("status" in rawModule)) {
-    console.warn(`Cross-profile TCP file has unexpected format: ${path}`);
-    return null;
-  }
+  Object.entries(crossProfileTcpFiles).forEach(([path, rawModule]) => {
+    const pathParts = path.split("/");
+    const generalIndex = pathParts.indexOf("General");
+    if (generalIndex < 1) return;
+    const alias = pathParts[generalIndex - 1];
 
-  /* eslint-disable-next-line "@typescript-eslint/no-explicit-any" */
-  const moduleData = rawModule as { status: string; data?: any };
+    if (
+      !rawModule ||
+      typeof rawModule !== "object" ||
+      !("status" in rawModule)
+    ) {
+      result[alias] = null;
+      return;
+    }
 
-  if (moduleData.status !== "success" || !moduleData.data) {
-    console.warn(`Cross-profile TCP data retrieval failed for ${path}`);
-    return null;
-  }
+    /* eslint-disable-next-line "@typescript-eslint/no-explicit-any" */
+    const moduleData = rawModule as { status: string; data?: any };
 
-  return moduleData.data as CrossProfileTcpData;
+    if (moduleData.status !== "success" || !moduleData.data) {
+      result[alias] = null;
+      return;
+    }
+
+    result[alias] = moduleData.data as CrossProfileTcpData;
+  });
+
+  return result;
 }
 
-export const crossProfileTcpData = loadCrossProfileTcpData();
-console.log("Cross-profile TCP data:", crossProfileTcpData);
+export const allCrossProfileTcpData = loadAllCrossProfileTcpData();
+console.log("All cross-profile TCP data:", allCrossProfileTcpData);
+
+// Backward compatible: get first alias data
+export const crossProfileTcpData =
+  allCrossProfileTcpData[getAvailableAliases()[0]] || null;
 
 // --- Cross-Profile UDP Data Loading ---
 
-const crossProfileUdpFile = import.meta.glob(
-  "@/bench/General/comparison/cross_profile_udp.json",
+const crossProfileUdpFiles = import.meta.glob(
+  "@/bench/**/General/comparison/cross_profile_udp.json",
   { eager: true },
 );
 
-export function loadCrossProfileUdpData(): CrossProfileUdpData | null {
-  const files = Object.entries(crossProfileUdpFile);
-  if (files.length === 0) {
-    console.log("No cross-profile UDP data file found");
-    return null;
-  }
+export type AllCrossProfileUdpData = Record<string, CrossProfileUdpData | null>;
 
-  const [path, rawModule] = files[0];
+export function loadAllCrossProfileUdpData(): AllCrossProfileUdpData {
+  const result: AllCrossProfileUdpData = {};
 
-  if (!rawModule || typeof rawModule !== "object" || !("status" in rawModule)) {
-    console.warn(`Cross-profile UDP file has unexpected format: ${path}`);
-    return null;
-  }
+  Object.entries(crossProfileUdpFiles).forEach(([path, rawModule]) => {
+    const pathParts = path.split("/");
+    const generalIndex = pathParts.indexOf("General");
+    if (generalIndex < 1) return;
+    const alias = pathParts[generalIndex - 1];
 
-  /* eslint-disable-next-line "@typescript-eslint/no-explicit-any" */
-  const moduleData = rawModule as { status: string; data?: any };
+    if (
+      !rawModule ||
+      typeof rawModule !== "object" ||
+      !("status" in rawModule)
+    ) {
+      result[alias] = null;
+      return;
+    }
 
-  if (moduleData.status !== "success" || !moduleData.data) {
-    console.warn(`Cross-profile UDP data retrieval failed for ${path}`);
-    return null;
-  }
+    /* eslint-disable-next-line "@typescript-eslint/no-explicit-any" */
+    const moduleData = rawModule as { status: string; data?: any };
 
-  return moduleData.data as CrossProfileUdpData;
+    if (moduleData.status !== "success" || !moduleData.data) {
+      result[alias] = null;
+      return;
+    }
+
+    result[alias] = moduleData.data as CrossProfileUdpData;
+  });
+
+  return result;
 }
 
-export const crossProfileUdpData = loadCrossProfileUdpData();
-console.log("Cross-profile UDP data:", crossProfileUdpData);
+export const allCrossProfileUdpData = loadAllCrossProfileUdpData();
+console.log("All cross-profile UDP data:", allCrossProfileUdpData);
+
+// Backward compatible: get first alias data
+export const crossProfileUdpData =
+  allCrossProfileUdpData[getAvailableAliases()[0]] || null;
 
 // --- Cross-Profile Ping Data Loading ---
 
-const crossProfilePingFile = import.meta.glob(
-  "@/bench/General/comparison/cross_profile_ping.json",
+const crossProfilePingFiles = import.meta.glob(
+  "@/bench/**/General/comparison/cross_profile_ping.json",
   { eager: true },
 );
 
-export function loadCrossProfilePingData(): CrossProfilePingData | null {
-  const files = Object.entries(crossProfilePingFile);
-  if (files.length === 0) {
-    console.log("No cross-profile Ping data file found");
-    return null;
-  }
+export type AllCrossProfilePingData = Record<
+  string,
+  CrossProfilePingData | null
+>;
 
-  const [path, rawModule] = files[0];
+export function loadAllCrossProfilePingData(): AllCrossProfilePingData {
+  const result: AllCrossProfilePingData = {};
 
-  if (!rawModule || typeof rawModule !== "object" || !("status" in rawModule)) {
-    console.warn(`Cross-profile Ping file has unexpected format: ${path}`);
-    return null;
-  }
+  Object.entries(crossProfilePingFiles).forEach(([path, rawModule]) => {
+    const pathParts = path.split("/");
+    const generalIndex = pathParts.indexOf("General");
+    if (generalIndex < 1) return;
+    const alias = pathParts[generalIndex - 1];
 
-  /* eslint-disable-next-line "@typescript-eslint/no-explicit-any" */
-  const moduleData = rawModule as { status: string; data?: any };
+    if (
+      !rawModule ||
+      typeof rawModule !== "object" ||
+      !("status" in rawModule)
+    ) {
+      result[alias] = null;
+      return;
+    }
 
-  if (moduleData.status !== "success" || !moduleData.data) {
-    console.warn(`Cross-profile Ping data retrieval failed for ${path}`);
-    return null;
-  }
+    /* eslint-disable-next-line "@typescript-eslint/no-explicit-any" */
+    const moduleData = rawModule as { status: string; data?: any };
 
-  return moduleData.data as CrossProfilePingData;
+    if (moduleData.status !== "success" || !moduleData.data) {
+      result[alias] = null;
+      return;
+    }
+
+    result[alias] = moduleData.data as CrossProfilePingData;
+  });
+
+  return result;
 }
 
-export const crossProfilePingData = loadCrossProfilePingData();
-console.log("Cross-profile Ping data:", crossProfilePingData);
+export const allCrossProfilePingData = loadAllCrossProfilePingData();
+console.log("All cross-profile Ping data:", allCrossProfilePingData);
+
+export const crossProfilePingData =
+  allCrossProfilePingData[getAvailableAliases()[0]] || null;
 
 // --- Cross-Profile QUIC/Qperf Data Loading ---
 
-const crossProfileQperfFile = import.meta.glob(
-  "@/bench/General/comparison/cross_profile_qperf.json",
+const crossProfileQperfFiles = import.meta.glob(
+  "@/bench/**/General/comparison/cross_profile_qperf.json",
   { eager: true },
 );
 
-export function loadCrossProfileQperfData(): CrossProfileQperfData | null {
-  const files = Object.entries(crossProfileQperfFile);
-  if (files.length === 0) {
-    console.log("No cross-profile QUIC data file found");
-    return null;
-  }
+export type AllCrossProfileQperfData = Record<
+  string,
+  CrossProfileQperfData | null
+>;
 
-  const [path, rawModule] = files[0];
+export function loadAllCrossProfileQperfData(): AllCrossProfileQperfData {
+  const result: AllCrossProfileQperfData = {};
 
-  if (!rawModule || typeof rawModule !== "object" || !("status" in rawModule)) {
-    console.warn(`Cross-profile QUIC file has unexpected format: ${path}`);
-    return null;
-  }
+  Object.entries(crossProfileQperfFiles).forEach(([path, rawModule]) => {
+    const pathParts = path.split("/");
+    const generalIndex = pathParts.indexOf("General");
+    if (generalIndex < 1) return;
+    const alias = pathParts[generalIndex - 1];
 
-  /* eslint-disable-next-line "@typescript-eslint/no-explicit-any" */
-  const moduleData = rawModule as { status: string; data?: any };
+    if (
+      !rawModule ||
+      typeof rawModule !== "object" ||
+      !("status" in rawModule)
+    ) {
+      result[alias] = null;
+      return;
+    }
 
-  if (moduleData.status !== "success" || !moduleData.data) {
-    console.warn(`Cross-profile QUIC data retrieval failed for ${path}`);
-    return null;
-  }
+    /* eslint-disable-next-line "@typescript-eslint/no-explicit-any" */
+    const moduleData = rawModule as { status: string; data?: any };
 
-  return moduleData.data as CrossProfileQperfData;
+    if (moduleData.status !== "success" || !moduleData.data) {
+      result[alias] = null;
+      return;
+    }
+
+    result[alias] = moduleData.data as CrossProfileQperfData;
+  });
+
+  return result;
 }
 
-export const crossProfileQperfData = loadCrossProfileQperfData();
-console.log("Cross-profile QUIC data:", crossProfileQperfData);
+export const allCrossProfileQperfData = loadAllCrossProfileQperfData();
+console.log("All cross-profile QUIC data:", allCrossProfileQperfData);
+
+export const crossProfileQperfData =
+  allCrossProfileQperfData[getAvailableAliases()[0]] || null;
 
 // --- Cross-Profile Video Streaming Data Loading ---
 
-const crossProfileVideoStreamingFile = import.meta.glob(
-  "@/bench/General/comparison/cross_profile_video_streaming.json",
+const crossProfileVideoStreamingFiles = import.meta.glob(
+  "@/bench/**/General/comparison/cross_profile_video_streaming.json",
   { eager: true },
 );
 
-export function loadCrossProfileVideoStreamingData(): CrossProfileVideoStreamingData | null {
-  const files = Object.entries(crossProfileVideoStreamingFile);
-  if (files.length === 0) {
-    console.log("No cross-profile Video Streaming data file found");
-    return null;
-  }
+export type AllCrossProfileVideoStreamingData = Record<
+  string,
+  CrossProfileVideoStreamingData | null
+>;
 
-  const [path, rawModule] = files[0];
+export function loadAllCrossProfileVideoStreamingData(): AllCrossProfileVideoStreamingData {
+  const result: AllCrossProfileVideoStreamingData = {};
 
-  if (!rawModule || typeof rawModule !== "object" || !("status" in rawModule)) {
-    console.warn(
-      `Cross-profile Video Streaming file has unexpected format: ${path}`,
-    );
-    return null;
-  }
+  Object.entries(crossProfileVideoStreamingFiles).forEach(
+    ([path, rawModule]) => {
+      const pathParts = path.split("/");
+      const generalIndex = pathParts.indexOf("General");
+      if (generalIndex < 1) return;
+      const alias = pathParts[generalIndex - 1];
 
-  /* eslint-disable-next-line "@typescript-eslint/no-explicit-any" */
-  const moduleData = rawModule as { status: string; data?: any };
+      if (
+        !rawModule ||
+        typeof rawModule !== "object" ||
+        !("status" in rawModule)
+      ) {
+        result[alias] = null;
+        return;
+      }
 
-  if (moduleData.status !== "success" || !moduleData.data) {
-    console.warn(
-      `Cross-profile Video Streaming data retrieval failed for ${path}`,
-    );
-    return null;
-  }
+      /* eslint-disable-next-line "@typescript-eslint/no-explicit-any" */
+      const moduleData = rawModule as { status: string; data?: any };
 
-  return moduleData.data as CrossProfileVideoStreamingData;
+      if (moduleData.status !== "success" || !moduleData.data) {
+        result[alias] = null;
+        return;
+      }
+
+      result[alias] = moduleData.data as CrossProfileVideoStreamingData;
+    },
+  );
+
+  return result;
 }
 
-export const crossProfileVideoStreamingData =
-  loadCrossProfileVideoStreamingData();
+export const allCrossProfileVideoStreamingData =
+  loadAllCrossProfileVideoStreamingData();
 console.log(
-  "Cross-profile Video Streaming data:",
-  crossProfileVideoStreamingData,
+  "All cross-profile Video Streaming data:",
+  allCrossProfileVideoStreamingData,
 );
+
+export const crossProfileVideoStreamingData =
+  allCrossProfileVideoStreamingData[getAvailableAliases()[0]] || null;
 
 // --- Cross-Profile Nix Cache Data Loading ---
 
-const crossProfileNixCacheFile = import.meta.glob(
-  "@/bench/General/comparison/cross_profile_nix_cache.json",
+const crossProfileNixCacheFiles = import.meta.glob(
+  "@/bench/**/General/comparison/cross_profile_nix_cache.json",
   { eager: true },
 );
 
-export function loadCrossProfileNixCacheData(): CrossProfileNixCacheData | null {
-  const files = Object.entries(crossProfileNixCacheFile);
-  if (files.length === 0) {
-    console.log("No cross-profile Nix Cache data file found");
-    return null;
-  }
+export type AllCrossProfileNixCacheData = Record<
+  string,
+  CrossProfileNixCacheData | null
+>;
 
-  const [path, rawModule] = files[0];
+export function loadAllCrossProfileNixCacheData(): AllCrossProfileNixCacheData {
+  const result: AllCrossProfileNixCacheData = {};
 
-  if (!rawModule || typeof rawModule !== "object" || !("status" in rawModule)) {
-    console.warn(`Cross-profile Nix Cache file has unexpected format: ${path}`);
-    return null;
-  }
+  Object.entries(crossProfileNixCacheFiles).forEach(([path, rawModule]) => {
+    const pathParts = path.split("/");
+    const generalIndex = pathParts.indexOf("General");
+    if (generalIndex < 1) return;
+    const alias = pathParts[generalIndex - 1];
 
-  /* eslint-disable-next-line "@typescript-eslint/no-explicit-any" */
-  const moduleData = rawModule as { status: string; data?: any };
+    if (
+      !rawModule ||
+      typeof rawModule !== "object" ||
+      !("status" in rawModule)
+    ) {
+      result[alias] = null;
+      return;
+    }
 
-  if (moduleData.status !== "success" || !moduleData.data) {
-    console.warn(`Cross-profile Nix Cache data retrieval failed for ${path}`);
-    return null;
-  }
+    /* eslint-disable-next-line "@typescript-eslint/no-explicit-any" */
+    const moduleData = rawModule as { status: string; data?: any };
 
-  return moduleData.data as CrossProfileNixCacheData;
+    if (moduleData.status !== "success" || !moduleData.data) {
+      result[alias] = null;
+      return;
+    }
+
+    result[alias] = moduleData.data as CrossProfileNixCacheData;
+  });
+
+  return result;
 }
 
-export const crossProfileNixCacheData = loadCrossProfileNixCacheData();
-console.log("Cross-profile Nix Cache data:", crossProfileNixCacheData);
+export const allCrossProfileNixCacheData = loadAllCrossProfileNixCacheData();
+console.log("All cross-profile Nix Cache data:", allCrossProfileNixCacheData);
+
+export const crossProfileNixCacheData =
+  allCrossProfileNixCacheData[getAvailableAliases()[0]] || null;

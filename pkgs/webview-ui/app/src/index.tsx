@@ -42,18 +42,19 @@ import { HyperfineData, HyperfineReport } from "./components/HyperfineCharts";
 import { PingData, PingReport } from "./components/PingCharts";
 import { RistData, RistReport } from "./components/RistStreamCharts";
 import { TCSettingsData } from "./benchData";
+import { AliasProvider } from "./AliasContext";
 
 export const client = new QueryClient();
 
 // Logical ordering for TC profiles (from no impairment to severe)
-const TC_PROFILE_ORDER = [
+export const TC_PROFILE_ORDER = [
   "baseline",
   "low_impairment",
   "medium_impairment",
   "high_impairment",
 ];
 
-function sortTcProfiles(profiles: string[]): string[] {
+export function sortTcProfiles(profiles: string[]): string[] {
   return [...profiles].sort((a, b) => {
     const aIndex = TC_PROFILE_ORDER.indexOf(a);
     const bIndex = TC_PROFILE_ORDER.indexOf(b);
@@ -165,6 +166,7 @@ export type AppRoute = Omit<RouteDefinition, "children"> & {
   icon?: IconVariant;
   children?: AppRoute[];
   hidden?: boolean;
+  category?: "vpn" | "analysis";
 };
 
 // Helper function to process results for a specific benchmark type across machines
@@ -354,6 +356,7 @@ function generateRoutesFromBenchData(data: BenchData): AppRoute[] {
       component: () => <VpnDashboardWithProfiles category={category} />,
       // Hide route if category has no runs
       hidden: !hasRuns,
+      category: "vpn" as const,
     };
   });
 }
@@ -370,14 +373,15 @@ function generateAppRouteFromGeneralData(
 
   return [
     {
-      path: "/general",
-      label: "General",
+      path: "/overview",
+      label: "Overview",
       component: () => (
         <GeneralDashboard
           comparisonData={comparison}
           allVpnNames={allVpnNames}
         />
       ),
+      category: "analysis" as const,
     },
   ];
 }
@@ -392,6 +396,7 @@ function generateConnectionTimesRoute(comparison: ComparisonData): AppRoute[] {
       path: "/connection-times",
       label: "Connection Times",
       component: () => <ConnectionTimesDashboard comparisonData={comparison} />,
+      category: "analysis" as const,
     },
   ];
 }
@@ -400,8 +405,9 @@ function generateCrossProfileRoute(): AppRoute[] {
   return [
     {
       path: "/cross-profile",
-      label: "Cross Profile",
+      label: "Cross Impairment",
       component: () => <TcpCrossProfileDashboard />,
+      category: "analysis" as const,
     },
   ];
 }
@@ -421,9 +427,9 @@ export const routes: AppRoute[] =
           ),
         },
         ...generateRoutesFromBenchData(benchData),
-        ...generateCrossProfileRoute(),
-        ...generateConnectionTimesRoute(comparisonData),
         ...generateAppRouteFromGeneralData(comparisonData),
+        ...generateConnectionTimesRoute(comparisonData),
+        ...generateCrossProfileRoute(),
       ]
     : [];
 
@@ -433,9 +439,11 @@ render(
       <Portal mount={document.body}>
         <Toaster position="top-right" containerClassName="z-[9999]" />
       </Portal>
-      <QueryClientProvider client={client}>
-        <Router root={Layout}>{routes}</Router>
-      </QueryClientProvider>
+      <AliasProvider>
+        <QueryClientProvider client={client}>
+          <Router root={Layout}>{routes}</Router>
+        </QueryClientProvider>
+      </AliasProvider>
     </>
   ),
   // eslint-disable-next-line @typescript-eslint/no-non-null-assertion

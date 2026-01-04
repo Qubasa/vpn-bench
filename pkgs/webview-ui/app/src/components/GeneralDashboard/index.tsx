@@ -1,6 +1,7 @@
 import { Echart } from "../Echarts";
 import { Show, createSignal, createEffect, createMemo, For } from "solid-js";
 import { ComparisonData, TCSettingsData } from "@/src/benchData";
+import { sortTcProfiles } from "@/src/index";
 import { Tabs } from "@kobalte/core/tabs";
 import {
   TcpComparisonSection,
@@ -529,9 +530,9 @@ export const GeneralDashboard = (props: GeneralDashboardProps) => {
   // Get URL search params for state sync
   const [searchParams, setSearchParams] = useSearchParams();
 
-  // Get TC profile aliases from comparison data
+  // Get TC profile aliases from comparison data, sorted in logical order
   const runAliases = createMemo(() =>
-    props.comparisonData ? Object.keys(props.comparisonData) : [],
+    props.comparisonData ? sortTcProfiles(Object.keys(props.comparisonData)) : [],
   );
 
   // Initialize profile from URL or fallback to "baseline"

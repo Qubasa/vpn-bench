@@ -1,7 +1,6 @@
 /* Sidebar Elements */
 
 @import "./sidebar-header";
-@import "./sidebar-flyout";
 @import "./sidebar-list-item";
 @import "./sidebar-profile";
 
@@ -14,13 +13,114 @@
 .sidebar__body {
   display: flex;
   flex-direction: column;
-  gap: theme(padding.2);
+  gap: theme(padding.3);
   padding: theme(padding.4) theme(padding.2);
 }
 
-.sidebar__section {
+/* Date Selector */
+
+.sidebar__date-selector {
+  position: relative;
+  padding: 0 theme(padding.2);
+}
+
+.sidebar__date-selector__button {
+  display: flex;
+  align-items: center;
+  gap: theme(padding.2);
+  width: 100%;
+  padding: theme(padding.2) theme(padding.3);
+  @apply bg-primary-700/50;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: theme(borderRadius.md);
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.sidebar__date-selector__button:hover {
+  @apply bg-primary-700/70;
+}
+
+.sidebar__date-selector__caret {
+  margin-left: auto;
+  transition: transform 0.2s ease;
+}
+
+.sidebar__date-selector__caret--open {
+  transform: rotate(180deg);
+}
+
+.sidebar__date-selector__dropdown {
+  position: absolute;
+  top: 100%;
+  left: theme(padding.2);
+  right: theme(padding.2);
+  margin-top: theme(padding.1);
+  @apply bg-primary-800;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: theme(borderRadius.md);
+  overflow: hidden;
+  z-index: 10;
+}
+
+.sidebar__date-selector__option {
+  display: block;
+  padding: theme(padding.2) theme(padding.3);
+  text-decoration: none;
+  transition: background-color 0.15s ease;
+}
+
+.sidebar__date-selector__option:hover {
+  @apply bg-primary-700/50;
+}
+
+.sidebar__date-selector__option--active {
+  @apply bg-primary-600/50;
+}
+
+/* Category Sections */
+
+.sidebar__category {
   padding: theme(padding.2);
-  /* background-color: rgba(var(--clr-bg-inv-3) / 0.9); */
   @apply bg-primary-800/90;
   border-radius: theme(borderRadius.md);
+}
+
+.sidebar__category__header {
+  cursor: pointer;
+  list-style: none;
+  padding: theme(padding.1) theme(padding.2);
+  border-radius: theme(borderRadius.sm);
+  transition: background-color 0.15s ease;
+}
+
+.sidebar__category__header:hover {
+  @apply bg-primary-700/50;
+}
+
+.sidebar__category__header::-webkit-details-marker {
+  display: none;
+}
+
+.sidebar__category__caret {
+  transition: transform 0.2s ease;
+}
+
+.sidebar__category[open] .sidebar__category__caret {
+  transform: rotate(90deg);
+}
+
+.sidebar__category__count {
+  opacity: 0.7;
+  font-weight: normal;
+}
+
+.sidebar__category__body {
+  margin-top: theme(padding.2);
+}
+
+.sidebar__category__body ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
 }

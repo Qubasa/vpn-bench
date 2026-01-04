@@ -4,6 +4,7 @@ import argparse
 import logging
 import os
 import sys
+from datetime import UTC, datetime
 from pathlib import Path
 
 from clan_lib.custom_logger import setup_logging
@@ -139,6 +140,12 @@ def create_parser() -> argparse.ArgumentParser:
         type=Path,
         help="TOML config file specifying per-VPN test configuration",
     )
+    bench_parser.add_argument(
+        "--alias",
+        type=str,
+        default=None,
+        help="Alias for this benchmark run (default: current date DD.MM.YYYY)",
+    )
 
     plot_parser = subparsers.add_parser("plot", help="Plot the data from benchmark")
     plot_parser.add_argument("--debug", action="store_true", help="Enable debug mode")
@@ -173,8 +180,21 @@ def create_conf_obj(args: argparse.Namespace) -> Config:
     cache_dir.mkdir(parents=True, exist_ok=True)
     tr_dir = data_dir / "terraform"
     clan_dir = data_dir / "clan"
-    bench_dir = data_dir / "bench"
-    bench_dir.mkdir(parents=True, exist_ok=True)
+
+    # For bench command, use alias subdirectory (default: current date DD.MM.YYYY)
+    # For other commands (build-ui, compare), use base bench_dir
+    base_bench_dir = data_dir / "bench"
+    base_bench_dir.mkdir(parents=True, exist_ok=True)
+
+    subcommand = getattr(args, "subcommand", None)
+    if subcommand == "bench":
+        alias = getattr(args, "alias", None)
+        if alias is None:
+            alias = datetime.now(tz=UTC).strftime("%d.%m.%Y")
+        bench_dir = base_bench_dir / alias
+        bench_dir.mkdir(parents=True, exist_ok=True)
+    else:
+        bench_dir = base_bench_dir
 
     gen_key = generate_ssh_key(data_dir)
     ssh_keys = [gen_key]
@@ -424,16 +444,58 @@ def run_cli() -> None:
 
     elif args.subcommand == "plot":
         machines = tr_metadata(config)
-        generate_comparison_data(config.bench_dir)
+        # For plot, iterate over all aliases
+        for alias_dir in config.bench_dir.iterdir():
+            if alias_dir.is_dir() and not alias_dir.name.startswith("."):
+                generate_comparison_data(alias_dir)
+                # Create a config copy with alias-specific bench_dir
+                alias_config = Config(
+                    debug=config.debug,
+                    data_dir=config.data_dir,
+                    tr_dir=config.tr_dir,
+                    cache_dir=config.cache_dir,
+                    clan_dir=config.clan_dir,
+                    bench_dir=alias_dir,
+                    ssh_keys=config.ssh_keys,
+                )
+                analyse_connection_timings(alias_config)
         plot_data(config, machines)
 
     elif args.subcommand == "compare":
-        generate_comparison_data(config.bench_dir)
-        analyse_connection_timings(config)
+        # Iterate over all aliases in bench_dir
+        for alias_dir in config.bench_dir.iterdir():
+            if alias_dir.is_dir() and not alias_dir.name.startswith("."):
+                log.info(f"Processing alias: {alias_dir.name}")
+                generate_comparison_data(alias_dir)
+                # Create a config copy with alias-specific bench_dir
+                alias_config = Config(
+                    debug=config.debug,
+                    data_dir=config.data_dir,
+                    tr_dir=config.tr_dir,
+                    cache_dir=config.cache_dir,
+                    clan_dir=config.clan_dir,
+                    bench_dir=alias_dir,
+                    ssh_keys=config.ssh_keys,
+                )
+                analyse_connection_timings(alias_config)
 
     elif args.subcommand == "build-ui":
-        generate_comparison_data(config.bench_dir)
-        analyse_connection_timings(config)
+        # Iterate over all aliases in bench_dir
+        for alias_dir in config.bench_dir.iterdir():
+            if alias_dir.is_dir() and not alias_dir.name.startswith("."):
+                log.info(f"Processing alias: {alias_dir.name}")
+                generate_comparison_data(alias_dir)
+                # Create a config copy with alias-specific bench_dir
+                alias_config = Config(
+                    debug=config.debug,
+                    data_dir=config.data_dir,
+                    tr_dir=config.tr_dir,
+                    cache_dir=config.cache_dir,
+                    clan_dir=config.clan_dir,
+                    bench_dir=alias_dir,
+                    ssh_keys=config.ssh_keys,
+                )
+                analyse_connection_timings(alias_config)
         website_dir = build_ui(config.bench_dir, create_symlink=not args.no_symlink)
         print(website_dir)
 
