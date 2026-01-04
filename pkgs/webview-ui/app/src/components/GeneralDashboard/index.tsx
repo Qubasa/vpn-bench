@@ -532,7 +532,9 @@ export const GeneralDashboard = (props: GeneralDashboardProps) => {
 
   // Get TC profile aliases from comparison data, sorted in logical order
   const runAliases = createMemo(() =>
-    props.comparisonData ? sortTcProfiles(Object.keys(props.comparisonData)) : [],
+    props.comparisonData
+      ? sortTcProfiles(Object.keys(props.comparisonData))
+      : [],
   );
 
   // Initialize profile from URL or fallback to "baseline"

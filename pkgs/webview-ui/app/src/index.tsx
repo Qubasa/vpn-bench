@@ -43,6 +43,8 @@ import { PingData, PingReport } from "./components/PingCharts";
 import { RistData, RistReport } from "./components/RistStreamCharts";
 import { TCSettingsData } from "./benchData";
 import { AliasProvider } from "./AliasContext";
+import { getVpnOverview } from "./vpnOverviews";
+import { FeatureMatrixPage } from "./components/FeatureMatrixPage";
 
 export const client = new QueryClient();
 
@@ -318,6 +320,7 @@ function VpnDashboardWithProfiles(props: { category: BenchData[0] }) {
       {/* Render VpnDashboard with reports from selected run */}
       <VpnDashboard
         vpnName={props.category.name}
+        overviewMarkdown={getVpnOverview(props.category.name) ?? undefined}
         tcpReports={reportsForCurrentRun().tcp}
         udpReports={reportsForCurrentRun().udp}
         parallelTcpReport={reportsForCurrentRun().parallelTcp}
@@ -374,7 +377,7 @@ function generateAppRouteFromGeneralData(
   return [
     {
       path: "/overview",
-      label: "Overview",
+      label: "Across VPNs",
       component: () => (
         <GeneralDashboard
           comparisonData={comparison}
@@ -405,8 +408,19 @@ function generateCrossProfileRoute(): AppRoute[] {
   return [
     {
       path: "/cross-profile",
-      label: "Cross Impairment",
+      label: "Across Impairments",
       component: () => <TcpCrossProfileDashboard />,
+      category: "analysis" as const,
+    },
+  ];
+}
+
+function generateFeatureMatrixRoute(): AppRoute[] {
+  return [
+    {
+      path: "/feature-matrix",
+      label: "Feature Matrix",
+      component: () => <FeatureMatrixPage />,
       category: "analysis" as const,
     },
   ];
@@ -430,6 +444,7 @@ export const routes: AppRoute[] =
         ...generateAppRouteFromGeneralData(comparisonData),
         ...generateConnectionTimesRoute(comparisonData),
         ...generateCrossProfileRoute(),
+        ...generateFeatureMatrixRoute(),
       ]
     : [];
 
