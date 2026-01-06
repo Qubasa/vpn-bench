@@ -361,7 +361,7 @@ export const VpnDashboard = (props: VpnDashboardProps) => {
       {/* Direct JSX in Tabs.Content for proper reactivity */}
       <Tabs.Content class="tabs__content" value="info">
         <Show when={props.overviewMarkdown} fallback={<FallbackMessage />}>
-          <MarkdownContent content={props.overviewMarkdown!} />
+          {(content) => <MarkdownContent content={content()} />}
         </Show>
       </Tabs.Content>
 

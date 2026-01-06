@@ -21,7 +21,7 @@ export default tseslint.config(
         "error",
         {
           callees: ["cx"],
-          whitelist: ["material-icons"],
+          whitelist: ["material-icons", "sidebar__.*"],
         },
       ],
       // TODO: make this more strict by removing later

@@ -1,0 +1,113 @@
+{
+  "vpn_name": "mycelium",
+  "total_duration_seconds": 2834.472076683014,
+  "start_timestamp": 1766197095.63051,
+  "end_timestamp": 1766199930.1025882,
+  "phases": [
+    {
+      "phase": "vpn_installation",
+      "duration_seconds": 170.74955472297734,
+      "start_timestamp": 1766197095.642564,
+      "operations": [
+        {
+          "name": "nix_flake_update",
+          "duration_seconds": 1.8473903959966265,
+          "start_timestamp": 1766197095.6425743,
+          "success": true
+        },
+        {
+          "name": "create_base_inventory",
+          "duration_seconds": 21.47237223701086,
+          "start_timestamp": 1766197097.5073159,
+          "success": true
+        },
+        {
+          "name": "install_mycelium_config",
+          "duration_seconds": 9.726934072037693,
+          "start_timestamp": 1766197119.3711026,
+          "success": true
+        },
+        {
+          "name": "get_vpn_ips",
+          "duration_seconds": 10.822465448000003,
+          "start_timestamp": 1766197129.2810519,
+          "success": true
+        },
+        {
+          "name": "install_nix_cache",
+          "duration_seconds": 0.08044366299873218,
+          "start_timestamp": 1766197140.1201642,
+          "success": true
+        },
+        {
+          "name": "install_connection_timings_service",
+          "duration_seconds": 0.35996250296011567,
+          "start_timestamp": 1766197140.2237391,
+          "success": true
+        },
+        {
+          "name": "run_generators",
+          "duration_seconds": 9.39278837502934,
+          "start_timestamp": 1766197140.9554493,
+          "success": true
+        },
+        {
+          "name": "deploy_vpn_machines",
+          "duration_seconds": 116.01136470597703,
+          "start_timestamp": 1766197150.3606505,
+          "success": true
+        }
+      ]
+    },
+    {
+      "phase": "benchmarking",
+      "duration_seconds": 358.6058830830152,
+      "start_timestamp": 1766197266.4376397,
+      "operations": [
+        {
+          "name": "tc_stabilization",
+          "duration_seconds": 30.048970261996146,
+          "start_timestamp": 1766197266.9129179,
+          "success": true
+        },
+        {
+          "name": "run_tests",
+          "duration_seconds": 327.5556092580082,
+          "start_timestamp": 1766197296.9839916,
+          "success": true,
+          "metadata": {
+            "profile": "baseline"
+          }
+        }
+      ],
+      "metadata": {
+        "profile": "baseline"
+      }
+    },
+    {
+      "phase": "benchmarking",
+      "duration_seconds": 2304.941912141978,
+      "start_timestamp": 1766197625.1342046,
+      "operations": [
+        {
+          "name": "tc_stabilization",
+          "duration_seconds": 30.013478391978424,
+          "start_timestamp": 1766197625.7563653,
+          "success": true
+        },
+        {
+          "name": "run_tests",
+          "duration_seconds": 2273.7751325759455,
+          "start_timestamp": 1766197655.7919555,
+          "success": true,
+          "metadata": {
+            "profile": "low_impairment"
+          }
+        }
+      ],
+      "metadata": {
+        "profile": "low_impairment"
+      }
+    }
+  ]
+}

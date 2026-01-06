@@ -347,6 +347,51 @@ export interface TimeBreakdownData {
   total_seconds: number;
 }
 
+// --- Hardware Comparison Data ---
+
+export interface CpuInfo {
+  architecture: string;
+  vendor_name: string;
+  model: number;
+  cores: number;
+  siblings: number;
+  cache_kb: number;
+  bogo: number;
+  features: string[];
+  bugs: string[];
+}
+
+export interface MemoryInfo {
+  total_bytes: number;
+  total_gb: number;
+}
+
+export interface NetworkController {
+  vendor: string;
+  device: string;
+  model: string;
+  driver: string;
+  unix_device_name: string;
+}
+
+export interface NetworkInterface {
+  model: string;
+  driver: string;
+  unix_device_name: string;
+}
+
+export interface MachineHardware {
+  machine_name: string;
+  cpu: CpuInfo;
+  memory: MemoryInfo;
+  network_controllers: NetworkController[];
+  network_interfaces: NetworkInterface[];
+}
+
+export interface HardwareComparisonData {
+  machines: MachineHardware[];
+}
+
 // --- Cross-Profile TCP Visualization Data ---
 
 export interface Bar3DData {
@@ -1427,3 +1472,56 @@ console.log("All cross-profile Nix Cache data:", allCrossProfileNixCacheData);
 
 export const crossProfileNixCacheData =
   allCrossProfileNixCacheData[getAvailableAliases()[0]] || null;
+
+// --- Hardware Comparison Data Loading ---
+
+const hardwareFiles = import.meta.glob("@/bench/**/General/hardware.json", {
+  eager: true,
+});
+
+export type AllHardwareData = Record<string, HardwareComparisonData | null>;
+
+export function loadAllHardwareData(): AllHardwareData {
+  const result: AllHardwareData = {};
+
+  Object.entries(hardwareFiles).forEach(([path, rawModule]) => {
+    const pathParts = path.split("/");
+    const generalIndex = pathParts.indexOf("General");
+    if (generalIndex < 1) return;
+    const alias = pathParts[generalIndex - 1];
+
+    if (
+      !rawModule ||
+      typeof rawModule !== "object" ||
+      !("status" in rawModule)
+    ) {
+      result[alias] = null;
+      return;
+    }
+
+    /* eslint-disable-next-line "@typescript-eslint/no-explicit-any" */
+    const moduleData = rawModule as { status: string; data?: any };
+
+    if (moduleData.status !== "success" || !moduleData.data) {
+      result[alias] = null;
+      return;
+    }
+
+    result[alias] = moduleData.data as HardwareComparisonData;
+  });
+
+  return result;
+}
+
+export const allHardwareData = loadAllHardwareData();
+console.log("All hardware data:", allHardwareData);
+
+export function getHardwareDataForAlias(
+  alias?: string,
+): HardwareComparisonData | null {
+  const aliases = getAvailableAliases();
+  const targetAlias = alias || aliases[0] || "";
+  return allHardwareData[targetAlias] || null;
+}
+
+export const hardwareData = getHardwareDataForAlias();

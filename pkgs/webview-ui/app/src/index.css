@@ -6,6 +6,20 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Fix prose tables to auto-size instead of 100% width */
+.prose table {
+  width: auto;
+  display: block;
+  overflow-x: auto;
+}
+
+.prose th,
+.prose td {
+  white-space: nowrap;
+  padding-left: 0.75rem;
+  padding-right: 0.75rem;
+}
+
 @font-face {
   font-family: "Archivo";
   font-weight: 400;

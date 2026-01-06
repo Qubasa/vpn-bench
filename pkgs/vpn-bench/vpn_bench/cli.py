@@ -466,7 +466,7 @@ def run_cli() -> None:
         for alias_dir in config.bench_dir.iterdir():
             if alias_dir.is_dir() and not alias_dir.name.startswith("."):
                 log.info(f"Processing alias: {alias_dir.name}")
-                generate_comparison_data(alias_dir)
+                generate_comparison_data(alias_dir, clan_dir=config.clan_dir)
                 # Create a config copy with alias-specific bench_dir
                 alias_config = Config(
                     debug=config.debug,
@@ -484,7 +484,7 @@ def run_cli() -> None:
         for alias_dir in config.bench_dir.iterdir():
             if alias_dir.is_dir() and not alias_dir.name.startswith("."):
                 log.info(f"Processing alias: {alias_dir.name}")
-                generate_comparison_data(alias_dir)
+                generate_comparison_data(alias_dir, clan_dir=config.clan_dir)
                 # Create a config copy with alias-specific bench_dir
                 alias_config = Config(
                     debug=config.debug,

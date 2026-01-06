@@ -45,6 +45,7 @@ import { TCSettingsData } from "./benchData";
 import { AliasProvider } from "./AliasContext";
 import { getVpnOverview } from "./vpnOverviews";
 import { FeatureMatrixPage } from "./components/FeatureMatrixPage";
+import { HardwarePage } from "./components/HardwarePage";
 
 export const client = new QueryClient();
 
@@ -426,6 +427,17 @@ function generateFeatureMatrixRoute(): AppRoute[] {
   ];
 }
 
+function generateHardwareRoute(): AppRoute[] {
+  return [
+    {
+      path: "/hardware",
+      label: "Hardware",
+      component: () => <HardwarePage />,
+      category: "analysis" as const,
+    },
+  ];
+}
+
 // Generate routes from benchData
 export const routes: AppRoute[] =
   benchData.length > 0
@@ -445,6 +457,7 @@ export const routes: AppRoute[] =
         ...generateConnectionTimesRoute(comparisonData),
         ...generateCrossProfileRoute(),
         ...generateFeatureMatrixRoute(),
+        ...generateHardwareRoute(),
       ]
     : [];
 

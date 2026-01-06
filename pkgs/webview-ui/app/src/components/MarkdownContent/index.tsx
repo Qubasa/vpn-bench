@@ -19,7 +19,7 @@ export const MarkdownContent = (props: MarkdownContentProps) => {
 
   return (
     <div
-      class={`prose prose-slate max-w-none ${props.class ?? ""}`}
+      class={`prose prose-slate max-w-5xl ${props.class ?? ""}`}
       innerHTML={renderedHtml()}
     />
   );

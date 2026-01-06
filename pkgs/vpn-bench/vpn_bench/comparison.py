@@ -309,6 +309,64 @@ class CrossProfileNixCacheDict(TypedDict):
     heatmap: CrossProfileNixCacheHeatmapDict
 
 
+# --- Hardware TypedDict Definitions ---
+
+
+class CpuInfoDict(TypedDict):
+    """CPU information extracted from facter.json."""
+
+    architecture: str
+    vendor_name: str
+    model: int  # CPU model number
+    cores: int
+    siblings: int
+    cache_kb: int
+    bogo: float
+    features: list[str]  # Filtered to relevant: aes, avx, avx2, etc.
+    bugs: list[str]
+
+
+class MemoryInfoDict(TypedDict):
+    """Memory information extracted from facter.json."""
+
+    total_bytes: int
+    total_gb: float
+
+
+class NetworkControllerDict(TypedDict):
+    """Network controller (NIC) information from facter.json."""
+
+    vendor: str
+    device: str
+    model: str
+    driver: str
+    unix_device_name: str
+
+
+class NetworkInterfaceDict(TypedDict):
+    """Network interface information from facter.json."""
+
+    model: str
+    driver: str
+    unix_device_name: str
+
+
+class MachineHardwareDict(TypedDict):
+    """Hardware information for a single machine."""
+
+    machine_name: str
+    cpu: CpuInfoDict
+    memory: MemoryInfoDict
+    network_controllers: list[NetworkControllerDict]
+    network_interfaces: list[NetworkInterfaceDict]
+
+
+class HardwareComparisonDict(TypedDict):
+    """Hardware comparison data across all benchmark machines."""
+
+    machines: list[MachineHardwareDict]
+
+
 # --- Helper Functions ---
 
 # Logical ordering for TC profiles (from no impairment to severe)
@@ -457,6 +515,191 @@ def get_vpn_error_for_test(
             }
 
     return None
+
+
+# --- Hardware Extraction Functions ---
+
+# CPU features relevant for VPN/crypto performance
+RELEVANT_CPU_FEATURES = {
+    "aes",
+    "avx",
+    "avx2",
+    "avx512f",
+    "avx512vl",
+    "avx512bw",
+    "sse",
+    "sse2",
+    "sse3",
+    "sse4_1",
+    "sse4_2",
+    "pclmulqdq",
+    "rdrand",
+    "sha_ni",
+}
+
+
+def _extract_relevant_cpu_features(features: list[str]) -> list[str]:
+    """Filter CPU features to those relevant for VPN/crypto performance."""
+    return sorted([f for f in features if f.lower() in RELEVANT_CPU_FEATURES])
+
+
+def extract_hardware_from_facter(
+    facter_path: Path, machine_name: str
+) -> MachineHardwareDict | None:
+    """Extract hardware information from a facter.json file.
+
+    Args:
+        facter_path: Path to the facter.json file
+        machine_name: Name of the machine
+
+    Returns:
+        MachineHardwareDict with extracted hardware info, or None if extraction fails
+    """
+    if not facter_path.exists():
+        log.warning(f"Facter file not found: {facter_path}")
+        return None
+
+    try:
+        with facter_path.open("r") as f:
+            facter_data = json.load(f)
+    except (json.JSONDecodeError, OSError) as e:
+        log.warning(f"Failed to load facter file {facter_path}: {e}")
+        return None
+
+    hardware = facter_data.get("hardware", {})
+
+    # Extract CPU info
+    cpu_list = hardware.get("cpu", [])
+    cpu_info: CpuInfoDict = {
+        "architecture": "unknown",
+        "vendor_name": "unknown",
+        "model": 0,
+        "cores": 0,
+        "siblings": 0,
+        "cache_kb": 0,
+        "bogo": 0.0,
+        "features": [],
+        "bugs": [],
+    }
+
+    if cpu_list:
+        cpu = cpu_list[0]  # Take first CPU
+        cpu_info = {
+            "architecture": cpu.get("architecture", "unknown"),
+            "vendor_name": cpu.get("vendor_name", "unknown"),
+            "model": cpu.get("model", 0),
+            "cores": cpu.get("cores", 0),
+            "siblings": cpu.get("siblings", 0),
+            "cache_kb": cpu.get("cache", 0),
+            "bogo": cpu.get("bogo", 0.0),
+            "features": _extract_relevant_cpu_features(cpu.get("features", [])),
+            "bugs": cpu.get("bugs", []),
+        }
+
+    # Extract memory info from resources with type "phys_mem"
+    memory_info: MemoryInfoDict = {"total_bytes": 0, "total_gb": 0.0}
+    memory_list = hardware.get("memory", [])
+    for mem in memory_list:
+        resources = mem.get("resources", [])
+        for resource in resources:
+            if resource.get("type") == "phys_mem":
+                range_bytes = resource.get("range", 0)
+                memory_info = {
+                    "total_bytes": range_bytes,
+                    "total_gb": round(range_bytes / (1024**3), 2),
+                }
+                break
+        if memory_info["total_bytes"] > 0:
+            break
+
+    # Extract network controllers
+    network_controllers: list[NetworkControllerDict] = []
+    for nc in hardware.get("network_controller", []):
+        # Get vendor as string (may be dict with hex/value or just string)
+        vendor_raw = nc.get("vendor", {})
+        vendor = (
+            vendor_raw.get("hex", str(vendor_raw))
+            if isinstance(vendor_raw, dict)
+            else str(vendor_raw)
+        )
+
+        device_raw = nc.get("device", {})
+        device = (
+            device_raw.get("hex", str(device_raw))
+            if isinstance(device_raw, dict)
+            else str(device_raw)
+        )
+
+        unix_names = nc.get("unix_device_names", [])
+        unix_device_name = (
+            unix_names[0] if unix_names else nc.get("unix_device_name", "unknown")
+        )
+
+        network_controllers.append(
+            {
+                "vendor": vendor,
+                "device": device,
+                "model": nc.get("model", "unknown"),
+                "driver": nc.get("driver", "unknown"),
+                "unix_device_name": unix_device_name,
+            }
+        )
+
+    # Extract network interfaces
+    network_interfaces: list[NetworkInterfaceDict] = []
+    for ni in hardware.get("network_interface", []):
+        unix_names = ni.get("unix_device_names", [])
+        unix_device_name = (
+            unix_names[0] if unix_names else ni.get("unix_device_name", "unknown")
+        )
+
+        network_interfaces.append(
+            {
+                "model": ni.get("model", "unknown"),
+                "driver": ni.get("driver", "unknown"),
+                "unix_device_name": unix_device_name,
+            }
+        )
+
+    return {
+        "machine_name": machine_name,
+        "cpu": cpu_info,
+        "memory": memory_info,
+        "network_controllers": network_controllers,
+        "network_interfaces": network_interfaces,
+    }
+
+
+def generate_hardware_comparison(clan_dir: Path) -> HardwareComparisonDict | None:
+    """Generate hardware comparison data from all machine facter.json files.
+
+    Args:
+        clan_dir: Path to the clan directory containing machine configs
+
+    Returns:
+        HardwareComparisonDict with all machine hardware info
+    """
+    machines_path = clan_dir / "machines"
+    if not machines_path.exists():
+        log.warning(f"Machines directory not found: {machines_path}")
+        return None
+
+    hardware_data: list[MachineHardwareDict] = []
+
+    for machine_dir in sorted(machines_path.iterdir()):
+        if not machine_dir.is_dir():
+            continue
+
+        facter_path = machine_dir / "facter.json"
+        machine_hw = extract_hardware_from_facter(facter_path, machine_dir.name)
+        if machine_hw:
+            hardware_data.append(machine_hw)
+
+    if not hardware_data:
+        log.warning("No hardware data found for any machine")
+        return None
+
+    return {"machines": hardware_data}
 
 
 # --- Aggregation Functions ---
@@ -1897,12 +2140,16 @@ def aggregate_benchmark_stats(
 # --- Main Generation Function ---
 
 
-def generate_comparison_data(bench_dir: Path) -> None:
+def generate_comparison_data(bench_dir: Path, clan_dir: Path | None = None) -> None:
     """
     Generate comparison data for all VPNs and benchmark types.
 
     Scans the bench directory for VPN results, aggregates data across machines,
     and writes comparison files to the General/comparison directory.
+
+    Args:
+        bench_dir: Path to the benchmark results directory
+        clan_dir: Path to the clan directory (for hardware info extraction)
     """
     log.info(f"Generating comparison data from {bench_dir}")
 
@@ -2310,5 +2557,16 @@ def generate_comparison_data(bench_dir: Path) -> None:
             f"Saved cross-profile Nix Cache data ({len(cross_profile_nix['heatmap']['mean_seconds'])} VPNs, "
             f"{len(cross_profile_nix['heatmap']['tc_profiles'])} profiles)"
         )
+
+    # Generate hardware comparison data
+    if clan_dir is not None:
+        hardware_data = generate_hardware_comparison(clan_dir)
+        if hardware_data:
+            save_bench_report(general_dir, hardware_data, "hardware.json")
+            log.info(
+                f"Saved hardware comparison ({len(hardware_data['machines'])} machines)"
+            )
+    else:
+        log.debug("Skipping hardware generation - clan_dir not provided")
 
     log.info("Comparison data generation complete")
