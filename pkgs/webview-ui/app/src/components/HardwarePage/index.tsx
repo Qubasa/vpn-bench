@@ -1,9 +1,6 @@
 import { For, Show, createMemo } from "solid-js";
 import { useAlias } from "@/src/AliasContext";
-import {
-  getHardwareDataForAlias,
-  type MachineHardware,
-} from "@/src/benchData";
+import { getHardwareDataForAlias, type MachineHardware } from "@/src/benchData";
 import { Typography } from "../Typography";
 
 // Comparison table component for quick overview
@@ -110,9 +107,7 @@ const MachineCard = (props: { machine: MachineHardware }) => {
           <tbody>
             <tr class="border-b border-secondary-100">
               <td class="py-1 text-secondary-600">Architecture</td>
-              <td class="py-1 font-medium">
-                {props.machine.cpu.architecture}
-              </td>
+              <td class="py-1 font-medium">{props.machine.cpu.architecture}</td>
             </tr>
             <tr class="border-b border-secondary-100">
               <td class="py-1 text-secondary-600">Vendor</td>
@@ -130,9 +125,7 @@ const MachineCard = (props: { machine: MachineHardware }) => {
             </tr>
             <tr class="border-b border-secondary-100">
               <td class="py-1 text-secondary-600">Cache</td>
-              <td class="py-1 font-medium">
-                {props.machine.cpu.cache_kb} KB
-              </td>
+              <td class="py-1 font-medium">{props.machine.cpu.cache_kb} KB</td>
             </tr>
             <tr class="border-b border-secondary-100">
               <td class="py-1 text-secondary-600">BogoMIPS</td>
@@ -266,7 +259,9 @@ const MachineCard = (props: { machine: MachineHardware }) => {
 export const HardwarePage = () => {
   const { currentAlias } = useAlias();
 
-  const hardwareData = createMemo(() => getHardwareDataForAlias(currentAlias()));
+  const hardwareData = createMemo(() =>
+    getHardwareDataForAlias(currentAlias()),
+  );
 
   return (
     <div class="p-6">
@@ -281,7 +276,11 @@ export const HardwarePage = () => {
       </Typography>
 
       <Show
-        when={hardwareData()?.machines && hardwareData()!.machines.length > 0}
+        when={
+          hardwareData()?.machines?.length
+            ? hardwareData()?.machines
+            : undefined
+        }
         fallback={
           <div class="rounded-lg border border-yellow-200 bg-yellow-50 p-4 text-yellow-800">
             <p class="font-medium">No hardware data available</p>
@@ -291,36 +290,41 @@ export const HardwarePage = () => {
             </p>
           </div>
         }
+        keyed
       >
-        {/* Quick comparison table */}
-        <div class="mb-8">
-          <Typography
-            tag="h2"
-            hierarchy="headline"
-            size="default"
-            weight="bold"
-            class="mb-4"
-          >
-            Comparison Overview
-          </Typography>
-          <HardwareComparisonTable machines={hardwareData()!.machines} />
-        </div>
+        {(machines) => (
+          <>
+            {/* Quick comparison table */}
+            <div class="mb-8">
+              <Typography
+                tag="h2"
+                hierarchy="headline"
+                size="default"
+                weight="bold"
+                class="mb-4"
+              >
+                Comparison Overview
+              </Typography>
+              <HardwareComparisonTable machines={machines} />
+            </div>
 
-        {/* Detailed machine cards */}
-        <Typography
-          tag="h2"
-          hierarchy="headline"
-          size="default"
-          weight="bold"
-          class="mb-4"
-        >
-          Detailed Hardware Information
-        </Typography>
-        <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          <For each={hardwareData()!.machines}>
-            {(machine) => <MachineCard machine={machine} />}
-          </For>
-        </div>
+            {/* Detailed machine cards */}
+            <Typography
+              tag="h2"
+              hierarchy="headline"
+              size="default"
+              weight="bold"
+              class="mb-4"
+            >
+              Detailed Hardware Information
+            </Typography>
+            <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              <For each={machines}>
+                {(machine) => <MachineCard machine={machine} />}
+              </For>
+            </div>
+          </>
+        )}
       </Show>
     </div>
   );

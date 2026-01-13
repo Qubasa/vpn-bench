@@ -18,6 +18,7 @@ import {
 import { ErrorDetailsPanel } from "@/src/components/ErrorDetailsPanel";
 import { For, Show, createSignal, createEffect } from "solid-js";
 import { MarkdownContent } from "@/src/components/MarkdownContent";
+import { OverviewDisclaimer } from "@/src/components/LlmDisclaimer";
 import {
   Ok,
   MixedReport,
@@ -361,7 +362,12 @@ export const VpnDashboard = (props: VpnDashboardProps) => {
       {/* Direct JSX in Tabs.Content for proper reactivity */}
       <Tabs.Content class="tabs__content" value="info">
         <Show when={props.overviewMarkdown} fallback={<FallbackMessage />}>
-          {(content) => <MarkdownContent content={content()} />}
+          {(content) => (
+            <>
+              <OverviewDisclaimer />
+              <MarkdownContent content={content()} />
+            </>
+          )}
         </Show>
       </Tabs.Content>
 
@@ -604,7 +610,8 @@ export const VpnDashboard = (props: VpnDashboardProps) => {
                         }}
                       >
                         <strong>Parallel Test:</strong> All {reports.length}{" "}
-                        machine pairs ran TCP tests simultaneously.
+                        machine pairs ran TCP tests simultaneously. Throughput
+                        values shown are the sum of all machine pairs combined.
                       </div>
                       <IperfTcpCharts reports={reports} height={tcpHeight} />
                     </Show>

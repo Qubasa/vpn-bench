@@ -46,6 +46,7 @@ import { AliasProvider } from "./AliasContext";
 import { getVpnOverview } from "./vpnOverviews";
 import { FeatureMatrixPage } from "./components/FeatureMatrixPage";
 import { HardwarePage } from "./components/HardwarePage";
+import { LlmInstructionsPage } from "./components/LlmInstructionsPage";
 
 export const client = new QueryClient();
 
@@ -401,6 +402,7 @@ function generateConnectionTimesRoute(comparison: ComparisonData): AppRoute[] {
       label: "Connection Times",
       component: () => <ConnectionTimesDashboard comparisonData={comparison} />,
       category: "analysis" as const,
+      hidden: true,
     },
   ];
 }
@@ -438,6 +440,17 @@ function generateHardwareRoute(): AppRoute[] {
   ];
 }
 
+function generateLlmInstructionsRoute(): AppRoute[] {
+  return [
+    {
+      path: "/llm-instructions",
+      label: "LLM Instructions",
+      component: () => <LlmInstructionsPage />,
+      hidden: true, // Not shown in sidebar, accessed via disclaimer links
+    },
+  ];
+}
+
 // Generate routes from benchData
 export const routes: AppRoute[] =
   benchData.length > 0
@@ -458,6 +471,7 @@ export const routes: AppRoute[] =
         ...generateCrossProfileRoute(),
         ...generateFeatureMatrixRoute(),
         ...generateHardwareRoute(),
+        ...generateLlmInstructionsRoute(),
       ]
     : [];
 

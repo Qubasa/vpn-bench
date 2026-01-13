@@ -1,578 +1,578 @@
 {
-    "status": "success",
-    "data": {
-        "VpnCloud": {
-            "status": "error",
-            "error_type": "CmdOut",
-            "error": {
-                "stdout": "{\n\t\"start\":\t{\n\t\t\"connected\":\t[{\n\t\t\t\t\"socket\":\t5,\n\t\t\t\t\"local_host\":\t\"10.25.186.63\",\n\t\t\t\t\"local_port\":\t51058,\n\t\t\t\t\"remote_host\":\t\"10.25.112.48\",\n\t\t\t\t\"remote_port\":\t5201\n\t\t\t}],\n\t\t\"version\":\t\"iperf 3.20\",\n\t\t\"system_info\":\t\"Linux lom 6.12.57 #1-NixOS SMP PREEMPT_DYNAMIC Sun Nov  2 13:15:23 UTC 2025 x86_64\",\n\t\t\"timestamp\":\t{\n\t\t\t\"time\":\t\"Thu, 18 Dec 2025 11:43:05 GMT\",\n\t\t\t\"timesecs\":\t1766058185,\n\t\t\t\"timemillisecs\":\t1766058185281\n\t\t},\n\t\t\"connecting_to\":\t{\n\t\t\t\"host\":\t\"vpn.yuki\",\n\t\t\t\"port\":\t5201\n\t\t},\n\t\t\"cookie\":\t\"bwneu7aa47wmaj52uareegjur3murlyf3cbg\",\n\t\t\"target_bitrate\":\t0,\n\t\t\"fq_rate\":\t0,\n\t\t\"sock_bufsize\":\t0,\n\t\t\"sndbuf_actual\":\t212992,\n\t\t\"rcvbuf_actual\":\t212992\n\t},\n\t\"intervals\":\t[],\n\t\"end\":\t{\n\t},\n\t\"error\":\t\"unable to read from stream socket: No such file or directory\"\n}\n",
-                "stderr": "Warning: Permanently added '138.201.33.111' (ED25519) to the list of known hosts.\r\n",
-                "cwd": "/home/lhebendanz/Projects/vpn-benchmark-suite/pkgs/vpn-bench",
-                "command_list": [
-                    "ssh",
-                    "root@138.201.33.111",
-                    "-A",
-                    "-o",
-                    "StrictHostKeyChecking=no",
-                    "-o",
-                    "UserKnownHostsFile=/dev/null",
-                    "-o",
-                    "ControlMaster=auto",
-                    "-o",
-                    "ControlPersist=1m",
-                    "-o",
-                    "ControlPath=/tmp/clan-sshrvy0c4ax/socket",
-                    "--",
-                    "bash",
-                    "-c",
-                    "'export IPERF3_PASSWORD=mambaBudo; exec \"$@\"'",
-                    "--",
-                    "iperf --bidir --connect-timeout 600 --time 30 --json -Z -c vpn.yuki --username mario --rsa-public-key-path /tmp/iperf3.public -u --udp-counters-64bit -b 0"
-                ],
-                "returncode": 1
-            },
-            "machine": "0_lom"
+  "status": "success",
+  "data": {
+    "VpnCloud": {
+      "status": "error",
+      "error_type": "CmdOut",
+      "error": {
+        "stdout": "{\n\t\"start\":\t{\n\t\t\"connected\":\t[{\n\t\t\t\t\"socket\":\t5,\n\t\t\t\t\"local_host\":\t\"10.25.186.63\",\n\t\t\t\t\"local_port\":\t51058,\n\t\t\t\t\"remote_host\":\t\"10.25.112.48\",\n\t\t\t\t\"remote_port\":\t5201\n\t\t\t}],\n\t\t\"version\":\t\"iperf 3.20\",\n\t\t\"system_info\":\t\"Linux lom 6.12.57 #1-NixOS SMP PREEMPT_DYNAMIC Sun Nov  2 13:15:23 UTC 2025 x86_64\",\n\t\t\"timestamp\":\t{\n\t\t\t\"time\":\t\"Thu, 18 Dec 2025 11:43:05 GMT\",\n\t\t\t\"timesecs\":\t1766058185,\n\t\t\t\"timemillisecs\":\t1766058185281\n\t\t},\n\t\t\"connecting_to\":\t{\n\t\t\t\"host\":\t\"vpn.yuki\",\n\t\t\t\"port\":\t5201\n\t\t},\n\t\t\"cookie\":\t\"bwneu7aa47wmaj52uareegjur3murlyf3cbg\",\n\t\t\"target_bitrate\":\t0,\n\t\t\"fq_rate\":\t0,\n\t\t\"sock_bufsize\":\t0,\n\t\t\"sndbuf_actual\":\t212992,\n\t\t\"rcvbuf_actual\":\t212992\n\t},\n\t\"intervals\":\t[],\n\t\"end\":\t{\n\t},\n\t\"error\":\t\"unable to read from stream socket: No such file or directory\"\n}\n",
+        "stderr": "Warning: Permanently added '138.201.33.111' (ED25519) to the list of known hosts.\r\n",
+        "cwd": "/home/lhebendanz/Projects/vpn-benchmark-suite/pkgs/vpn-bench",
+        "command_list": [
+          "ssh",
+          "root@138.201.33.111",
+          "-A",
+          "-o",
+          "StrictHostKeyChecking=no",
+          "-o",
+          "UserKnownHostsFile=/dev/null",
+          "-o",
+          "ControlMaster=auto",
+          "-o",
+          "ControlPersist=1m",
+          "-o",
+          "ControlPath=/tmp/clan-sshrvy0c4ax/socket",
+          "--",
+          "bash",
+          "-c",
+          "'export IPERF3_PASSWORD=mambaBudo; exec \"$@\"'",
+          "--",
+          "iperf --bidir --connect-timeout 600 --time 30 --json -Z -c vpn.yuki --username mario --rsa-public-key-path /tmp/iperf3.public -u --udp-counters-64bit -b 0"
+        ],
+        "returncode": 1
+      },
+      "machine": "0_lom"
+    },
+    "Zerotier": {
+      "status": "success",
+      "data": {
+        "sender_throughput_mbps": {
+          "min": 8739.07966089142,
+          "average": 8739.07966089142,
+          "max": 8739.07966089142,
+          "percentiles": {
+            "p25": 8739.07966089142,
+            "p50": 8739.07966089142,
+            "p75": 8739.07966089142
+          }
         },
-        "Zerotier": {
-            "status": "success",
-            "data": {
-                "sender_throughput_mbps": {
-                    "min": 8739.07966089142,
-                    "average": 8739.07966089142,
-                    "max": 8739.07966089142,
-                    "percentiles": {
-                        "p25": 8739.07966089142,
-                        "p50": 8739.07966089142,
-                        "p75": 8739.07966089142
-                    }
-                },
-                "receiver_throughput_mbps": {
-                    "min": 170.94090641309617,
-                    "average": 170.94090641309617,
-                    "max": 170.94090641309617,
-                    "percentiles": {
-                        "p25": 170.94090641309617,
-                        "p50": 170.94090641309617,
-                        "p75": 170.94090641309617
-                    }
-                },
-                "jitter_ms": {
-                    "min": 0.760779030111987,
-                    "average": 0.760779030111987,
-                    "max": 0.760779030111987,
-                    "percentiles": {
-                        "p25": 0.760779030111987,
-                        "p50": 0.760779030111987,
-                        "p75": 0.760779030111987
-                    }
-                },
-                "lost_percent": {
-                    "min": 98.0291804323958,
-                    "average": 98.0291804323958,
-                    "max": 98.0291804323958,
-                    "percentiles": {
-                        "p25": 98.0291804323958,
-                        "p50": 98.0291804323958,
-                        "p75": 98.0291804323958
-                    }
-                },
-                "total_bytes_sent": {
-                    "min": 32772909840.0,
-                    "average": 32772909840.0,
-                    "max": 32772909840.0,
-                    "percentiles": {
-                        "p25": 32772909840.0,
-                        "p50": 32772909840.0,
-                        "p75": 32772909840.0
-                    }
-                },
-                "total_bytes_received": {
-                    "min": 645723056.0,
-                    "average": 645723056.0,
-                    "max": 645723056.0,
-                    "percentiles": {
-                        "p25": 645723056.0,
-                        "p50": 645723056.0,
-                        "p75": 645723056.0
-                    }
-                },
-                "duration_seconds": {
-                    "min": 30.001246,
-                    "average": 30.001246,
-                    "max": 30.001246,
-                    "percentiles": {
-                        "p25": 30.001246,
-                        "p50": 30.001246,
-                        "p75": 30.001246
-                    }
-                },
-                "blksize_bytes": {
-                    "min": 2728.0,
-                    "average": 2728.0,
-                    "max": 2728.0,
-                    "percentiles": {
-                        "p25": 2728.0,
-                        "p50": 2728.0,
-                        "p75": 2728.0
-                    }
-                },
-                "host_cpu_percent": {
-                    "min": 103.55513431658578,
-                    "average": 103.55513431658578,
-                    "max": 103.55513431658578,
-                    "percentiles": {
-                        "p25": 103.55513431658578,
-                        "p50": 103.55513431658578,
-                        "p75": 103.55513431658578
-                    }
-                },
-                "remote_cpu_percent": {
-                    "min": 103.64876083145522,
-                    "average": 103.64876083145522,
-                    "max": 103.64876083145522,
-                    "percentiles": {
-                        "p25": 103.64876083145522,
-                        "p50": 103.64876083145522,
-                        "p75": 103.64876083145522
-                    }
-                }
-            }
+        "receiver_throughput_mbps": {
+          "min": 170.94090641309617,
+          "average": 170.94090641309617,
+          "max": 170.94090641309617,
+          "percentiles": {
+            "p25": 170.94090641309617,
+            "p50": 170.94090641309617,
+            "p75": 170.94090641309617
+          }
         },
-        "Yggdrasil": {
-            "status": "success",
-            "data": {
-                "sender_throughput_mbps": {
-                    "min": 66092.79912547224,
-                    "average": 66519.24375654479,
-                    "max": 66906.22493331243,
-                    "percentiles": {
-                        "p25": 66519.24375654479,
-                        "p50": 66519.24375654479,
-                        "p75": 66519.24375654479
-                    }
-                },
-                "receiver_throughput_mbps": {
-                    "min": 12.259085629864494,
-                    "average": 12.284856518001664,
-                    "max": 12.3282575389785,
-                    "percentiles": {
-                        "p25": 12.284856518001664,
-                        "p50": 12.284856518001664,
-                        "p75": 12.284856518001664
-                    }
-                },
-                "jitter_ms": {
-                    "min": 19.419233120199443,
-                    "average": 21.33144910231188,
-                    "max": 23.464676404534035,
-                    "percentiles": {
-                        "p25": 21.33144910231188,
-                        "p50": 21.33144910231188,
-                        "p75": 21.33144910231188
-                    }
-                },
-                "lost_percent": {
-                    "min": 99.97308773554754,
-                    "average": 99.97472648324705,
-                    "max": 99.9761771133898,
-                    "percentiles": {
-                        "p25": 99.97472648324705,
-                        "p50": 99.97472648324705,
-                        "p75": 99.97472648324705
-                    }
-                },
-                "total_bytes_sent": {
-                    "min": 247857134050.0,
-                    "average": 249455497883.33334,
-                    "max": 250904390150.0,
-                    "percentiles": {
-                        "p25": 249455497883.33334,
-                        "p50": 249455497883.33334,
-                        "p75": 249455497883.33334
-                    }
-                },
-                "total_bytes_received": {
-                    "min": 59046724.0,
-                    "average": 59581330.333333336,
-                    "max": 59995923.0,
-                    "percentiles": {
-                        "p25": 59581330.333333336,
-                        "p50": 59581330.333333336,
-                        "p75": 59581330.333333336
-                    }
-                },
-                "duration_seconds": {
-                    "min": 30.000723,
-                    "average": 30.001003,
-                    "max": 30.00118,
-                    "percentiles": {
-                        "p25": 30.001003,
-                        "p50": 30.001003,
-                        "p75": 30.001003
-                    }
-                },
-                "blksize_bytes": {
-                    "min": 32731.0,
-                    "average": 32731.0,
-                    "max": 32731.0,
-                    "percentiles": {
-                        "p25": 32731.0,
-                        "p50": 32731.0,
-                        "p75": 32731.0
-                    }
-                },
-                "host_cpu_percent": {
-                    "min": 99.39694863037776,
-                    "average": 99.51317100399484,
-                    "max": 99.5869004385912,
-                    "percentiles": {
-                        "p25": 99.51317100399484,
-                        "p50": 99.51317100399484,
-                        "p75": 99.51317100399484
-                    }
-                },
-                "remote_cpu_percent": {
-                    "min": 99.6685705984102,
-                    "average": 99.67150480649853,
-                    "max": 99.67587847533633,
-                    "percentiles": {
-                        "p25": 99.67150480649853,
-                        "p50": 99.67150480649853,
-                        "p75": 99.67150480649853
-                    }
-                }
-            }
+        "jitter_ms": {
+          "min": 0.760779030111987,
+          "average": 0.760779030111987,
+          "max": 0.760779030111987,
+          "percentiles": {
+            "p25": 0.760779030111987,
+            "p50": 0.760779030111987,
+            "p75": 0.760779030111987
+          }
         },
-        "Tinc": {
-            "status": "error",
-            "error_type": "CmdOut",
-            "error": {
-                "stdout": "{\n\t\"start\":\t{\n\t\t\"connected\":\t[{\n\t\t\t\t\"socket\":\t5,\n\t\t\t\t\"local_host\":\t\"fd63:7b6d:b690:1:6e8c:eb12:7b9b:8aa8\",\n\t\t\t\t\"local_port\":\t52211,\n\t\t\t\t\"remote_host\":\t\"fd63:7b6d:b690:1:d6ec:5608:53a0:8d36\",\n\t\t\t\t\"remote_port\":\t5201\n\t\t\t}],\n\t\t\"version\":\t\"iperf 3.20\",\n\t\t\"system_info\":\t\"Linux lom 6.12.57 #1-NixOS SMP PREEMPT_DYNAMIC Sun Nov  2 13:15:23 UTC 2025 x86_64\",\n\t\t\"timestamp\":\t{\n\t\t\t\"time\":\t\"Fri, 19 Dec 2025 03:41:10 GMT\",\n\t\t\t\"timesecs\":\t1766115670,\n\t\t\t\"timemillisecs\":\t1766115670953\n\t\t},\n\t\t\"connecting_to\":\t{\n\t\t\t\"host\":\t\"vpn.yuki\",\n\t\t\t\"port\":\t5201\n\t\t},\n\t\t\"cookie\":\t\"boq32nfqzfovues5q7x6hjnjev2plp7uz36j\",\n\t\t\"target_bitrate\":\t0,\n\t\t\"fq_rate\":\t0,\n\t\t\"sock_bufsize\":\t0,\n\t\t\"sndbuf_actual\":\t212992,\n\t\t\"rcvbuf_actual\":\t212992\n\t},\n\t\"intervals\":\t[],\n\t\"end\":\t{\n\t},\n\t\"error\":\t\"unable to read from stream socket: No such file or directory\"\n}\n",
-                "stderr": "Warning: Permanently added '138.201.33.111' (ED25519) to the list of known hosts.\r\n",
-                "cwd": "/home/lhebendanz/Projects/vpn-benchmark-suite/pkgs/vpn-bench",
-                "command_list": [
-                    "ssh",
-                    "root@138.201.33.111",
-                    "-A",
-                    "-o",
-                    "StrictHostKeyChecking=no",
-                    "-o",
-                    "UserKnownHostsFile=/dev/null",
-                    "-o",
-                    "ControlMaster=auto",
-                    "-o",
-                    "ControlPersist=1m",
-                    "-o",
-                    "ControlPath=/tmp/clan-sshs7mxa3wx/socket",
-                    "--",
-                    "bash",
-                    "-c",
-                    "'export IPERF3_PASSWORD=mambaBudo; exec \"$@\"'",
-                    "--",
-                    "iperf --bidir --connect-timeout 600 --time 30 --json -Z -c vpn.yuki --username mario --rsa-public-key-path /tmp/iperf3.public -u --udp-counters-64bit -b 0"
-                ],
-                "returncode": 1
-            },
-            "machine": "0_lom"
+        "lost_percent": {
+          "min": 98.0291804323958,
+          "average": 98.0291804323958,
+          "max": 98.0291804323958,
+          "percentiles": {
+            "p25": 98.0291804323958,
+            "p50": 98.0291804323958,
+            "p75": 98.0291804323958
+          }
         },
-        "Mycelium": {
-            "status": "error",
-            "error_type": "CmdOut",
-            "error": {
-                "stdout": "",
-                "stderr": "Warning: Permanently added '138.201.33.111' (ED25519) to the list of known hosts.\r\n",
-                "cwd": "/home/lhebendanz/Projects/vpn-benchmark-suite/pkgs/vpn-bench",
-                "command_list": [
-                    "ssh",
-                    "root@138.201.33.111",
-                    "-A",
-                    "-o",
-                    "StrictHostKeyChecking=no",
-                    "-o",
-                    "UserKnownHostsFile=/dev/null",
-                    "-o",
-                    "ControlMaster=auto",
-                    "-o",
-                    "ControlPersist=1m",
-                    "-o",
-                    "ControlPath=/tmp/clan-sshaas5nuu1/socket",
-                    "--",
-                    "bash",
-                    "-c",
-                    "'export IPERF3_PASSWORD=mambaBudo; exec \"$@\"'",
-                    "--",
-                    "iperf --bidir --connect-timeout 600 --time 30 --json -Z -c vpn.yuki --username mario --rsa-public-key-path /tmp/iperf3.public -u --udp-counters-64bit -b 0"
-                ],
-                "returncode": -1,
-                "msg": "Command timed out after 120 seconds"
-            },
-            "machine": "0_lom"
+        "total_bytes_sent": {
+          "min": 32772909840.0,
+          "average": 32772909840.0,
+          "max": 32772909840.0,
+          "percentiles": {
+            "p25": 32772909840.0,
+            "p50": 32772909840.0,
+            "p75": 32772909840.0
+          }
         },
-        "Easytier": {
-            "status": "success",
-            "data": {
-                "sender_throughput_mbps": {
-                    "min": 3783.0629239429404,
-                    "average": 3898.503593340374,
-                    "max": 4013.9442627378075,
-                    "percentiles": {
-                        "p25": 3898.503593340374,
-                        "p50": 3898.503593340374,
-                        "p75": 3898.503593340374
-                    }
-                },
-                "receiver_throughput_mbps": {
-                    "min": 362.95653102035703,
-                    "average": 434.72918492071256,
-                    "max": 506.50183882106813,
-                    "percentiles": {
-                        "p25": 434.72918492071256,
-                        "p50": 434.72918492071256,
-                        "p75": 434.72918492071256
-                    }
-                },
-                "jitter_ms": {
-                    "min": 0.0041454719107455,
-                    "average": 0.00785533160945708,
-                    "max": 0.011565191308168661,
-                    "percentiles": {
-                        "p25": 0.00785533160945708,
-                        "p50": 0.00785533160945708,
-                        "p75": 0.00785533160945708
-                    }
-                },
-                "lost_percent": {
-                    "min": 87.22806978513236,
-                    "average": 88.81105538992469,
-                    "max": 90.394040994717,
-                    "percentiles": {
-                        "p25": 88.81105538992469,
-                        "p50": 88.81105538992469,
-                        "p75": 88.81105538992469
-                    }
-                },
-                "total_bytes_sent": {
-                    "min": 14186791920.0,
-                    "average": 14619650080.0,
-                    "max": 15052508240.0,
-                    "percentiles": {
-                        "p25": 14619650080.0,
-                        "p50": 14619650080.0,
-                        "p75": 14619650080.0
-                    }
-                },
-                "total_bytes_received": {
-                    "min": 1362777416.0,
-                    "average": 1637851712.0,
-                    "max": 1912926008.0,
-                    "percentiles": {
-                        "p25": 1637851712.0,
-                        "p50": 1637851712.0,
-                        "p75": 1637851712.0
-                    }
-                },
-                "duration_seconds": {
-                    "min": 30.000433,
-                    "average": 30.00054,
-                    "max": 30.000647,
-                    "percentiles": {
-                        "p25": 30.00054,
-                        "p50": 30.00054,
-                        "p75": 30.00054
-                    }
-                },
-                "blksize_bytes": {
-                    "min": 1288.0,
-                    "average": 1288.0,
-                    "max": 1288.0,
-                    "percentiles": {
-                        "p25": 1288.0,
-                        "p50": 1288.0,
-                        "p75": 1288.0
-                    }
-                },
-                "host_cpu_percent": {
-                    "min": 111.06356041746552,
-                    "average": 111.10793854401604,
-                    "max": 111.15231667056653,
-                    "percentiles": {
-                        "p25": 111.10793854401604,
-                        "p50": 111.10793854401604,
-                        "p75": 111.10793854401604
-                    }
-                },
-                "remote_cpu_percent": {
-                    "min": 110.50330928809922,
-                    "average": 112.36986992267022,
-                    "max": 114.23643055724122,
-                    "percentiles": {
-                        "p25": 112.36986992267022,
-                        "p50": 112.36986992267022,
-                        "p75": 112.36986992267022
-                    }
-                }
-            }
+        "total_bytes_received": {
+          "min": 645723056.0,
+          "average": 645723056.0,
+          "max": 645723056.0,
+          "percentiles": {
+            "p25": 645723056.0,
+            "p50": 645723056.0,
+            "p75": 645723056.0
+          }
         },
-        "Internal": {
-            "status": "error",
-            "error_type": "CmdOut",
-            "error": {
-                "stdout": "{\n\t\"start\":\t{\n\t\t\"connected\":\t[{\n\t\t\t\t\"socket\":\t5,\n\t\t\t\t\"local_host\":\t\"138.201.33.111\",\n\t\t\t\t\"local_port\":\t33033,\n\t\t\t\t\"remote_host\":\t\"138.201.51.119\",\n\t\t\t\t\"remote_port\":\t5201\n\t\t\t}],\n\t\t\"version\":\t\"iperf 3.20\",\n\t\t\"system_info\":\t\"Linux lom 6.12.57 #1-NixOS SMP PREEMPT_DYNAMIC Sun Nov  2 13:15:23 UTC 2025 x86_64\",\n\t\t\"timestamp\":\t{\n\t\t\t\"time\":\t\"Thu, 18 Dec 2025 00:37:42 GMT\",\n\t\t\t\"timesecs\":\t1766018262,\n\t\t\t\"timemillisecs\":\t1766018262169\n\t\t},\n\t\t\"connecting_to\":\t{\n\t\t\t\"host\":\t\"vpn.yuki\",\n\t\t\t\"port\":\t5201\n\t\t},\n\t\t\"cookie\":\t\"43fy7msuot4l4ahis7y3ois7of3mlm7fwisp\",\n\t\t\"target_bitrate\":\t0,\n\t\t\"fq_rate\":\t0,\n\t\t\"sock_bufsize\":\t0,\n\t\t\"sndbuf_actual\":\t212992,\n\t\t\"rcvbuf_actual\":\t212992\n\t},\n\t\"intervals\":\t[],\n\t\"end\":\t{\n\t},\n\t\"error\":\t\"unable to read from stream socket: No such file or directory\"\n}\n",
-                "stderr": "Warning: Permanently added '138.201.33.111' (ED25519) to the list of known hosts.\r\n",
-                "cwd": "/home/lhebendanz/Projects/vpn-benchmark-suite/pkgs/vpn-bench",
-                "command_list": [
-                    "ssh",
-                    "root@138.201.33.111",
-                    "-A",
-                    "-o",
-                    "StrictHostKeyChecking=no",
-                    "-o",
-                    "UserKnownHostsFile=/dev/null",
-                    "-o",
-                    "ControlMaster=auto",
-                    "-o",
-                    "ControlPersist=1m",
-                    "-o",
-                    "ControlPath=/tmp/clan-sshxeyzu7hl/socket",
-                    "--",
-                    "bash",
-                    "-c",
-                    "'export IPERF3_PASSWORD=mambaBudo; exec \"$@\"'",
-                    "--",
-                    "iperf --bidir --connect-timeout 600 --time 30 --json -Z -c vpn.yuki --username mario --rsa-public-key-path /tmp/iperf3.public -u --udp-counters-64bit -b 0"
-                ],
-                "returncode": 1
-            },
-            "machine": "0_lom"
+        "duration_seconds": {
+          "min": 30.001246,
+          "average": 30.001246,
+          "max": 30.001246,
+          "percentiles": {
+            "p25": 30.001246,
+            "p50": 30.001246,
+            "p75": 30.001246
+          }
         },
-        "Hyprspace": {
-            "status": "error",
-            "error_type": "CmdOut",
-            "error": {
-                "stdout": "",
-                "stderr": "Warning: Permanently added '138.201.33.111' (ED25519) to the list of known hosts.\r\n",
-                "cwd": "/home/lhebendanz/Projects/vpn-benchmark-suite/pkgs/vpn-bench",
-                "command_list": [
-                    "ssh",
-                    "root@138.201.33.111",
-                    "-A",
-                    "-o",
-                    "StrictHostKeyChecking=no",
-                    "-o",
-                    "UserKnownHostsFile=/dev/null",
-                    "-o",
-                    "ControlMaster=auto",
-                    "-o",
-                    "ControlPersist=1m",
-                    "-o",
-                    "ControlPath=/tmp/clan-ssh7xw7r7fp/socket",
-                    "--",
-                    "bash",
-                    "-c",
-                    "'export IPERF3_PASSWORD=mambaBudo; exec \"$@\"'",
-                    "--",
-                    "iperf --bidir --connect-timeout 600 --time 30 --json -Z -c vpn.yuki --username mario --rsa-public-key-path /tmp/iperf3.public -u --udp-counters-64bit -b 0"
-                ],
-                "returncode": -1,
-                "msg": "Command timed out after 120 seconds"
-            },
-            "machine": "0_lom"
+        "blksize_bytes": {
+          "min": 2728.0,
+          "average": 2728.0,
+          "max": 2728.0,
+          "percentiles": {
+            "p25": 2728.0,
+            "p50": 2728.0,
+            "p75": 2728.0
+          }
         },
-        "Nebula": {
-            "status": "error",
-            "error_type": "CmdOut",
-            "error": {
-                "stdout": "{\n\t\"start\":\t{\n\t\t\"connected\":\t[{\n\t\t\t\t\"socket\":\t5,\n\t\t\t\t\"local_host\":\t\"fdc4:fb93:e53a:1:eff5:d0f7:ac45:870\",\n\t\t\t\t\"local_port\":\t40457,\n\t\t\t\t\"remote_host\":\t\"fdc4:fb93:e53a:1:495b:7e7b:f01:d16e\",\n\t\t\t\t\"remote_port\":\t5201\n\t\t\t}],\n\t\t\"version\":\t\"iperf 3.20\",\n\t\t\"system_info\":\t\"Linux lom 6.12.57 #1-NixOS SMP PREEMPT_DYNAMIC Sun Nov  2 13:15:23 UTC 2025 x86_64\",\n\t\t\"timestamp\":\t{\n\t\t\t\"time\":\t\"Fri, 19 Dec 2025 00:21:07 GMT\",\n\t\t\t\"timesecs\":\t1766103667,\n\t\t\t\"timemillisecs\":\t1766103667340\n\t\t},\n\t\t\"connecting_to\":\t{\n\t\t\t\"host\":\t\"vpn.yuki\",\n\t\t\t\"port\":\t5201\n\t\t},\n\t\t\"cookie\":\t\"6fwhi44atgefhun64ckqatkdexyirqgfvxdq\",\n\t\t\"target_bitrate\":\t0,\n\t\t\"fq_rate\":\t0,\n\t\t\"sock_bufsize\":\t0,\n\t\t\"sndbuf_actual\":\t212992,\n\t\t\"rcvbuf_actual\":\t212992\n\t},\n\t\"intervals\":\t[],\n\t\"end\":\t{\n\t},\n\t\"error\":\t\"unable to read from stream socket: No such file or directory\"\n}\n",
-                "stderr": "Warning: Permanently added '138.201.33.111' (ED25519) to the list of known hosts.\r\n",
-                "cwd": "/home/lhebendanz/Projects/vpn-benchmark-suite/pkgs/vpn-bench",
-                "command_list": [
-                    "ssh",
-                    "root@138.201.33.111",
-                    "-A",
-                    "-o",
-                    "StrictHostKeyChecking=no",
-                    "-o",
-                    "UserKnownHostsFile=/dev/null",
-                    "-o",
-                    "ControlMaster=auto",
-                    "-o",
-                    "ControlPersist=1m",
-                    "-o",
-                    "ControlPath=/tmp/clan-ssh9l65zmwp/socket",
-                    "--",
-                    "bash",
-                    "-c",
-                    "'export IPERF3_PASSWORD=mambaBudo; exec \"$@\"'",
-                    "--",
-                    "iperf --bidir --connect-timeout 600 --time 30 --json -Z -c vpn.yuki --username mario --rsa-public-key-path /tmp/iperf3.public -u --udp-counters-64bit -b 0"
-                ],
-                "returncode": 1
-            },
-            "machine": "0_lom"
+        "host_cpu_percent": {
+          "min": 103.55513431658578,
+          "average": 103.55513431658578,
+          "max": 103.55513431658578,
+          "percentiles": {
+            "p25": 103.55513431658578,
+            "p50": 103.55513431658578,
+            "p75": 103.55513431658578
+          }
         },
-        "Headscale": {
-            "status": "error",
-            "error_type": "CmdOut",
-            "error": {
-                "stdout": "{\n\t\"start\":\t{\n\t\t\"connected\":\t[{\n\t\t\t\t\"socket\":\t5,\n\t\t\t\t\"local_host\":\t\"fdbc:4ca7:7b65::3\",\n\t\t\t\t\"local_port\":\t33447,\n\t\t\t\t\"remote_host\":\t\"fdbc:4ca7:7b65::2\",\n\t\t\t\t\"remote_port\":\t5201\n\t\t\t}],\n\t\t\"version\":\t\"iperf 3.20\",\n\t\t\"system_info\":\t\"Linux lom 6.12.57 #1-NixOS SMP PREEMPT_DYNAMIC Sun Nov  2 13:15:23 UTC 2025 x86_64\",\n\t\t\"timestamp\":\t{\n\t\t\t\"time\":\t\"Fri, 19 Dec 2025 06:26:27 GMT\",\n\t\t\t\"timesecs\":\t1766125587,\n\t\t\t\"timemillisecs\":\t1766125587667\n\t\t},\n\t\t\"connecting_to\":\t{\n\t\t\t\"host\":\t\"vpn.yuki\",\n\t\t\t\"port\":\t5201\n\t\t},\n\t\t\"cookie\":\t\"azpaxux6qzi6flehit3upwtzv7ge65pt7swq\",\n\t\t\"target_bitrate\":\t0,\n\t\t\"fq_rate\":\t0,\n\t\t\"sock_bufsize\":\t0,\n\t\t\"sndbuf_actual\":\t212992,\n\t\t\"rcvbuf_actual\":\t212992\n\t},\n\t\"intervals\":\t[],\n\t\"end\":\t{\n\t},\n\t\"error\":\t\"unable to read from stream socket: No such file or directory\"\n}\n",
-                "stderr": "Warning: Permanently added '138.201.33.111' (ED25519) to the list of known hosts.\r\n",
-                "cwd": "/home/lhebendanz/Projects/vpn-benchmark-suite/pkgs/vpn-bench",
-                "command_list": [
-                    "ssh",
-                    "root@138.201.33.111",
-                    "-A",
-                    "-o",
-                    "StrictHostKeyChecking=no",
-                    "-o",
-                    "UserKnownHostsFile=/dev/null",
-                    "-o",
-                    "ControlMaster=auto",
-                    "-o",
-                    "ControlPersist=1m",
-                    "-o",
-                    "ControlPath=/tmp/clan-sshj248oaex/socket",
-                    "--",
-                    "bash",
-                    "-c",
-                    "'export IPERF3_PASSWORD=mambaBudo; exec \"$@\"'",
-                    "--",
-                    "iperf --bidir --connect-timeout 600 --time 30 --json -Z -c vpn.yuki --username mario --rsa-public-key-path /tmp/iperf3.public -u --udp-counters-64bit -b 0"
-                ],
-                "returncode": 1
-            },
-            "machine": "0_lom"
-        },
-        "Wireguard": {
-            "status": "error",
-            "error_type": "CmdOut",
-            "error": {
-                "stdout": "{\n\t\"start\":\t{\n\t\t\"connected\":\t[{\n\t\t\t\t\"socket\":\t5,\n\t\t\t\t\"local_host\":\t\"192.168.2.1\",\n\t\t\t\t\"local_port\":\t35353,\n\t\t\t\t\"remote_host\":\t\"192.168.2.2\",\n\t\t\t\t\"remote_port\":\t5201\n\t\t\t}],\n\t\t\"version\":\t\"iperf 3.20\",\n\t\t\"system_info\":\t\"Linux lom 6.12.57 #1-NixOS SMP PREEMPT_DYNAMIC Sun Nov  2 13:15:23 UTC 2025 x86_64\",\n\t\t\"timestamp\":\t{\n\t\t\t\"time\":\t\"Thu, 18 Dec 2025 14:22:15 GMT\",\n\t\t\t\"timesecs\":\t1766067735,\n\t\t\t\"timemillisecs\":\t1766067735349\n\t\t},\n\t\t\"connecting_to\":\t{\n\t\t\t\"host\":\t\"vpn.yuki\",\n\t\t\t\"port\":\t5201\n\t\t},\n\t\t\"cookie\":\t\"by7ezsmhsbnfvmwmwrmryafih3xm6d4g3vhx\",\n\t\t\"target_bitrate\":\t0,\n\t\t\"fq_rate\":\t0,\n\t\t\"sock_bufsize\":\t0,\n\t\t\"sndbuf_actual\":\t212992,\n\t\t\"rcvbuf_actual\":\t212992\n\t},\n\t\"intervals\":\t[],\n\t\"end\":\t{\n\t},\n\t\"error\":\t\"unable to read from stream socket: No such file or directory\"\n}\n",
-                "stderr": "Warning: Permanently added '138.201.33.111' (ED25519) to the list of known hosts.\r\n",
-                "cwd": "/home/lhebendanz/Projects/vpn-benchmark-suite/pkgs/vpn-bench",
-                "command_list": [
-                    "ssh",
-                    "root@138.201.33.111",
-                    "-A",
-                    "-o",
-                    "StrictHostKeyChecking=no",
-                    "-o",
-                    "UserKnownHostsFile=/dev/null",
-                    "-o",
-                    "ControlMaster=auto",
-                    "-o",
-                    "ControlPersist=1m",
-                    "-o",
-                    "ControlPath=/tmp/clan-sshy6fs1e3x/socket",
-                    "--",
-                    "bash",
-                    "-c",
-                    "'export IPERF3_PASSWORD=mambaBudo; exec \"$@\"'",
-                    "--",
-                    "iperf --bidir --connect-timeout 600 --time 30 --json -Z -c vpn.yuki --username mario --rsa-public-key-path /tmp/iperf3.public -u --udp-counters-64bit -b 0"
-                ],
-                "returncode": 1
-            },
-            "machine": "0_lom"
+        "remote_cpu_percent": {
+          "min": 103.64876083145522,
+          "average": 103.64876083145522,
+          "max": 103.64876083145522,
+          "percentiles": {
+            "p25": 103.64876083145522,
+            "p50": 103.64876083145522,
+            "p75": 103.64876083145522
+          }
         }
+      }
+    },
+    "Yggdrasil": {
+      "status": "success",
+      "data": {
+        "sender_throughput_mbps": {
+          "min": 66092.79912547224,
+          "average": 66519.24375654479,
+          "max": 66906.22493331243,
+          "percentiles": {
+            "p25": 66519.24375654479,
+            "p50": 66519.24375654479,
+            "p75": 66519.24375654479
+          }
+        },
+        "receiver_throughput_mbps": {
+          "min": 12.259085629864494,
+          "average": 12.284856518001664,
+          "max": 12.3282575389785,
+          "percentiles": {
+            "p25": 12.284856518001664,
+            "p50": 12.284856518001664,
+            "p75": 12.284856518001664
+          }
+        },
+        "jitter_ms": {
+          "min": 19.419233120199443,
+          "average": 21.33144910231188,
+          "max": 23.464676404534035,
+          "percentiles": {
+            "p25": 21.33144910231188,
+            "p50": 21.33144910231188,
+            "p75": 21.33144910231188
+          }
+        },
+        "lost_percent": {
+          "min": 99.97308773554754,
+          "average": 99.97472648324705,
+          "max": 99.9761771133898,
+          "percentiles": {
+            "p25": 99.97472648324705,
+            "p50": 99.97472648324705,
+            "p75": 99.97472648324705
+          }
+        },
+        "total_bytes_sent": {
+          "min": 247857134050.0,
+          "average": 249455497883.33334,
+          "max": 250904390150.0,
+          "percentiles": {
+            "p25": 249455497883.33334,
+            "p50": 249455497883.33334,
+            "p75": 249455497883.33334
+          }
+        },
+        "total_bytes_received": {
+          "min": 59046724.0,
+          "average": 59581330.333333336,
+          "max": 59995923.0,
+          "percentiles": {
+            "p25": 59581330.333333336,
+            "p50": 59581330.333333336,
+            "p75": 59581330.333333336
+          }
+        },
+        "duration_seconds": {
+          "min": 30.000723,
+          "average": 30.001003,
+          "max": 30.00118,
+          "percentiles": {
+            "p25": 30.001003,
+            "p50": 30.001003,
+            "p75": 30.001003
+          }
+        },
+        "blksize_bytes": {
+          "min": 32731.0,
+          "average": 32731.0,
+          "max": 32731.0,
+          "percentiles": {
+            "p25": 32731.0,
+            "p50": 32731.0,
+            "p75": 32731.0
+          }
+        },
+        "host_cpu_percent": {
+          "min": 99.39694863037776,
+          "average": 99.51317100399484,
+          "max": 99.5869004385912,
+          "percentiles": {
+            "p25": 99.51317100399484,
+            "p50": 99.51317100399484,
+            "p75": 99.51317100399484
+          }
+        },
+        "remote_cpu_percent": {
+          "min": 99.6685705984102,
+          "average": 99.67150480649853,
+          "max": 99.67587847533633,
+          "percentiles": {
+            "p25": 99.67150480649853,
+            "p50": 99.67150480649853,
+            "p75": 99.67150480649853
+          }
+        }
+      }
+    },
+    "Tinc": {
+      "status": "error",
+      "error_type": "CmdOut",
+      "error": {
+        "stdout": "{\n\t\"start\":\t{\n\t\t\"connected\":\t[{\n\t\t\t\t\"socket\":\t5,\n\t\t\t\t\"local_host\":\t\"fd63:7b6d:b690:1:6e8c:eb12:7b9b:8aa8\",\n\t\t\t\t\"local_port\":\t52211,\n\t\t\t\t\"remote_host\":\t\"fd63:7b6d:b690:1:d6ec:5608:53a0:8d36\",\n\t\t\t\t\"remote_port\":\t5201\n\t\t\t}],\n\t\t\"version\":\t\"iperf 3.20\",\n\t\t\"system_info\":\t\"Linux lom 6.12.57 #1-NixOS SMP PREEMPT_DYNAMIC Sun Nov  2 13:15:23 UTC 2025 x86_64\",\n\t\t\"timestamp\":\t{\n\t\t\t\"time\":\t\"Fri, 19 Dec 2025 03:41:10 GMT\",\n\t\t\t\"timesecs\":\t1766115670,\n\t\t\t\"timemillisecs\":\t1766115670953\n\t\t},\n\t\t\"connecting_to\":\t{\n\t\t\t\"host\":\t\"vpn.yuki\",\n\t\t\t\"port\":\t5201\n\t\t},\n\t\t\"cookie\":\t\"boq32nfqzfovues5q7x6hjnjev2plp7uz36j\",\n\t\t\"target_bitrate\":\t0,\n\t\t\"fq_rate\":\t0,\n\t\t\"sock_bufsize\":\t0,\n\t\t\"sndbuf_actual\":\t212992,\n\t\t\"rcvbuf_actual\":\t212992\n\t},\n\t\"intervals\":\t[],\n\t\"end\":\t{\n\t},\n\t\"error\":\t\"unable to read from stream socket: No such file or directory\"\n}\n",
+        "stderr": "Warning: Permanently added '138.201.33.111' (ED25519) to the list of known hosts.\r\n",
+        "cwd": "/home/lhebendanz/Projects/vpn-benchmark-suite/pkgs/vpn-bench",
+        "command_list": [
+          "ssh",
+          "root@138.201.33.111",
+          "-A",
+          "-o",
+          "StrictHostKeyChecking=no",
+          "-o",
+          "UserKnownHostsFile=/dev/null",
+          "-o",
+          "ControlMaster=auto",
+          "-o",
+          "ControlPersist=1m",
+          "-o",
+          "ControlPath=/tmp/clan-sshs7mxa3wx/socket",
+          "--",
+          "bash",
+          "-c",
+          "'export IPERF3_PASSWORD=mambaBudo; exec \"$@\"'",
+          "--",
+          "iperf --bidir --connect-timeout 600 --time 30 --json -Z -c vpn.yuki --username mario --rsa-public-key-path /tmp/iperf3.public -u --udp-counters-64bit -b 0"
+        ],
+        "returncode": 1
+      },
+      "machine": "0_lom"
+    },
+    "Mycelium": {
+      "status": "error",
+      "error_type": "CmdOut",
+      "error": {
+        "stdout": "",
+        "stderr": "Warning: Permanently added '138.201.33.111' (ED25519) to the list of known hosts.\r\n",
+        "cwd": "/home/lhebendanz/Projects/vpn-benchmark-suite/pkgs/vpn-bench",
+        "command_list": [
+          "ssh",
+          "root@138.201.33.111",
+          "-A",
+          "-o",
+          "StrictHostKeyChecking=no",
+          "-o",
+          "UserKnownHostsFile=/dev/null",
+          "-o",
+          "ControlMaster=auto",
+          "-o",
+          "ControlPersist=1m",
+          "-o",
+          "ControlPath=/tmp/clan-sshaas5nuu1/socket",
+          "--",
+          "bash",
+          "-c",
+          "'export IPERF3_PASSWORD=mambaBudo; exec \"$@\"'",
+          "--",
+          "iperf --bidir --connect-timeout 600 --time 30 --json -Z -c vpn.yuki --username mario --rsa-public-key-path /tmp/iperf3.public -u --udp-counters-64bit -b 0"
+        ],
+        "returncode": -1,
+        "msg": "Command timed out after 120 seconds"
+      },
+      "machine": "0_lom"
+    },
+    "Easytier": {
+      "status": "success",
+      "data": {
+        "sender_throughput_mbps": {
+          "min": 3783.0629239429404,
+          "average": 3898.503593340374,
+          "max": 4013.9442627378075,
+          "percentiles": {
+            "p25": 3898.503593340374,
+            "p50": 3898.503593340374,
+            "p75": 3898.503593340374
+          }
+        },
+        "receiver_throughput_mbps": {
+          "min": 362.95653102035703,
+          "average": 434.72918492071256,
+          "max": 506.50183882106813,
+          "percentiles": {
+            "p25": 434.72918492071256,
+            "p50": 434.72918492071256,
+            "p75": 434.72918492071256
+          }
+        },
+        "jitter_ms": {
+          "min": 0.0041454719107455,
+          "average": 0.00785533160945708,
+          "max": 0.011565191308168661,
+          "percentiles": {
+            "p25": 0.00785533160945708,
+            "p50": 0.00785533160945708,
+            "p75": 0.00785533160945708
+          }
+        },
+        "lost_percent": {
+          "min": 87.22806978513236,
+          "average": 88.81105538992469,
+          "max": 90.394040994717,
+          "percentiles": {
+            "p25": 88.81105538992469,
+            "p50": 88.81105538992469,
+            "p75": 88.81105538992469
+          }
+        },
+        "total_bytes_sent": {
+          "min": 14186791920.0,
+          "average": 14619650080.0,
+          "max": 15052508240.0,
+          "percentiles": {
+            "p25": 14619650080.0,
+            "p50": 14619650080.0,
+            "p75": 14619650080.0
+          }
+        },
+        "total_bytes_received": {
+          "min": 1362777416.0,
+          "average": 1637851712.0,
+          "max": 1912926008.0,
+          "percentiles": {
+            "p25": 1637851712.0,
+            "p50": 1637851712.0,
+            "p75": 1637851712.0
+          }
+        },
+        "duration_seconds": {
+          "min": 30.000433,
+          "average": 30.00054,
+          "max": 30.000647,
+          "percentiles": {
+            "p25": 30.00054,
+            "p50": 30.00054,
+            "p75": 30.00054
+          }
+        },
+        "blksize_bytes": {
+          "min": 1288.0,
+          "average": 1288.0,
+          "max": 1288.0,
+          "percentiles": {
+            "p25": 1288.0,
+            "p50": 1288.0,
+            "p75": 1288.0
+          }
+        },
+        "host_cpu_percent": {
+          "min": 111.06356041746552,
+          "average": 111.10793854401604,
+          "max": 111.15231667056653,
+          "percentiles": {
+            "p25": 111.10793854401604,
+            "p50": 111.10793854401604,
+            "p75": 111.10793854401604
+          }
+        },
+        "remote_cpu_percent": {
+          "min": 110.50330928809922,
+          "average": 112.36986992267022,
+          "max": 114.23643055724122,
+          "percentiles": {
+            "p25": 112.36986992267022,
+            "p50": 112.36986992267022,
+            "p75": 112.36986992267022
+          }
+        }
+      }
+    },
+    "Internal": {
+      "status": "error",
+      "error_type": "CmdOut",
+      "error": {
+        "stdout": "{\n\t\"start\":\t{\n\t\t\"connected\":\t[{\n\t\t\t\t\"socket\":\t5,\n\t\t\t\t\"local_host\":\t\"138.201.33.111\",\n\t\t\t\t\"local_port\":\t33033,\n\t\t\t\t\"remote_host\":\t\"138.201.51.119\",\n\t\t\t\t\"remote_port\":\t5201\n\t\t\t}],\n\t\t\"version\":\t\"iperf 3.20\",\n\t\t\"system_info\":\t\"Linux lom 6.12.57 #1-NixOS SMP PREEMPT_DYNAMIC Sun Nov  2 13:15:23 UTC 2025 x86_64\",\n\t\t\"timestamp\":\t{\n\t\t\t\"time\":\t\"Thu, 18 Dec 2025 00:37:42 GMT\",\n\t\t\t\"timesecs\":\t1766018262,\n\t\t\t\"timemillisecs\":\t1766018262169\n\t\t},\n\t\t\"connecting_to\":\t{\n\t\t\t\"host\":\t\"vpn.yuki\",\n\t\t\t\"port\":\t5201\n\t\t},\n\t\t\"cookie\":\t\"43fy7msuot4l4ahis7y3ois7of3mlm7fwisp\",\n\t\t\"target_bitrate\":\t0,\n\t\t\"fq_rate\":\t0,\n\t\t\"sock_bufsize\":\t0,\n\t\t\"sndbuf_actual\":\t212992,\n\t\t\"rcvbuf_actual\":\t212992\n\t},\n\t\"intervals\":\t[],\n\t\"end\":\t{\n\t},\n\t\"error\":\t\"unable to read from stream socket: No such file or directory\"\n}\n",
+        "stderr": "Warning: Permanently added '138.201.33.111' (ED25519) to the list of known hosts.\r\n",
+        "cwd": "/home/lhebendanz/Projects/vpn-benchmark-suite/pkgs/vpn-bench",
+        "command_list": [
+          "ssh",
+          "root@138.201.33.111",
+          "-A",
+          "-o",
+          "StrictHostKeyChecking=no",
+          "-o",
+          "UserKnownHostsFile=/dev/null",
+          "-o",
+          "ControlMaster=auto",
+          "-o",
+          "ControlPersist=1m",
+          "-o",
+          "ControlPath=/tmp/clan-sshxeyzu7hl/socket",
+          "--",
+          "bash",
+          "-c",
+          "'export IPERF3_PASSWORD=mambaBudo; exec \"$@\"'",
+          "--",
+          "iperf --bidir --connect-timeout 600 --time 30 --json -Z -c vpn.yuki --username mario --rsa-public-key-path /tmp/iperf3.public -u --udp-counters-64bit -b 0"
+        ],
+        "returncode": 1
+      },
+      "machine": "0_lom"
+    },
+    "Hyprspace": {
+      "status": "error",
+      "error_type": "CmdOut",
+      "error": {
+        "stdout": "",
+        "stderr": "Warning: Permanently added '138.201.33.111' (ED25519) to the list of known hosts.\r\n",
+        "cwd": "/home/lhebendanz/Projects/vpn-benchmark-suite/pkgs/vpn-bench",
+        "command_list": [
+          "ssh",
+          "root@138.201.33.111",
+          "-A",
+          "-o",
+          "StrictHostKeyChecking=no",
+          "-o",
+          "UserKnownHostsFile=/dev/null",
+          "-o",
+          "ControlMaster=auto",
+          "-o",
+          "ControlPersist=1m",
+          "-o",
+          "ControlPath=/tmp/clan-ssh7xw7r7fp/socket",
+          "--",
+          "bash",
+          "-c",
+          "'export IPERF3_PASSWORD=mambaBudo; exec \"$@\"'",
+          "--",
+          "iperf --bidir --connect-timeout 600 --time 30 --json -Z -c vpn.yuki --username mario --rsa-public-key-path /tmp/iperf3.public -u --udp-counters-64bit -b 0"
+        ],
+        "returncode": -1,
+        "msg": "Command timed out after 120 seconds"
+      },
+      "machine": "0_lom"
+    },
+    "Nebula": {
+      "status": "error",
+      "error_type": "CmdOut",
+      "error": {
+        "stdout": "{\n\t\"start\":\t{\n\t\t\"connected\":\t[{\n\t\t\t\t\"socket\":\t5,\n\t\t\t\t\"local_host\":\t\"fdc4:fb93:e53a:1:eff5:d0f7:ac45:870\",\n\t\t\t\t\"local_port\":\t40457,\n\t\t\t\t\"remote_host\":\t\"fdc4:fb93:e53a:1:495b:7e7b:f01:d16e\",\n\t\t\t\t\"remote_port\":\t5201\n\t\t\t}],\n\t\t\"version\":\t\"iperf 3.20\",\n\t\t\"system_info\":\t\"Linux lom 6.12.57 #1-NixOS SMP PREEMPT_DYNAMIC Sun Nov  2 13:15:23 UTC 2025 x86_64\",\n\t\t\"timestamp\":\t{\n\t\t\t\"time\":\t\"Fri, 19 Dec 2025 00:21:07 GMT\",\n\t\t\t\"timesecs\":\t1766103667,\n\t\t\t\"timemillisecs\":\t1766103667340\n\t\t},\n\t\t\"connecting_to\":\t{\n\t\t\t\"host\":\t\"vpn.yuki\",\n\t\t\t\"port\":\t5201\n\t\t},\n\t\t\"cookie\":\t\"6fwhi44atgefhun64ckqatkdexyirqgfvxdq\",\n\t\t\"target_bitrate\":\t0,\n\t\t\"fq_rate\":\t0,\n\t\t\"sock_bufsize\":\t0,\n\t\t\"sndbuf_actual\":\t212992,\n\t\t\"rcvbuf_actual\":\t212992\n\t},\n\t\"intervals\":\t[],\n\t\"end\":\t{\n\t},\n\t\"error\":\t\"unable to read from stream socket: No such file or directory\"\n}\n",
+        "stderr": "Warning: Permanently added '138.201.33.111' (ED25519) to the list of known hosts.\r\n",
+        "cwd": "/home/lhebendanz/Projects/vpn-benchmark-suite/pkgs/vpn-bench",
+        "command_list": [
+          "ssh",
+          "root@138.201.33.111",
+          "-A",
+          "-o",
+          "StrictHostKeyChecking=no",
+          "-o",
+          "UserKnownHostsFile=/dev/null",
+          "-o",
+          "ControlMaster=auto",
+          "-o",
+          "ControlPersist=1m",
+          "-o",
+          "ControlPath=/tmp/clan-ssh9l65zmwp/socket",
+          "--",
+          "bash",
+          "-c",
+          "'export IPERF3_PASSWORD=mambaBudo; exec \"$@\"'",
+          "--",
+          "iperf --bidir --connect-timeout 600 --time 30 --json -Z -c vpn.yuki --username mario --rsa-public-key-path /tmp/iperf3.public -u --udp-counters-64bit -b 0"
+        ],
+        "returncode": 1
+      },
+      "machine": "0_lom"
+    },
+    "Headscale": {
+      "status": "error",
+      "error_type": "CmdOut",
+      "error": {
+        "stdout": "{\n\t\"start\":\t{\n\t\t\"connected\":\t[{\n\t\t\t\t\"socket\":\t5,\n\t\t\t\t\"local_host\":\t\"fdbc:4ca7:7b65::3\",\n\t\t\t\t\"local_port\":\t33447,\n\t\t\t\t\"remote_host\":\t\"fdbc:4ca7:7b65::2\",\n\t\t\t\t\"remote_port\":\t5201\n\t\t\t}],\n\t\t\"version\":\t\"iperf 3.20\",\n\t\t\"system_info\":\t\"Linux lom 6.12.57 #1-NixOS SMP PREEMPT_DYNAMIC Sun Nov  2 13:15:23 UTC 2025 x86_64\",\n\t\t\"timestamp\":\t{\n\t\t\t\"time\":\t\"Fri, 19 Dec 2025 06:26:27 GMT\",\n\t\t\t\"timesecs\":\t1766125587,\n\t\t\t\"timemillisecs\":\t1766125587667\n\t\t},\n\t\t\"connecting_to\":\t{\n\t\t\t\"host\":\t\"vpn.yuki\",\n\t\t\t\"port\":\t5201\n\t\t},\n\t\t\"cookie\":\t\"azpaxux6qzi6flehit3upwtzv7ge65pt7swq\",\n\t\t\"target_bitrate\":\t0,\n\t\t\"fq_rate\":\t0,\n\t\t\"sock_bufsize\":\t0,\n\t\t\"sndbuf_actual\":\t212992,\n\t\t\"rcvbuf_actual\":\t212992\n\t},\n\t\"intervals\":\t[],\n\t\"end\":\t{\n\t},\n\t\"error\":\t\"unable to read from stream socket: No such file or directory\"\n}\n",
+        "stderr": "Warning: Permanently added '138.201.33.111' (ED25519) to the list of known hosts.\r\n",
+        "cwd": "/home/lhebendanz/Projects/vpn-benchmark-suite/pkgs/vpn-bench",
+        "command_list": [
+          "ssh",
+          "root@138.201.33.111",
+          "-A",
+          "-o",
+          "StrictHostKeyChecking=no",
+          "-o",
+          "UserKnownHostsFile=/dev/null",
+          "-o",
+          "ControlMaster=auto",
+          "-o",
+          "ControlPersist=1m",
+          "-o",
+          "ControlPath=/tmp/clan-sshj248oaex/socket",
+          "--",
+          "bash",
+          "-c",
+          "'export IPERF3_PASSWORD=mambaBudo; exec \"$@\"'",
+          "--",
+          "iperf --bidir --connect-timeout 600 --time 30 --json -Z -c vpn.yuki --username mario --rsa-public-key-path /tmp/iperf3.public -u --udp-counters-64bit -b 0"
+        ],
+        "returncode": 1
+      },
+      "machine": "0_lom"
+    },
+    "Wireguard": {
+      "status": "error",
+      "error_type": "CmdOut",
+      "error": {
+        "stdout": "{\n\t\"start\":\t{\n\t\t\"connected\":\t[{\n\t\t\t\t\"socket\":\t5,\n\t\t\t\t\"local_host\":\t\"192.168.2.1\",\n\t\t\t\t\"local_port\":\t35353,\n\t\t\t\t\"remote_host\":\t\"192.168.2.2\",\n\t\t\t\t\"remote_port\":\t5201\n\t\t\t}],\n\t\t\"version\":\t\"iperf 3.20\",\n\t\t\"system_info\":\t\"Linux lom 6.12.57 #1-NixOS SMP PREEMPT_DYNAMIC Sun Nov  2 13:15:23 UTC 2025 x86_64\",\n\t\t\"timestamp\":\t{\n\t\t\t\"time\":\t\"Thu, 18 Dec 2025 14:22:15 GMT\",\n\t\t\t\"timesecs\":\t1766067735,\n\t\t\t\"timemillisecs\":\t1766067735349\n\t\t},\n\t\t\"connecting_to\":\t{\n\t\t\t\"host\":\t\"vpn.yuki\",\n\t\t\t\"port\":\t5201\n\t\t},\n\t\t\"cookie\":\t\"by7ezsmhsbnfvmwmwrmryafih3xm6d4g3vhx\",\n\t\t\"target_bitrate\":\t0,\n\t\t\"fq_rate\":\t0,\n\t\t\"sock_bufsize\":\t0,\n\t\t\"sndbuf_actual\":\t212992,\n\t\t\"rcvbuf_actual\":\t212992\n\t},\n\t\"intervals\":\t[],\n\t\"end\":\t{\n\t},\n\t\"error\":\t\"unable to read from stream socket: No such file or directory\"\n}\n",
+        "stderr": "Warning: Permanently added '138.201.33.111' (ED25519) to the list of known hosts.\r\n",
+        "cwd": "/home/lhebendanz/Projects/vpn-benchmark-suite/pkgs/vpn-bench",
+        "command_list": [
+          "ssh",
+          "root@138.201.33.111",
+          "-A",
+          "-o",
+          "StrictHostKeyChecking=no",
+          "-o",
+          "UserKnownHostsFile=/dev/null",
+          "-o",
+          "ControlMaster=auto",
+          "-o",
+          "ControlPersist=1m",
+          "-o",
+          "ControlPath=/tmp/clan-sshy6fs1e3x/socket",
+          "--",
+          "bash",
+          "-c",
+          "'export IPERF3_PASSWORD=mambaBudo; exec \"$@\"'",
+          "--",
+          "iperf --bidir --connect-timeout 600 --time 30 --json -Z -c vpn.yuki --username mario --rsa-public-key-path /tmp/iperf3.public -u --udp-counters-64bit -b 0"
+        ],
+        "returncode": 1
+      },
+      "machine": "0_lom"
     }
+  }
 }

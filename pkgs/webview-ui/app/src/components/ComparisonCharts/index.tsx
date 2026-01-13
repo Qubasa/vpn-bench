@@ -450,14 +450,24 @@ const createDualBarChartOption = (
   firstLabel = "Sender",
   secondLabel = "Receiver",
   labelFormatter: (value: number) => string = (v) => v.toFixed(1),
+  sortBy: "average" | "first" | "second" = "average",
 ) => {
-  // Sort by average of both values for better visualization (incomplete items at end)
+  // Sort by specified value for better visualization (incomplete items at end)
   const sortedData = [...data].sort((a, b) => {
     if (a.isIncomplete && !b.isIncomplete) return 1;
     if (!a.isIncomplete && b.isIncomplete) return -1;
-    const aAvg = (a.senderValue + a.receiverValue) / 2;
-    const bAvg = (b.senderValue + b.receiverValue) / 2;
-    return bAvg - aAvg;
+    let aVal: number, bVal: number;
+    if (sortBy === "first") {
+      aVal = a.senderValue;
+      bVal = b.senderValue;
+    } else if (sortBy === "second") {
+      aVal = a.receiverValue;
+      bVal = b.receiverValue;
+    } else {
+      aVal = (a.senderValue + a.receiverValue) / 2;
+      bVal = (b.senderValue + b.receiverValue) / 2;
+    }
+    return bVal - aVal;
   });
 
   const maxValue = Math.max(
@@ -629,6 +639,7 @@ export const DualComparisonBarChart = (props: {
   firstLabel?: string;
   secondLabel?: string;
   labelFormatter?: (value: number) => string;
+  sortBy?: "average" | "first" | "second";
 }) => {
   return (
     <Show when={props.data.length > 0} fallback={<div>No data available</div>}>
@@ -642,6 +653,7 @@ export const DualComparisonBarChart = (props: {
           props.firstLabel,
           props.secondLabel,
           props.labelFormatter,
+          props.sortBy,
         )}
         height={props.height ?? 400}
       />
@@ -829,6 +841,7 @@ export const UdpThroughputComparisonChart = (props: {
       firstColor="#52c41a"
       secondColor="#1890ff"
       labelFormatter={(v) => v.toFixed(0)}
+      sortBy="second"
     />
   );
 };
@@ -904,6 +917,7 @@ export const UdpTotalDataComparisonChart = (props: {
       secondColor="#13c2c2"
       firstLabel="Sent"
       secondLabel="Received"
+      sortBy="second"
     />
   );
 };

@@ -765,10 +765,26 @@ export const GeneralDashboard = (props: GeneralDashboardProps) => {
             fallback={<FallbackMessage />}
           >
             {(data) => (
-              <ParallelTcpComparisonSection
-                data={data()}
-                allVpnNames={props.allVpnNames}
-              />
+              <>
+                <div
+                  style={{
+                    background: "#f0fff4",
+                    border: "1px solid #38a169",
+                    "border-radius": "8px",
+                    padding: "12px 16px",
+                    "margin-bottom": "16px",
+                    color: "#276749",
+                  }}
+                >
+                  <strong>Parallel Test:</strong> All 3 machine pairs ran TCP
+                  tests simultaneously. Throughput values shown are the sum of
+                  all machine pairs combined.
+                </div>
+                <ParallelTcpComparisonSection
+                  data={data()}
+                  allVpnNames={props.allVpnNames}
+                />
+              </>
             )}
           </Show>
         </Tabs.Content>
