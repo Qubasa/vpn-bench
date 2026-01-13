@@ -26,9 +26,10 @@ export const LlmDisclaimer = (props: LlmDisclaimerProps) => {
   onMount(() => {
     if (!detailsRef) return;
 
+    const ref = detailsRef;
     // Listen for toggle events to persist state
-    detailsRef.addEventListener("toggle", () => {
-      localStorage.setItem(storageKey, (!detailsRef!.open).toString());
+    ref.addEventListener("toggle", () => {
+      localStorage.setItem(storageKey, (!ref.open).toString());
     });
   });
 
