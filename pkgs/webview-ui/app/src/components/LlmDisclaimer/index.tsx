@@ -93,7 +93,7 @@ export const FeatureMatrixDisclaimer = () => (
     <p>
       <strong>Found an inaccuracy?</strong> PRs are welcome at the{" "}
       <a
-        href="https://git.clan.lol/Qubasa/vpn-benchmark/src/branch/main/pkgs/webview-ui/app/analysis"
+        href="https://github.com/Qubasa/vpn-bench/tree/main/pkgs/webview-ui/app/analysis"
         style={{ color: "#d97706", "text-decoration": "underline" }}
       >
         vpn benchmark repository
@@ -125,7 +125,7 @@ export const OverviewDisclaimer = () => (
     <p>
       <strong>Found an inaccuracy?</strong> PRs are welcome at the{" "}
       <a
-        href="https://git.clan.lol/Qubasa/vpn-benchmark/src/branch/main/pkgs/webview-ui/app/analysis"
+        href="https://github.com/Qubasa/vpn-bench/tree/main/pkgs/webview-ui/app/analysis"
         style={{ color: "#d97706", "text-decoration": "underline" }}
       >
         vpn benchmark repository
