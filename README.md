@@ -1,40 +1,14 @@
 # VPN Benchmark Tooling
 
-!!! This is a Work In Progress
+A fully automated and reproducible benchmark for Peer-to-Peer Mesh VPNs. 
+Current benchmark results can be viewed at https://vpnbench.clan.lol/overview
 
-This repository creates a network of VMs on the Hetzner cloud with opentofu, 
-installs clan on every machine and then performs benchmarks for different VPNs.
+## Screenshots
 
-## Run
+![Benchmark Website Screenshot](./website_screenshot.png)
 
-If you just want to run the benchmark, just execute:
+![TUI Screenshot](./tui_screenshot.png)
 
-```
- hyperfine --show-output 'rm -R ~/.cache/nix/binary-cache-*.sqlite*; rm -rf /tmp/cache; nix copy --from "{url}" --to "file:///tmp/cache?compression=none" /nix/store/jlkypcf54nrh4n6r0l62ryx93z752hb2-firefox-132.0' -L url https://nixos.tvix.store/,https://cache.nixos.org/,https://hetzner-cache.numtide.com/
-```
-
-1. **Install Nix Package Manager**:
-
-      - You can install the Nix package manager by either [downloading the Nix installer](https://github.com/DeterminateSystems/nix-installer/releases) or running this command:
-        ```bash
-        curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | sh -s -- install
-        ```
-
-2. **Download the application**
-  - This will download vpn-bench and drop you in a shell with it. This will not install vpn-bench
-  ```bash
-  nix shell git+https://git.clan.lol/Qubasa/vpn-benchmark.git#vpn-bench --refresh
-  ```
-
-3. **Start benchmarking**
-  And afterwards you have access to the `vpn-bench` command. To start the benchmarking execute:
-  ```bash
-  vpb create # <-- Creates the VMs with terraform
-  vpb meta # <-- To see the cloud metadata for the created VMs
-  vpb install # <-- Install benchmarking on VMs
-  vpb bench # <-- Runs the benchmarks
-  vpb plot # <-- Plots the results into a static website
-  ```
 
 ## Development Setup
 
@@ -74,16 +48,67 @@ Let's get your development environment up and running:
         $ direnv allow
       ```
 
-5. **Locally execute vpn-bench***
-    - You can execute `./bin/vpn-bench` to test the program
-    - You can create a `.local.env` where you can add bash commands and
+6. **(Optional) Hetzner Credentials**
+    - For development I recommend setting the env var `TF_VAR_hcloud_token` with the token gathered from
+    [generating-api-token](https://docs.hetzner.com/cloud/api/getting-started/generating-api-token/)
+
+    - You can create a `vpn-benchmark/pkgs/vpn-bench/.local.env` where you can add bash commands and
       and exports like:
         ```bash
-        export PATH=$HOME/Projects/clan-core/pkgs/clan-cli/bin:$PATH
-        export PYTHONPATH=$HOME/Projects/clan-core/pkgs/clan-cli:$PYTHONPATH
+        export TF_VAR_hcloud_token=$(rbw get "hetzner benchmark space API key")
         ```
-      to use a local checkout of clan-cli for example.
 
-6. **Hetzner Credentials**
-    - For development I recommand setting the env var `TF_VAR_hcloud_token` with the token gathered from
-    [generating-api-token](https://docs.hetzner.com/cloud/api/getting-started/generating-api-token/)
+## Benchmarking on Hetzner Cloud VMs
+
+Hetzner VMs are good for developing, as they are easy to spin up and tier down, 
+for actual benchmarks however, they are not very well suited as the VMs share a common network card.
+
+
+Create the VMs:
+
+```bash
+cd pkgs/vpn-bench
+vpb create --provider hetzner
+```
+
+Install the VMs:
+```bash
+vpb install
+```
+
+Start benchmarking:
+
+```bash
+vpb bench
+```
+
+## Benchmarking on Hetzner Hardware
+
+This should be used to get reliable benchmark data, as here every machine has it's own network card.
+
+Rent yourself (at least) three machines that have similiar hardware, that are in the same region.
+
+To create the configuration execute:
+
+```bash
+vpb create --provider hardware --host "root@138.201.33.111:lom" --host "root@138.201.51.119:yuki" --host "root@88.99.103.93:luna" --debug
+```
+
+You can inspect `~/.local/share/vpn_bench` for the newly created files.
+
+
+This will use kexec to install the Hetzner machines. 
+Note that kexec can crash and be non recoverable.
+This depends on the hardware, some hardware works with kexec some doesn't, 
+this will be a trial and error process, till the correct hardware has been found.
+
+```bash
+vpb install --provider hardware
+```
+
+
+This will start the benchmark, with all tests and all vpns.
+
+```bash
+vpb bench --test all --vpn all
+```
