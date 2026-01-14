@@ -96,7 +96,7 @@ export const FeatureMatrixDisclaimer = () => (
         href="https://git.clan.lol/Qubasa/vpn-benchmark/src/branch/main/pkgs/webview-ui/app/analysis"
         style={{ color: "#d97706", "text-decoration": "underline" }}
       >
-        analysis repository
+        vpn benchmark repository
       </a>
       .
     </p>
@@ -128,7 +128,7 @@ export const OverviewDisclaimer = () => (
         href="https://git.clan.lol/Qubasa/vpn-benchmark/src/branch/main/pkgs/webview-ui/app/analysis"
         style={{ color: "#d97706", "text-decoration": "underline" }}
       >
-        analysis repository
+        vpn benchmark repository
       </a>
       .
     </p>
