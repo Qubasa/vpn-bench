@@ -66,7 +66,7 @@ A comprehensive comparison of mesh VPN solutions across protocol, encryption, pe
 
 | Feature | EasyTier | Tailscale | Hyprspace | Mycelium | Nebula | Tinc | VpnCloud | Yggdrasil | ZeroTier |
 |---------|----------|-----------|-----------|----------|--------|------|----------|-----------|----------|
-| Replay protection | ✗ | ✓ | ✓ | ✗ | ✓ | ✓ | ✓ | ✗ | ✓ |
+| Replay protection | ✗ | ✓ | ✓ | ✗ | ✓ | ✓ | ✓ | ✓ | ✓ |
 | Noise Protocol | ✗ | ✓ | ✓ | ✗ | ✓ | ✗ | ✗ | ✗ | ✗ |
 | No cleartext metadata | ✗ | ✓ | ✓ | ✗ | ✓ | ✓ | ✓ | ✗ | ✗ |
 
@@ -330,7 +330,7 @@ A comprehensive comparison of mesh VPN solutions across protocol, encryption, pe
 | **Nebula** | 6/14 | 7/12 | 12/28 | 10/15 | 8/16 | 8/13 | 8/11 | 3/12 | 9/10 | **71/131** |
 | **Tinc** | 9/14 | 8/12 | 9/28 | 4/15 | 4/16 | 9/13 | 10/11 | 5/12 | 7/10 | **65/131** |
 | **VpnCloud** | 9/14 | 8/12 | 5/28 | 4/15 | 5/16 | 4/13 | 7/11 | 3/12 | 3/10 | **48/131** |
-| **Yggdrasil** | 6/14 | 6/12 | 6/28 | 3/15 | 1/16 | 3/13 | 8/11 | 3/12 | 9/10 | **45/131** |
+| **Yggdrasil** | 6/14 | 7/12 | 6/28 | 3/15 | 1/16 | 3/13 | 8/11 | 3/12 | 9/10 | **46/131** |
 | **ZeroTier** | 10/14 | 6/12 | 10/28 | 10/15 | 12/16 | 7/13 | 8/11 | 8/12 | 10/10 | **81/131** |
 
 ---

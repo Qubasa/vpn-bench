@@ -4,11 +4,13 @@ Yggdrasil is an experimental, fully end-to-end encrypted IPv6 overlay network. I
 
 Key Architecture Components:
 
-- **Ironwood Routing Library**: Provides the core routing functionality using a combination of spanning tree and DHT-based routing. The spanning tree is used for greedy routing towards destinations based on tree coordinates, while the DHT handles node location lookups.
+- **Ironwood Routing Library**: Provides the core encrypted mesh routing layer using a spanning tree topology with bloom filter-based lookups. Key features:
+  - **Spanning Tree**: Nodes maintain a soft-state CRDT-based spanning tree with parent/child relationships
+  - **Bloom Filter Lookups**: Per-peer bloom filters (8192-bit, 1024 bytes) track which keys are reachable through each link's subtree, replacing the DHT used in v4
+  - **Greedy Routing**: Packets are forwarded by maximizing "velocity in treespace" toward destination coordinates
+  - **Encryption Layers**: Supports unsigned (legal for amateur radio), signed (ed25519), or encrypted (nacl/box with ratcheting for forward secrecy)
 
-- **Phony Actor Model**: All components (Core, links, protocol handlers, nodeinfo, multicast) use the Phony actor model for concurrency, communicating via message passing through actor inboxes rather than traditional mutexes.
-
-- **Source Routing**: Once a path to a destination is discovered via DHT lookup, the path is cached for 2 minutes and packets include explicit path coordinates for efficient forwarding.
+- **Greedy Tree Routing**: Packets are routed greedily through the spanning tree toward their destination based on tree coordinates. Unknown destinations are discovered via bloom filter-based multicast lookups over the tree structure.
 
 - **Cryptographic Identity**: Each node has an Ed25519 key pair, and IPv6 addresses are cryptographically derived from public keys with the prefix 0x02. Keys with more leading 1s (when inverted) result in shorter, more desirable addresses.
 
@@ -18,9 +20,11 @@ Key Architecture Components:
 
 Yggdrasil uses protocol version 0.5 and supports multiple transport protocols for flexibility across different network environments.
 
-**Control Plane**: Nodes exchange metadata during handshake containing protocol version, Ed25519 public key, and priority value. The handshake is signed using Ed25519 with optional password-based BLAKE2b authentication. Once connected, nodes exchange routing information through the Ironwood DHT and spanning tree protocols.
+**Control Plane**: Nodes exchange metadata during handshake containing protocol version, Ed25519 public key, and priority value. The handshake is signed using Ed25519 with optional password-based BLAKE2b authentication. Once connected, nodes exchange routing information through Ironwood's spanning tree protocol and bloom filter gossip.
 
-**Data Plane**: Traffic is sent as encrypted IPv6 packets. The routing uses a hybrid approach: greedy routing via the spanning tree for initial forwarding, DHT lookups for unknown destinations, and cached source routes for known paths. All data is encrypted via Ironwood's encrypted PacketConn which uses ephemeral X25519 key exchange.
+**Data Plane**: Traffic is sent as encrypted IPv6 packets using greedy routing through the spanning tree topology. Unknown destinations are discovered via bloom filter-based lookups that multicast over the tree structure. All data is encrypted via Ironwood's encrypted PacketConn which uses ephemeral X25519 key exchange with forward secrecy.
+
+> **Note**: Yggdrasil v5 (0.5.x) uses a significantly different routing architecture than v4. The DHT and source routing from v4 were replaced with bloom filters and greedy routing for improved convergence speed and bandwidth efficiency.
 
 **Transport Support**: Yggdrasil does not use raw UDP - instead it supports TCP, TLS (minimum TLS 1.2, prefers TLS 1.3), QUIC, WebSocket (WS), and WebSocket Secure (WSS). The TLS implementation intentionally sets InsecureSkipVerify because it relies on custom Ed25519 signature verification in the handshake rather than traditional PKI.
 
@@ -75,15 +79,15 @@ Yggdrasil uses multiple layers of encryption to provide end-to-end security.
 - [x] **Constant-time operations** - Ed25519 and X25519 are constant-time
 
 ### Protocol Security
-- [ ] **Replay protection** - No visible nonce/timestamp in handshake (may be in TLS layer)
+- [x] **Replay protection** - Ironwood's encrypted layer uses ratcheting for replay protection
 - [ ] **Noise Protocol or equivalent** - Uses TLS 1.3 + custom handshake (not Noise)
 - [ ] **No cleartext metadata** - Ed25519 public keys are visible to peers during handshake
 
 # Performance
 
-Yggdrasil uses the Phony actor model for concurrency, with each major component having its own actor inbox.
+Yggdrasil is written in Go and uses goroutines for concurrent packet handling.
 
-**Threading Model**: The codebase spawns goroutines for each peer connection handler, TUN read/write loops, multicast listener, and listener accept loops. All actors communicate via phony.Act() method calls for asynchronous operations, or phony.Block() for synchronous operations. This provides clean isolation but adds message-passing overhead compared to direct function calls.
+**Threading Model**: The codebase spawns goroutines for each peer connection handler, TUN read/write loops, multicast listener, and listener accept loops. Internally, the phony actor library is used for thread-safe state management, but this is an implementation detail rather than an architectural feature.
 
 **Multi-core Utilization**: The actor model allows work to be distributed across CPU cores, though the global keystore uses a sync.Mutex that can become a contention point under high packet rates.
 
@@ -128,7 +132,7 @@ Yggdrasil uses the Phony actor model for concurrency, with each major component 
 
 ### Peer Management
 - [x] **Lazy peer removal** - Exponential backoff for reconnection (max ~1h8m)
-- [x] **Endpoint caching** - DHT paths cached for 2 minutes
+- [x] **Endpoint caching** - Routing paths cached via bloom filter state
 - [x] **Efficient keepalive timers** - QUIC uses 20-second KeepAlivePeriod
 
 ### Packet Processing
@@ -219,7 +223,7 @@ Yggdrasil uses multicast discovery on local networks but all traffic is still ro
 
 **LAN Discovery**: Nodes on the same LAN discover each other via IPv6 multicast beacons on [ff02::114]:9001. Beacons contain protocol version, Ed25519 public key, listening port, and optional password hash. When a beacon is received and verified, the node initiates a TLS connection to the discovered peer.
 
-**Routing Behavior**: Even between local peers, packets are routed through the Yggdrasil mesh using the spanning tree/DHT routing algorithm. The routing is overlay-based and doesn't necessarily prefer the direct LAN connection - it depends on the tree topology. If two LAN nodes connect but the spanning tree routes through remote nodes, traffic may take inefficient paths.
+**Routing Behavior**: Even between local peers, packets are routed through the Yggdrasil mesh using the spanning tree greedy routing algorithm. The routing is overlay-based and doesn't necessarily prefer the direct LAN connection - it depends on the tree topology. If two LAN nodes connect but the spanning tree routes through remote nodes, traffic may take inefficient paths.
 
 **No LAN Optimization**: There is no automatic preference for local paths over WAN paths, and no trusted path mode to skip encryption on local networks. All traffic is always encrypted end-to-end.
 
@@ -247,11 +251,11 @@ Yggdrasil is fully decentralized with no central points of failure.
 
 **No Bootstrap Servers**: Peers can be manually configured or discovered via multicast. There are no required bootstrap or rendezvous servers.
 
-**No Central Controller**: The network has no control plane server. All routing information is distributed via the DHT, and the spanning tree root is automatically selected based on cryptographic key properties (highest key value). Any node can become root.
+**No Central Controller**: The network has no control plane server. All routing information is distributed via the spanning tree and bloom filter gossip protocols. The spanning tree root is automatically selected based on cryptographic key properties (highest key value). Any node can become root.
 
-**Self-Healing**: Persistent connection attempts with exponential backoff (default max ~1h8m) ensure nodes automatically reconnect when peers become available. The DHT provides multiple paths to destinations, and if the spanning tree root disappears, a new root is automatically elected.
+**Self-Healing**: Persistent connection attempts with exponential backoff (default max ~1h8m) ensure nodes automatically reconnect when peers become available. The spanning tree provides multiple paths to destinations via greedy routing, and if the root disappears, a new root is automatically elected.
 
-**Graceful Degradation**: When peers are unreachable, the node continues to function with remaining peers. Cached routing information (DHT paths) expires after 2 minutes, forcing fresh lookups if stale. Existing connections remain operational even if multicast or configuration changes occur.
+**Graceful Degradation**: When peers are unreachable, the node continues to function with remaining peers. Routing state is soft-state with periodic refresh (default timeout ~5 minutes), ensuring stale information is eventually purged. Existing connections remain operational even if multicast or configuration changes occur.
 
 **Potential Weaknesses**: Small networks may be susceptible to Sybil attacks. Initial peer discovery requires at least one known peer or multicast capability. If all peers are down, the node is isolated.
 
@@ -259,7 +263,7 @@ Yggdrasil is fully decentralized with no central points of failure.
 
 ### Offline Operation
 - [x] **Existing connections survive** - Connections maintain state independent of other peers
-- [x] **Local state caching** - DHT paths cached for 2 minutes, peer info persisted
+- [x] **Local state caching** - Routing state cached with soft-state refresh, peer info persisted
 - [ ] **Cached credentials** - Configuration must be available (file or explicit)
 - [x] **Graceful degradation** - Node functions with available peers, no hard requirements
 
@@ -271,8 +275,8 @@ Yggdrasil is fully decentralized with no central points of failure.
 
 ### Efficiency
 - [ ] **Delta/incremental updates** - DON'T KNOW (handled by Ironwood library)
-- [ ] **Long polling / push updates** - DHT uses request/response, not push
-- [x] **Configurable sync interval** - DHT path cache timeout is fixed at 2 minutes
+- [ ] **Long polling / push updates** - Bloom filter gossip uses periodic refresh, not push
+- [x] **Configurable sync interval** - Soft-state timeout is fixed (~5 minutes)
 
 # Authentication
 
