@@ -57,7 +57,7 @@ The protocol allows direct peer-to-peer communication with automatic fallback to
 
 ### Advanced
 - [ ] **Multipath/bonding** - Aggregate multiple network paths not implemented
-- [ ] **QoS/traffic shaping** - No priority queues or traffic classes (only basic rate limiting)
+- [x] **QoS/traffic shaping** - L4 stream rate limiting via ACL-based rules
 - [x] **Multicast support** - Virtual multicast/broadcast supported via packet routing
 
 # Encryption
@@ -115,7 +115,7 @@ EasyTier supports both single-threaded and multi-threaded operation via runtime 
 **Packet Processing:**
 - Packets processed individually, one at a time - **no batching**
 - Single syscall per packet (no recvmmsg/sendmmsg)
-- Packets copied into BytesMut buffers, no buffer pooling visible
+- No packet copying within userspace - copies only occur during kernel ↔ userspace communication
 - No packet sorting before sending to kernel
 - TUN interface read in single task, no multi-queue parallelism
 
@@ -127,13 +127,13 @@ EasyTier supports both single-threaded and multi-threaded operation via runtime 
 - ArcSwap for lock-free ACL hot-reload
 
 **Performance vs Tailscale:**
-EasyTier significantly underperforms Tailscale under adverse network conditions (5% reordering, 2% loss). While Tailscale achieves 41 Mbps, EasyTier would perform much worse due to:
-- 128x more syscalls (no batching)
-- 35-1000x smaller buffers
-- No userspace TCP stack with tuned congestion control
+EasyTier underperforms Tailscale under adverse network conditions (5% reordering, 2% loss). While Tailscale achieves 41 Mbps, EasyTier performs worse due to:
+- More syscalls (no recvmmsg/sendmmsg batching)
+- Smaller socket buffers
+- No tuned congestion control in the userspace TCP stack
 - No GSO/GRO offloading
 
-The architecture prioritizes simplicity and correctness over high-performance optimizations.
+Note: EasyTier does have a userspace TCP implementation (smoltcp) and buffer reuse for UDP/TCP/TUN packet receiving, though with different optimization trade-offs than Tailscale.
 
 ## Performance Optimizations Checklist
 
@@ -151,11 +151,11 @@ The architecture prioritizes simplicity and correctness over high-performance op
 - [ ] **UDP GRO (Generic Receive Offload)** - Kernel coalescing not used (QUIC explicitly disables it)
 
 ### Buffer Management
-- [ ] **Buffer pool reuse** - No buffer pooling, BytesMut allocated per packet
+- [x] **Buffer pool reuse** - For UDP/TCP and TUN packet receiving, allocates large buffer to receive multiple packets and continues allocating new buffers only when consumed
 - [ ] **Large UDP socket buffers** - Uses Tokio defaults (~200KB), not MB-sized
 
 ### Userspace TCP Stack (optional)
-- [ ] **Userspace TCP implementation** - Relies on kernel TCP for tunneled traffic
+- [x] **Userspace TCP implementation** - Uses smoltcp as userspace TCP stack; can proxy overlay TCP streams via QUIC or KCP
 - [ ] **Large TCP RX/TX buffers** - Uses Tokio defaults (~8KB), not multi-MB
 - [ ] **Tuned congestion control** - Kernel TCP with default CUBIC, not optimized
 - [ ] **Reordering tolerance** - Kernel TCP default behavior
@@ -174,8 +174,8 @@ The architecture prioritizes simplicity and correctness over high-performance op
 - [x] **Efficient keepalive timers** - QUIC uses 5-second keepalive intervals
 
 ### Packet Processing
-- [ ] **Zero-allocation parsing** - Claims "zero-copy" but packets copied to BytesMut buffers
-- [ ] **Zero-copy filtering** - Packets copied during processing
+- [ ] **Zero-allocation parsing** - Packets still allocated to BytesMut buffers
+- [x] **Zero-copy filtering** - No packet copying within userspace; copies only at kernel ↔ userspace boundary
 
 ### State Synchronization
 - [x] **Delta updates** - OSPF-style incremental route updates
@@ -382,7 +382,6 @@ EasyTier uses a simple pre-shared key authentication model with no PKI infrastru
 **Limitations:**
 - No SSO/OAuth integration
 - No PKI or certificate-based authentication
-- No multi-user support
 - Network secret must be distributed out-of-band securely
 
 ## Authentication Checklist
@@ -402,7 +401,7 @@ EasyTier uses a simple pre-shared key authentication model with no PKI infrastru
 ### Identity
 - [x] **Stable device identity** - Peer ID persistent across restarts (stored in config)
 - [ ] **Identity portability** - Cannot move identity between devices easily
-- [ ] **Multi-user support** - No multiple users per device, single network secret only
+- [x] **Multi-user support** - A node can act as a shared node and relay packets for other users
 
 # Platform Support
 

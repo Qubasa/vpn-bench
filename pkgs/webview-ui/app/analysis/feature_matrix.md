@@ -38,7 +38,7 @@ A comprehensive comparison of mesh VPN solutions across protocol, encryption, pe
 | Feature | EasyTier | Tailscale | Hyprspace | Mycelium | Nebula | Tinc | VpnCloud | Yggdrasil | ZeroTier |
 |---------|----------|-----------|-----------|----------|--------|------|----------|-----------|----------|
 | Multipath/bonding | ✗ | ✗ | ✗ | ✗ | ✗ | ✗ | ✗ | ✗ | ✓ |
-| QoS/traffic shaping | ✗ | ✗ | ✗ | ✗ | ✗ | ✗ | ✗ | ✗ | ✓ |
+| QoS/traffic shaping | ✓ | ✗ | ✗ | ✗ | ✗ | ✗ | ✗ | ✗ | ✓ |
 | Multicast support | ✓ | ✗ | ✗ | ✗ | ✗ | ✓ | ✓ | ✗ | ✓ |
 
 ---
@@ -100,14 +100,14 @@ A comprehensive comparison of mesh VPN solutions across protocol, encryption, pe
 
 | Feature | EasyTier | Tailscale | Hyprspace | Mycelium | Nebula | Tinc | VpnCloud | Yggdrasil | ZeroTier |
 |---------|----------|-----------|-----------|----------|--------|------|----------|-----------|----------|
-| Buffer pool reuse | ✗ | ✓ | ✗ | ✗ | ✓ | ✓ | ✓ | ✓ | ✓ |
+| Buffer pool reuse | ✓ | ✓ | ✗ | ✗ | ✓ | ✓ | ✓ | ✓ | ✓ |
 | Large UDP socket buffers (MB) | ✗ | ✓ | ✗ | ✗ | ✓ | ✓ | ✗ | ✗ | ✗ |
 
 ### Userspace TCP Stack
 
 | Feature | EasyTier | Tailscale | Hyprspace | Mycelium | Nebula | Tinc | VpnCloud | Yggdrasil | ZeroTier |
 |---------|----------|-----------|-----------|----------|--------|------|----------|-----------|----------|
-| Userspace TCP implementation | ✗ | ✓ | ✓ | ✗ | ✗ | ✗ | ✗ | ✗ | ✗ |
+| Userspace TCP implementation | ✓ | ✓ | ✓ | ✗ | ✗ | ✗ | ✗ | ✗ | ✗ |
 | Large TCP RX/TX buffers | ✗ | ✓ | ✓ | ✗ | ✗ | ✗ | ✗ | ✗ | ✗ |
 | Tuned congestion control | ✗ | ✓ | ✗ | ✗ | ✗ | ✗ | ✗ | ✗ | ✗ |
 | Reordering tolerance | ✗ | ✓ | ✗ | ✗ | ✗ | ✗ | ✗ | ✗ | ✗ |
@@ -132,7 +132,7 @@ A comprehensive comparison of mesh VPN solutions across protocol, encryption, pe
 | Feature | EasyTier | Tailscale | Hyprspace | Mycelium | Nebula | Tinc | VpnCloud | Yggdrasil | ZeroTier |
 |---------|----------|-----------|-----------|----------|--------|------|----------|-----------|----------|
 | Zero-allocation parsing | ✗ | ✓ | ✗ | ✗ | ✓ | ✗ | ✗ | ✗ | ✓ |
-| Zero-copy filtering | ✗ | ✓ | ✗ | ✗ | ✗ | ✗ | ✗ | ✗ | ✗ |
+| Zero-copy filtering | ✓ | ✓ | ✗ | ✗ | ✗ | ✗ | ✗ | ✗ | ✗ |
 
 ### Data Plane Compression
 
@@ -287,7 +287,7 @@ A comprehensive comparison of mesh VPN solutions across protocol, encryption, pe
 |---------|----------|-----------|-----------|----------|--------|------|----------|-----------|----------|
 | Stable device identity | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
 | Identity portability | ✗ | ✗ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✗ |
-| Multi-user support | ✗ | ✓ | ✗ | ✗ | ✗ | ✗ | ✗ | ✗ | ✗ |
+| Multi-user support | ✓ | ✓ | ✗ | ✗ | ✗ | ✗ | ✗ | ✗ | ✗ |
 
 ---
 
@@ -323,7 +323,7 @@ A comprehensive comparison of mesh VPN solutions across protocol, encryption, pe
 
 | VPN | Protocol | Encryption | Performance | Security | NAT | Routing | Resilience | Auth | Platform | **Total** |
 |-----|----------|------------|-------------|----------|-----|---------|------------|------|----------|-----------|
-| **EasyTier** | 11/14 | 3/12 | 6/28 | 4/15 | 10/16 | 9/13 | 7/11 | 4/12 | 8/10 | **62/131** |
+| **EasyTier** | 12/14 | 3/12 | 9/28 | 4/15 | 10/16 | 9/13 | 7/11 | 5/12 | 8/10 | **67/131** |
 | **Tailscale** | 10/14 | 8/12 | 24/28 | 7/15 | 16/16 | 8/13 | 8/11 | 10/12 | 10/10 | **101/131** |
 | **Hyprspace** | 9/14 | 7/12 | 7/28 | 3/15 | 13/16 | 8/13 | 7/11 | 2/12 | 5/10 | **61/131** |
 | **Mycelium** | 4/14 | 5/12 | 4/28 | 2/15 | 4/16 | 6/13 | 7/11 | 2/12 | 7/10 | **41/131** |
