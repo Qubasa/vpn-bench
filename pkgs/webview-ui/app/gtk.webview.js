@@ -32,7 +32,7 @@ fs.readFile(manifestPath, { encoding: "utf8" }, (err, data) => {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Webview UI</title>`;
+    <title>VPN Benchmarks</title>`;
 
   // Add linked stylesheets
   assets.forEach((asset) => {
