@@ -9,14 +9,15 @@ import { QperfCrossProfileCharts } from "../QperfCrossProfileCharts";
 import { VideoStreamingCrossProfileCharts } from "../VideoStreamingCrossProfileCharts";
 import { NixCacheCrossProfileCharts } from "../NixCacheCrossProfileCharts";
 import {
-  crossProfileTcpData,
-  crossProfileUdpData,
-  crossProfilePingData,
-  crossProfileQperfData,
-  crossProfileVideoStreamingData,
-  crossProfileNixCacheData,
   CrossProfileTcpData,
+  getCrossProfileTcpDataForAlias,
+  getCrossProfileUdpDataForAlias,
+  getCrossProfilePingDataForAlias,
+  getCrossProfileQperfDataForAlias,
+  getCrossProfileVideoStreamingDataForAlias,
+  getCrossProfileNixCacheDataForAlias,
 } from "../../benchData";
+import { useAlias } from "../../AliasContext";
 import { Tabs } from "@kobalte/core/tabs";
 import { useSearchParams } from "@solidjs/router";
 import "../VpnBenchDashboard/style.css";
@@ -39,8 +40,18 @@ const FallbackMessage = (props: { message?: string }) => (
 export const TcpCrossProfileDashboard = (
   props: TcpCrossProfileDashboardProps,
 ) => {
-  // Use provided data or fall back to global crossProfileTcpData
-  const data = () => props.data ?? crossProfileTcpData;
+  const { currentAlias } = useAlias();
+
+  // Reactive alias-aware data accessors
+  const data = () =>
+    props.data ?? getCrossProfileTcpDataForAlias(currentAlias());
+  const udpData = () => getCrossProfileUdpDataForAlias(currentAlias());
+  const pingData = () => getCrossProfilePingDataForAlias(currentAlias());
+  const qperfData = () => getCrossProfileQperfDataForAlias(currentAlias());
+  const videoStreamingData = () =>
+    getCrossProfileVideoStreamingDataForAlias(currentAlias());
+  const nixCacheData = () =>
+    getCrossProfileNixCacheDataForAlias(currentAlias());
 
   // Get URL search params for state sync
   const [searchParams, setSearchParams] = useSearchParams();
@@ -85,26 +96,24 @@ export const TcpCrossProfileDashboard = (
   const hasParallelData = () =>
     (data()?.parallel_tcp.bar3d.throughput_data.length ?? 0) > 0;
   const hasUdpData = () =>
-    Object.keys(crossProfileUdpData?.heatmap.throughput ?? {}).length > 0;
+    Object.keys(udpData()?.heatmap.throughput ?? {}).length > 0;
   const hasPingData = () =>
-    Object.keys(crossProfilePingData?.heatmap.rtt ?? {}).length > 0;
+    Object.keys(pingData()?.heatmap.rtt ?? {}).length > 0;
   const hasQperfData = () =>
-    Object.keys(crossProfileQperfData?.heatmap.bandwidth ?? {}).length > 0;
+    Object.keys(qperfData()?.heatmap.bandwidth ?? {}).length > 0;
   const hasVideoStreamingData = () =>
-    Object.keys(crossProfileVideoStreamingData?.heatmap.quality ?? {}).length >
-    0;
+    Object.keys(videoStreamingData()?.heatmap.quality ?? {}).length > 0;
   const hasNixCacheData = () =>
-    Object.keys(crossProfileNixCacheData?.heatmap.mean_seconds ?? {}).length >
-    0;
+    Object.keys(nixCacheData()?.heatmap.mean_seconds ?? {}).length > 0;
 
   // Check if any cross-profile data is available
   const hasAnyData = () =>
     data() ||
-    crossProfileUdpData ||
-    crossProfilePingData ||
-    crossProfileQperfData ||
-    crossProfileVideoStreamingData ||
-    crossProfileNixCacheData;
+    udpData() ||
+    pingData() ||
+    qperfData() ||
+    videoStreamingData() ||
+    nixCacheData();
 
   return (
     <div class="p-6">
@@ -204,34 +213,34 @@ export const TcpCrossProfileDashboard = (
 
           <Tabs.Content class="tabs__content" value="udp-cross-profile">
             <Show
-              when={hasUdpData() ? crossProfileUdpData : null}
+              when={hasUdpData() ? udpData() : null}
               fallback={
                 <FallbackMessage message="No UDP cross-profile data available" />
               }
             >
-              {(udpData) => <UdpCrossProfileCharts data={udpData()} />}
+              {(d) => <UdpCrossProfileCharts data={d()} />}
             </Show>
           </Tabs.Content>
 
           <Tabs.Content class="tabs__content" value="ping-cross-profile">
             <Show
-              when={hasPingData() ? crossProfilePingData : null}
+              when={hasPingData() ? pingData() : null}
               fallback={
                 <FallbackMessage message="No Ping cross-profile data available" />
               }
             >
-              {(pingData) => <PingCrossProfileCharts data={pingData()} />}
+              {(d) => <PingCrossProfileCharts data={d()} />}
             </Show>
           </Tabs.Content>
 
           <Tabs.Content class="tabs__content" value="qperf-cross-profile">
             <Show
-              when={hasQperfData() ? crossProfileQperfData : null}
+              when={hasQperfData() ? qperfData() : null}
               fallback={
                 <FallbackMessage message="No QUIC cross-profile data available" />
               }
             >
-              {(qperfData) => <QperfCrossProfileCharts data={qperfData()} />}
+              {(d) => <QperfCrossProfileCharts data={d()} />}
             </Show>
           </Tabs.Content>
 
@@ -240,27 +249,23 @@ export const TcpCrossProfileDashboard = (
             value="video-streaming-cross-profile"
           >
             <Show
-              when={
-                hasVideoStreamingData() ? crossProfileVideoStreamingData : null
-              }
+              when={hasVideoStreamingData() ? videoStreamingData() : null}
               fallback={
                 <FallbackMessage message="No Video Streaming cross-profile data available" />
               }
             >
-              {(videoData) => (
-                <VideoStreamingCrossProfileCharts data={videoData()} />
-              )}
+              {(d) => <VideoStreamingCrossProfileCharts data={d()} />}
             </Show>
           </Tabs.Content>
 
           <Tabs.Content class="tabs__content" value="nix-cache-cross-profile">
             <Show
-              when={hasNixCacheData() ? crossProfileNixCacheData : null}
+              when={hasNixCacheData() ? nixCacheData() : null}
               fallback={
                 <FallbackMessage message="No Nix Cache cross-profile data available" />
               }
             >
-              {(nixData) => <NixCacheCrossProfileCharts data={nixData()} />}
+              {(d) => <NixCacheCrossProfileCharts data={d()} />}
             </Show>
           </Tabs.Content>
         </Tabs>

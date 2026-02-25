@@ -23,8 +23,8 @@
 
 [[benchmark]]
 vpn = "internal"
-tests = ["nix-cache"]
-tc_profiles = ["low", "medium", "high"]
+tests = ["iperf3"]
+tc_profiles = ["baseline"]
 skip_con_times = false
 
 # [[benchmark]]
@@ -63,11 +63,11 @@ skip_con_times = false
 # tc_profiles = ["baseline", "low", "medium", "high"]
 # skip_con_times = true
 
-[[benchmark]]
-vpn = "easytier"
-tests = ["nix-cache"]
-tc_profiles = ["baseline", "low", "medium", "high"]
-skip_con_times = false
+# [[benchmark]]
+# vpn = "easytier"
+# tests = ["nix-cache"]
+# tc_profiles = ["baseline", "low", "medium", "high"]
+# skip_con_times = false
 
 # [[benchmark]]
 # vpn = "nebula"

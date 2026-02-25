@@ -1219,6 +1219,14 @@ console.log("All cross-profile TCP data:", allCrossProfileTcpData);
 export const crossProfileTcpData =
   allCrossProfileTcpData[getAvailableAliases()[0]] || null;
 
+export function getCrossProfileTcpDataForAlias(
+  alias?: string,
+): CrossProfileTcpData | null {
+  const aliases = getAvailableAliases();
+  const targetAlias = alias || aliases[0] || "";
+  return allCrossProfileTcpData[targetAlias] || null;
+}
+
 // --- Cross-Profile UDP Data Loading ---
 
 const crossProfileUdpFiles = import.meta.glob(
@@ -1266,6 +1274,14 @@ console.log("All cross-profile UDP data:", allCrossProfileUdpData);
 // Backward compatible: get first alias data
 export const crossProfileUdpData =
   allCrossProfileUdpData[getAvailableAliases()[0]] || null;
+
+export function getCrossProfileUdpDataForAlias(
+  alias?: string,
+): CrossProfileUdpData | null {
+  const aliases = getAvailableAliases();
+  const targetAlias = alias || aliases[0] || "";
+  return allCrossProfileUdpData[targetAlias] || null;
+}
 
 // --- Cross-Profile Ping Data Loading ---
 
@@ -1317,6 +1333,14 @@ console.log("All cross-profile Ping data:", allCrossProfilePingData);
 export const crossProfilePingData =
   allCrossProfilePingData[getAvailableAliases()[0]] || null;
 
+export function getCrossProfilePingDataForAlias(
+  alias?: string,
+): CrossProfilePingData | null {
+  const aliases = getAvailableAliases();
+  const targetAlias = alias || aliases[0] || "";
+  return allCrossProfilePingData[targetAlias] || null;
+}
+
 // --- Cross-Profile QUIC/Qperf Data Loading ---
 
 const crossProfileQperfFiles = import.meta.glob(
@@ -1366,6 +1390,14 @@ console.log("All cross-profile QUIC data:", allCrossProfileQperfData);
 
 export const crossProfileQperfData =
   allCrossProfileQperfData[getAvailableAliases()[0]] || null;
+
+export function getCrossProfileQperfDataForAlias(
+  alias?: string,
+): CrossProfileQperfData | null {
+  const aliases = getAvailableAliases();
+  const targetAlias = alias || aliases[0] || "";
+  return allCrossProfileQperfData[targetAlias] || null;
+}
 
 // --- Cross-Profile Video Streaming Data Loading ---
 
@@ -1423,6 +1455,14 @@ console.log(
 export const crossProfileVideoStreamingData =
   allCrossProfileVideoStreamingData[getAvailableAliases()[0]] || null;
 
+export function getCrossProfileVideoStreamingDataForAlias(
+  alias?: string,
+): CrossProfileVideoStreamingData | null {
+  const aliases = getAvailableAliases();
+  const targetAlias = alias || aliases[0] || "";
+  return allCrossProfileVideoStreamingData[targetAlias] || null;
+}
+
 // --- Cross-Profile Nix Cache Data Loading ---
 
 const crossProfileNixCacheFiles = import.meta.glob(
@@ -1472,6 +1512,14 @@ console.log("All cross-profile Nix Cache data:", allCrossProfileNixCacheData);
 
 export const crossProfileNixCacheData =
   allCrossProfileNixCacheData[getAvailableAliases()[0]] || null;
+
+export function getCrossProfileNixCacheDataForAlias(
+  alias?: string,
+): CrossProfileNixCacheData | null {
+  const aliases = getAvailableAliases();
+  const targetAlias = alias || aliases[0] || "";
+  return allCrossProfileNixCacheData[targetAlias] || null;
+}
 
 // --- Hardware Comparison Data Loading ---
 

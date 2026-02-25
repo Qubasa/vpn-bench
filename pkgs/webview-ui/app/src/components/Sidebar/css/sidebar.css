@@ -27,10 +27,10 @@
 .sidebar__date-selector__button {
   display: flex;
   align-items: center;
-  gap: theme(padding.2);
+  justify-content: space-between;
   width: 100%;
   padding: theme(padding.2) theme(padding.3);
-  @apply bg-primary-700/50;
+  @apply bg-primary-700;
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: theme(borderRadius.md);
   cursor: pointer;
@@ -38,7 +38,7 @@
 }
 
 .sidebar__date-selector__button:hover {
-  @apply bg-primary-700/70;
+  @apply bg-primary-600;
 }
 
 .sidebar__date-selector__caret {
@@ -57,25 +57,31 @@
   right: theme(padding.2);
   margin-top: theme(padding.1);
   @apply bg-primary-800;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: theme(borderRadius.md);
   overflow: hidden;
-  z-index: 10;
+  z-index: 100;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
 
 .sidebar__date-selector__option {
   display: block;
+  width: 100%;
   padding: theme(padding.2) theme(padding.3);
   text-decoration: none;
+  text-align: left;
+  border: none;
+  @apply bg-primary-800;
+  cursor: pointer;
   transition: background-color 0.15s ease;
 }
 
 .sidebar__date-selector__option:hover {
-  @apply bg-primary-700/50;
+  @apply bg-primary-700;
 }
 
 .sidebar__date-selector__option--active {
-  @apply bg-primary-600/50;
+  @apply bg-primary-600;
 }
 
 /* Category Sections */

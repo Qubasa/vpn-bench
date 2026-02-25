@@ -95,6 +95,7 @@
           "nix-cache-new" = ./clanModules/nix-cache-new;
           "mycelium" = ./clanModules/mycelium;
           "phantun" = (lib.modules.importApply ./clanModules/phantun { packages = self.packages; });
+          "tcp-reorder-tune" = ./clanModules/tcp-reorder-tune;
         };
       };
     };

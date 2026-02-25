@@ -5,13 +5,14 @@ import {
   Router,
   useSearchParams,
 } from "@solidjs/router";
-import { createSignal, For, createMemo } from "solid-js";
+import { createSignal, createEffect, For, createMemo } from "solid-js";
 import { Tabs } from "@kobalte/core/tabs";
 
 import "./index.css";
 import { QueryClient, QueryClientProvider } from "@tanstack/solid-query";
 
 import { Layout } from "./layout/layout";
+import { useAlias } from "./AliasContext";
 import { VpnDashboard } from "@/src/components/VpnBenchDashboard";
 import {
   IperfTcpReport,
@@ -42,7 +43,6 @@ import { HyperfineData, HyperfineReport } from "./components/HyperfineCharts";
 import { PingData, PingReport } from "./components/PingCharts";
 import { RistData, RistReport } from "./components/RistStreamCharts";
 import { TCSettingsData } from "./benchData";
-import { AliasProvider } from "./AliasContext";
 import { getVpnOverview } from "./vpnOverviews";
 import { FeatureMatrixPage } from "./components/FeatureMatrixPage";
 import { HardwarePage } from "./components/HardwarePage";
@@ -237,20 +237,35 @@ function processCategoryReportsMixed<TData>(
 }
 
 // Wrapper component that handles TC profile selection
-function VpnDashboardWithProfiles(props: { category: BenchData[0] }) {
+function VpnDashboardWithProfiles(props: { vpnName: string }) {
+  const { benchData: aliasBenchData } = useAlias();
+
+  // Look up category reactively from the current alias's data
+  const category = () =>
+    aliasBenchData().find((c) => c.name === props.vpnName);
+
   // Get the list of TC profile aliases, sorted in logical order
-  const runAliases = sortTcProfiles(Object.keys(props.category.runs));
+  const runAliases = () =>
+    sortTcProfiles(Object.keys(category()?.runs || {}));
 
   // Get URL search params for state sync
   const [searchParams, setSearchParams] = useSearchParams();
 
   // Initialize from URL or fallback to first run
   const initialRun =
-    searchParams.profile && runAliases.includes(searchParams.profile)
+    searchParams.profile && runAliases().includes(searchParams.profile)
       ? searchParams.profile
-      : runAliases[0] || "baseline";
+      : runAliases()[0] || "baseline";
 
   const [selectedRun, setSelectedRun] = createSignal(initialRun);
+
+  // Reset selected run when alias changes and current selection is no longer valid
+  createEffect(() => {
+    const aliases = runAliases();
+    if (aliases.length > 0 && !aliases.includes(selectedRun())) {
+      setSelectedRun(aliases[0]);
+    }
+  });
 
   // Handler that updates both local state AND URL
   const handleRunChange = (newRun: string) => {
@@ -259,7 +274,7 @@ function VpnDashboardWithProfiles(props: { category: BenchData[0] }) {
   };
 
   // Get machines and TC settings for the currently selected run
-  const getCurrentRun = () => props.category.runs[selectedRun()];
+  const getCurrentRun = () => category()?.runs[selectedRun()];
   const getCurrentMachines = () => getCurrentRun()?.machines || [];
   const getCurrentTCSettings = () => getCurrentRun()?.tcSettings || null;
 
@@ -295,14 +310,14 @@ function VpnDashboardWithProfiles(props: { category: BenchData[0] }) {
   return (
     <div>
       {/* TC Profile Tabs - only show if there are multiple profiles */}
-      {runAliases.length > 1 ? (
+      {runAliases().length > 1 ? (
         <Tabs
           value={selectedRun()}
           onChange={handleRunChange}
           class="tc-profile-tabs"
         >
           <Tabs.List class="tc-profile-tabs__list">
-            <For each={runAliases}>
+            <For each={runAliases()}>
               {(alias) => (
                 <Tabs.Trigger class="tc-profile-tabs__trigger" value={alias}>
                   {alias
@@ -321,8 +336,8 @@ function VpnDashboardWithProfiles(props: { category: BenchData[0] }) {
 
       {/* Render VpnDashboard with reports from selected run */}
       <VpnDashboard
-        vpnName={props.category.name}
-        overviewMarkdown={getVpnOverview(props.category.name) ?? undefined}
+        vpnName={props.vpnName}
+        overviewMarkdown={getVpnOverview(props.vpnName) ?? undefined}
         tcpReports={reportsForCurrentRun().tcp}
         udpReports={reportsForCurrentRun().udp}
         parallelTcpReport={reportsForCurrentRun().parallelTcp}
@@ -358,12 +373,24 @@ function generateRoutesFromBenchData(data: BenchData): AppRoute[] {
     return {
       path,
       label: category.name,
-      component: () => <VpnDashboardWithProfiles category={category} />,
+      component: () => <VpnDashboardWithProfiles vpnName={category.name} />,
       // Hide route if category has no runs
       hidden: !hasRuns,
       category: "vpn" as const,
     };
   });
+}
+
+function GeneralDashboardWrapper() {
+  const { comparisonData: aliasComparisonData, benchData: aliasBenchData } =
+    useAlias();
+  const allVpnNames = () => aliasBenchData().map((c) => c.name);
+  return (
+    <GeneralDashboard
+      comparisonData={aliasComparisonData()}
+      allVpnNames={allVpnNames()}
+    />
+  );
 }
 
 function generateAppRouteFromGeneralData(
@@ -373,22 +400,19 @@ function generateAppRouteFromGeneralData(
     return [];
   }
 
-  // Get all VPN names from benchData to show incomplete VPNs
-  const allVpnNames = benchData.map((category) => category.name);
-
   return [
     {
       path: "/overview",
       label: "Across VPNs",
-      component: () => (
-        <GeneralDashboard
-          comparisonData={comparison}
-          allVpnNames={allVpnNames}
-        />
-      ),
+      component: () => <GeneralDashboardWrapper />,
       category: "analysis" as const,
     },
   ];
+}
+
+function ConnectionTimesDashboardWrapper() {
+  const { comparisonData: aliasComparisonData } = useAlias();
+  return <ConnectionTimesDashboard comparisonData={aliasComparisonData()} />;
 }
 
 function generateConnectionTimesRoute(comparison: ComparisonData): AppRoute[] {
@@ -400,7 +424,7 @@ function generateConnectionTimesRoute(comparison: ComparisonData): AppRoute[] {
     {
       path: "/connection-times",
       label: "Connection Times",
-      component: () => <ConnectionTimesDashboard comparisonData={comparison} />,
+      component: () => <ConnectionTimesDashboardWrapper />,
       category: "analysis" as const,
       hidden: true,
     },
@@ -481,11 +505,9 @@ render(
       <Portal mount={document.body}>
         <Toaster position="top-right" containerClassName="z-[9999]" />
       </Portal>
-      <AliasProvider>
-        <QueryClientProvider client={client}>
-          <Router root={Layout}>{routes}</Router>
-        </QueryClientProvider>
-      </AliasProvider>
+      <QueryClientProvider client={client}>
+        <Router root={Layout}>{routes}</Router>
+      </QueryClientProvider>
     </>
   ),
   // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
