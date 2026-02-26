@@ -17,6 +17,7 @@ from vpn_bench.data import (
     VPN,
     BenchmarkEntry,
     Config,
+    KernelProfile,
     Provider,
     SSHKeyPair,
     TCProfile,
@@ -409,32 +410,63 @@ def run_cli() -> None:
             )
             app.run()
         else:
+            from vpn_bench.vpn import (
+                install_tcp_reorder_tune,
+                remove_tcp_reorder_tune,
+            )
+
             # Run without TUI (standard logging)
             failed_vpns: list[tuple[VPN, str]] = []
             for entry in entries:
-                log.info(f"========== Running benchmark for {entry.vpn} ==========")
-                log.info(
-                    f"  Default tests: {[t.value for t in entry.tests]}, "
-                    f"TC profiles: {[p.value for p in entry.tc_profiles]}, "
-                    f"Skip connection times: {entry.skip_con_times}"
-                )
-                if entry.profile_overrides:
-                    for name, override in entry.profile_overrides.items():
-                        log.info(f"  Profile '{name}' overrides: {override}")
-                try:
-                    benchmark_vpn(
-                        config,
-                        entry,
-                        machines,
+                for kp in entry.kernel_profiles:
+                    log.info(
+                        f"========== Running benchmark for {entry.vpn} "
+                        f"(kernel: {kp.value}) =========="
                     )
-                except Exception as e:
-                    error_msg = str(e)
-                    log.error(
-                        f"Benchmark for {entry.vpn} failed with error: {error_msg}"
+                    log.info(
+                        f"  Default tests: {[t.value for t in entry.tests]}, "
+                        f"TC profiles: {[p.value for p in entry.tc_profiles]}, "
+                        f"Kernel profile: {kp.value}, "
+                        f"Skip connection times: {entry.skip_con_times}"
                     )
-                    failed_vpns.append((entry.vpn, error_msg))
-                    log.info("Continuing with next VPN...")
-                    continue
+                    if entry.profile_overrides:
+                        for name, override in entry.profile_overrides.items():
+                            log.info(f"  Profile '{name}' overrides: {override}")
+
+                    # Apply kernel profile services
+                    if kp != KernelProfile.BASELINE:
+                        for service in kp.get_services():
+                            if service == "tcp-reorder-tune":
+                                log.info(
+                                    f"Applying {service} for kernel profile {kp.value}"
+                                )
+                                install_tcp_reorder_tune(config)
+
+                    try:
+                        benchmark_vpn(
+                            config,
+                            entry,
+                            machines,
+                            kernel_profile=kp,
+                        )
+                    except Exception as e:
+                        error_msg = str(e)
+                        log.error(
+                            f"Benchmark for {entry.vpn} (kernel: {kp.value}) "
+                            f"failed with error: {error_msg}"
+                        )
+                        failed_vpns.append((entry.vpn, error_msg))
+                        log.info("Continuing with next benchmark...")
+                    finally:
+                        # Clean up kernel profile services
+                        if kp != KernelProfile.BASELINE:
+                            for service in kp.get_services():
+                                if service == "tcp-reorder-tune":
+                                    log.info(
+                                        f"Removing {service} after kernel "
+                                        f"profile {kp.value}"
+                                    )
+                                    remove_tcp_reorder_tune(config)
 
             if failed_vpns:
                 log.warning("The following VPNs failed during benchmarking:")

@@ -76,6 +76,7 @@ def download_connection_timings(
     machines: list[Machine],
     reboot: bool = False,
     benchmark_run_alias: str = "default",
+    kernel_profile_alias: str = "baseline",
 ) -> None:
     def download_save(machine: Machine, dest: Path) -> None:
         host = machine.target_host().override(host_key_check="none")
@@ -93,6 +94,7 @@ def download_connection_timings(
         for index, machine in enumerate(machines):
             dest = (
                 config.bench_dir
+                / kernel_profile_alias
                 / vpn.name
                 / benchmark_run_alias
                 / f"{index}_{machine.name}"
@@ -210,6 +212,7 @@ def reboot_connection_timings(
     vpn: VPN,
     machines: list[Machine],
     benchmark_run_alias: str = "default",
+    kernel_profile_alias: str = "baseline",
 ) -> None:
     """Reboot machines to get connection timings."""
     log.info("Rebooting machines to get connection timings")
@@ -295,7 +298,12 @@ def reboot_connection_timings(
         runtime.check_all()
 
     download_connection_timings(
-        config, vpn, machines, reboot=True, benchmark_run_alias=benchmark_run_alias
+        config,
+        vpn,
+        machines,
+        reboot=True,
+        benchmark_run_alias=benchmark_run_alias,
+        kernel_profile_alias=kernel_profile_alias,
     )
 
 
@@ -304,18 +312,43 @@ def analyse_connection_timings(config: Config) -> None:
     Collect connection timing information from all machines for each VPN
     and generate summary files in the General folder.
 
+    Discovers kernel profile directories by scanning for kernel_profile.json
+    metadata files. For each kernel profile, analyzes connection timings within
+    that profile's directory.
+
     Args:
         config: Configuration containing benchmark directory
     """
     log.info("Analyzing connection timings")
 
-    # Create the General directory if it doesn't exist
-    general_dir = config.bench_dir / "General"
-    general_dir.mkdir(parents=True, exist_ok=True)
+    # Discover kernel profile directories by looking for kernel_profile.json
+    kernel_profile_dirs: list[Path] = []
+    if config.bench_dir.is_dir():
+        for subdir in sorted(config.bench_dir.iterdir()):
+            if subdir.is_dir() and (subdir / "kernel_profile.json").exists():
+                kernel_profile_dirs.append(subdir)
 
-    # Process both regular and reboot connection timings
-    for timing_type in ["connection_timings", "reboot_connection_timings"]:
-        process_timing_files(config, timing_type, general_dir)
+    if not kernel_profile_dirs:
+        # Fallback: treat bench_dir itself as the profile dir (legacy data)
+        kernel_profile_dirs = [config.bench_dir]
+
+    for kp_dir in kernel_profile_dirs:
+        log.info(f"Analyzing connection timings for kernel profile: {kp_dir.name}")
+        # Create a config copy with kernel-profile-specific bench_dir
+        kp_config = Config(
+            debug=config.debug,
+            data_dir=config.data_dir,
+            cache_dir=config.cache_dir,
+            tr_dir=config.tr_dir,
+            clan_dir=config.clan_dir,
+            bench_dir=kp_dir,
+            ssh_keys=config.ssh_keys,
+        )
+        general_dir = kp_dir / "General"
+        general_dir.mkdir(parents=True, exist_ok=True)
+
+        for timing_type in ["connection_timings", "reboot_connection_timings"]:
+            process_timing_files(kp_config, timing_type, general_dir)
 
 
 def process_timing_files(config: Config, timing_type: str, general_dir: Path) -> None:

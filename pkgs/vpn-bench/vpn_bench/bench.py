@@ -17,6 +17,7 @@ from vpn_bench.data import (
     BenchMachine,
     BenchmarkEntry,
     Config,
+    KernelProfile,
     TCProfile,
     TCSettings,
     TestType,
@@ -184,12 +185,15 @@ def run_benchmarks(
     benchmark_run_alias: str = "default",
     tc_settings: TCSettings | None = None,
     tracker: ProgressTracker | None = None,
+    kernel_profile_alias: str = "baseline",
 ) -> None:
     """Run TCP and UDP benchmarks for each machine."""
     import json
 
     # Save TC settings JSON file once per benchmark run
-    tc_settings_dir = config.bench_dir / vpn.name / benchmark_run_alias
+    tc_settings_dir = (
+        config.bench_dir / kernel_profile_alias / vpn.name / benchmark_run_alias
+    )
     tc_settings_dir.mkdir(parents=True, exist_ok=True)
     tc_settings_file = tc_settings_dir / "tc_settings.json"
 
@@ -251,7 +255,12 @@ def run_benchmarks(
                 results_data.append(result_entry)
 
             # Save results to profile-level directory
-            parallel_result_dir = config.bench_dir / vpn.name / benchmark_run_alias
+            parallel_result_dir = (
+                config.bench_dir
+                / kernel_profile_alias
+                / vpn.name
+                / benchmark_run_alias
+            )
             parallel_result_dir.mkdir(parents=True, exist_ok=True)
 
             parallel_metadata: TestMetadataDict = {
@@ -291,6 +300,7 @@ def run_benchmarks(
             )
         result_dir = (
             config.bench_dir
+            / kernel_profile_alias
             / vpn.name
             / benchmark_run_alias
             / f"{pos}_{bmachine.cmachine.name}"
@@ -538,23 +548,27 @@ def benchmark_vpn(
     entry: BenchmarkEntry,
     tr_machines: list[TrMachine],
     tracker: ProgressTracker | None = None,
+    kernel_profile: KernelProfile = KernelProfile.BASELINE,
 ) -> None:
     """
-    Run VPN benchmarks with multiple TC configurations.
+    Run VPN benchmarks with multiple TC configurations under a kernel profile.
 
     Args:
         config: Configuration object
         entry: BenchmarkEntry containing VPN, tests, profiles, and overrides
         tr_machines: List of terraform machines
         tracker: Optional progress tracker for TUI updates
+        kernel_profile: Kernel profile determining kernel-level tuning
     """
     from vpn_bench.tc import apply_tc_settings
 
     vpn = entry.vpn
+    kernel_profile_alias = kernel_profile.value
     benchmark_runs = entry.get_benchmark_runs()
 
     log.info(
-        f"Benchmarking VPN {vpn} with {len(benchmark_runs)} different configurations"
+        f"Benchmarking VPN {vpn} with {len(benchmark_runs)} configurations "
+        f"(kernel profile: {kernel_profile_alias})"
     )
 
     # Create timing tracker with TUI callbacks
@@ -591,7 +605,19 @@ def benchmark_vpn(
             if benchmark_runs
             else "default",
             timing=timing,
+            kernel_profile_alias=kernel_profile_alias,
         )
+
+    # Write kernel profile metadata file
+    import json as _json
+
+    kernel_profile_dir = config.bench_dir / kernel_profile_alias
+    kernel_profile_dir.mkdir(parents=True, exist_ok=True)
+    kernel_metadata_file = kernel_profile_dir / "kernel_profile.json"
+    kernel_metadata_file.write_text(
+        _json.dumps(kernel_profile.to_metadata(), indent=2)
+    )
+    log.info(f"Saved kernel profile metadata to {kernel_metadata_file}")
 
     # Get list of machines for TC application
     machines = [bm.cmachine for bm in bmachines]
@@ -625,6 +651,7 @@ def benchmark_vpn(
                     run_config.alias,
                     run_config.tc_settings,
                     tracker,
+                    kernel_profile_alias=kernel_profile_alias,
                 )
 
         # Track profile completion
@@ -634,7 +661,11 @@ def benchmark_vpn(
         # Save timing breakdown per profile
         timing_breakdown = timing.finalize()
         timing_file = (
-            config.bench_dir / vpn.name / run_config.alias / "timing_breakdown.json"
+            config.bench_dir
+            / kernel_profile_alias
+            / vpn.name
+            / run_config.alias
+            / "timing_breakdown.json"
         )
         timing_breakdown.save(timing_file)
         log.info(f"Saved timing breakdown to {timing_file}")

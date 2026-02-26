@@ -257,10 +257,10 @@ const MachineCard = (props: { machine: MachineHardware }) => {
 };
 
 export const HardwarePage = () => {
-  const { currentAlias } = useAlias();
+  const { currentAlias, currentKernelProfile } = useAlias();
 
   const hardwareData = createMemo(() =>
-    getHardwareDataForAlias(currentAlias()),
+    getHardwareDataForAlias(currentAlias(), currentKernelProfile()),
   );
 
   return (

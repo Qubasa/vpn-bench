@@ -1,16 +1,25 @@
 # VPN Benchmark Configuration
 # Usage: vpb bench --config /path/to/config.toml
 #
+# Kernel profiles:
+# kernel_profiles controls kernel-level TCP tuning applied to all machines.
+# Available profiles: "baseline" (default kernel settings), "optimized"
+# (applies tcp-reorder-tune clanService for high-reordering network tuning).
+# Each kernel profile triggers a full machine rebuild, so using both
+# doubles the benchmark duration.
+# Defaults to ["baseline"] if omitted.
+#
 # Per-profile test overrides:
 # You can override tests and skip_con_times for specific profiles using
 # [[benchmark.profile]] sections. This allows running different tests
 # on different TC profiles for the same VPN.
 #
-# Example with per-profile overrides:
+# Example with kernel profiles and per-profile overrides:
 #   [[benchmark]]
 #   vpn = "wireguard"
 #   tests = ["ping", "rist-stream"]  # default tests for all profiles
 #   tc_profiles = ["baseline", "low", "medium", "high"]
+#   kernel_profiles = ["baseline", "optimized"]
 #   skip_con_times = false
 #
 #   [[benchmark.profile]]
@@ -22,6 +31,7 @@
 #   skip_con_times = true  # override skip_con_times for "medium" profile
 
 [[benchmark]]
+kernel_profiles = ["optimized"]
 vpn = "internal"
 tests = ["iperf3"]
 tc_profiles = ["baseline"]

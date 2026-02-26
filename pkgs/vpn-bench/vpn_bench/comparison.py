@@ -2144,15 +2144,46 @@ def generate_comparison_data(bench_dir: Path, clan_dir: Path | None = None) -> N
     """
     Generate comparison data for all VPNs and benchmark types.
 
-    Scans the bench directory for VPN results, aggregates data across machines,
-    and writes comparison files to the General/comparison directory.
+    Discovers kernel profile directories by scanning for kernel_profile.json
+    metadata files. For each kernel profile, generates comparison data within
+    that profile's directory.
 
     Args:
-        bench_dir: Path to the benchmark results directory
+        bench_dir: Path to the benchmark results directory (date-level)
         clan_dir: Path to the clan directory (for hardware info extraction)
     """
     log.info(f"Generating comparison data from {bench_dir}")
 
+    # Discover kernel profile directories by looking for kernel_profile.json
+    kernel_profile_dirs: list[Path] = []
+    if bench_dir.is_dir():
+        for subdir in sorted(bench_dir.iterdir()):
+            if subdir.is_dir() and (subdir / "kernel_profile.json").exists():
+                kernel_profile_dirs.append(subdir)
+
+    if not kernel_profile_dirs:
+        log.warning(
+            "No kernel profile directories found (missing kernel_profile.json). "
+            "Falling back to treating bench_dir as a single profile."
+        )
+        # Fallback: treat bench_dir itself as the profile dir (legacy data)
+        kernel_profile_dirs = [bench_dir]
+
+    for kp_dir in kernel_profile_dirs:
+        log.info(f"Processing kernel profile: {kp_dir.name}")
+        _generate_comparison_data_for_profile(kp_dir, clan_dir)
+
+
+def _generate_comparison_data_for_profile(
+    bench_dir: Path, clan_dir: Path | None = None
+) -> None:
+    """
+    Generate comparison data for a single kernel profile directory.
+
+    Args:
+        bench_dir: Path to the kernel profile directory containing VPN subdirs
+        clan_dir: Path to the clan directory (for hardware info extraction)
+    """
     general_dir = bench_dir / "General"
     comparison_dir = general_dir / "comparison"
 

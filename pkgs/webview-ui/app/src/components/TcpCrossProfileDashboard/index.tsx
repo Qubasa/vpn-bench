@@ -40,18 +40,28 @@ const FallbackMessage = (props: { message?: string }) => (
 export const TcpCrossProfileDashboard = (
   props: TcpCrossProfileDashboardProps,
 ) => {
-  const { currentAlias } = useAlias();
+  const { currentAlias, currentKernelProfile } = useAlias();
 
-  // Reactive alias-aware data accessors
+  // Reactive alias-aware and kernel-profile-aware data accessors
   const data = () =>
-    props.data ?? getCrossProfileTcpDataForAlias(currentAlias());
-  const udpData = () => getCrossProfileUdpDataForAlias(currentAlias());
-  const pingData = () => getCrossProfilePingDataForAlias(currentAlias());
-  const qperfData = () => getCrossProfileQperfDataForAlias(currentAlias());
+    props.data ??
+    getCrossProfileTcpDataForAlias(currentAlias(), currentKernelProfile());
+  const udpData = () =>
+    getCrossProfileUdpDataForAlias(currentAlias(), currentKernelProfile());
+  const pingData = () =>
+    getCrossProfilePingDataForAlias(currentAlias(), currentKernelProfile());
+  const qperfData = () =>
+    getCrossProfileQperfDataForAlias(currentAlias(), currentKernelProfile());
   const videoStreamingData = () =>
-    getCrossProfileVideoStreamingDataForAlias(currentAlias());
+    getCrossProfileVideoStreamingDataForAlias(
+      currentAlias(),
+      currentKernelProfile(),
+    );
   const nixCacheData = () =>
-    getCrossProfileNixCacheDataForAlias(currentAlias());
+    getCrossProfileNixCacheDataForAlias(
+      currentAlias(),
+      currentKernelProfile(),
+    );
 
   // Get URL search params for state sync
   const [searchParams, setSearchParams] = useSearchParams();

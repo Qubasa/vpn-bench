@@ -862,6 +862,8 @@ class BenchmarkTUI(App[None]):
     def run_benchmark(self) -> None:
         """Run the benchmark in a background thread."""
         from vpn_bench.bench import benchmark_vpn
+        from vpn_bench.data import KernelProfile
+        from vpn_bench.vpn import install_tcp_reorder_tune, remove_tcp_reorder_tune
 
         worker = get_current_worker()
 
@@ -873,32 +875,59 @@ class BenchmarkTUI(App[None]):
                 if worker.is_cancelled:
                     break
 
-                # Tracker callbacks are thread-safe, so we can call directly
-                self.tracker.start_vpn(entry.vpn, entry_idx)
-                self.tracker.log(
-                    f"========== Starting benchmark for {entry.vpn.value} =========="
-                )
-                self.tracker.log(
-                    f"  Tests: {[t.value for t in entry.tests]}, "
-                    f"TC profiles: {[p.value for p in entry.tc_profiles]}, "
-                    f"Skip connection times: {entry.skip_con_times}"
-                )
+                for kp in entry.kernel_profiles:
+                    if worker.is_cancelled:
+                        break
 
-                try:
-                    benchmark_vpn(
-                        self.config,
-                        entry,
-                        self.machines,
-                        tracker=self.tracker,
-                    )
-                    self.tracker.complete_vpn()
-                except Exception as e:
-                    error_msg = str(e)
+                    # Tracker callbacks are thread-safe, so we can call directly
+                    self.tracker.start_vpn(entry.vpn, entry_idx)
                     self.tracker.log(
-                        f"[ERROR] Benchmark for {entry.vpn.value} failed: {error_msg}"
+                        f"========== Starting benchmark for {entry.vpn.value} "
+                        f"(kernel: {kp.value}) =========="
                     )
-                    failed_vpns.append((entry.vpn, error_msg))
-                    self.tracker.complete_vpn()
+                    self.tracker.log(
+                        f"  Tests: {[t.value for t in entry.tests]}, "
+                        f"TC profiles: {[p.value for p in entry.tc_profiles]}, "
+                        f"Kernel profile: {kp.value}, "
+                        f"Skip connection times: {entry.skip_con_times}"
+                    )
+
+                    # Apply kernel profile services
+                    if kp != KernelProfile.BASELINE:
+                        for service in kp.get_services():
+                            if service == "tcp-reorder-tune":
+                                self.tracker.log(
+                                    f"Applying {service} for kernel profile {kp.value}"
+                                )
+                                install_tcp_reorder_tune(self.config)
+
+                    try:
+                        benchmark_vpn(
+                            self.config,
+                            entry,
+                            self.machines,
+                            tracker=self.tracker,
+                            kernel_profile=kp,
+                        )
+                        self.tracker.complete_vpn()
+                    except Exception as e:
+                        error_msg = str(e)
+                        self.tracker.log(
+                            f"[ERROR] Benchmark for {entry.vpn.value} "
+                            f"(kernel: {kp.value}) failed: {error_msg}"
+                        )
+                        failed_vpns.append((entry.vpn, error_msg))
+                        self.tracker.complete_vpn()
+                    finally:
+                        # Clean up kernel profile services
+                        if kp != KernelProfile.BASELINE:
+                            for service in kp.get_services():
+                                if service == "tcp-reorder-tune":
+                                    self.tracker.log(
+                                        f"Removing {service} after kernel "
+                                        f"profile {kp.value}"
+                                    )
+                                    remove_tcp_reorder_tune(self.config)
 
         # Report failures
         if failed_vpns:

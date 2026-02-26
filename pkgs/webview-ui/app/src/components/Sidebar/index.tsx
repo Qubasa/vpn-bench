@@ -1,4 +1,4 @@
-import { For, type JSX, createMemo } from "solid-js";
+import { For, Show, type JSX, createMemo } from "solid-js";
 import { RouteSectionProps } from "@solidjs/router";
 
 import { AppRoute, routes } from "@/src/index";
@@ -45,17 +45,30 @@ export const SidebarCategory = (props: SidebarCategoryProps) => {
 };
 
 export const Sidebar = (props: RouteSectionProps) => {
-  const { currentAlias, setCurrentAlias } = useAlias();
+  const {
+    currentAlias,
+    setCurrentAlias,
+    currentKernelProfile,
+    setCurrentKernelProfile,
+    availableKernelProfiles,
+    benchData: aliasBenchData,
+  } = useAlias();
 
-  // Filter and group routes by category
-  const visibleRoutes = createMemo(() => routes.filter((r) => !r.hidden));
+  // VPN routes derived reactively from current alias/kernel profile bench data
+  const vpnRoutes = createMemo(() => {
+    const data = aliasBenchData();
+    return data
+      .filter((category) => Object.keys(category.runs).length > 0)
+      .map((category) => ({
+        path: `/${category.name.toLowerCase().replace(/\s+/g, "_")}`,
+        label: category.name,
+        category: "vpn" as const,
+      }));
+  });
 
-  const vpnRoutes = createMemo(() =>
-    visibleRoutes().filter((r) => r.category === "vpn"),
-  );
-
+  // Analysis routes remain static
   const analysisRoutes = createMemo(() =>
-    visibleRoutes().filter((r) => r.category === "analysis"),
+    routes.filter((r) => !r.hidden && r.category === "analysis"),
   );
 
   return (
@@ -68,6 +81,40 @@ export const Sidebar = (props: RouteSectionProps) => {
           currentAlias={currentAlias()}
           onAliasChange={setCurrentAlias}
         />
+
+        {/* Kernel Profile Selector - only show if multiple profiles available */}
+        <Show when={availableKernelProfiles().length > 1}>
+          <div class="mx-3 mb-3">
+            <Typography
+              tag="p"
+              hierarchy="body"
+              size="xs"
+              weight="medium"
+              color="tertiary"
+              inverted={true}
+              class="mb-1 uppercase"
+            >
+              Kernel Profile
+            </Typography>
+            <div class="flex gap-1">
+              <For each={availableKernelProfiles()}>
+                {(kp) => (
+                  <button
+                    type="button"
+                    class={`rounded px-2 py-1 text-xs font-medium transition-colors ${
+                      kp === currentKernelProfile()
+                        ? "bg-primary-600 text-white"
+                        : "bg-white/10 text-white/70 hover:bg-white/20 hover:text-white"
+                    }`}
+                    onClick={() => setCurrentKernelProfile(kp)}
+                  >
+                    {kp.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase())}
+                  </button>
+                )}
+              </For>
+            </div>
+          </div>
+        </Show>
 
         {/* VPNs Section - Collapsed by default */}
         <SidebarCategory

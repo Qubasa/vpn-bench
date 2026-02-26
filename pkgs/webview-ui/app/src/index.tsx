@@ -27,6 +27,7 @@ import { IconVariant } from "./components/icon";
 import {
   benchData,
   comparisonData,
+  getAllVpnNames,
   BenchData,
   ComparisonData,
   Err,
@@ -362,20 +363,15 @@ function VpnDashboardWithProfiles(props: { vpnName: string }) {
   );
 }
 
-// Function to generate routes from benchData, passing aggregated Results
-function generateRoutesFromBenchData(data: BenchData): AppRoute[] {
-  return data.map((category) => {
-    const path = `/${category.name.toLowerCase().replace(/\s+/g, "_")}`;
-
-    // Check if category has any runs
-    const hasRuns = Object.keys(category.runs).length > 0;
-
+// Generate routes for ALL VPN names across all aliases/kernel profiles
+// so the router has paths registered even when the current alias changes
+function generateRoutesFromAllVpns(): AppRoute[] {
+  return getAllVpnNames().map((vpnName) => {
+    const path = `/${vpnName.toLowerCase().replace(/\s+/g, "_")}`;
     return {
       path,
-      label: category.name,
-      component: () => <VpnDashboardWithProfiles vpnName={category.name} />,
-      // Hide route if category has no runs
-      hidden: !hasRuns,
+      label: vpnName,
+      component: () => <VpnDashboardWithProfiles vpnName={vpnName} />,
       category: "vpn" as const,
     };
   });
@@ -476,8 +472,10 @@ function generateLlmInstructionsRoute(): AppRoute[] {
 }
 
 // Generate routes from benchData
+const allVpnNames = getAllVpnNames();
+
 export const routes: AppRoute[] =
-  benchData.length > 0
+  allVpnNames.length > 0
     ? [
         {
           path: "/",
@@ -485,11 +483,11 @@ export const routes: AppRoute[] =
           hidden: true,
           component: () => (
             <Navigate
-              href={`/${benchData[0].name.toLowerCase().replace(/\s+/g, "_")}`}
+              href={`/${allVpnNames[0].toLowerCase().replace(/\s+/g, "_")}`}
             />
           ),
         },
-        ...generateRoutesFromBenchData(benchData),
+        ...generateRoutesFromAllVpns(),
         ...generateAppRouteFromGeneralData(comparisonData),
         ...generateConnectionTimesRoute(comparisonData),
         ...generateCrossProfileRoute(),

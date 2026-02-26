@@ -297,6 +297,37 @@ def install_headscale(config: Config, tr_machines: list[TrMachine]) -> None:
     inventory_store.write(inventory, message="Add headscale configuration")
 
 
+def install_tcp_reorder_tune(config: Config) -> None:
+    """Add tcp-reorder-tune clanService to all machines in the inventory."""
+    inventory_store = InventoryStore(Flake(str(config.clan_dir)))
+    inventory = inventory_store.read()
+    conf: dict[str, Any] = {
+        "module": {"name": "tcp-reorder-tune", "input": "cvpn-bench"},
+        "roles": {
+            "default": {
+                "tags": { "all": {} },
+            },
+        },
+    }
+    set_value_by_path_tuple(inventory, ("instances", "tcp-reorder-tune"), conf)
+    inventory_store.write(inventory, message="Add tcp-reorder-tune configuration")
+
+
+def remove_tcp_reorder_tune(config: Config) -> None:
+    """Remove tcp-reorder-tune clanService from the inventory."""
+    inventory_store = InventoryStore(Flake(str(config.clan_dir)))
+    inventory = inventory_store.read()
+    instances = inventory.get("instances", {})
+    if "tcp-reorder-tune" in instances:
+        del instances["tcp-reorder-tune"]
+        inventory_store.write(
+            inventory, message="Remove tcp-reorder-tune configuration"
+        )
+        log.info("Removed tcp-reorder-tune from inventory")
+    else:
+        log.info("tcp-reorder-tune not in inventory, nothing to remove")
+
+
 def get_vpn_ips(
     config: Config, machines: list[Machine], vpn: VPN, tr_machines: list[TrMachine]
 ) -> list[BenchMachine]:
@@ -353,12 +384,15 @@ def get_vpn_ips(
 
 
 def save_machine_layout(
-    config: Config, vpn: VPN, bmachines: list[BenchMachine]
+    config: Config,
+    vpn: VPN,
+    bmachines: list[BenchMachine],
+    kernel_profile_alias: str = "baseline",
 ) -> None:
     """Save the machine layout to a file."""
 
     layout = dataclass_to_dict(bmachines)
-    result_dir = config.bench_dir / vpn.name
+    result_dir = config.bench_dir / kernel_profile_alias / vpn.name
     result_dir.mkdir(parents=True, exist_ok=True)
     with (result_dir / "layout.json").open("w") as f:
         json.dump(layout, f, indent=4)
@@ -428,6 +462,7 @@ def install_vpn(
     get_con_times: bool = True,
     benchmark_run_alias: str = "default",
     timing: TimingTracker | None = None,
+    kernel_profile_alias: str = "baseline",
 ) -> list[BenchMachine]:
     """Install and configure VPN on all machines.
 
@@ -547,7 +582,7 @@ def install_vpn(
         # NOW query IPs (tailscale is running and authenticated)
         with timed_op("get_vpn_ips"):
             bmachines = get_vpn_ips(config, machines, vpn, tr_machines)
-            save_machine_layout(config, vpn, bmachines)
+            save_machine_layout(config, vpn, bmachines, kernel_profile_alias)
 
         # Install nix cache with real IPs
         with timed_op("install_nix_cache"):
@@ -568,11 +603,19 @@ def install_vpn(
         if get_con_times:
             with timed_op("initial_connection_timings"):
                 download_connection_timings(
-                    config, vpn, machines, benchmark_run_alias=benchmark_run_alias
+                    config,
+                    vpn,
+                    machines,
+                    benchmark_run_alias=benchmark_run_alias,
+                    kernel_profile_alias=kernel_profile_alias,
                 )
             with timed_op("reboot_connection_timings"):
                 reboot_connection_timings(
-                    config, vpn, machines, benchmark_run_alias=benchmark_run_alias
+                    config,
+                    vpn,
+                    machines,
+                    benchmark_run_alias=benchmark_run_alias,
+                    kernel_profile_alias=kernel_profile_alias,
                 )
 
         return bmachines
@@ -581,7 +624,7 @@ def install_vpn(
     # Get the VPN IP of each machine
     with timed_op("get_vpn_ips"):
         bmachines = get_vpn_ips(config, machines, vpn, tr_machines)
-        save_machine_layout(config, vpn, bmachines)
+        save_machine_layout(config, vpn, bmachines, kernel_profile_alias)
 
     # Install Nix cache (first machine is the server, others are clients)
     with timed_op("install_nix_cache"):
@@ -610,11 +653,19 @@ def install_vpn(
     if get_con_times:
         with timed_op("initial_connection_timings"):
             download_connection_timings(
-                config, vpn, machines, benchmark_run_alias=benchmark_run_alias
+                config,
+                vpn,
+                machines,
+                benchmark_run_alias=benchmark_run_alias,
+                kernel_profile_alias=kernel_profile_alias,
             )
         with timed_op("reboot_connection_timings"):
             reboot_connection_timings(
-                config, vpn, machines, benchmark_run_alias=benchmark_run_alias
+                config,
+                vpn,
+                machines,
+                benchmark_run_alias=benchmark_run_alias,
+                kernel_profile_alias=kernel_profile_alias,
             )
 
     return bmachines

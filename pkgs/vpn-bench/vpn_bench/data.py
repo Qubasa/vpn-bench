@@ -239,6 +239,44 @@ def get_benchmark_runs(profiles: list[TCProfile]) -> list[BenchmarkRun]:
     return [profile.to_benchmark_run() for profile in profiles]
 
 
+class KernelProfile(Enum):
+    """Kernel-level configuration profiles for benchmark runs."""
+
+    BASELINE = "baseline"
+    OPTIMIZED = "optimized"
+
+    @staticmethod
+    def from_str(label: str) -> "KernelProfile":
+        if label in KernelProfile._value2member_map_:
+            return KernelProfile(KernelProfile._value2member_map_[label])
+        msg = f"Unknown kernel profile: {label}"
+        raise ValueError(msg)
+
+    def get_services(self) -> list[str]:
+        """Return list of clanService names to apply for this profile."""
+        match self:
+            case KernelProfile.BASELINE:
+                return []
+            case KernelProfile.OPTIMIZED:
+                return ["tcp-reorder-tune"]
+
+    def get_description(self) -> str:
+        """Return human-readable description of this profile."""
+        match self:
+            case KernelProfile.BASELINE:
+                return "Default kernel TCP/network settings"
+            case KernelProfile.OPTIMIZED:
+                return "TCP stack tuned for high-reordering networks"
+
+    def to_metadata(self) -> dict[str, object]:
+        """Return metadata dict for kernel_profile.json."""
+        return {
+            "name": self.value,
+            "services": self.get_services(),
+            "description": self.get_description(),
+        }
+
+
 @dataclass
 class ProfileConfig:
     """Per-profile configuration overrides."""
@@ -255,6 +293,9 @@ class BenchmarkEntry:
     vpn: "VPN"
     tests: list[TestType] = field(default_factory=list)
     tc_profiles: list[TCProfile] = field(default_factory=lambda: [TCProfile.BASELINE])
+    kernel_profiles: list[KernelProfile] = field(
+        default_factory=lambda: [KernelProfile.BASELINE]
+    )
     skip_con_times: bool = False
     profile_overrides: dict[str, ProfileConfig] = field(default_factory=dict)
 
@@ -308,6 +349,8 @@ def parse_benchmark_config(config_path: Path) -> list["BenchmarkEntry"]:
         tests = [TestType.from_str(t) for t in item.get("tests", [])]
         tc_profiles_raw = item.get("tc_profiles", ["baseline"])
         tc_profiles = [TCProfile.from_str(p) for p in tc_profiles_raw]
+        kernel_profiles_raw = item.get("kernel_profiles", ["baseline"])
+        kernel_profiles = [KernelProfile.from_str(p) for p in kernel_profiles_raw]
         skip_con_times = item.get("skip_con_times", False)
 
         # Parse per-profile overrides
@@ -341,6 +384,7 @@ def parse_benchmark_config(config_path: Path) -> list["BenchmarkEntry"]:
                 vpn=vpn,
                 tests=tests,
                 tc_profiles=tc_profiles,
+                kernel_profiles=kernel_profiles,
                 skip_con_times=skip_con_times,
                 profile_overrides=profile_overrides,
             )

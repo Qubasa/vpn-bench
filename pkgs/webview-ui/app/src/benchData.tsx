@@ -213,8 +213,18 @@ export interface BenchCategory {
 }
 export type BenchData = BenchCategory[];
 
-// Maps alias (e.g., "04.01.2026") to benchmark data for that alias
-export type AllBenchData = Record<string, BenchData>;
+// Kernel profile metadata (loaded from kernel_profile.json)
+export interface KernelProfileMetadata {
+  name: string;
+  services: string[];
+  description: string;
+}
+
+// Maps kernel profile alias to benchmark data for that profile
+export type KernelProfileBenchData = Record<string, BenchData>;
+
+// Maps alias (e.g., "04.01.2026") to kernel profile data
+export type AllBenchData = Record<string, KernelProfileBenchData>;
 
 // --- Existing GeneralData Interface ---
 export interface GeneralData {
@@ -534,8 +544,11 @@ export interface ComparisonRunData {
 // Maps run alias (TC profile) to comparison data
 export type ComparisonData = Record<string, ComparisonRunData>;
 
-// Maps alias (e.g., "04.01.2026") to comparison data for that alias
-export type AllComparisonData = Record<string, ComparisonData>;
+// Maps kernel profile alias to comparison data for that profile
+export type KernelProfileComparisonData = Record<string, ComparisonData>;
+
+// Maps alias (e.g., "04.01.2026") to kernel profile comparison data
+export type AllComparisonData = Record<string, KernelProfileComparisonData>;
 
 // --- Timing Breakdown Data for Total Runtime Display ---
 
@@ -545,6 +558,12 @@ export type VpnTimingMap = Record<string, TimingBreakdown>;
 // Maps run alias (TC profile) to VPN timing data
 export type ProfileTimingData = Record<string, VpnTimingMap>;
 
+// Maps alias → kernel profile → metadata
+export type AllKernelProfileMetadata = Record<
+  string,
+  Record<string, KernelProfileMetadata>
+>;
+
 // --- Data Generation Logic ---
 
 const benchFiles = import.meta.glob("@/bench/**/*.json", { eager: true });
@@ -553,17 +572,21 @@ if (Object.keys(benchFiles).length === 0) {
   console.warn("No benchmark JSON files found in '@/bench/**'.");
 }
 
-// Helper to load TC settings for a specific alias/VPN/run combination
+// Helper to load TC settings for a specific alias/kernel profile/VPN/run combination
 function loadTCSettings(
   benchFiles: Record<string, unknown>,
   alias: string,
+  kernelProfile: string,
   vpnName: string,
   runAlias: string,
 ): TCSettingsData | null {
-  // Search for the tc_settings.json file in benchFiles
-  // New path: @/bench/<ALIAS>/<VPN>/<RUN_ALIAS>/tc_settings.json
+  // Path: @/bench/<ALIAS>/<KERNEL_PROFILE>/<VPN>/<RUN_ALIAS>/tc_settings.json
   for (const [path, rawModule] of Object.entries(benchFiles)) {
-    if (path.includes(`/${alias}/${vpnName}/${runAlias}/tc_settings.json`)) {
+    if (
+      path.includes(
+        `/${alias}/${kernelProfile}/${vpnName}/${runAlias}/tc_settings.json`,
+      )
+    ) {
       if (rawModule && typeof rawModule === "object" && "alias" in rawModule) {
         return rawModule as TCSettingsData;
       }
@@ -577,13 +600,13 @@ function loadTCSettings(
 function loadTCSettingsForRunAlias(
   benchFiles: Record<string, unknown>,
   alias: string,
+  kernelProfile: string,
   runAlias: string,
 ): TCSettingsData | null {
-  // Search for any tc_settings.json file with this run alias
-  // New path: @/bench/<ALIAS>/<VPN>/<RUN_ALIAS>/tc_settings.json
+  // Path: @/bench/<ALIAS>/<KERNEL_PROFILE>/<VPN>/<RUN_ALIAS>/tc_settings.json
   for (const [path, rawModule] of Object.entries(benchFiles)) {
     if (
-      path.includes(`/${alias}/`) &&
+      path.includes(`/${alias}/${kernelProfile}/`) &&
       path.includes(`/${runAlias}/tc_settings.json`) &&
       !path.includes("/General/")
     ) {
@@ -597,31 +620,37 @@ function loadTCSettingsForRunAlias(
 }
 
 export function generateBenchData(): AllBenchData {
-  // Maps alias -> VPN name -> BenchCategory
-  const aliasData: Record<string, Record<string, BenchCategory>> = {};
+  // Maps alias -> kernel profile -> VPN name -> BenchCategory
+  const aliasData: Record<
+    string,
+    Record<string, Record<string, BenchCategory>>
+  > = {};
 
   Object.entries(benchFiles).forEach(([path, rawModule]) => {
     const pathParts = path.split("/");
 
-    // New structure: @/bench/<ALIAS>/<VPN>/<RUN_ALIAS>/<MACHINE>/<FILE> (7 parts)
-    // Run-level: @/bench/<ALIAS>/<VPN>/<RUN_ALIAS>/parallel_tcp_iperf3.json (6 parts)
+    // New structure: /bench/<ALIAS>/<KERNEL_PROFILE>/<VPN>/<RUN_ALIAS>/<MACHINE>/<FILE> (8 parts with leading empty)
+    // Run-level: /bench/<ALIAS>/<KERNEL_PROFILE>/<VPN>/<RUN_ALIAS>/parallel_tcp_iperf3.json (7 parts with leading empty)
 
     let alias: string;
+    let kernelProfile: string;
     let categoryName: string;
     let benchRunAlias: string;
     let machineName: string;
     let fileName: string;
 
-    if (pathParts.length >= 7) {
-      // Machine-level file: @/bench/<ALIAS>/<VPN>/<RUN_ALIAS>/<MACHINE>/<FILE>
-      alias = pathParts[pathParts.length - 5];
+    if (pathParts.length >= 8) {
+      // Machine-level file: @/bench/<ALIAS>/<KERNEL_PROFILE>/<VPN>/<RUN_ALIAS>/<MACHINE>/<FILE>
+      alias = pathParts[pathParts.length - 6];
+      kernelProfile = pathParts[pathParts.length - 5];
       categoryName = pathParts[pathParts.length - 4];
       benchRunAlias = pathParts[pathParts.length - 3];
       machineName = pathParts[pathParts.length - 2];
       fileName = pathParts[pathParts.length - 1];
-    } else if (pathParts.length === 6) {
-      // Run-level file: @/bench/<ALIAS>/<VPN>/<RUN_ALIAS>/<FILE>
-      alias = pathParts[pathParts.length - 4];
+    } else if (pathParts.length === 7) {
+      // Run-level file: @/bench/<ALIAS>/<KERNEL_PROFILE>/<VPN>/<RUN_ALIAS>/<FILE>
+      alias = pathParts[pathParts.length - 5];
+      kernelProfile = pathParts[pathParts.length - 4];
       categoryName = pathParts[pathParts.length - 3];
       benchRunAlias = pathParts[pathParts.length - 2];
       machineName = "";
@@ -634,18 +663,20 @@ export function generateBenchData(): AllBenchData {
       return;
     }
 
-    // Filter out connection timing files and tc_settings
+    // Filter out metadata and non-benchmark files
     if (
       fileName === "connection_timings.json" ||
       fileName === "reboot_connection_timings.json" ||
       fileName === "tc_settings.json" ||
-      fileName === "timing_breakdown.json"
+      fileName === "timing_breakdown.json" ||
+      fileName === "kernel_profile.json" ||
+      fileName === "layout.json"
     ) {
       return;
     }
 
     // Handle run-level files (parallel_tcp_iperf3.json is at run level, not machine level)
-    if (pathParts.length === 6 && fileName === "parallel_tcp_iperf3.json") {
+    if (pathParts.length === 7 && fileName === "parallel_tcp_iperf3.json") {
       if (
         !rawModule ||
         typeof rawModule !== "object" ||
@@ -686,20 +717,29 @@ export function generateBenchData(): AllBenchData {
         aliasData[alias] = {};
       }
 
+      // Initialize kernel profile if needed
+      if (!aliasData[alias][kernelProfile]) {
+        aliasData[alias][kernelProfile] = {};
+      }
+
       // Initialize category if needed
-      if (!aliasData[alias][categoryName]) {
-        aliasData[alias][categoryName] = { name: categoryName, runs: {} };
+      if (!aliasData[alias][kernelProfile][categoryName]) {
+        aliasData[alias][kernelProfile][categoryName] = {
+          name: categoryName,
+          runs: {},
+        };
       }
 
       // Initialize run if needed
-      if (!aliasData[alias][categoryName].runs[benchRunAlias]) {
+      if (!aliasData[alias][kernelProfile][categoryName].runs[benchRunAlias]) {
         const tcSettings = loadTCSettings(
           benchFiles,
           alias,
+          kernelProfile,
           categoryName,
           benchRunAlias,
         );
-        aliasData[alias][categoryName].runs[benchRunAlias] = {
+        aliasData[alias][kernelProfile][categoryName].runs[benchRunAlias] = {
           machines: [],
           tcSettings,
           parallelTcp: null,
@@ -707,8 +747,9 @@ export function generateBenchData(): AllBenchData {
       }
 
       // Assign parallel TCP result
-      aliasData[alias][categoryName].runs[benchRunAlias].parallelTcp =
-        generatedResult as Result<ParallelTcpReportData>;
+      aliasData[alias][kernelProfile][categoryName].runs[
+        benchRunAlias
+      ].parallelTcp = generatedResult as Result<ParallelTcpReportData>;
       return;
     }
 
@@ -756,20 +797,29 @@ export function generateBenchData(): AllBenchData {
       aliasData[alias] = {};
     }
 
+    // Initialize kernel profile if needed
+    if (!aliasData[alias][kernelProfile]) {
+      aliasData[alias][kernelProfile] = {};
+    }
+
     // Initialize category if needed
-    if (!aliasData[alias][categoryName]) {
-      aliasData[alias][categoryName] = { name: categoryName, runs: {} };
+    if (!aliasData[alias][kernelProfile][categoryName]) {
+      aliasData[alias][kernelProfile][categoryName] = {
+        name: categoryName,
+        runs: {},
+      };
     }
 
     // Ensure the run alias exists
-    if (!aliasData[alias][categoryName].runs[benchRunAlias]) {
+    if (!aliasData[alias][kernelProfile][categoryName].runs[benchRunAlias]) {
       const tcSettings = loadTCSettings(
         benchFiles,
         alias,
+        kernelProfile,
         categoryName,
         benchRunAlias,
       );
-      aliasData[alias][categoryName].runs[benchRunAlias] = {
+      aliasData[alias][kernelProfile][categoryName].runs[benchRunAlias] = {
         machines: [],
         tcSettings,
         parallelTcp: null,
@@ -777,7 +827,7 @@ export function generateBenchData(): AllBenchData {
     }
 
     // Find or create machine within this run
-    let machine = aliasData[alias][categoryName].runs[
+    let machine = aliasData[alias][kernelProfile][categoryName].runs[
       benchRunAlias
     ].machines.find((m) => m.name === machineName);
     if (!machine) {
@@ -789,7 +839,9 @@ export function generateBenchData(): AllBenchData {
         ping: null,
         ristStream: null,
       };
-      aliasData[alias][categoryName].runs[benchRunAlias].machines.push(machine);
+      aliasData[alias][kernelProfile][categoryName].runs[
+        benchRunAlias
+      ].machines.push(machine);
     }
 
     // Assign the generated Result to the correct machine field
@@ -820,57 +872,62 @@ export function generateBenchData(): AllBenchData {
   });
 
   // For each alias
-  Object.values(aliasData).forEach((categories) => {
-    // For each category (VPN)
-    Object.values(categories).forEach((category) => {
-      // For each run (TC profile)
-      Object.values(category.runs).forEach((run) => {
-        // For each machine
-        run.machines.forEach((machine) => {
-          const hasAnyData =
-            machine.iperf3.tcp !== null ||
-            machine.iperf3.udp !== null ||
-            machine.qperf !== null ||
-            machine.nixCache !== null ||
-            machine.ping !== null ||
-            machine.ristStream !== null;
+  Object.values(aliasData).forEach((kernelProfiles) => {
+    // For each kernel profile
+    Object.values(kernelProfiles).forEach((categories) => {
+      // For each category (VPN)
+      Object.values(categories).forEach((category) => {
+        // For each run (TC profile)
+        Object.values(category.runs).forEach((run) => {
+          // For each machine
+          run.machines.forEach((machine) => {
+            const hasAnyData =
+              machine.iperf3.tcp !== null ||
+              machine.iperf3.udp !== null ||
+              machine.qperf !== null ||
+              machine.nixCache !== null ||
+              machine.ping !== null ||
+              machine.ristStream !== null;
 
-          if (hasAnyData) {
-            if (machine.iperf3.tcp === null) {
-              machine.iperf3.tcp = createNotRunResult(machine.name);
+            if (hasAnyData) {
+              if (machine.iperf3.tcp === null) {
+                machine.iperf3.tcp = createNotRunResult(machine.name);
+              }
+              if (machine.iperf3.udp === null) {
+                machine.iperf3.udp = createNotRunResult(machine.name);
+              }
+              if (machine.qperf === null) {
+                machine.qperf = createNotRunResult(machine.name);
+              }
+              if (machine.nixCache === null) {
+                machine.nixCache = createNotRunResult(machine.name);
+              }
+              if (machine.ping === null) {
+                machine.ping = createNotRunResult(machine.name);
+              }
+              if (machine.ristStream === null) {
+                machine.ristStream = createNotRunResult(machine.name);
+              }
             }
-            if (machine.iperf3.udp === null) {
-              machine.iperf3.udp = createNotRunResult(machine.name);
-            }
-            if (machine.qperf === null) {
-              machine.qperf = createNotRunResult(machine.name);
-            }
-            if (machine.nixCache === null) {
-              machine.nixCache = createNotRunResult(machine.name);
-            }
-            if (machine.ping === null) {
-              machine.ping = createNotRunResult(machine.name);
-            }
-            if (machine.ristStream === null) {
-              machine.ristStream = createNotRunResult(machine.name);
-            }
-          }
+          });
         });
       });
     });
   });
 
-  // Convert to AllBenchData format: alias -> BenchData (array of categories)
+  // Convert to AllBenchData format: alias -> kernelProfile -> BenchData (array of categories)
   const result: AllBenchData = {};
-  for (const [alias, categories] of Object.entries(aliasData)) {
-    result[alias] = Object.values(categories);
+  for (const [alias, kernelProfiles] of Object.entries(aliasData)) {
+    result[alias] = {};
+    for (const [kp, categories] of Object.entries(kernelProfiles)) {
+      result[alias][kp] = Object.values(categories);
+    }
   }
   return result;
 }
 
 // --- Generate and Log Data ---
 export const allBenchData = generateBenchData();
-console.log("All bench data:", allBenchData);
 
 // Helper to get available aliases sorted by date (newest first)
 export function getAvailableAliases(): string[] {
@@ -903,34 +960,106 @@ export function getAvailableAliases(): string[] {
   });
 }
 
-// Get data for a specific alias (or first available if not specified)
-export function getBenchDataForAlias(alias?: string): BenchData {
+// Get available kernel profiles for a given alias
+export function getAvailableKernelProfiles(alias?: string): string[] {
   const aliases = getAvailableAliases();
   const targetAlias = alias || aliases[0] || "";
-  return allBenchData[targetAlias] || [];
+  const kpData = allBenchData[targetAlias];
+  if (!kpData) return [];
+  // Sort so "baseline" comes first
+  return Object.keys(kpData).sort((a, b) => {
+    if (a === "baseline") return -1;
+    if (b === "baseline") return 1;
+    return a.localeCompare(b);
+  });
 }
 
-// Backward compatible export: use first available alias
+// Get data for a specific alias and kernel profile
+export function getBenchDataForAlias(
+  alias?: string,
+  kernelProfile?: string,
+): BenchData {
+  const aliases = getAvailableAliases();
+  const targetAlias = alias || aliases[0] || "";
+  const kpData = allBenchData[targetAlias];
+  if (!kpData) return [];
+  const kps = getAvailableKernelProfiles(targetAlias);
+  const targetKp = kernelProfile || kps[0] || "baseline";
+  return kpData[targetKp] || [];
+}
+
+// Get all unique VPN names across all aliases and kernel profiles
+export function getAllVpnNames(): string[] {
+  const names = new Set<string>();
+  for (const kpData of Object.values(allBenchData)) {
+    for (const categories of Object.values(kpData)) {
+      for (const category of categories) {
+        names.add(category.name);
+      }
+    }
+  }
+  return [...names].sort();
+}
+
+// Backward compatible export: use first available alias and kernel profile
 export const benchData = getBenchDataForAlias();
 
-// --- General Data Handling (remains unchanged as it wasn't requested to use Result) ---
-// Note: General data is now per-alias at @/bench/<ALIAS>/General/
+// --- Kernel Profile Metadata Loading ---
+
+const kernelProfileFiles = import.meta.glob(
+  "@/bench/**/kernel_profile.json",
+  { eager: true },
+);
+
+export function loadAllKernelProfileMetadata(): AllKernelProfileMetadata {
+  const result: AllKernelProfileMetadata = {};
+
+  Object.entries(kernelProfileFiles).forEach(([path, rawModule]) => {
+    const pathParts = path.split("/");
+    // Path: @/bench/<ALIAS>/<KERNEL_PROFILE>/kernel_profile.json
+    if (pathParts.length < 4) return;
+
+    const kernelProfile = pathParts[pathParts.length - 2];
+    const alias = pathParts[pathParts.length - 3];
+
+    if (
+      !rawModule ||
+      typeof rawModule !== "object" ||
+      !("name" in rawModule)
+    ) {
+      return;
+    }
+
+    if (!result[alias]) {
+      result[alias] = {};
+    }
+
+    result[alias][kernelProfile] = rawModule as KernelProfileMetadata;
+  });
+
+  return result;
+}
+
+export const allKernelProfileMetadata = loadAllKernelProfileMetadata();
+console.log("Kernel profile metadata:", allKernelProfileMetadata);
+
+// --- General Data Handling ---
+// Note: General data is now per-alias/kernel-profile at @/bench/<ALIAS>/<KERNEL_PROFILE>/General/
 const generalFiles = import.meta.glob("@/bench/**/General/**/*.json", {
   eager: true,
 });
 
 export function generateGeneralData(): GeneralData | undefined {
-  const result: GeneralData = {}; // Initialize as empty object
+  const result: GeneralData = {};
   Object.entries(generalFiles).forEach(([path, rawModule]) => {
     const pathParts = path.split("/");
     if (pathParts.length < 4) {
       console.warn(
         `Skipping general file with unexpected path structure: ${path}`,
       );
-      return; // Skip malformed paths
+      return;
     }
-    const fileName = pathParts[pathParts.length - 1]; // Get the last part as filename
-    // Validate the imported module structure
+    const fileName = pathParts[pathParts.length - 1];
     if (
       !rawModule ||
       typeof rawModule !== "object" ||
@@ -940,10 +1069,9 @@ export function generateGeneralData(): GeneralData | undefined {
         `Skipping general file with unexpected content format (missing 'status'): ${path}`,
         rawModule,
       );
-      return; // Skip files that don't match the expected wrapper structure
+      return;
     }
-    // Assume rawModule has the Success/Error structure
-    const moduleData = rawModule as JsonWrapper<ConnectionTimings>; // Specific type here
+    const moduleData = rawModule as JsonWrapper<ConnectionTimings>;
     let actualData: ConnectionTimings | null = null;
     if (moduleData.status === "success") {
       actualData = moduleData.data;
@@ -952,7 +1080,6 @@ export function generateGeneralData(): GeneralData | undefined {
         `General data retrieval failed for ${path}: Type=${moduleData.error_type}`,
         moduleData.error,
       );
-      // actualData remains null
     } else {
       console.warn(
         /* eslint-disable-next-line "@typescript-eslint/no-explicit-any" */
@@ -960,7 +1087,6 @@ export function generateGeneralData(): GeneralData | undefined {
       );
       return;
     }
-    // Assign data if successful
     if (actualData !== null) {
       if (fileName === "connection_timings.json") {
         result.connection_timings = actualData;
@@ -969,7 +1095,6 @@ export function generateGeneralData(): GeneralData | undefined {
       }
     }
   });
-  // Return result only if it contains some data, otherwise return undefined
   return Object.keys(result).length > 0 ? result : undefined;
 }
 
@@ -989,17 +1114,18 @@ export function generateComparisonData(): AllComparisonData {
   const result: AllComparisonData = {};
 
   Object.entries(comparisonFiles).forEach(([path, rawModule]) => {
-    // Path format: @/bench/<ALIAS>/General/comparison/<run_alias>/<benchmark>.json
+    // Path format: @/bench/<ALIAS>/<KERNEL_PROFILE>/General/comparison/<run_alias>/<benchmark>.json
     const pathParts = path.split("/");
 
-    // Find the "General" index to determine alias
+    // Find the "General" index to determine alias and kernel profile
     const generalIndex = pathParts.indexOf("General");
-    if (generalIndex < 1 || pathParts.length < generalIndex + 4) {
+    if (generalIndex < 2 || pathParts.length < generalIndex + 4) {
       console.warn(`Skipping comparison file with unexpected path: ${path}`);
       return;
     }
 
-    const alias = pathParts[generalIndex - 1];
+    const kernelProfile = pathParts[generalIndex - 1];
+    const alias = pathParts[generalIndex - 2];
     const runAlias = pathParts[pathParts.length - 2];
     const fileName = pathParts[pathParts.length - 1];
 
@@ -1025,51 +1151,61 @@ export function generateComparisonData(): AllComparisonData {
       result[alias] = {};
     }
 
+    // Initialize kernel profile if needed
+    if (!result[alias][kernelProfile]) {
+      result[alias][kernelProfile] = {};
+    }
+
     // Initialize run alias if needed
-    if (!result[alias][runAlias]) {
-      result[alias][runAlias] = {
-        tcSettings: loadTCSettingsForRunAlias(benchFiles, alias, runAlias),
+    if (!result[alias][kernelProfile][runAlias]) {
+      result[alias][kernelProfile][runAlias] = {
+        tcSettings: loadTCSettingsForRunAlias(
+          benchFiles,
+          alias,
+          kernelProfile,
+          runAlias,
+        ),
       };
     }
 
     // Assign data based on file name
     if (fileName === "ping.json") {
-      result[alias][runAlias].ping =
+      result[alias][kernelProfile][runAlias].ping =
         moduleData.data as VpnComparisonResultMap<PingComparisonData>;
     } else if (fileName === "qperf.json") {
-      result[alias][runAlias].qperf =
+      result[alias][kernelProfile][runAlias].qperf =
         moduleData.data as VpnComparisonResultMap<QperfComparisonData>;
     } else if (fileName === "video_streaming.json") {
-      result[alias][runAlias].videoStreaming =
+      result[alias][kernelProfile][runAlias].videoStreaming =
         moduleData.data as VpnComparisonResultMap<VideoStreamingComparisonData>;
     } else if (fileName === "tcp_iperf3.json") {
-      result[alias][runAlias].tcpIperf =
+      result[alias][kernelProfile][runAlias].tcpIperf =
         moduleData.data as VpnComparisonResultMap<TcpIperfComparisonData>;
     } else if (fileName === "udp_iperf3.json") {
-      result[alias][runAlias].udpIperf =
+      result[alias][kernelProfile][runAlias].udpIperf =
         moduleData.data as VpnComparisonResultMap<UdpIperfComparisonData>;
     } else if (fileName === "nix_cache.json") {
-      result[alias][runAlias].nixCache =
+      result[alias][kernelProfile][runAlias].nixCache =
         moduleData.data as VpnComparisonResultMap<NixCacheComparisonData>;
     } else if (fileName === "parallel_tcp_iperf3.json") {
-      result[alias][runAlias].parallelTcp =
+      result[alias][kernelProfile][runAlias].parallelTcp =
         moduleData.data as VpnComparisonResultMap<ParallelTcpComparisonData>;
     } else if (fileName === "timing_comparison.json") {
-      result[alias][runAlias].timingComparison =
+      result[alias][kernelProfile][runAlias].timingComparison =
         moduleData.data as VpnComparisonResultMap<TimingComparisonData>;
     } else if (fileName === "benchmark_stats.json") {
-      result[alias][runAlias].benchmarkStats =
+      result[alias][kernelProfile][runAlias].benchmarkStats =
         moduleData.data as VpnComparisonResultMap<BenchmarkStatsData>;
     } else if (fileName === "time_breakdown.json") {
-      result[alias][runAlias].timeBreakdown = moduleData as {
+      result[alias][kernelProfile][runAlias].timeBreakdown = moduleData as {
         status: string;
         data: TimeBreakdownData;
       };
     } else if (fileName === "connection_timings.json") {
-      result[alias][runAlias].connectionTimings =
+      result[alias][kernelProfile][runAlias].connectionTimings =
         moduleData.data as ConnectionTimings;
     } else if (fileName === "reboot_connection_timings.json") {
-      result[alias][runAlias].rebootConnectionTimings =
+      result[alias][kernelProfile][runAlias].rebootConnectionTimings =
         moduleData.data as ConnectionTimings;
     }
   });
@@ -1080,14 +1216,21 @@ export function generateComparisonData(): AllComparisonData {
 export const allComparisonData = generateComparisonData();
 console.log("All comparison data:", allComparisonData);
 
-// Get comparison data for a specific alias (or first available if not specified)
-export function getComparisonDataForAlias(alias?: string): ComparisonData {
+// Get comparison data for a specific alias and kernel profile
+export function getComparisonDataForAlias(
+  alias?: string,
+  kernelProfile?: string,
+): ComparisonData {
   const aliases = getAvailableAliases();
   const targetAlias = alias || aliases[0] || "";
-  return allComparisonData[targetAlias] || {};
+  const kpData = allComparisonData[targetAlias];
+  if (!kpData) return {};
+  const kps = getAvailableKernelProfiles(targetAlias);
+  const targetKp = kernelProfile || kps[0] || "baseline";
+  return kpData[targetKp] || {};
 }
 
-// Backward compatible export: use first available alias
+// Backward compatible export: use first available alias and kernel profile
 export const comparisonData = getComparisonDataForAlias();
 
 // --- Timing Breakdown Loading ---
@@ -1100,11 +1243,10 @@ export function generateTimingData(): ProfileTimingData {
   const result: ProfileTimingData = {};
 
   Object.entries(timingFiles).forEach(([path, rawModule]) => {
-    // Path format: @/bench/<VPN>/<run_alias>/timing_breakdown.json
-    // or @/bench/<VPN>/timing_breakdown.json (baseline)
+    // Path format: @/bench/<ALIAS>/<KERNEL_PROFILE>/<VPN>/<run_alias>/timing_breakdown.json
     const pathParts = path.split("/");
 
-    if (pathParts.length < 4) {
+    if (pathParts.length < 5) {
       return;
     }
 
@@ -1118,19 +1260,9 @@ export function generateTimingData(): ProfileTimingData {
       return;
     }
 
-    // Determine if this is a profile-specific timing or a VPN-level timing
-    let vpnName: string;
-    let runAlias: string;
-
-    if (pathParts.length >= 5) {
-      // Profile-specific: @/bench/<VPN>/<run_alias>/timing_breakdown.json
-      vpnName = pathParts[pathParts.length - 3];
-      runAlias = pathParts[pathParts.length - 2];
-    } else {
-      // VPN-level (baseline): @/bench/<VPN>/timing_breakdown.json
-      vpnName = pathParts[pathParts.length - 2];
-      runAlias = "baseline";
-    }
+    // Path: @/bench/<ALIAS>/<KERNEL_PROFILE>/<VPN>/<RUN_ALIAS>/timing_breakdown.json
+    const vpnName = pathParts[pathParts.length - 3];
+    const runAlias = pathParts[pathParts.length - 2];
 
     if (
       !rawModule ||
@@ -1178,7 +1310,16 @@ const crossProfileTcpFiles = import.meta.glob(
   { eager: true },
 );
 
-export type AllCrossProfileTcpData = Record<string, CrossProfileTcpData | null>;
+// Maps kernel profile to cross-profile TCP data
+export type KernelProfileCrossProfileTcpData = Record<
+  string,
+  CrossProfileTcpData | null
+>;
+// Maps alias to kernel profile cross-profile TCP data
+export type AllCrossProfileTcpData = Record<
+  string,
+  KernelProfileCrossProfileTcpData
+>;
 
 export function loadAllCrossProfileTcpData(): AllCrossProfileTcpData {
   const result: AllCrossProfileTcpData = {};
@@ -1186,15 +1327,20 @@ export function loadAllCrossProfileTcpData(): AllCrossProfileTcpData {
   Object.entries(crossProfileTcpFiles).forEach(([path, rawModule]) => {
     const pathParts = path.split("/");
     const generalIndex = pathParts.indexOf("General");
-    if (generalIndex < 1) return;
-    const alias = pathParts[generalIndex - 1];
+    if (generalIndex < 2) return;
+    const kernelProfile = pathParts[generalIndex - 1];
+    const alias = pathParts[generalIndex - 2];
+
+    if (!result[alias]) {
+      result[alias] = {};
+    }
 
     if (
       !rawModule ||
       typeof rawModule !== "object" ||
       !("status" in rawModule)
     ) {
-      result[alias] = null;
+      result[alias][kernelProfile] = null;
       return;
     }
 
@@ -1202,11 +1348,11 @@ export function loadAllCrossProfileTcpData(): AllCrossProfileTcpData {
     const moduleData = rawModule as { status: string; data?: any };
 
     if (moduleData.status !== "success" || !moduleData.data) {
-      result[alias] = null;
+      result[alias][kernelProfile] = null;
       return;
     }
 
-    result[alias] = moduleData.data as CrossProfileTcpData;
+    result[alias][kernelProfile] = moduleData.data as CrossProfileTcpData;
   });
 
   return result;
@@ -1215,16 +1361,21 @@ export function loadAllCrossProfileTcpData(): AllCrossProfileTcpData {
 export const allCrossProfileTcpData = loadAllCrossProfileTcpData();
 console.log("All cross-profile TCP data:", allCrossProfileTcpData);
 
-// Backward compatible: get first alias data
+// Backward compatible: get first alias and kernel profile data
 export const crossProfileTcpData =
-  allCrossProfileTcpData[getAvailableAliases()[0]] || null;
+  getCrossProfileTcpDataForAlias(getAvailableAliases()[0]);
 
 export function getCrossProfileTcpDataForAlias(
   alias?: string,
+  kernelProfile?: string,
 ): CrossProfileTcpData | null {
   const aliases = getAvailableAliases();
   const targetAlias = alias || aliases[0] || "";
-  return allCrossProfileTcpData[targetAlias] || null;
+  const kpData = allCrossProfileTcpData[targetAlias];
+  if (!kpData) return null;
+  const kps = getAvailableKernelProfiles(targetAlias);
+  const targetKp = kernelProfile || kps[0] || "baseline";
+  return kpData[targetKp] || null;
 }
 
 // --- Cross-Profile UDP Data Loading ---
@@ -1234,7 +1385,14 @@ const crossProfileUdpFiles = import.meta.glob(
   { eager: true },
 );
 
-export type AllCrossProfileUdpData = Record<string, CrossProfileUdpData | null>;
+export type KernelProfileCrossProfileUdpData = Record<
+  string,
+  CrossProfileUdpData | null
+>;
+export type AllCrossProfileUdpData = Record<
+  string,
+  KernelProfileCrossProfileUdpData
+>;
 
 export function loadAllCrossProfileUdpData(): AllCrossProfileUdpData {
   const result: AllCrossProfileUdpData = {};
@@ -1242,15 +1400,20 @@ export function loadAllCrossProfileUdpData(): AllCrossProfileUdpData {
   Object.entries(crossProfileUdpFiles).forEach(([path, rawModule]) => {
     const pathParts = path.split("/");
     const generalIndex = pathParts.indexOf("General");
-    if (generalIndex < 1) return;
-    const alias = pathParts[generalIndex - 1];
+    if (generalIndex < 2) return;
+    const kernelProfile = pathParts[generalIndex - 1];
+    const alias = pathParts[generalIndex - 2];
+
+    if (!result[alias]) {
+      result[alias] = {};
+    }
 
     if (
       !rawModule ||
       typeof rawModule !== "object" ||
       !("status" in rawModule)
     ) {
-      result[alias] = null;
+      result[alias][kernelProfile] = null;
       return;
     }
 
@@ -1258,11 +1421,11 @@ export function loadAllCrossProfileUdpData(): AllCrossProfileUdpData {
     const moduleData = rawModule as { status: string; data?: any };
 
     if (moduleData.status !== "success" || !moduleData.data) {
-      result[alias] = null;
+      result[alias][kernelProfile] = null;
       return;
     }
 
-    result[alias] = moduleData.data as CrossProfileUdpData;
+    result[alias][kernelProfile] = moduleData.data as CrossProfileUdpData;
   });
 
   return result;
@@ -1271,16 +1434,21 @@ export function loadAllCrossProfileUdpData(): AllCrossProfileUdpData {
 export const allCrossProfileUdpData = loadAllCrossProfileUdpData();
 console.log("All cross-profile UDP data:", allCrossProfileUdpData);
 
-// Backward compatible: get first alias data
+// Backward compatible: get first alias and kernel profile data
 export const crossProfileUdpData =
-  allCrossProfileUdpData[getAvailableAliases()[0]] || null;
+  getCrossProfileUdpDataForAlias(getAvailableAliases()[0]);
 
 export function getCrossProfileUdpDataForAlias(
   alias?: string,
+  kernelProfile?: string,
 ): CrossProfileUdpData | null {
   const aliases = getAvailableAliases();
   const targetAlias = alias || aliases[0] || "";
-  return allCrossProfileUdpData[targetAlias] || null;
+  const kpData = allCrossProfileUdpData[targetAlias];
+  if (!kpData) return null;
+  const kps = getAvailableKernelProfiles(targetAlias);
+  const targetKp = kernelProfile || kps[0] || "baseline";
+  return kpData[targetKp] || null;
 }
 
 // --- Cross-Profile Ping Data Loading ---
@@ -1290,9 +1458,13 @@ const crossProfilePingFiles = import.meta.glob(
   { eager: true },
 );
 
-export type AllCrossProfilePingData = Record<
+export type KernelProfileCrossProfilePingData = Record<
   string,
   CrossProfilePingData | null
+>;
+export type AllCrossProfilePingData = Record<
+  string,
+  KernelProfileCrossProfilePingData
 >;
 
 export function loadAllCrossProfilePingData(): AllCrossProfilePingData {
@@ -1301,15 +1473,20 @@ export function loadAllCrossProfilePingData(): AllCrossProfilePingData {
   Object.entries(crossProfilePingFiles).forEach(([path, rawModule]) => {
     const pathParts = path.split("/");
     const generalIndex = pathParts.indexOf("General");
-    if (generalIndex < 1) return;
-    const alias = pathParts[generalIndex - 1];
+    if (generalIndex < 2) return;
+    const kernelProfile = pathParts[generalIndex - 1];
+    const alias = pathParts[generalIndex - 2];
+
+    if (!result[alias]) {
+      result[alias] = {};
+    }
 
     if (
       !rawModule ||
       typeof rawModule !== "object" ||
       !("status" in rawModule)
     ) {
-      result[alias] = null;
+      result[alias][kernelProfile] = null;
       return;
     }
 
@@ -1317,11 +1494,11 @@ export function loadAllCrossProfilePingData(): AllCrossProfilePingData {
     const moduleData = rawModule as { status: string; data?: any };
 
     if (moduleData.status !== "success" || !moduleData.data) {
-      result[alias] = null;
+      result[alias][kernelProfile] = null;
       return;
     }
 
-    result[alias] = moduleData.data as CrossProfilePingData;
+    result[alias][kernelProfile] = moduleData.data as CrossProfilePingData;
   });
 
   return result;
@@ -1330,15 +1507,21 @@ export function loadAllCrossProfilePingData(): AllCrossProfilePingData {
 export const allCrossProfilePingData = loadAllCrossProfilePingData();
 console.log("All cross-profile Ping data:", allCrossProfilePingData);
 
-export const crossProfilePingData =
-  allCrossProfilePingData[getAvailableAliases()[0]] || null;
+export const crossProfilePingData = getCrossProfilePingDataForAlias(
+  getAvailableAliases()[0],
+);
 
 export function getCrossProfilePingDataForAlias(
   alias?: string,
+  kernelProfile?: string,
 ): CrossProfilePingData | null {
   const aliases = getAvailableAliases();
   const targetAlias = alias || aliases[0] || "";
-  return allCrossProfilePingData[targetAlias] || null;
+  const kpData = allCrossProfilePingData[targetAlias];
+  if (!kpData) return null;
+  const kps = getAvailableKernelProfiles(targetAlias);
+  const targetKp = kernelProfile || kps[0] || "baseline";
+  return kpData[targetKp] || null;
 }
 
 // --- Cross-Profile QUIC/Qperf Data Loading ---
@@ -1348,9 +1531,13 @@ const crossProfileQperfFiles = import.meta.glob(
   { eager: true },
 );
 
-export type AllCrossProfileQperfData = Record<
+export type KernelProfileCrossProfileQperfData = Record<
   string,
   CrossProfileQperfData | null
+>;
+export type AllCrossProfileQperfData = Record<
+  string,
+  KernelProfileCrossProfileQperfData
 >;
 
 export function loadAllCrossProfileQperfData(): AllCrossProfileQperfData {
@@ -1359,15 +1546,20 @@ export function loadAllCrossProfileQperfData(): AllCrossProfileQperfData {
   Object.entries(crossProfileQperfFiles).forEach(([path, rawModule]) => {
     const pathParts = path.split("/");
     const generalIndex = pathParts.indexOf("General");
-    if (generalIndex < 1) return;
-    const alias = pathParts[generalIndex - 1];
+    if (generalIndex < 2) return;
+    const kernelProfile = pathParts[generalIndex - 1];
+    const alias = pathParts[generalIndex - 2];
+
+    if (!result[alias]) {
+      result[alias] = {};
+    }
 
     if (
       !rawModule ||
       typeof rawModule !== "object" ||
       !("status" in rawModule)
     ) {
-      result[alias] = null;
+      result[alias][kernelProfile] = null;
       return;
     }
 
@@ -1375,11 +1567,11 @@ export function loadAllCrossProfileQperfData(): AllCrossProfileQperfData {
     const moduleData = rawModule as { status: string; data?: any };
 
     if (moduleData.status !== "success" || !moduleData.data) {
-      result[alias] = null;
+      result[alias][kernelProfile] = null;
       return;
     }
 
-    result[alias] = moduleData.data as CrossProfileQperfData;
+    result[alias][kernelProfile] = moduleData.data as CrossProfileQperfData;
   });
 
   return result;
@@ -1388,15 +1580,21 @@ export function loadAllCrossProfileQperfData(): AllCrossProfileQperfData {
 export const allCrossProfileQperfData = loadAllCrossProfileQperfData();
 console.log("All cross-profile QUIC data:", allCrossProfileQperfData);
 
-export const crossProfileQperfData =
-  allCrossProfileQperfData[getAvailableAliases()[0]] || null;
+export const crossProfileQperfData = getCrossProfileQperfDataForAlias(
+  getAvailableAliases()[0],
+);
 
 export function getCrossProfileQperfDataForAlias(
   alias?: string,
+  kernelProfile?: string,
 ): CrossProfileQperfData | null {
   const aliases = getAvailableAliases();
   const targetAlias = alias || aliases[0] || "";
-  return allCrossProfileQperfData[targetAlias] || null;
+  const kpData = allCrossProfileQperfData[targetAlias];
+  if (!kpData) return null;
+  const kps = getAvailableKernelProfiles(targetAlias);
+  const targetKp = kernelProfile || kps[0] || "baseline";
+  return kpData[targetKp] || null;
 }
 
 // --- Cross-Profile Video Streaming Data Loading ---
@@ -1406,9 +1604,13 @@ const crossProfileVideoStreamingFiles = import.meta.glob(
   { eager: true },
 );
 
-export type AllCrossProfileVideoStreamingData = Record<
+export type KernelProfileCrossProfileVideoStreamingData = Record<
   string,
   CrossProfileVideoStreamingData | null
+>;
+export type AllCrossProfileVideoStreamingData = Record<
+  string,
+  KernelProfileCrossProfileVideoStreamingData
 >;
 
 export function loadAllCrossProfileVideoStreamingData(): AllCrossProfileVideoStreamingData {
@@ -1418,15 +1620,20 @@ export function loadAllCrossProfileVideoStreamingData(): AllCrossProfileVideoStr
     ([path, rawModule]) => {
       const pathParts = path.split("/");
       const generalIndex = pathParts.indexOf("General");
-      if (generalIndex < 1) return;
-      const alias = pathParts[generalIndex - 1];
+      if (generalIndex < 2) return;
+      const kernelProfile = pathParts[generalIndex - 1];
+      const alias = pathParts[generalIndex - 2];
+
+      if (!result[alias]) {
+        result[alias] = {};
+      }
 
       if (
         !rawModule ||
         typeof rawModule !== "object" ||
         !("status" in rawModule)
       ) {
-        result[alias] = null;
+        result[alias][kernelProfile] = null;
         return;
       }
 
@@ -1434,11 +1641,12 @@ export function loadAllCrossProfileVideoStreamingData(): AllCrossProfileVideoStr
       const moduleData = rawModule as { status: string; data?: any };
 
       if (moduleData.status !== "success" || !moduleData.data) {
-        result[alias] = null;
+        result[alias][kernelProfile] = null;
         return;
       }
 
-      result[alias] = moduleData.data as CrossProfileVideoStreamingData;
+      result[alias][kernelProfile] =
+        moduleData.data as CrossProfileVideoStreamingData;
     },
   );
 
@@ -1453,14 +1661,19 @@ console.log(
 );
 
 export const crossProfileVideoStreamingData =
-  allCrossProfileVideoStreamingData[getAvailableAliases()[0]] || null;
+  getCrossProfileVideoStreamingDataForAlias(getAvailableAliases()[0]);
 
 export function getCrossProfileVideoStreamingDataForAlias(
   alias?: string,
+  kernelProfile?: string,
 ): CrossProfileVideoStreamingData | null {
   const aliases = getAvailableAliases();
   const targetAlias = alias || aliases[0] || "";
-  return allCrossProfileVideoStreamingData[targetAlias] || null;
+  const kpData = allCrossProfileVideoStreamingData[targetAlias];
+  if (!kpData) return null;
+  const kps = getAvailableKernelProfiles(targetAlias);
+  const targetKp = kernelProfile || kps[0] || "baseline";
+  return kpData[targetKp] || null;
 }
 
 // --- Cross-Profile Nix Cache Data Loading ---
@@ -1470,9 +1683,13 @@ const crossProfileNixCacheFiles = import.meta.glob(
   { eager: true },
 );
 
-export type AllCrossProfileNixCacheData = Record<
+export type KernelProfileCrossProfileNixCacheData = Record<
   string,
   CrossProfileNixCacheData | null
+>;
+export type AllCrossProfileNixCacheData = Record<
+  string,
+  KernelProfileCrossProfileNixCacheData
 >;
 
 export function loadAllCrossProfileNixCacheData(): AllCrossProfileNixCacheData {
@@ -1481,15 +1698,20 @@ export function loadAllCrossProfileNixCacheData(): AllCrossProfileNixCacheData {
   Object.entries(crossProfileNixCacheFiles).forEach(([path, rawModule]) => {
     const pathParts = path.split("/");
     const generalIndex = pathParts.indexOf("General");
-    if (generalIndex < 1) return;
-    const alias = pathParts[generalIndex - 1];
+    if (generalIndex < 2) return;
+    const kernelProfile = pathParts[generalIndex - 1];
+    const alias = pathParts[generalIndex - 2];
+
+    if (!result[alias]) {
+      result[alias] = {};
+    }
 
     if (
       !rawModule ||
       typeof rawModule !== "object" ||
       !("status" in rawModule)
     ) {
-      result[alias] = null;
+      result[alias][kernelProfile] = null;
       return;
     }
 
@@ -1497,11 +1719,11 @@ export function loadAllCrossProfileNixCacheData(): AllCrossProfileNixCacheData {
     const moduleData = rawModule as { status: string; data?: any };
 
     if (moduleData.status !== "success" || !moduleData.data) {
-      result[alias] = null;
+      result[alias][kernelProfile] = null;
       return;
     }
 
-    result[alias] = moduleData.data as CrossProfileNixCacheData;
+    result[alias][kernelProfile] = moduleData.data as CrossProfileNixCacheData;
   });
 
   return result;
@@ -1510,15 +1732,21 @@ export function loadAllCrossProfileNixCacheData(): AllCrossProfileNixCacheData {
 export const allCrossProfileNixCacheData = loadAllCrossProfileNixCacheData();
 console.log("All cross-profile Nix Cache data:", allCrossProfileNixCacheData);
 
-export const crossProfileNixCacheData =
-  allCrossProfileNixCacheData[getAvailableAliases()[0]] || null;
+export const crossProfileNixCacheData = getCrossProfileNixCacheDataForAlias(
+  getAvailableAliases()[0],
+);
 
 export function getCrossProfileNixCacheDataForAlias(
   alias?: string,
+  kernelProfile?: string,
 ): CrossProfileNixCacheData | null {
   const aliases = getAvailableAliases();
   const targetAlias = alias || aliases[0] || "";
-  return allCrossProfileNixCacheData[targetAlias] || null;
+  const kpData = allCrossProfileNixCacheData[targetAlias];
+  if (!kpData) return null;
+  const kps = getAvailableKernelProfiles(targetAlias);
+  const targetKp = kernelProfile || kps[0] || "baseline";
+  return kpData[targetKp] || null;
 }
 
 // --- Hardware Comparison Data Loading ---
@@ -1527,7 +1755,11 @@ const hardwareFiles = import.meta.glob("@/bench/**/General/hardware.json", {
   eager: true,
 });
 
-export type AllHardwareData = Record<string, HardwareComparisonData | null>;
+export type KernelProfileHardwareData = Record<
+  string,
+  HardwareComparisonData | null
+>;
+export type AllHardwareData = Record<string, KernelProfileHardwareData>;
 
 export function loadAllHardwareData(): AllHardwareData {
   const result: AllHardwareData = {};
@@ -1535,15 +1767,20 @@ export function loadAllHardwareData(): AllHardwareData {
   Object.entries(hardwareFiles).forEach(([path, rawModule]) => {
     const pathParts = path.split("/");
     const generalIndex = pathParts.indexOf("General");
-    if (generalIndex < 1) return;
-    const alias = pathParts[generalIndex - 1];
+    if (generalIndex < 2) return;
+    const kernelProfile = pathParts[generalIndex - 1];
+    const alias = pathParts[generalIndex - 2];
+
+    if (!result[alias]) {
+      result[alias] = {};
+    }
 
     if (
       !rawModule ||
       typeof rawModule !== "object" ||
       !("status" in rawModule)
     ) {
-      result[alias] = null;
+      result[alias][kernelProfile] = null;
       return;
     }
 
@@ -1551,11 +1788,11 @@ export function loadAllHardwareData(): AllHardwareData {
     const moduleData = rawModule as { status: string; data?: any };
 
     if (moduleData.status !== "success" || !moduleData.data) {
-      result[alias] = null;
+      result[alias][kernelProfile] = null;
       return;
     }
 
-    result[alias] = moduleData.data as HardwareComparisonData;
+    result[alias][kernelProfile] = moduleData.data as HardwareComparisonData;
   });
 
   return result;
@@ -1566,10 +1803,15 @@ console.log("All hardware data:", allHardwareData);
 
 export function getHardwareDataForAlias(
   alias?: string,
+  kernelProfile?: string,
 ): HardwareComparisonData | null {
   const aliases = getAvailableAliases();
   const targetAlias = alias || aliases[0] || "";
-  return allHardwareData[targetAlias] || null;
+  const kpData = allHardwareData[targetAlias];
+  if (!kpData) return null;
+  const kps = getAvailableKernelProfiles(targetAlias);
+  const targetKp = kernelProfile || kps[0] || "baseline";
+  return kpData[targetKp] || null;
 }
 
 export const hardwareData = getHardwareDataForAlias();
