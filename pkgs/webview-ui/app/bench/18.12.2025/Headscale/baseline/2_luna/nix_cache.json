@@ -1,31 +1,37 @@
 {
-  "status": "success",
-  "data": {
-    "results": [
-      {
-        "command": "nix copy --from http://cache.vpn.lom --to file:///tmp/cache?compression=none /nix/store/8y3bzk5rmdl9dqxnvii0cnx5rigi8vym-firefox-144.0.2",
-        "mean": 9.768307368599999,
-        "stddev": 0.04068642567919305,
-        "median": 9.768307368599999,
-        "user": 13.137789080000001,
-        "system": 2.85174842,
-        "min": 9.7395377211,
-        "max": 9.7970770161,
-        "times": [9.7970770161, 9.7395377211],
-        "exit_codes": [0, 0],
-        "parameters": {
-          "url": "http://cache.vpn.lom"
-        }
-      }
-    ]
-  },
-  "meta": {
-    "duration_seconds": 32.82910752296448,
-    "test_attempts": 1,
-    "vpn_restart_attempts": 0,
-    "vpn_restart_duration_seconds": 5.11200475692749,
-    "connectivity_wait_duration_seconds": 3.785454034805298,
-    "source": "luna",
-    "target": "lom"
-  }
+    "status": "success",
+    "data": {
+        "results": [
+            {
+                "command": "nix copy --from http://cache.vpn.lom --to file:///tmp/cache?compression=none /nix/store/8y3bzk5rmdl9dqxnvii0cnx5rigi8vym-firefox-144.0.2",
+                "mean": 9.768307368599999,
+                "stddev": 0.04068642567919305,
+                "median": 9.768307368599999,
+                "user": 13.137789080000001,
+                "system": 2.85174842,
+                "min": 9.7395377211,
+                "max": 9.7970770161,
+                "times": [
+                    9.7970770161,
+                    9.7395377211
+                ],
+                "exit_codes": [
+                    0,
+                    0
+                ],
+                "parameters": {
+                    "url": "http://cache.vpn.lom"
+                }
+            }
+        ]
+    },
+    "meta": {
+        "duration_seconds": 32.82910752296448,
+        "test_attempts": 1,
+        "vpn_restart_attempts": 0,
+        "vpn_restart_duration_seconds": 5.11200475692749,
+        "connectivity_wait_duration_seconds": 3.785454034805298,
+        "source": "luna",
+        "target": "lom"
+    }
 }
