@@ -45,17 +45,26 @@ export const SidebarCategory = (props: SidebarCategoryProps) => {
 };
 
 export const Sidebar = (props: RouteSectionProps) => {
-  const { currentAlias, setCurrentAlias } = useAlias();
+  const {
+    currentAlias,
+    setCurrentAlias,
+    benchData: aliasBenchData,
+  } = useAlias();
 
-  // Filter and group routes by category
-  const visibleRoutes = createMemo(() => routes.filter((r) => !r.hidden));
+  // VPN names present in the current alias's bench data
+  const currentVpnNames = createMemo(
+    () => new Set(aliasBenchData().map((c) => c.name)),
+  );
 
+  // Filter VPN routes to show only those present in the current alias
   const vpnRoutes = createMemo(() =>
-    visibleRoutes().filter((r) => r.category === "vpn"),
+    routes.filter(
+      (r) => r.category === "vpn" && currentVpnNames().has(r.label),
+    ),
   );
 
   const analysisRoutes = createMemo(() =>
-    visibleRoutes().filter((r) => r.category === "analysis"),
+    routes.filter((r) => r.category === "analysis" && !r.hidden),
   );
 
   return (

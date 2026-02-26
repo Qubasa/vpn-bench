@@ -697,11 +697,13 @@ class BenchmarkTUI(App[None]):
         config: Config,
         entries: list[BenchmarkEntry],
         machines: list[TrMachine],
+        optimized: bool = False,
     ) -> None:
         super().__init__()
         self.config = config
         self.entries = entries
         self.machines = machines
+        self.optimized = optimized
         self.tracker = ProgressTracker()
         self._log_paused = False
         self._shutting_down = False
@@ -890,6 +892,7 @@ class BenchmarkTUI(App[None]):
                         entry,
                         self.machines,
                         tracker=self.tracker,
+                        optimized=self.optimized,
                     )
                     self.tracker.complete_vpn()
                 except Exception as e:

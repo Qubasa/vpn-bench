@@ -538,6 +538,7 @@ def benchmark_vpn(
     entry: BenchmarkEntry,
     tr_machines: list[TrMachine],
     tracker: ProgressTracker | None = None,
+    optimized: bool = False,
 ) -> None:
     """
     Run VPN benchmarks with multiple TC configurations.
@@ -547,6 +548,7 @@ def benchmark_vpn(
         entry: BenchmarkEntry containing VPN, tests, profiles, and overrides
         tr_machines: List of terraform machines
         tracker: Optional progress tracker for TUI updates
+        optimized: Whether to install optimized kernel profile
     """
     from vpn_bench.tc import apply_tc_settings
 
@@ -591,6 +593,7 @@ def benchmark_vpn(
             if benchmark_runs
             else "default",
             timing=timing,
+            optimized=optimized,
         )
 
     # Get list of machines for TC application

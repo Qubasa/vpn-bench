@@ -1,0 +1,33 @@
+{
+  "status": "success",
+  "data": {
+    "heatmap": {
+      "tc_profiles": ["baseline-optimized", "low_impairment-optimized"],
+      "throughput": {
+        "Internal": {
+          "baseline-optimized": 951.3838773801157
+        }
+      },
+      "cpu": {
+        "Internal": {
+          "baseline-optimized": 59.40232833710226
+        }
+      },
+      "failed": {
+        "Internal": ["low_impairment-optimized"]
+      }
+    },
+    "scatter": {
+      "dimensions": [
+        "throughput",
+        "payload_size",
+        "received_bytes_gb",
+        "vpn_index",
+        "profile_index"
+      ],
+      "vpn_names": ["Internal"],
+      "tc_profiles": ["baseline-optimized", "low_impairment-optimized"],
+      "data": [[951.3838773801157, 1448.0, 3.3230667437116304, 0.0, 0.0]]
+    }
+  }
+}

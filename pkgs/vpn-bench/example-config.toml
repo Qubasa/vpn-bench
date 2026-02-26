@@ -24,8 +24,15 @@
 [[benchmark]]
 vpn = "internal"
 tests = ["iperf3"]
-tc_profiles = ["baseline"]
+tc_profiles = ["medium"]
 skip_con_times = false
+
+[[benchmark]]
+vpn = "headscale"
+tests = ["iperf3"]
+tc_profiles = ["baseline", "low", "medium", "high"]
+skip_con_times = false
+
 
 # [[benchmark]]
 # vpn = "zerotier"
@@ -81,8 +88,3 @@ skip_con_times = false
 # tc_profiles = ["baseline", "low", "medium", "high"]
 # skip_con_times = false
 
-# [[benchmark]]
-# vpn = "headscale"
-# tests = ["rist-stream"]
-# tc_profiles = ["baseline", "low", "medium", "high"]
-# skip_con_times = false

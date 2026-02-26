@@ -146,6 +146,11 @@ def create_parser() -> argparse.ArgumentParser:
         default=None,
         help="Alias for this benchmark run (default: current date DD.MM.YYYY)",
     )
+    bench_parser.add_argument(
+        "--optimized",
+        action="store_true",
+        help="Install optimized kernel profile and suffix benchmark alias with '-optimized'",
+    )
 
     plot_parser = subparsers.add_parser("plot", help="Plot the data from benchmark")
     plot_parser.add_argument("--debug", action="store_true", help="Enable debug mode")
@@ -191,6 +196,8 @@ def create_conf_obj(args: argparse.Namespace) -> Config:
         alias = getattr(args, "alias", None)
         if alias is None:
             alias = datetime.now(tz=UTC).strftime("%d.%m.%Y")
+        if getattr(args, "optimized", False):
+            alias = f"{alias}-optimized"
         bench_dir = base_bench_dir / alias
         bench_dir.mkdir(parents=True, exist_ok=True)
     else:
@@ -406,6 +413,7 @@ def run_cli() -> None:
                 config=config,
                 entries=entries,
                 machines=machines,
+                optimized=args.optimized,
             )
             app.run()
         else:
@@ -426,6 +434,7 @@ def run_cli() -> None:
                         config,
                         entry,
                         machines,
+                        optimized=args.optimized,
                     )
                 except Exception as e:
                     error_msg = str(e)

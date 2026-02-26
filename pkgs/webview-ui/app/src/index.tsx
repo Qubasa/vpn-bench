@@ -27,7 +27,9 @@ import { IconVariant } from "./components/icon";
 import {
   benchData,
   comparisonData,
+  allBenchData,
   BenchData,
+  AllBenchData,
   ComparisonData,
   Err,
   Machine,
@@ -241,12 +243,10 @@ function VpnDashboardWithProfiles(props: { vpnName: string }) {
   const { benchData: aliasBenchData } = useAlias();
 
   // Look up category reactively from the current alias's data
-  const category = () =>
-    aliasBenchData().find((c) => c.name === props.vpnName);
+  const category = () => aliasBenchData().find((c) => c.name === props.vpnName);
 
   // Get the list of TC profile aliases, sorted in logical order
-  const runAliases = () =>
-    sortTcProfiles(Object.keys(category()?.runs || {}));
+  const runAliases = () => sortTcProfiles(Object.keys(category()?.runs || {}));
 
   // Get URL search params for state sync
   const [searchParams, setSearchParams] = useSearchParams();
@@ -362,23 +362,28 @@ function VpnDashboardWithProfiles(props: { vpnName: string }) {
   );
 }
 
-// Function to generate routes from benchData, passing aggregated Results
-function generateRoutesFromBenchData(data: BenchData): AppRoute[] {
-  return data.map((category) => {
-    const path = `/${category.name.toLowerCase().replace(/\s+/g, "_")}`;
+// Function to generate routes from ALL bench data across all aliases
+// This ensures routes exist for every VPN that appears in any alias,
+// so switching aliases doesn't lose routes.
+function generateRoutesFromAllBenchData(data: AllBenchData): AppRoute[] {
+  const allVpnNames = new Set<string>();
+  for (const aliasCategories of Object.values(data)) {
+    for (const category of aliasCategories) {
+      allVpnNames.add(category.name);
+    }
+  }
 
-    // Check if category has any runs
-    const hasRuns = Object.keys(category.runs).length > 0;
-
-    return {
-      path,
-      label: category.name,
-      component: () => <VpnDashboardWithProfiles vpnName={category.name} />,
-      // Hide route if category has no runs
-      hidden: !hasRuns,
-      category: "vpn" as const,
-    };
-  });
+  return Array.from(allVpnNames)
+    .sort()
+    .map((vpnName) => {
+      const path = `/${vpnName.toLowerCase().replace(/\s+/g, "_")}`;
+      return {
+        path,
+        label: vpnName,
+        component: () => <VpnDashboardWithProfiles vpnName={vpnName} />,
+        category: "vpn" as const,
+      };
+    });
 }
 
 function GeneralDashboardWrapper() {
@@ -475,9 +480,9 @@ function generateLlmInstructionsRoute(): AppRoute[] {
   ];
 }
 
-// Generate routes from benchData
+// Generate routes from all bench data (union of VPNs across all aliases)
 export const routes: AppRoute[] =
-  benchData.length > 0
+  Object.keys(allBenchData).length > 0
     ? [
         {
           path: "/",
@@ -489,7 +494,7 @@ export const routes: AppRoute[] =
             />
           ),
         },
-        ...generateRoutesFromBenchData(benchData),
+        ...generateRoutesFromAllBenchData(allBenchData),
         ...generateAppRouteFromGeneralData(comparisonData),
         ...generateConnectionTimesRoute(comparisonData),
         ...generateCrossProfileRoute(),

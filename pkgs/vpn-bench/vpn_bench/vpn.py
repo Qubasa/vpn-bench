@@ -69,6 +69,27 @@ def install_zerotier(config: Config, tr_machines: list[TrMachine]) -> None:
     inventory_store.write(inventory, message="Add zerotier configuration")
 
 
+def install_optimized_kernel_profile(config: Config) -> None:
+    inventory_store = InventoryStore(Flake(str(config.clan_dir)))
+    inventory = inventory_store.read()
+    conf: dict[str, Any] = {
+        "module": {"name": "tcp-reorder-tune", "input": "cvpn-bench"},
+        "roles": {
+            "default": {"tags": {"all": {}}},
+        },
+    }
+    set_value_by_path_tuple(inventory, ("instances", "tcp-reorder-tune"), conf)
+    inventory_store.write(inventory, message="Add kernel tcp reorder optimization")
+
+
+def remove_optimized_kernel_profile(config: Config) -> None:
+    inventory_store = InventoryStore(Flake(str(config.clan_dir)))
+    inventory = inventory_store.read()
+    if "tcp-reorder-tune" in inventory["instances"]:
+        del inventory["instances"]["tcp-reorder-tune"]
+    inventory_store.write(inventory, message="Remove kernel tcp reorder optimization")
+
+
 def install_nebula(config: Config, tr_machines: list[TrMachine]) -> None:
     inventory_store = InventoryStore(Flake(str(config.clan_dir)))
     inventory = inventory_store.read()
@@ -428,6 +449,7 @@ def install_vpn(
     get_con_times: bool = True,
     benchmark_run_alias: str = "default",
     timing: TimingTracker | None = None,
+    optimized: bool = False,
 ) -> list[BenchMachine]:
     """Install and configure VPN on all machines.
 
@@ -438,6 +460,7 @@ def install_vpn(
         get_con_times: Whether to collect connection timing measurements
         benchmark_run_alias: Alias for the benchmark run (for timing results)
         timing: Optional TimingTracker for operation-level timing
+        optimized: Whether to install optimized kernel profile
 
     Returns:
         List of BenchMachine objects with VPN IPs
@@ -590,6 +613,12 @@ def install_vpn(
     # Always install connection timings service (needed for wait_for_vpn_connectivity)
     with timed_op("install_connection_timings_service"):
         install_connection_timings_conf(config, tr_machines, vpn, bmachines)
+
+    if optimized:
+        with timed_op("install_tc_reoder_optimization"):
+            install_optimized_kernel_profile(config)
+    else:
+        remove_optimized_kernel_profile(config)
 
     machines = [bmachine.cmachine for bmachine in bmachines]
 
