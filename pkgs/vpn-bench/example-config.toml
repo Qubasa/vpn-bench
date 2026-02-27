@@ -21,17 +21,17 @@
 #   name = "medium"
 #   skip_con_times = true  # override skip_con_times for "medium" profile
 
-[[benchmark]]
-vpn = "internal"
-tests = ["iperf3"]
-tc_profiles = ["medium"]
-skip_con_times = false
+# [[benchmark]]
+# vpn = "internal"
+# tests = ["iperf3", "rist-stream"]
+# tc_profiles = ["baseline", "low", "medium"]
+# skip_con_times = false
 
 [[benchmark]]
 vpn = "headscale"
-tests = ["iperf3"]
-tc_profiles = ["baseline", "low", "medium", "high"]
-skip_con_times = false
+tests = ["iperf3", "rist-stream"]
+tc_profiles = ["low", "medium"]
+skip_con_times = true
 
 
 # [[benchmark]]

@@ -1,49 +1,145 @@
 {
-  "status": "success",
-  "data": {
-    "tcp": {
-      "bar3d": {
-        "vpn_names": ["Internal"],
-        "tc_profiles": ["baseline-optimized", "low_impairment-optimized"],
-        "throughput_data": [
-          [0.0, 0.0, 934.1076827573281],
-          [0.0, 1.0, 319.4606432891394]
-        ]
-      },
-      "scatter3d": {
-        "dimensions": [
-          "throughput",
-          "window_size",
-          "cwnd",
-          "vpn_index",
-          "profile_index"
-        ],
-        "vpn_names": ["Internal"],
-        "tc_profiles": ["baseline-optimized", "low_impairment-optimized"],
-        "data": [
-          [934.1076827573281, 2419.8333333333335, 627.84375, 0.0, 0.0],
-          [319.4606432891394, 2804.125, 316.2786458333333, 0.0, 1.0]
-        ]
-      }
-    },
-    "parallel_tcp": {
-      "bar3d": {
-        "vpn_names": ["Internal"],
-        "tc_profiles": ["baseline-optimized", "low_impairment-optimized"],
-        "throughput_data": []
-      },
-      "scatter3d": {
-        "dimensions": [
-          "throughput",
-          "window_size",
-          "cwnd",
-          "vpn_index",
-          "profile_index"
-        ],
-        "vpn_names": ["Internal"],
-        "tc_profiles": ["baseline-optimized", "low_impairment-optimized"],
-        "data": []
-      }
+    "status": "success",
+    "data": {
+        "tcp": {
+            "bar3d": {
+                "vpn_names": [
+                    "Headscale",
+                    "Internal"
+                ],
+                "tc_profiles": [
+                    "baseline",
+                    "low_impairment",
+                    "medium_impairment"
+                ],
+                "throughput_data": [
+                    [
+                        0.0,
+                        0.0,
+                        829.8507392487629
+                    ],
+                    [
+                        0.0,
+                        1.0,
+                        229.61690219218372
+                    ],
+                    [
+                        0.0,
+                        2.0,
+                        52.100008408174396
+                    ],
+                    [
+                        1.0,
+                        0.0,
+                        934.3772879643064
+                    ],
+                    [
+                        1.0,
+                        1.0,
+                        363.1701151987238
+                    ],
+                    [
+                        1.0,
+                        2.0,
+                        64.15708377026853
+                    ]
+                ]
+            },
+            "scatter3d": {
+                "dimensions": [
+                    "throughput",
+                    "window_size",
+                    "cwnd",
+                    "vpn_index",
+                    "profile_index"
+                ],
+                "vpn_names": [
+                    "Headscale",
+                    "Internal"
+                ],
+                "tc_profiles": [
+                    "baseline",
+                    "low_impairment",
+                    "medium_impairment"
+                ],
+                "data": [
+                    [
+                        829.8507392487629,
+                        5376.0,
+                        2417.9661458333335,
+                        0.0,
+                        0.0
+                    ],
+                    [
+                        229.61690219218372,
+                        3360.0,
+                        238.69010416666666,
+                        0.0,
+                        1.0
+                    ],
+                    [
+                        52.100008408174396,
+                        3453.5833333333335,
+                        146.67447916666666,
+                        0.0,
+                        2.0
+                    ],
+                    [
+                        934.3772879643064,
+                        1464.9166666666667,
+                        665.0807291666666,
+                        1.0,
+                        0.0
+                    ],
+                    [
+                        363.1701151987238,
+                        4914.833333333333,
+                        479.3671875,
+                        1.0,
+                        1.0
+                    ],
+                    [
+                        64.15708377026853,
+                        3838.5833333333335,
+                        146.59114583333334,
+                        1.0,
+                        2.0
+                    ]
+                ]
+            }
+        },
+        "parallel_tcp": {
+            "bar3d": {
+                "vpn_names": [
+                    "Headscale",
+                    "Internal"
+                ],
+                "tc_profiles": [
+                    "baseline",
+                    "low_impairment",
+                    "medium_impairment"
+                ],
+                "throughput_data": []
+            },
+            "scatter3d": {
+                "dimensions": [
+                    "throughput",
+                    "window_size",
+                    "cwnd",
+                    "vpn_index",
+                    "profile_index"
+                ],
+                "vpn_names": [
+                    "Headscale",
+                    "Internal"
+                ],
+                "tc_profiles": [
+                    "baseline",
+                    "low_impairment",
+                    "medium_impairment"
+                ],
+                "data": []
+            }
+        }
     }
-  }
 }

@@ -557,6 +557,13 @@ def install_vpn(
         with timed_op("run_zerotier_generators"):
             run_generators([machines[0]], "zerotier")
 
+    # If --optimized flag is set include custom kernel profile
+    if optimized:
+        with timed_op("install_tc_reoder_optimization"):
+            install_optimized_kernel_profile(config)
+    else:
+        remove_optimized_kernel_profile(config)
+
     # Headscale needs a different flow: deploy first, then query IPs
     # (because tailscale assigns IPs dynamically after authentication)
     if vpn == VPN.Headscale:
@@ -613,12 +620,6 @@ def install_vpn(
     # Always install connection timings service (needed for wait_for_vpn_connectivity)
     with timed_op("install_connection_timings_service"):
         install_connection_timings_conf(config, tr_machines, vpn, bmachines)
-
-    if optimized:
-        with timed_op("install_tc_reoder_optimization"):
-            install_optimized_kernel_profile(config)
-    else:
-        remove_optimized_kernel_profile(config)
 
     machines = [bmachine.cmachine for bmachine in bmachines]
 
