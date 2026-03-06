@@ -73,10 +73,10 @@
       {
         nixosModule = {
           boot.kernel.sysctl = {
-            "net.ipv4.tcp_rmem" = settings.tcpRmem;
-            "net.ipv4.tcp_wmem" = settings.tcpWmem;
-            "net.core.rmem_max" = settings.rmemMax;
-            "net.core.wmem_max" = settings.wmemMax;
+            # "net.ipv4.tcp_rmem" = settings.tcpRmem;
+            # "net.ipv4.tcp_wmem" = settings.tcpWmem;
+            # "net.core.rmem_max" = settings.rmemMax;
+            # "net.core.wmem_max" = settings.wmemMax;
             "net.ipv4.tcp_reordering" = settings.tcpReordering;
             "net.ipv4.tcp_recovery" = settings.tcpRecovery;
             "net.ipv4.tcp_early_retrans" = settings.tcpEarlyRetrans;

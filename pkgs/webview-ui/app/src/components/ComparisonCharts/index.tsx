@@ -1778,6 +1778,12 @@ export const TestDurationComparisonChart = (props: {
         left: "center",
         top: 0,
       },
+      toolbox: {
+        feature: {
+          saveAsImage: {},
+          dataView: { show: true, readOnly: false },
+        },
+      },
       tooltip: {
         trigger: "axis",
         axisPointer: { type: "shadow" },
@@ -1873,6 +1879,12 @@ export const SuccessRateComparisonChart = (props: {
         left: "center",
         top: 0,
       },
+      toolbox: {
+        feature: {
+          saveAsImage: {},
+          dataView: { show: true, readOnly: false },
+        },
+      },
       tooltip: {
         trigger: "axis",
         axisPointer: { type: "shadow" },
@@ -1956,6 +1968,12 @@ export const FailureCountComparisonChart = (props: {
         text: "Test Results by VPN",
         subtext: "More successes is better",
         left: "center",
+      },
+      toolbox: {
+        feature: {
+          saveAsImage: {},
+          dataView: { show: true, readOnly: false },
+        },
       },
       tooltip: {
         trigger: "axis",
@@ -2167,6 +2185,12 @@ export const RetryComparisonChart = (props: {
         left: "center",
         top: 0,
       },
+      toolbox: {
+        feature: {
+          saveAsImage: {},
+          dataView: { show: true, readOnly: false },
+        },
+      },
       tooltip: {
         trigger: "axis",
         axisPointer: { type: "shadow" },
@@ -2297,6 +2321,12 @@ export const TimeBreakdownPieChart = (props: {
       subtext: `Total: ${formatTime(props.data.total_seconds)}`,
       left: "center",
       top: 0,
+    },
+    toolbox: {
+      feature: {
+        saveAsImage: {},
+        dataView: { show: true, readOnly: false },
+      },
     },
     tooltip: {
       trigger: "item",

@@ -167,12 +167,22 @@ def install_easytier(config: Config, tr_machines: list[TrMachine]) -> None:
 def install_mycelium(config: Config, tr_machines: list[TrMachine]) -> None:
     inventory_store = InventoryStore(Flake(str(config.clan_dir)))
     inventory = inventory_store.read()
+
+    # Set per-machine publicAddress for direct peering between machines
+    machines: dict[str, Any] = {}
+    for tr_machine in tr_machines:
+        if tr_machine["ipv4"] is not None:
+            machines[tr_machine["name"]] = {
+                "settings": {"publicAddress": tr_machine["ipv4"]}
+            }
+
     conf: dict[str, Any] = {
         "module": {"name": "mycelium", "input": "cvpn-bench"},
         "roles": {
             "peer": {
                 "tags": {"all": {}},
-                "settings": {"openFirewall": True, "addHostedPublicNodes": True},
+                "machines": machines,
+                "settings": {"openFirewall": True, "addHostedPublicNodes": False},
             },
         },
     }

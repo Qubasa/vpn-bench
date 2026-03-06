@@ -25,6 +25,7 @@
               matchConfig = {
                 Type = "ether";
               };
+              linkConfig.Multicast = true;
               address = settings.ipAddresses;
               networkConfig.DHCP = "yes";
               routes = [

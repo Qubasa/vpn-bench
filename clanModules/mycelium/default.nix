@@ -42,6 +42,16 @@
             default = true;
             description = "Add hosted Public nodes";
           };
+
+          publicAddress = lib.mkOption {
+            type = lib.types.nullOr lib.types.str;
+            default = null;
+            description = ''
+              Public IP address of this machine, used for direct peering
+              with other machines in the same instance.
+              If set, other peers will connect directly via QUIC and TCP.
+            '';
+          };
         };
       };
 
@@ -50,8 +60,24 @@
         settings,
         mkExports,
         machine,
+        roles,
         ...
       }:
+      let
+        # Collect public addresses from all other peer machines for direct peering
+        directPeers = lib.concatLists (
+          lib.mapAttrsToList (
+            peerName: peerCfg:
+            let
+              addr = peerCfg.settings.publicAddress;
+            in
+            lib.optionals (peerName != machine.name && addr != null) [
+              "quic://${addr}:9651"
+              "tcp://${addr}:9651"
+            ]
+          ) roles.peer.machines
+        );
+      in
       {
 
         exports = mkExports {
@@ -84,6 +110,7 @@
               addHostedPublicNodes = lib.mkDefault settings.addHostedPublicNodes;
               openFirewall = lib.mkDefault settings.openFirewall;
               keyFile = config.clan.core.vars.generators.mycelium.files.key.path;
+              peers = directPeers;
             };
 
             clan.core.vars.generators.mycelium = {

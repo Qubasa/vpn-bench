@@ -23,28 +23,42 @@
 
 # [[benchmark]]
 # vpn = "internal"
-# tests = ["iperf3", "rist-stream"]
+# tests = ["iperf3", "iperf3-parallel-tcp", "qperf", "nix-cache", "ping", "rist-stream"]
 # tc_profiles = ["baseline", "low", "medium"]
 # skip_con_times = false
 
-[[benchmark]]
-vpn = "headscale"
-tests = ["iperf3", "rist-stream"]
-tc_profiles = ["low", "medium"]
-skip_con_times = true
-
+# [[benchmark]]
+# vpn = "headscale"
+# tests = ["iperf3", "iperf3-parallel-tcp", "qperf", "nix-cache", "ping", "rist-stream"]
+# tc_profiles = ["baseline", "low", "medium"]
+# skip_con_times = false
 
 # [[benchmark]]
 # vpn = "zerotier"
-# tests = ["nix-cache"]
-# tc_profiles = ["baseline", "low", "medium", "high"]
-# skip_con_times = true
+# tests =  ["iperf3", "iperf3-parallel-tcp", "qperf", "nix-cache", "ping", "rist-stream"]
+# tc_profiles = ["baseline", "low", "medium"]
+# skip_con_times = false
+
 
 # [[benchmark]]
-# vpn = "mycelium"
-# tests = ["nix-cache"]
-# tc_profiles = ["baseline", "low", "medium", "high"]
-# skip_con_times = true
+# vpn = "wireguard"
+# tests = ["iperf3", "iperf3-parallel-tcp", "qperf", "nix-cache", "ping", "rist-stream"]
+# tc_profiles = ["baseline", "low", "medium"]
+# skip_con_times = false
+
+
+# [[benchmark]]
+# vpn = "tinc"
+# tests = ["iperf3", "iperf3-parallel-tcp", "qperf", "nix-cache", "ping", "rist-stream"]
+# tc_profiles = ["baseline", "low", "medium"]
+# skip_con_times = false
+
+
+[[benchmark]]
+vpn = "mycelium"
+tests = ["iperf3"]
+tc_profiles = ["baseline"]
+skip_con_times = false
 
 # [[benchmark]]
 # vpn = "hyprspace"
@@ -64,11 +78,6 @@ skip_con_times = true
 # tc_profiles = ["baseline", "low", "medium", "high"]
 # skip_con_times = true
 
-# [[benchmark]]
-# vpn = "wireguard"
-# tests = ["nix-cache"]
-# tc_profiles = ["baseline", "low", "medium", "high"]
-# skip_con_times = true
 
 # [[benchmark]]
 # vpn = "easytier"
@@ -78,12 +87,6 @@ skip_con_times = true
 
 # [[benchmark]]
 # vpn = "nebula"
-# tests = ["iperf3", "iperf3-parallel-tcp", "qperf", "nix-cache", "ping", "rist-stream"]
-# tc_profiles = ["baseline", "low", "medium", "high"]
-# skip_con_times = false
-
-# [[benchmark]]
-# vpn = "tinc"
 # tests = ["iperf3", "iperf3-parallel-tcp", "qperf", "nix-cache", "ping", "rist-stream"]
 # tc_profiles = ["baseline", "low", "medium", "high"]
 # skip_con_times = false
