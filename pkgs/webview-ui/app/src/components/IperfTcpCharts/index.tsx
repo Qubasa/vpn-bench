@@ -1,4 +1,5 @@
 import { Echart } from "../Echarts";
+import { createErrorBarSeries } from "../Echarts/errorBars";
 
 // Define interfaces for typing
 export interface IperfTcpReportData {
@@ -152,76 +153,55 @@ const IperfTestSummary = (props: { reports: IperfTcpReport[] }) => {
   );
 };
 
-// RTT Boxplot Chart Creator - USING ONLY MIN/MEAN/MAX for data
+// RTT Bar Chart Creator - shows mean RTT with min/max error bars
 const createRttOption = (reports: IperfTcpReport[]) => {
-  const boxplotData = reports.map((report) => {
+  const rttData = reports.map((report) => {
     if (report.data.end.streams && report.data.end.streams.length > 0) {
       const stream = report.data.end.streams.find((data) => data.sender.sender);
-
       if (stream?.sender.mean_rtt != null) {
-        const min = stream.sender.min_rtt;
-        const mean = stream.sender.mean_rtt; // Use the provided mean
-        const max = stream.sender.max_rtt;
-
-        // *** MODIFIED DATA ARRAY ***
-        // Provide data as [min, mean, mean, mean, max]
-        // This places the mean where q1, median, and q3 are expected,
-        // effectively collapsing the 'box' to a line at the mean.
-        // The whiskers will still show min and max correctly.
-        return [min, mean, mean, mean, max];
-        // *** END MODIFIED DATA ARRAY ***
-      } else {
-        console.warn(
-          "Sender stream found but missing RTT data in report:",
-          report.name,
-        );
-        const receiverStream = report.data.end.streams.find(
-          (data) => !data.sender.sender,
-        );
-        if (receiverStream?.sender.mean_rtt != null) {
-          const min = receiverStream.sender.min_rtt;
-          const mean = receiverStream.sender.mean_rtt;
-          const max = receiverStream.sender.max_rtt;
-          return [min, mean, mean, mean, max]; // Apply same logic
-        } else {
-          console.warn(
-            "Receiver stream also missing RTT data in report:",
-            report.name,
-          );
-          return [0, 0, 0, 0, 0];
-        }
+        return {
+          mean: stream.sender.mean_rtt / 1000, // Convert µs to ms
+          min: stream.sender.min_rtt / 1000,
+          max: stream.sender.max_rtt / 1000,
+        };
+      }
+      const receiverStream = report.data.end.streams.find(
+        (data) => !data.sender.sender,
+      );
+      if (receiverStream?.sender.mean_rtt != null) {
+        return {
+          mean: receiverStream.sender.mean_rtt / 1000,
+          min: receiverStream.sender.min_rtt / 1000,
+          max: receiverStream.sender.max_rtt / 1000,
+        };
       }
     }
-    console.warn("No streams found in end data for report:", report.name);
-    return [0, 0, 0, 0, 0];
+    return { mean: 0, min: 0, max: 0 };
   });
+
+  const formatRttLabel = (ms: number) =>
+    ms < 1 ? `${ms.toFixed(2)} ms` : `${ms.toFixed(1)} ms`;
 
   return {
     title: {
-      text: "Round Trip Time (RTT)", // Simplified title
+      text: "Round Trip Time (RTT)",
       subtext: "Lower is better",
       left: "center",
       subtextStyle: { color: "#888", fontSize: 12 },
     },
     tooltip: {
-      trigger: "item",
-      formatter: function (params: {
-        name: string;
-        data: [number, number, number, number, number];
-        marker: string;
-      }) {
-        const boxData = params.data;
-        const factor = 1000; // Convert µs to ms
-
-        // Indices still correspond to [min, q1(mean), median(mean), q3(mean), max]
-        const minMs = (boxData[0] / factor).toFixed(2);
-        const meanMs = (boxData[2] / factor).toFixed(2); // Mean is at index 2
-        const maxMs = (boxData[4] / factor).toFixed(2);
-
-        return `${params.marker}${params.name}<br/>
-                Min RTT: ${minMs} µs<br/>
-                Mean RTT: ${meanMs} µs<br/>
-                Max RTT: ${maxMs} µs`;
+      trigger: "axis",
+      axisPointer: { type: "shadow" },
+      formatter: (
+        params: { name: string; dataIndex: number; marker: string }[],
+      ) => {
+        if (!params || params.length === 0) return "";
+        const idx = params[0].dataIndex;
+        const d = rttData[idx];
+        return `${params[0].marker}${params[0].name}<br/>
+                Mean RTT: ${formatRttLabel(d.mean)}<br/>
+                Min RTT: ${formatRttLabel(d.min)}<br/>
+                Max RTT: ${formatRttLabel(d.max)}`;
       },
     },
     grid: {
@@ -240,37 +220,31 @@ const createRttOption = (reports: IperfTcpReport[]) => {
     xAxis: {
       type: "category",
       data: reports.map((report) => report.name),
-      boundaryGap: true,
-      nameGap: 30,
-      splitArea: { show: false },
-      axisLabel: { show: true },
-      splitLine: { show: false },
     },
     yAxis: {
       type: "value",
-      name: "RTT (µs)",
-      axisLabel: {
-        // Format axis labels to show ms for better readability
-        formatter: (value: number) => `${(value / 1000).toFixed(1)} µs`,
+      name: "RTT (ms)",
+      max: (value: { max: number }) => {
+        const errorMax = Math.max(...rttData.map((d) => d.max), 0);
+        return Math.max(value.max, errorMax) * 1.1 || undefined;
       },
-      splitArea: { show: true },
     },
     series: [
       {
-        name: "RTT Values (µs)",
-        type: "boxplot",
-        data: boxplotData,
-        // Tooltip formatting is now handled by the main tooltip config above
-        itemStyle: {
-          borderColor: "#3498db",
-        },
-        boxWidth: [40, 70],
-        emphasis: {
-          itemStyle: {
-            borderColor: "#1a6fb0",
+        name: "Mean RTT",
+        type: "bar",
+        data: rttData.map((d) => d.mean.toFixed(2)),
+        color: "#3498db",
+        label: { show: false },
+      },
+      createErrorBarSeries(
+        rttData.map((d) => ({ min: d.min, max: d.max })),
+        {
+          labels: {
+            values: rttData.map((d) => formatRttLabel(d.mean)),
           },
         },
-      },
+      ),
     ],
   };
 };
@@ -554,6 +528,14 @@ const createThroughputOption = (reports: IperfTcpReport[]) => {
     yAxis: {
       type: "value",
       name: "Mbps",
+      max: (value: { max: number }) => {
+        const errorMax = Math.max(
+          ...throughputStats.map((s) =>
+            Math.max(s.stats.maxSentMbps, s.stats.maxRecvMbps),
+          ),
+        );
+        return Math.ceil(Math.max(value.max, errorMax) * 1.1);
+      },
       axisLabel: {
         formatter: "{value}", // Keep simple number format for Mbps
       },
@@ -564,25 +546,45 @@ const createThroughputOption = (reports: IperfTcpReport[]) => {
         type: "bar",
         data: throughputStats.map((item) => item.stats.avgSentMbps.toFixed(1)), // Plot average
         color: "#3498db",
-        label: {
-          // Label still shows the average value on the bar
-          show: true,
-          position: "top",
-          formatter: "{c} Mbps",
-        },
+        label: { show: false },
       },
       {
         name: "Average Received", // Updated series name
         type: "bar",
         data: throughputStats.map((item) => item.stats.avgRecvMbps.toFixed(1)), // Plot average
         color: "#2ecc71",
-        label: {
-          // Label still shows the average value on the bar
-          show: true,
-          position: "top",
-          formatter: "{c} Mbps",
-        },
+        label: { show: false },
       },
+      createErrorBarSeries(
+        throughputStats.map((item) => ({
+          min: item.stats.minSentMbps,
+          max: item.stats.maxSentMbps,
+        })),
+        {
+          barIndex: 0,
+          totalBars: 2,
+          labels: {
+            values: throughputStats.map(
+              (item) => `${item.stats.avgSentMbps.toFixed(1)} Mbps`,
+            ),
+          },
+        },
+      ),
+      createErrorBarSeries(
+        throughputStats.map((item) => ({
+          min: item.stats.minRecvMbps,
+          max: item.stats.maxRecvMbps,
+        })),
+        {
+          barIndex: 1,
+          totalBars: 2,
+          labels: {
+            values: throughputStats.map(
+              (item) => `${item.stats.avgRecvMbps.toFixed(1)} Mbps`,
+            ),
+          },
+        },
+      ),
     ],
   };
 };

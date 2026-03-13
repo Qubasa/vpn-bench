@@ -1,5 +1,6 @@
 import { Show } from "solid-js";
 import { Echart } from "../Echarts";
+import { createErrorBarSeries } from "../Echarts/errorBars";
 
 // Define interfaces for typing
 interface MetricStats {
@@ -37,49 +38,43 @@ interface PingChartsProps {
   };
 }
 
-// RTT Boxplot Chart - showing distribution of RTT metrics
-const createRttBoxplotOption = (reports: PingReport[]) => {
-  // Sort by median RTT (ascending - lower is better)
+// RTT Bar Chart - showing average RTT with min/max error bars
+const createRttBarOption = (reports: PingReport[]) => {
+  // Sort by average RTT (ascending - lower is better)
   const sortedReports = [...reports].sort(
-    (a, b) =>
-      a.data.rtt_avg_ms.percentiles.p50 - b.data.rtt_avg_ms.percentiles.p50,
+    (a, b) => a.data.rtt_avg_ms.average - b.data.rtt_avg_ms.average,
   );
 
-  const boxplotData = sortedReports.map((report) => {
-    const avgMetric = report.data.rtt_avg_ms;
-    // Create boxplot from percentiles: [min, p25, p50, p75, max]
-    return [
-      avgMetric.min,
-      avgMetric.percentiles.p25,
-      avgMetric.percentiles.p50,
-      avgMetric.percentiles.p75,
-      avgMetric.max,
-    ];
-  });
-
   const categoryNames = sortedReports.map((r) => r.name);
+  const rttData = sortedReports.map((r) => ({
+    avg: r.data.rtt_avg_ms.average,
+    min: r.data.rtt_avg_ms.min,
+    max: r.data.rtt_avg_ms.max,
+  }));
+
+  const formatRtt = (ms: number) =>
+    ms < 10 ? `${ms.toFixed(3)} ms` : `${ms.toFixed(1)} ms`;
 
   return {
     title: {
-      text: "Round Trip Time Distribution (Average RTT)",
+      text: "Average Round Trip Time",
       subtext: "Lower is better",
       left: "center",
       subtextStyle: { color: "#888", fontSize: 12 },
     },
     tooltip: {
-      trigger: "item",
-      formatter: function (params: {
-        name: string;
-        data: [number, number, number, number, number];
-        marker: string;
-      }) {
-        const boxData = params.data;
-        return `${params.marker}${params.name}<br/>
-                Min: ${boxData[0].toFixed(3)} ms<br/>
-                P25: ${boxData[1].toFixed(3)} ms<br/>
-                Median: ${boxData[2].toFixed(3)} ms<br/>
-                P75: ${boxData[3].toFixed(3)} ms<br/>
-                Max: ${boxData[4].toFixed(3)} ms`;
+      trigger: "axis",
+      axisPointer: { type: "shadow" },
+      formatter: (
+        params: { name: string; dataIndex: number; marker: string }[],
+      ) => {
+        if (!params || params.length === 0) return "";
+        const idx = params[0].dataIndex;
+        const d = rttData[idx];
+        return `${params[0].marker}${params[0].name}<br/>
+                Avg RTT: ${formatRtt(d.avg)}<br/>
+                Min RTT: ${formatRtt(d.min)}<br/>
+                Max RTT: ${formatRtt(d.max)}`;
       },
     },
     grid: {
@@ -105,13 +100,27 @@ const createRttBoxplotOption = (reports: PingReport[]) => {
     yAxis: {
       type: "value",
       name: "RTT (ms)",
+      max: (value: { max: number }) => {
+        const errorMax = Math.max(...rttData.map((d) => d.max), 0);
+        return Math.max(value.max, errorMax) * 1.1 || undefined;
+      },
     },
     series: [
       {
-        name: "RTT Distribution",
-        type: "boxplot",
-        data: boxplotData,
+        name: "Avg RTT",
+        type: "bar",
+        data: rttData.map((d) => d.avg.toFixed(3)),
+        color: "#3498db",
+        label: { show: false },
       },
+      createErrorBarSeries(
+        rttData.map((d) => ({ min: d.min, max: d.max })),
+        {
+          labels: {
+            values: rttData.map((d) => formatRtt(d.avg)),
+          },
+        },
+      ),
     ],
   };
 };
@@ -389,7 +398,7 @@ export const PingCharts = (props: PingChartsProps) => {
     >
       <div>
         <Echart
-          option={createRttBoxplotOption(props.reports)}
+          option={createRttBarOption(props.reports)}
           height={height.rttBoxplot}
         />
         <Echart

@@ -1,4 +1,5 @@
 import { Echart } from "../Echarts"; // Assuming Echart component handles rendering
+import { createErrorBarSeries } from "../Echarts/errorBars";
 /* eslint-disable  @typescript-eslint/no-explicit-any */
 
 // Define interfaces for UDP reports based on provided JSON
@@ -472,6 +473,14 @@ const createUdpThroughputOption = (
     yAxis: {
       type: "value",
       name: "Mbps",
+      max: (value: { max: number }) => {
+        const errorMax = Math.max(
+          ...throughputStats.map((s) =>
+            Math.max(s.stats.maxSentMbps, s.stats.maxRecvMbps),
+          ),
+        );
+        return Math.ceil(Math.max(value.max, errorMax) * 1.1);
+      },
       axisLabel: { formatter: "{value}" },
       nameTextStyle: {
         align: "left",
@@ -485,12 +494,7 @@ const createUdpThroughputOption = (
           (item?.stats?.avgSentMbps ?? 0).toFixed(1),
         ),
         color: "#3498db",
-        label: {
-          show: true,
-          position: "top",
-          formatter: "{c} Mbps",
-          fontSize: 10,
-        },
+        label: { show: false },
         emphasis: { focus: "series" },
       },
       {
@@ -500,14 +504,39 @@ const createUdpThroughputOption = (
           (item?.stats?.avgRecvMbps ?? 0).toFixed(1),
         ),
         color: "#2ecc71",
-        label: {
-          show: true,
-          position: "top",
-          formatter: "{c} Mbps",
-          fontSize: 10,
-        },
+        label: { show: false },
         emphasis: { focus: "series" },
       },
+      createErrorBarSeries(
+        throughputStats.map((item) => ({
+          min: item.stats.minSentMbps,
+          max: item.stats.maxSentMbps,
+        })),
+        {
+          barIndex: 0,
+          totalBars: 2,
+          labels: {
+            values: throughputStats.map(
+              (item) => `${(item?.stats?.avgSentMbps ?? 0).toFixed(1)} Mbps`,
+            ),
+          },
+        },
+      ),
+      createErrorBarSeries(
+        throughputStats.map((item) => ({
+          min: item.stats.minRecvMbps,
+          max: item.stats.maxRecvMbps,
+        })),
+        {
+          barIndex: 1,
+          totalBars: 2,
+          labels: {
+            values: throughputStats.map(
+              (item) => `${(item?.stats?.avgRecvMbps ?? 0).toFixed(1)} Mbps`,
+            ),
+          },
+        },
+      ),
     ],
   };
 };

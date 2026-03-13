@@ -1,4 +1,5 @@
 import { Echart } from "../Echarts";
+import { createErrorBarSeries } from "../Echarts/errorBars";
 import { Show } from "solid-js";
 import {
   MetricStats,
@@ -166,6 +167,13 @@ const createBarChartOption = (
       name: yAxisLabel,
       nameLocation: "middle",
       nameGap: 50,
+      max: (value: { max: number }) => {
+        const errorMax = Math.max(
+          ...sortedData.filter((d) => !d.isIncomplete).map((d) => d.max),
+          0,
+        );
+        return Math.max(value.max, errorMax) * 1.1 || undefined;
+      },
     },
     series: [
       {
@@ -257,25 +265,22 @@ const createBarChartOption = (
             itemStyle: {
               color: color,
             },
-            label: {
-              show: true,
-              position: "top",
-              formatter: (params: { value: number }) =>
-                labelFormatter(params.value),
-              color: "#555",
-              fontSize: 10,
-            },
+            label: { show: false },
           };
         }),
-        // Add error bars for min/max
-        markLine: {
-          silent: true,
-          symbol: "none",
-          lineStyle: {
-            color: "#999",
+      },
+      createErrorBarSeries(
+        sortedData.map((d) =>
+          d.isIncomplete ? null : { min: d.min, max: d.max },
+        ),
+        {
+          labels: {
+            values: sortedData.map((d) =>
+              d.isIncomplete ? null : labelFormatter(d.value),
+            ),
           },
         },
-      },
+      ),
     ],
   };
 };
@@ -559,6 +564,15 @@ const createDualBarChartOption = (
       name: yAxisLabel,
       nameLocation: "middle",
       nameGap: 50,
+      max: (value: { max: number }) => {
+        const errorMax = Math.max(
+          ...sortedData
+            .filter((d) => !d.isIncomplete)
+            .flatMap((d) => [d.senderMax, d.receiverMax]),
+          0,
+        );
+        return Math.max(value.max, errorMax) * 1.1 || undefined;
+      },
     },
     series: [
       {
@@ -625,6 +639,18 @@ const createDualBarChartOption = (
           fontSize: 10,
         },
       },
+      createErrorBarSeries(
+        sortedData.map((d) =>
+          d.isIncomplete ? null : { min: d.senderMin, max: d.senderMax },
+        ),
+        { barIndex: 0, totalBars: 2 },
+      ),
+      createErrorBarSeries(
+        sortedData.map((d) =>
+          d.isIncomplete ? null : { min: d.receiverMin, max: d.receiverMax },
+        ),
+        { barIndex: 1, totalBars: 2 },
+      ),
     ],
   };
 };
