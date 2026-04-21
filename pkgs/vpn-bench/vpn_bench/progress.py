@@ -32,6 +32,7 @@ DEFAULT_OPERATION_ESTIMATES: dict[str, float] = {
     "install_easytier_config": 5.0,
     "install_nebula_config": 5.0,
     "install_tinc_config": 5.0,
+    "install_tincr_config": 5.0,
     "install_internal_config": 1.0,
     "run_zerotier_generators": 30.0,
     "get_vpn_ips": 30.0,

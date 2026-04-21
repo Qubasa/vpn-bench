@@ -53,6 +53,7 @@ class VPN(Enum):
     Easytier = "easytier"
     Nebula = "nebula"
     Tinc = "tinc"
+    Tincr = "tincr"
     Headscale = "headscale"
 
     @staticmethod
@@ -87,6 +88,8 @@ class VPN(Enum):
             case VPN.Nebula:
                 return ["/var/lib/nebula"]
             case VPN.Tinc:
+                return ["/etc/tinc"]
+            case VPN.Tincr:
                 return ["/etc/tinc"]
             case VPN.Headscale:
                 return ["/var/lib/headscale", "/var/lib/tailscale"]

@@ -84,6 +84,11 @@
           "headscale" = ./clanModules/headscale;
           "rist-stream" = ./clanModules/rist-stream;
           "tinc" = ./clanModules/tinc;
+          "tincr" = (
+            lib.modules.importApply ./clanModules/tincr {
+              tincr = inputs.tincr;
+            }
+          );
           "wireguard" = ./clanModules/wireguard;
           "yggdrasil" = ./clanModules/yggdrasil;
           "vpncloud" = (lib.modules.importApply ./clanModules/vpncloud { packages = self.packages; });
