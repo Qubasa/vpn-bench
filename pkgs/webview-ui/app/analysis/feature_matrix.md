@@ -4,6 +4,8 @@ A comprehensive comparison of mesh VPN solutions across protocol, encryption, pe
 
 **Legend:** ✓ = Supported | ✗ = Not Supported | ? = Unknown/Partial
 
+VpnCloud scores below are for [Lyamc/vpncloud](https://github.com/Lyamc/vpncloud) 2.4.0 (fork of dswd/vpncloud): Noise_XX, native TCP fallback, Linux recvmmsg/sendmmsg/GSO, STUN/NAT-PMP, overlay ACLs, signed configs, seccomp, and first-class macOS/Windows/FreeBSD/Android/iOS TUN.
+
 ---
 
 ## Protocol Features
@@ -13,7 +15,7 @@ A comprehensive comparison of mesh VPN solutions across protocol, encryption, pe
 | Feature | EasyTier | Tailscale | Hyprspace | Mycelium | Nebula | Tinc | VpnCloud | Yggdrasil | ZeroTier |
 |---------|----------|-----------|-----------|----------|--------|------|----------|-----------|----------|
 | UDP transport | ✓ | ✓ | ✓ | ✗ | ✓ | ✓ | ✓ | ✗ | ✓ |
-| TCP fallback | ✓ | ✓ | ✓ | ✓ | ✗ | ✓ | ✗ | ✓ | ✓ |
+| TCP fallback | ✓ | ✓ | ✓ | ✓ | ✗ | ✓ | ✓ | ✓ | ✓ |
 | QUIC support | ✓ | ✗ | ✓ | ✓ | ✗ | ✗ | ✗ | ✓ | ✗ |
 | WebSocket support | ✓ | ✓ | ✗ | ✗ | ✗ | ✗ | ✓ | ✓ | ✗ |
 
@@ -67,7 +69,7 @@ A comprehensive comparison of mesh VPN solutions across protocol, encryption, pe
 | Feature | EasyTier | Tailscale | Hyprspace | Mycelium | Nebula | Tinc | VpnCloud | Yggdrasil | ZeroTier |
 |---------|----------|-----------|-----------|----------|--------|------|----------|-----------|----------|
 | Replay protection | ✗ | ✓ | ✓ | ✗ | ✓ | ✓ | ✓ | ✓ | ✓ |
-| Noise Protocol | ✗ | ✓ | ✓ | ✗ | ✓ | ✗ | ✗ | ✗ | ✗ |
+| Noise Protocol | ✗ | ✓ | ✓ | ✗ | ✓ | ✗ | ✓ | ✗ | ✗ |
 | No cleartext metadata | ✗ | ✓ | ✓ | ✗ | ✗ | ✓ | ✓ | ✗ | ✗ |
 
 ---
@@ -78,30 +80,30 @@ A comprehensive comparison of mesh VPN solutions across protocol, encryption, pe
 
 | Feature | EasyTier | Tailscale | Hyprspace | Mycelium | Nebula | Tinc | VpnCloud | Yggdrasil | ZeroTier |
 |---------|----------|-----------|-----------|----------|--------|------|----------|-----------|----------|
-| Multi-threaded processing | ✓ | ✓ | ✓ | ✓ | ✓ | ✗ | ✗ | ✓ | ✓ |
+| Multi-threaded processing | ✓ | ✓ | ✓ | ✓ | ✓ | ✗ | ✓ | ✓ | ✓ |
 | Per-peer packet queues | ✗ | ✓ | ✗ | ✗ | ✓ | ✗ | ✗ | ✗ | ✗ |
 
 ### Packet I/O
 
 | Feature | EasyTier | Tailscale | Hyprspace | Mycelium | Nebula | Tinc | VpnCloud | Yggdrasil | ZeroTier |
 |---------|----------|-----------|-----------|----------|--------|------|----------|-----------|----------|
-| Batch UDP receives (recvmmsg) | ✗ | ✓ | ✗ | ✗ | ✓ | ✓ | ✗ | ✗ | ✓ |
-| Batch UDP sends (sendmmsg) | ✗ | ✓ | ✗ | ✗ | ✗ | ✗ | ✗ | ✗ | ✗ |
-| Large batch sizes (64+) | ✗ | ✓ | ✗ | ✗ | ✓ | ✓ | ✗ | ✗ | ✓ |
+| Batch UDP receives (recvmmsg) | ✗ | ✓ | ✗ | ✗ | ✓ | ✓ | ✓ | ✗ | ✓ |
+| Batch UDP sends (sendmmsg) | ✗ | ✓ | ✗ | ✗ | ✗ | ✗ | ✓ | ✗ | ✗ |
+| Large batch sizes (64+) | ✗ | ✓ | ✗ | ✗ | ✓ | ✓ | ✓ | ✗ | ✓ |
 
 ### UDP Offload
 
 | Feature | EasyTier | Tailscale | Hyprspace | Mycelium | Nebula | Tinc | VpnCloud | Yggdrasil | ZeroTier |
 |---------|----------|-----------|-----------|----------|--------|------|----------|-----------|----------|
-| UDP GSO | ✗ | ✓ | ✗ | ✗ | ✗ | ✗ | ✗ | ✗ | ✗ |
-| UDP GRO | ✗ | ✓ | ✗ | ✗ | ✗ | ✗ | ✗ | ✗ | ✗ |
+| UDP GSO | ✗ | ✓ | ✗ | ✗ | ✗ | ✗ | ✓ | ✗ | ✗ |
+| UDP GRO | ✗ | ✓ | ✗ | ✗ | ✗ | ✗ | ✓ | ✗ | ✗ |
 
 ### Buffer Management
 
 | Feature | EasyTier | Tailscale | Hyprspace | Mycelium | Nebula | Tinc | VpnCloud | Yggdrasil | ZeroTier |
 |---------|----------|-----------|-----------|----------|--------|------|----------|-----------|----------|
 | Buffer pool reuse | ✓ | ✓ | ✗ | ✗ | ✓ | ✓ | ✓ | ✓ | ✓ |
-| Large UDP socket buffers (MB) | ✗ | ✓ | ✗ | ✗ | ✓ | ✓ | ✗ | ✗ | ✓ |
+| Large UDP socket buffers (MB) | ✗ | ✓ | ✗ | ✗ | ✓ | ✓ | ✓ | ✗ | ✓ |
 
 ### Userspace TCP Stack
 
@@ -149,9 +151,9 @@ A comprehensive comparison of mesh VPN solutions across protocol, encryption, pe
 
 | Feature | EasyTier | Tailscale | Hyprspace | Mycelium | Nebula | Tinc | VpnCloud | Yggdrasil | ZeroTier |
 |---------|----------|-----------|-----------|----------|--------|------|----------|-----------|----------|
-| Rate limiting | ✓ | ✗ | ✗ | ✗ | ✓ | ✗ | ✗ | ✗ | ✓ |
+| Rate limiting | ✓ | ✗ | ✗ | ✗ | ✓ | ✗ | ✓ | ✗ | ✓ |
 | Stateful packet filter | ✗ | ✓ | ✗ | ✗ | ✓ | ✗ | ✗ | ✗ | ✓ |
-| Fine-grained ACLs | ✓ | ✓ | ✗ | ✗ | ✓ | ✗ | ✗ | ✗ | ✓ |
+| Fine-grained ACLs | ✓ | ✓ | ✗ | ✗ | ✓ | ✗ | ✓ | ✗ | ✓ |
 | Capability-based access | ✗ | ✓ | ✗ | ✗ | ✓ | ✗ | ✗ | ✗ | ✓ |
 
 ### Identity & Authentication
@@ -159,7 +161,7 @@ A comprehensive comparison of mesh VPN solutions across protocol, encryption, pe
 | Feature | EasyTier | Tailscale | Hyprspace | Mycelium | Nebula | Tinc | VpnCloud | Yggdrasil | ZeroTier |
 |---------|----------|-----------|-----------|----------|--------|------|----------|-----------|----------|
 | Identity validation | ✗ | ✗ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
-| Signed config updates | ✗ | ✓ | ✗ | ✗ | ✗ | ✗ | ✗ | ✗ | ✓ |
+| Signed config updates | ✗ | ✓ | ✗ | ✗ | ✗ | ✗ | ✓ | ✗ | ✓ |
 | Certificate pinning | ✗ | ✓ | ✗ | ✗ | ✓ | ✗ | ✗ | ✗ | ✗ |
 
 ### Implementation
@@ -168,7 +170,7 @@ A comprehensive comparison of mesh VPN solutions across protocol, encryption, pe
 |---------|----------|-----------|-----------|----------|--------|------|----------|-----------|----------|
 | Memory-safe language | ✓ | ✓ | ✓ | ✓ | ✓ | ✗ | ✓ | ✓ | ✗ |
 | Privilege separation | ✗ | ✗ | ✗ | ✗ | ✗ | ✓ | ✓ | ✓ | ✗ |
-| Sandboxing | ✗ | ✗ | ✗ | ✗ | ✗ | ✓ | ✗ | ✗ | ✗ |
+| Sandboxing | ✗ | ✗ | ✗ | ✗ | ✗ | ✓ | ✓ | ✗ | ✗ |
 | Audit logging | ✗ | ✗ | ✗ | ✗ | ✓ | ✗ | ✓ | ✗ | ✓ |
 
 ---
@@ -179,8 +181,8 @@ A comprehensive comparison of mesh VPN solutions across protocol, encryption, pe
 
 | Feature | EasyTier | Tailscale | Hyprspace | Mycelium | Nebula | Tinc | VpnCloud | Yggdrasil | ZeroTier |
 |---------|----------|-----------|-----------|----------|--------|------|----------|-----------|----------|
-| STUN support | ✓ | ✓ | ✓ | ✗ | ✓ | ✗ | ✗ | ✗ | ✗ |
-| Multiple STUN servers | ✓ | ✓ | ✓ | ✗ | ✓ | ✗ | ✗ | ✗ | ✓ |
+| STUN support | ✓ | ✓ | ✓ | ✗ | ✓ | ✗ | ✓ | ✗ | ✗ |
+| Multiple STUN servers | ✓ | ✓ | ✓ | ✗ | ✓ | ✗ | ✓ | ✗ | ✓ |
 | NAT type detection | ✓ | ✓ | ✓ | ✗ | ✗ | ✗ | ✗ | ✗ | ✓ |
 
 ### Port Mapping
@@ -188,7 +190,7 @@ A comprehensive comparison of mesh VPN solutions across protocol, encryption, pe
 | Feature | EasyTier | Tailscale | Hyprspace | Mycelium | Nebula | Tinc | VpnCloud | Yggdrasil | ZeroTier |
 |---------|----------|-----------|-----------|----------|--------|------|----------|-----------|----------|
 | UPnP port mapping | ✗ | ✓ | ✓ | ✗ | ✗ | ✓ | ✓ | ✗ | ✓ |
-| NAT-PMP support | ✗ | ✓ | ✓ | ✗ | ✗ | ✗ | ✗ | ✗ | ✓ |
+| NAT-PMP support | ✗ | ✓ | ✓ | ✗ | ✗ | ✗ | ✓ | ✗ | ✓ |
 | PCP support | ✗ | ✓ | ? | ✗ | ✗ | ✗ | ✗ | ✗ | ✗ |
 
 ### Hole Punching
@@ -205,7 +207,7 @@ A comprehensive comparison of mesh VPN solutions across protocol, encryption, pe
 |---------|----------|-----------|-----------|----------|--------|------|----------|-----------|----------|
 | Relay fallback | ✓ | ✓ | ✓ | ✓ | ✓ | ✗ | ✓ | ✗ | ✓ |
 | Multiple relay regions | ✓ | ✓ | ✓ | ✓ | ✓ | ✗ | ✗ | ✗ | ✓ |
-| Automatic relay selection | ✓ | ✓ | ✓ | ✓ | ✓ | ✗ | ✗ | ✗ | ✓ |
+| Automatic relay selection | ✓ | ✓ | ✓ | ✓ | ✓ | ✗ | ✓ | ✗ | ✓ |
 | TCP relay support | ✓ | ✓ | ✓ | ✓ | ✗ | ✓ | ✓ | ✓ | ✓ |
 
 ---
@@ -218,15 +220,15 @@ A comprehensive comparison of mesh VPN solutions across protocol, encryption, pe
 |---------|----------|-----------|-----------|----------|--------|------|----------|-----------|----------|
 | Broadcast/multicast discovery | ✓ | ✗ | ✓ | ✓ | ✗ | ✓ | ✗ | ✓ | ✗ |
 | Direct path advertisement | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
-| Same-subnet detection | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✗ | ✗ | ✗ |
+| Same-subnet detection | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✗ | ✗ |
 
 ### LAN Optimization
 
 | Feature | EasyTier | Tailscale | Hyprspace | Mycelium | Nebula | Tinc | VpnCloud | Yggdrasil | ZeroTier |
 |---------|----------|-----------|-----------|----------|--------|------|----------|-----------|----------|
-| Automatic LAN preference | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✗ | ✗ | ✗ |
+| Automatic LAN preference | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✗ | ✗ |
 | Trusted path mode | ✗ | ✗ | ✗ | ✗ | ✗ | ✗ | ✗ | ✗ | ✓ |
-| LAN-only mode | ✗ | ✗ | ✗ | ✗ | ✓ | ✗ | ✗ | ✗ | ✗ |
+| LAN-only mode | ✗ | ✗ | ✗ | ✗ | ✓ | ✗ | ✓ | ✗ | ✗ |
 
 ### Routing Features
 
@@ -235,7 +237,7 @@ A comprehensive comparison of mesh VPN solutions across protocol, encryption, pe
 | Subnet routes | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✗ | ✓ |
 | Full tunnel mode | ✓ | ✓ | ✓ | ✗ | ✓ | ✓ | ✓ | ✗ | ✓ |
 | Split tunneling | ✓ | ✓ | ✓ | ✗ | ✓ | ✓ | ✗ | ✗ | ✓ |
-| Route priorities | ✓ | ✓ | ✗ | ✓ | ✓ | ✗ | ✗ | ✗ | ✗ |
+| Route priorities | ✓ | ✓ | ✗ | ✓ | ✓ | ✗ | ✓ | ✗ | ✗ |
 
 ---
 
@@ -280,7 +282,7 @@ A comprehensive comparison of mesh VPN solutions across protocol, encryption, pe
 | Admin approval workflow | ✗ | ✓ | ✗ | ✗ | ✗ | ✗ | ✗ | ✗ | ✓ |
 | Automated enrollment rules | ✗ | ✓ | ✗ | ✗ | ✗ | ✗ | ✗ | ✗ | ✓ |
 | Ephemeral nodes | ✗ | ✓ | ✗ | ✗ | ✗ | ✗ | ✗ | ✗ | ✗ |
-| Node expiry | ✗ | ✓ | ✗ | ✗ | ✓ | ✗ | ✗ | ✗ | ✗ |
+| Node expiry | ✗ | ✓ | ✗ | ✗ | ✓ | ✗ | ✓ | ✗ | ✗ |
 
 ### Identity
 
@@ -299,16 +301,16 @@ A comprehensive comparison of mesh VPN solutions across protocol, encryption, pe
 | Feature | EasyTier | Tailscale | Hyprspace | Mycelium | Nebula | Tinc | VpnCloud | Yggdrasil | ZeroTier |
 |---------|----------|-----------|-----------|----------|--------|------|----------|-----------|----------|
 | Linux | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
-| macOS | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ? | ✓ | ✓ |
-| Windows | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ? | ✓ | ✓ |
-| FreeBSD/OpenBSD | ✓ | ✓ | ✗ | ✗ | ✓ | ✓ | ✗ | ✓ | ✓ |
+| macOS | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
+| Windows | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
+| FreeBSD/OpenBSD | ✓ | ✓ | ✗ | ✗ | ✓ | ✓ | ✓ | ✓ | ✓ |
 
 ### Mobile
 
 | Feature | EasyTier | Tailscale | Hyprspace | Mycelium | Nebula | Tinc | VpnCloud | Yggdrasil | ZeroTier |
 |---------|----------|-----------|-----------|----------|--------|------|----------|-----------|----------|
-| iOS | ✓ | ✓ | ✗ | ✓ | ✓ | ✗ | ✗ | ✓ | ✓ |
-| Android | ✓ | ✓ | ✗ | ✓ | ✓ | ✓ | ✗ | ✓ | ✓ |
+| iOS | ✓ | ✓ | ✗ | ✓ | ✓ | ✗ | ✓ | ✓ | ✓ |
+| Android | ✓ | ✓ | ✗ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
 
 ### Implementation
 
@@ -330,7 +332,7 @@ A comprehensive comparison of mesh VPN solutions across protocol, encryption, pe
 | **Mycelium** | 4/13 | 4/10 | 4/22 | 2/11 | 4/13 | 6/10 | 6/8 | 3/12 | 6/9 | **39/108** |
 | **Nebula** | 5/13 | 8/10 | 12/22 | 8/11 | 8/13 | 8/10 | 7/8 | 5/12 | 8/9 | **69/108** |
 | **Tinc** | 9/13 | 7/10 | 11/22 | 3/11 | 4/13 | 7/10 | 8/8 | 5/12 | 7/9 | **61/108** |
-| **VpnCloud** | 9/13 | 8/10 | 5/22 | 4/11 | 5/13 | 3/10 | 6/8 | 4/12 | 3/9 | **47/108** |
+| **VpnCloud** | 10/13 | 9/10 | 12/22 | 8/11 | 9/13 | 7/10 | 6/8 | 5/12 | 8/9 | **74/108** |
 | **Yggdrasil** | 5/13 | 5/10 | 7/22 | 3/11 | 1/13 | 2/10 | 7/8 | 4/12 | 8/9 | **42/108** |
 | **ZeroTier** | 10/13 | 5/10 | 11/22 | 7/11 | 11/13 | 5/10 | 6/8 | 7/12 | 9/9 | **71/108** |
 

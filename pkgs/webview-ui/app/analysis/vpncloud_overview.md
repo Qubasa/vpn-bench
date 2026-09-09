@@ -1,5 +1,9 @@
 # Overview
 
+This document describes **[Lyamc/vpncloud](https://github.com/Lyamc/vpncloud) 2.4.0**, a fork of [dswd/vpncloud](https://github.com/dswd/vpncloud). The fork keeps the original mesh UDP VPN and adds Noise_XX, native TCP fallback, Linux recvmmsg/sendmmsg/UDP GSO, STUN and NAT-PMP, overlay CIDR ACLs, Ed25519-signed configs, Linux seccomp, and first-class macOS, Windows, FreeBSD, Android, and iOS (TUN) support.
+
+VpnCloud is a high-performance peer-to-peer mesh VPN written in Rust that operates over UDP (with optional length-prefixed TCP fallback). It creates virtual network interfaces (TUN or TAP devices) and forwards received data to destination peers. Traffic is encrypted end-to-end (Curve25519, AES-GCM, ChaCha20-Poly1305, optional Noise_XX).
+
 VpnCloud is a high-performance peer-to-peer mesh VPN written in Rust that operates over UDP. It creates virtual network interfaces (TUN or TAP devices) and forwards all received data via UDP to destination peers. The system features strong end-to-end encryption based on elliptic curve keys (Curve25519) and authenticated encryption (AES-GCM or ChaCha20-Poly1305).
 
 ## Key Architecture Components
@@ -56,13 +60,13 @@ The handshake includes automatic role negotiation for concurrent connections (hi
 5. Sent via UDP send_to() to destination peer
 6. Receiving peer decrypts and writes to virtual interface
 
-**Transport Protocol**: UDP only. VpnCloud does not support TCP for tunnel transport. However, it includes an optional WebSocket proxy mode for restrictive network environments where UDP is blocked.
+**Transport Protocol**: UDP mesh plus optional length-prefixed TCP fallback on the same port, and an optional WebSocket proxy / native websocket listen for restrictive networks.
 
 ## Protocol Features Checklist
 
 ### Transport
 - [x] **UDP transport** - Primary and only transport protocol for peer-to-peer communication
-- [ ] **TCP fallback** - No native TCP transport support
+- [x] **TCP fallback** - Optional length-prefixed TCP on the mesh port when UDP handshake does not complete (`--tcp-fallback`)
 - [ ] **QUIC support** - Not implemented
 - [x] **WebSocket support** - WebSocket proxy mode for restrictive firewalls (tunnels UDP over WebSocket/TCP)
 
@@ -90,7 +94,7 @@ VpnCloud implements strong end-to-end encryption using modern cryptographic prim
 **Key Exchange**:
 - Ed25519 keypairs for node identity and digital signatures
 - X25519 Elliptic Curve Diffie-Hellman (ECDH) for ephemeral session key agreement
-- PBKDF2-HMAC-SHA256 with 4096 iterations for deriving keypairs from passwords (note: this iteration count is below modern recommendations of 100,000+)
+- PBKDF2-HMAC-SHA256: legacy 4096 iterations + static salt for existing password nets; `crypto.salt` enables 100000 iterations
 
 **Session Encryption**:
 - Negotiated per-peer based on performance benchmarks
@@ -125,7 +129,7 @@ VpnCloud implements strong end-to-end encryption using modern cryptographic prim
 
 ### Protocol Security
 - [x] **Replay protection** - Nonce counter verification and nonce pinning
-- [ ] **Noise Protocol or equivalent** - Custom protocol, not Noise framework
+- [x] **Noise Protocol or equivalent** - Optional Noise_XX_25519_ChaChaPoly_SHA256 (`--algorithm noise`) in addition to the classic ping/pong/peng handshake
 - [x] **No cleartext metadata** - Node identities transmitted as salted hashes, payloads fully encrypted
 
 # Performance
@@ -148,21 +152,21 @@ The event loop handles:
 ## Performance Optimizations Checklist
 
 ### Threading
-- [ ] **Multi-threaded processing** - Single-threaded event loop only
+- [x] **Multi-threaded processing** - Wait thread plus optional DATA crypto worker pool (`--crypto-threads`) and TCP reader/writer threads
 - [ ] **Per-core packet queues** - No multi-core support
 
 ### Packet I/O
-- [ ] **Batch UDP receives** - Uses single recv_from(), not recvmmsg
-- [ ] **Batch UDP sends** - Uses single send_to(), not sendmmsg
-- [ ] **Large batch sizes** - Processes 1 packet per epoll iteration (major bottleneck)
+- [x] **Batch UDP receives** - Linux `recvmmsg` (batch 64); other OS drain one packet per call
+- [x] **Batch UDP sends** - Linux `sendmmsg`; other OS send one packet
+- [x] **Large batch sizes** - Socket events drain a batch of up to 64 packets
 
 ### UDP Offload
-- [ ] **UDP GSO (Generic Segmentation Offload)** - Not implemented
-- [ ] **UDP GRO (Generic Receive Offload)** - Not implemented
+- [x] **UDP GSO (Generic Segmentation Offload)** - Linux `UDP_SEGMENT` when a send batch shares dest and size
+- [x] **UDP GRO (Generic Receive Offload)** - Linux UDP_GRO; recvmmsg splits coalesced datagrams via the UDP_GRO cmsg
 
 ### Buffer Management
 - [x] **Buffer pool reuse** - Single reusable MsgBuffer (65KB fixed buffer) allocated at loop start
-- [ ] **Large UDP socket buffers** - Uses Linux kernel defaults (~200KB), no socket buffer tuning
+- [x] **Large UDP socket buffers** - Configurable `SO_RCVBUF`/`SO_SNDBUF` (default 2 MiB, `--socket-buffer`)
 
 ### Userspace TCP Stack (optional)
 - [ ] **Userspace TCP implementation** - Relies on kernel TCP when used via WebSocket proxy
@@ -242,20 +246,20 @@ VpnCloud implements strong cryptographic primitives using the `ring` library, bu
 ## Security Features Checklist
 
 ### Network Security
-- [ ] **Rate limiting** - No protection against amplification/DoS attacks
+- [x] **Rate limiting** - Token bucket on crypto-init (PING) per source IP (`--init-rate-limit`)
 - [ ] **Stateful packet filter** - No built-in ACL or connection tracking
-- [ ] **Fine-grained ACLs** - No per-port/protocol access control
+- [x] **Fine-grained ACLs** - Overlay CIDR allow/deny after decrypt (`--acl`, last match wins). Proto/port ACLs are not implemented yet
 - [ ] **Capability-based access** - Simple allow/deny based on trusted keys only
 
 ### Identity & Authentication
 - [x] **Identity validation** - Ed25519 signature verification and trusted key validation
-- [ ] **Signed configuration updates** - No cryptographic config verification
+- [x] **Signed configuration updates** - Ed25519 signatures over config files (`vpncloud sign-config`, `--require-signed-config`)
 - [ ] **Certificate pinning** - Uses trusted public keys, similar concept
 
 ### Implementation
 - [x] **Memory-safe language** - Written in Rust (100% safe Rust, no C code)
 - [x] **Privilege separation** - Supports dropping privileges to specified user/group
-- [ ] **Sandboxing** - No process isolation/sandboxing
+- [x] **Sandboxing** - Linux seccomp blacklist plus `no_new_privs` after bind/TUN/privdrop
 - [x] **Audit logging** - Security events logged (untrusted peers, signature failures, etc.)
 
 # NAT Traversal
@@ -282,13 +286,13 @@ VpnCloud does **not explicitly handle double NAT** (NAT behind NAT scenarios). I
 ## NAT Traversal Checklist
 
 ### Discovery
-- [ ] **STUN support** - No STUN protocol implementation
-- [ ] **Multiple STUN servers** - Not applicable
+- [x] **STUN support** - STUN Binding on the mesh UDP socket; XOR-MAPPED-ADDRESS published in NODE_INFO
+- [x] **Multiple STUN servers** - Default Google STUN list; `--stun-server` is repeatable
 - [ ] **NAT type detection** - No explicit NAT type detection
 
 ### Port Mapping
 - [x] **UPnP port mapping** - Automatic router port forwarding via IGD protocol
-- [ ] **NAT-PMP support** - Not implemented
+- [x] **NAT-PMP support** - UDP 5351 mapping next to UPnP
 - [ ] **PCP support** - Not implemented (RFC 6887)
 
 ### Hole Punching
@@ -299,7 +303,7 @@ VpnCloud does **not explicitly handle double NAT** (NAT behind NAT scenarios). I
 ### Fallback
 - [x] **Relay fallback** - WebSocket proxy as encrypted relay when direct UDP fails
 - [ ] **Multiple relay regions** - No geographic redundancy for relays (user-deployed)
-- [ ] **Automatic relay selection** - Manual configuration only
+- [x] **Automatic relay selection** - Ciphertext `MESSAGE_TYPE_RELAY` via a connected peer (freshest last-seen); direct path retried in housekeep
 - [x] **TCP relay support** - WebSocket proxy uses TCP transport
 
 # Local Routing
@@ -341,18 +345,18 @@ VpnCloud supports subnet-based routing through its "claims" system:
 ### LAN Discovery
 - [ ] **Broadcast/multicast discovery** - No LAN announcements or mDNS
 - [x] **Direct path advertisement** - Peers share all known addresses in NODE_INFO messages
-- [ ] **Same-subnet detection** - No detection of local vs remote peers
+- [x] **Same-subnet detection** - Underlay addresses sorted with same-subnet / RFC1918-on-same-prefix first
 
 ### LAN Optimization
-- [ ] **Automatic LAN preference** - All peer connections treated equally
+- [x] **Automatic LAN preference** - LAN/same-prefix underlay addresses tried first
 - [ ] **Trusted path mode** - No option to skip encryption on LANs
-- [ ] **LAN-only mode** - No restriction to local network only
+- [x] **LAN-only mode** - `--lan-only` rejects underlay peers off local interface prefixes
 
 ### Routing Features
 - [x] **Subnet routes** - Full support via claims system (announce reachable subnets)
 - [x] **Full tunnel mode** - Route all traffic through peer via 0.0.0.0/0 claim
 - [ ] **Split tunneling** - No granular per-application routing control
-- [ ] **Route priorities** - No HA/failover route selection (first match wins)
+- [x] **Route priorities** - Claim metrics `10.0.0.0/8@50`; lookup is longest prefix, then lowest metric
 
 # Central Point of Failure
 
@@ -446,7 +450,7 @@ VpnCloud uses public key cryptography for node authentication with support for p
 - [ ] **Admin approval workflow** - Automatic authorization based on trusted keys only
 - [ ] **Automated enrollment rules** - Simple allow/deny based on key trust
 - [ ] **Ephemeral nodes** - No automatic cleanup (manual peer timeout only)
-- [ ] **Node expiry** - No time-limited authorization
+- [x] **Node expiry** - `trusted-key` may be `key:YYYY-MM-DD`; expired keys are not trusted
 
 ### Identity
 - [x] **Stable device identity** - Ed25519 keypair persists across restarts (if saved)
@@ -485,13 +489,13 @@ VpnCloud primarily targets Linux with varying levels of support for other platfo
 
 ### Desktop/Server
 - [x] **Linux** - Full support with all features
-- [ ] **macOS** - Partial/experimental support (help needed)
-- [ ] **Windows** - Partial/experimental support (help needed)
-- [ ] **FreeBSD/OpenBSD** - No official BSD support
+- [x] **macOS** - TUN (`utun`) and TAP (`feth` + BPF) via tun-rs; LaunchDaemon install
+- [x] **Windows** - TUN (Wintun) and TAP (tap-windows6); optional tray and SCM service
+- [x] **FreeBSD/OpenBSD** - FreeBSD TUN/TAP via tun-rs and rc.d install (`/usr/local`). OpenBSD is untested
 
 ### Mobile
-- [ ] **iOS** - No mobile app
-- [ ] **Android** - No mobile app
+- [x] **iOS** - TUN via Packet Tunnel Provider (`--tun-fd`). TAP is not available
+- [x] **Android** - TUN via VpnService (`--tun-fd`); TAP only on rooted devices with `/dev/net/tun`
 
 ### Implementation
 - [ ] **Kernel-mode datapath** - No kernel module (not WireGuard-based)
