@@ -17,6 +17,18 @@ from vpn_bench.terraform import TrMachine
 log = logging.getLogger(__name__)
 
 
+def flake_ref(flake_dir: Path) -> str:
+    """Return the flake reference Nix's CLI would pick for a local directory.
+
+    `builtins.getFlake` turns a bare path into a `path:` input, which copies
+    the whole tree including `.git` and fails on sockets such as git's
+    `fsmonitor--daemon.ipc`. The CLI uses `git+file:` for git checkouts instead.
+    """
+    if (flake_dir / ".git").exists():
+        return f"git+file://{flake_dir}"
+    return f"path:{flake_dir}"
+
+
 def build_ui(bench_dir: Path, create_symlink: bool = False) -> Path:
     """Build the webview-ui for plotting benchmark data.
 
@@ -28,12 +40,15 @@ def build_ui(bench_dir: Path, create_symlink: bool = False) -> Path:
         Path to the built website directory.
     """
     vpn_bench_flake = os.environ.get("VPN_BENCH_FLAKE")
+    if vpn_bench_flake is None:
+        msg = "Could not find VPN_BENCH_FLAKE in the environment"
+        raise VpnBenchError(msg)
 
     log.info("Building webview-ui for plotting the data")
     nix_conf = nix_config()
     build_script = f"""
     let
-        self = builtins.getFlake "{vpn_bench_flake}";
+        self = builtins.getFlake "{flake_ref(Path(vpn_bench_flake))}";
         lib = self.inputs.nixpkgs.lib;
     in
         self.packages.{nix_conf["system"]}.webview-ui.override {{ benchDir = {bench_dir}; }}
