@@ -361,7 +361,7 @@ def get_vpn_ips(
     for machine in machines:
         machine.flake.invalidate_cache()
 
-    run_generators(machines=machines)
+    run_generators(machines=machines, no_sandbox=config.no_sandbox)
     for idx, machine in enumerate(machines):
         machine.flake.invalidate_cache()
         log.info(stringify_all_vars(machine))
@@ -593,7 +593,7 @@ def install_vpn(
         # we need to generate the zerotier network-id var
         # for the controller machine
         with timed_op("run_zerotier_generators"):
-            run_generators([machines[0]], "zerotier")
+            run_generators([machines[0]], "zerotier", no_sandbox=config.no_sandbox)
 
     # If --optimized flag is set include custom kernel profile
     if optimized:
@@ -607,7 +607,12 @@ def install_vpn(
     if vpn == VPN.Headscale:
         # Run generators and deploy VPN machines FIRST
         with timed_op("run_generators"):
-            run_generators(machines, generators=None, full_closure=False)
+            run_generators(
+                machines,
+                generators=None,
+                full_closure=False,
+                no_sandbox=config.no_sandbox,
+            )
 
         with timed_op("deploy_vpn_machines"):
             deploy_machines(machines, build_host=build_host, ssh_key=config.ssh_keys[0])
@@ -669,7 +674,9 @@ def install_vpn(
         bmachine.cmachine.flake.invalidate_cache()
 
     with timed_op("run_generators"):
-        run_generators(machines, generators=None, full_closure=False)
+        run_generators(
+            machines, generators=None, full_closure=False, no_sandbox=config.no_sandbox
+        )
 
     # Update machine configuration with VPNs
     with timed_op("deploy_vpn_machines"):

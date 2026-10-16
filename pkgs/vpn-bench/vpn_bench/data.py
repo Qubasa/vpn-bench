@@ -366,6 +366,7 @@ class Config:
     clan_dir: Path
     bench_dir: Path
     ssh_keys: list[SSHKeyPair]
+    no_sandbox: bool = False
 
     def get_hardware_metadata_path(self) -> Path:
         """Get the path to the hardware machines metadata file."""

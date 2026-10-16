@@ -151,6 +151,11 @@ def create_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Install optimized kernel profile and suffix benchmark alias with '-optimized'",
     )
+    bench_parser.add_argument(
+        "--no-sandbox",
+        action="store_true",
+        help="Run clan vars generators without the bwrap sandbox",
+    )
 
     plot_parser = subparsers.add_parser("plot", help="Plot the data from benchmark")
     plot_parser.add_argument("--debug", action="store_true", help="Enable debug mode")
@@ -230,6 +235,7 @@ def create_conf_obj(args: argparse.Namespace) -> Config:
         clan_dir=clan_dir,
         bench_dir=bench_dir,
         ssh_keys=ssh_keys,
+        no_sandbox=getattr(args, "no_sandbox", False),
     )
 
 
