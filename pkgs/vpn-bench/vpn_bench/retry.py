@@ -120,7 +120,7 @@ def retry_with_backoff[R](
                             f"Retrying in {delay:.1f}s..."
                         )
                         # Sleep in small increments to check for cancellation
-                        _interruptible_sleep(delay)
+                        interruptible_sleep(delay)
                         delay = min(delay * backoff_factor, max_delay)
                     else:
                         log.error(
@@ -135,7 +135,7 @@ def retry_with_backoff[R](
     return decorator
 
 
-def _interruptible_sleep(duration: float, check_interval: float = 0.5) -> None:
+def interruptible_sleep(duration: float, check_interval: float = 0.5) -> None:
     """Sleep for duration but check for cancellation periodically.
 
     Args:
@@ -218,7 +218,7 @@ def retry_operation[R](
                     f"Retrying in {delay:.1f}s..."
                 )
                 # Sleep in small increments to check for cancellation
-                _interruptible_sleep(delay)
+                interruptible_sleep(delay)
                 delay = min(delay * backoff_factor, max_delay)
             else:
                 log.exception(
@@ -298,7 +298,7 @@ def retry_operation_with_info[R](
                     f"Retrying in {delay:.1f}s..."
                 )
                 # Sleep in small increments to check for cancellation
-                _interruptible_sleep(delay)
+                interruptible_sleep(delay)
                 delay = min(delay * backoff_factor, max_delay)
             else:
                 log.exception(

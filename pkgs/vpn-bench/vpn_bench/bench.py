@@ -27,13 +27,15 @@ from vpn_bench.nix_cache import run_nix_cache_test
 from vpn_bench.ping import run_ping_test
 from vpn_bench.progress import ProgressTracker
 from vpn_bench.qperf import run_qperf_test
-from vpn_bench.retry import retry_operation_with_info
+from vpn_bench.retry import interruptible_sleep, retry_operation_with_info
 from vpn_bench.rist_stream import run_rist_test
 from vpn_bench.terraform import TrMachine
 from vpn_bench.timing import TimingTracker
 from vpn_bench.vpn import install_vpn
 
 log = logging.getLogger(__name__)
+
+VPN_SETTLE_SECONDS = 80
 
 
 def get_vpn_service_name(vpn: VPN) -> str:
@@ -119,10 +121,14 @@ class VpnRestartResult:
 
 
 def restart_vpn_service(bmachines: list[BenchMachine], vpn: VPN) -> VpnRestartResult:
-    """Restart the VPN service on all benchmark machines and wait for connectivity.
+    """Restart the VPN service on all machines, wait for connectivity, then settle.
+
+    A VPN that has just reconnected often still underperforms, which skewed
+    results, so the next test waits VPN_SETTLE_SECONDS on top.
 
     Returns:
-        VpnRestartResult with timing breakdown
+        VpnRestartResult with timing breakdown. The settle time is counted in
+        connectivity_wait_duration_seconds.
     """
     if vpn == VPN.Internal or vpn == VPN.Wireguard:
         # No VPN service to restart for internal tests
@@ -165,10 +171,12 @@ def restart_vpn_service(bmachines: list[BenchMachine], vpn: VPN) -> VpnRestartRe
         f"VPN service {service_name} restarted on all machines in {restart_duration:.1f}s"
     )
 
-    # Wait for VPN connectivity to be re-established
+    # Wait for VPN connectivity to be re-established, then let it settle
     connectivity_start = time.time()
     machines = [bm.cmachine for bm in bmachines]
     wait_for_vpn_connectivity(machines)
+    log.info(f"VPN connected, settling for {VPN_SETTLE_SECONDS}s before the next test")
+    interruptible_sleep(VPN_SETTLE_SECONDS)
     connectivity_duration = time.time() - connectivity_start
 
     return VpnRestartResult(

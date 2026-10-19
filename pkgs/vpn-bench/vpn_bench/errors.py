@@ -23,7 +23,7 @@ class TestMetadataDict(TypedDict, total=False):
 
     # Extended timing fields for bottleneck analysis
     vpn_restart_duration_seconds: float  # Time spent restarting VPN between tests
-    connectivity_wait_duration_seconds: float  # Time waiting for VPN connectivity
+    connectivity_wait_duration_seconds: float  # VPN connectivity wait plus settle time
     test_setup_duration_seconds: (
         float  # Time for test-specific setup (e.g., service restart)
     )
