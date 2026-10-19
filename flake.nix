@@ -94,6 +94,7 @@
           "vpncloud" = (lib.modules.importApply ./clanModules/vpncloud { packages = self.packages; });
           "iperf-new" = ./clanModules/iperf-new;
           "hetzner-ips-new" = ./clanModules/hetzner-ips-new;
+          "impairment-tools" = ./clanModules/impairment-tools;
           "my-trusted-nix-caches-new" = ./clanModules/my-trusted-nix-caches-new;
           "my-nginx-new" = ./clanModules/my-nginx-new;
           "myadmin-new" = ./clanModules/myadmin-new;

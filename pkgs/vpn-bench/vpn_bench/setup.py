@@ -183,6 +183,17 @@ def create_base_inventory(config: Config, tr_machines: list[TrMachine]) -> None:
         },
     )
 
+    set_value_by_path_tuple(
+        inventory,
+        ("instances", "impairment-tools"),
+        {
+            "module": {"name": "impairment-tools", "input": "cvpn-bench"},
+            "roles": {
+                "default": {"tags": {"all": {}}},
+            },
+        },
+    )
+
     for machine in tr_machines:
         match machine["provider"]:
             case Provider.Hetzner:
