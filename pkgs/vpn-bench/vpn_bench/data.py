@@ -122,18 +122,29 @@ class TestType(Enum):
         raise ValueError(msg)
 
 
-@dataclass
-class TCSettings:
-    """Traffic control settings for network conditions simulation."""
+JITTER_DISTRIBUTION = "normal"
 
-    bandwidth_mbit: int | None = None  # Bandwidth limit in Mbit/s
-    latency_ms: int | None = None  # Added latency in milliseconds
-    jitter_ms: int | None = None  # Jitter (variation) in milliseconds
-    packet_loss_percent: float | None = None  # Packet loss percentage (0-100)
-    reorder_percent: float | None = None  # Packet reordering percentage (0-100)
-    reorder_correlation: float | None = (
-        None  # Reordering correlation percentage (0-100)
-    )
+
+@dataclass(frozen=True)
+class TCSettings:
+    """Per-direction network impairment, applied to the traffic each machine receives.
+
+    A round trip crosses two impaired directions, so it gains twice the delay.
+    """
+
+    latency_ms: float | None = None
+    jitter_ms: float | None = None
+    packet_loss_percent: float | None = None
+    bandwidth_mbit: int | None = None
+
+    def __post_init__(self) -> None:
+        if self.jitter_ms is not None and (
+            self.latency_ms is None or self.jitter_ms > self.latency_ms
+        ):
+            msg = (
+                f"Jitter ({self.jitter_ms} ms) exceeds the delay ({self.latency_ms} ms)"
+            )
+            raise ValueError(msg)
 
     def __str__(self) -> str:
         """Generate a human-readable description of TC settings."""
@@ -146,30 +157,24 @@ class TCSettings:
             parts.append(f"jit{self.jitter_ms}ms")
         if self.packet_loss_percent is not None:
             parts.append(f"loss{self.packet_loss_percent}pct")
-        if self.reorder_percent is not None:
-            parts.append(f"reorder{self.reorder_percent}pct")
         return "_".join(parts) if parts else "baseline"
 
-    def to_dict(self) -> dict[str, int | float | None]:
-        """Convert TC settings to dictionary for JSON serialization.
+    @property
+    def added_rtt_ms(self) -> float | None:
+        """Round-trip time added by the delay of both directions."""
+        return 2 * self.latency_ms if self.latency_ms is not None else None
 
-        Note: Values are doubled for additive metrics because TC is applied to egress
-        on all machines, so the effective end-to-end impairment is 2x the
-        configured value (data path + ACK path both get impaired).
-        Bandwidth is not doubled as it's a cap per direction.
-        """
+    def to_dict(self) -> dict[str, float | str | None]:
+        """Convert the per-direction values to a dictionary for JSON serialization."""
         return {
+            "latency_ms": self.latency_ms,
+            "jitter_ms": self.jitter_ms,
+            "jitter_distribution": JITTER_DISTRIBUTION
+            if self.jitter_ms is not None
+            else None,
+            "packet_loss_percent": self.packet_loss_percent,
+            "added_rtt_ms": self.added_rtt_ms,
             "bandwidth_mbit": self.bandwidth_mbit,
-            # Effective values are 2x (applied on both ends)
-            "latency_ms": self.latency_ms * 2 if self.latency_ms is not None else None,
-            "jitter_ms": self.jitter_ms * 2 if self.jitter_ms is not None else None,
-            "packet_loss_percent": self.packet_loss_percent * 2
-            if self.packet_loss_percent is not None
-            else None,
-            "reorder_percent": self.reorder_percent * 2
-            if self.reorder_percent is not None
-            else None,
-            "reorder_correlation": self.reorder_correlation,
         }
 
 
@@ -206,33 +211,21 @@ class TCProfile(Enum):
                 return BenchmarkRun(
                     alias="low_impairment",
                     tc_settings=TCSettings(
-                        latency_ms=2,
-                        jitter_ms=2,
-                        packet_loss_percent=0.25,
-                        reorder_percent=0.5,
-                        reorder_correlation=25.0,
+                        latency_ms=2.5, jitter_ms=0.625, packet_loss_percent=0.01
                     ),
                 )
             case TCProfile.MEDIUM:
                 return BenchmarkRun(
                     alias="medium_impairment",
                     tc_settings=TCSettings(
-                        latency_ms=4,
-                        jitter_ms=7,
-                        packet_loss_percent=1.0,
-                        reorder_percent=2.5,
-                        reorder_correlation=50.0,
+                        latency_ms=10, jitter_ms=2.5, packet_loss_percent=0.01
                     ),
                 )
             case TCProfile.HIGH:
                 return BenchmarkRun(
                     alias="high_impairment",
                     tc_settings=TCSettings(
-                        latency_ms=6,
-                        jitter_ms=15,
-                        packet_loss_percent=2.5,
-                        reorder_percent=5.0,
-                        reorder_correlation=50.0,
+                        latency_ms=20, jitter_ms=5, packet_loss_percent=0.05
                     ),
                 )
 

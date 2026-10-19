@@ -1,3 +1,4 @@
+import json
 import logging
 import time
 from collections.abc import Callable
@@ -18,7 +19,6 @@ from vpn_bench.data import (
     BenchmarkEntry,
     Config,
     TCProfile,
-    TCSettings,
     TestType,
 )
 from vpn_bench.errors import TestMetadataDict, save_bench_report
@@ -29,6 +29,7 @@ from vpn_bench.progress import ProgressTracker
 from vpn_bench.qperf import run_qperf_test
 from vpn_bench.retry import interruptible_sleep, retry_operation_with_info
 from vpn_bench.rist_stream import run_rist_test
+from vpn_bench.tc import AppliedImpairment, apply_tc_settings
 from vpn_bench.terraform import TrMachine
 from vpn_bench.timing import TimingTracker
 from vpn_bench.vpn import install_vpn
@@ -36,6 +37,26 @@ from vpn_bench.vpn import install_vpn
 log = logging.getLogger(__name__)
 
 VPN_SETTLE_SECONDS = 80
+
+
+def read_cvpn_bench_lock(clan_dir: Path) -> dict[str, Any]:
+    """Return the locked revision of the cvpn-bench input that the clan deploys.
+
+    Args:
+        clan_dir: Clan flake directory whose flake.lock pins cvpn-bench.
+
+    Returns:
+        The locked rev (None for path inputs), narHash, lastModified and type.
+    """
+    lock = json.loads((clan_dir / "flake.lock").read_text())
+    nodes = lock["nodes"]
+    locked = nodes[nodes[lock["root"]]["inputs"]["cvpn-bench"]]["locked"]
+    return {
+        "rev": locked.get("rev"),
+        "narHash": locked["narHash"],
+        "lastModified": locked.get("lastModified"),
+        "type": locked["type"],
+    }
 
 
 def get_vpn_service_name(vpn: VPN) -> str | None:
@@ -193,20 +214,17 @@ def run_benchmarks(
     bmachines: list[BenchMachine],
     tests: list[TestType],
     benchmark_run_alias: str = "default",
-    tc_settings: TCSettings | None = None,
+    impairment: AppliedImpairment | None = None,
     tracker: ProgressTracker | None = None,
 ) -> None:
     """Run TCP and UDP benchmarks for each machine."""
-    import json
-
-    # Save TC settings JSON file once per benchmark run
     tc_settings_dir = config.bench_dir / vpn.name / benchmark_run_alias
     tc_settings_dir.mkdir(parents=True, exist_ok=True)
     tc_settings_file = tc_settings_dir / "tc_settings.json"
 
     tc_data = {
         "alias": benchmark_run_alias,
-        "settings": tc_settings.to_dict() if tc_settings else None,
+        "settings": impairment.to_dict() if impairment else None,
     }
     tc_settings_file.write_text(json.dumps(tc_data, indent=2))
     log.info(f"Saved TC settings to {tc_settings_file}")
@@ -563,8 +581,6 @@ def benchmark_vpn(
         tracker: Optional progress tracker for TUI updates
         optimized: Whether to install optimized kernel profile
     """
-    from vpn_bench.tc import apply_tc_settings
-
     vpn = entry.vpn
     benchmark_runs = entry.get_benchmark_runs()
 
@@ -596,7 +612,7 @@ def benchmark_vpn(
     skip_reboot_timings = entry.get_skip_con_times_for_profile(first_profile)
 
     # Install VPN once (connection timings collected for baseline if enabled)
-    with timing.phase("vpn_installation"):
+    with timing.phase("vpn_installation") as install_phase:
         bmachines = install_vpn(
             config,
             vpn,
@@ -607,6 +623,9 @@ def benchmark_vpn(
             else "default",
             timing=timing,
             optimized=optimized,
+        )
+        install_phase.metadata["cvpn_bench_lock"] = read_cvpn_bench_lock(
+            config.clan_dir
         )
 
     # Get list of machines for TC application
@@ -625,7 +644,7 @@ def benchmark_vpn(
 
         with (
             timing.phase("benchmarking", profile=run_config.alias),
-            apply_tc_settings(machines, run_config.tc_settings),
+            apply_tc_settings(machines, run_config.tc_settings) as impairment,
         ):
             with timing.operation("tc_stabilization"):
                 log.info("TC settings applied, waiting 30 seconds for stabilization")
@@ -639,7 +658,7 @@ def benchmark_vpn(
                     bmachines,
                     tests,
                     run_config.alias,
-                    run_config.tc_settings,
+                    impairment,
                     tracker,
                 )
 
