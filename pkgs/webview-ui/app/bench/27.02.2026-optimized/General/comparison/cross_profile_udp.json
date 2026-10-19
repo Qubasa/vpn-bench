@@ -1,156 +1,64 @@
 {
-    "status": "success",
-    "data": {
-        "heatmap": {
-            "tc_profiles": [
-                "baseline",
-                "low_impairment",
-                "medium_impairment"
-            ],
-            "throughput": {
-                "Headscale": {
-                    "baseline": 875.5605877890945,
-                    "medium_impairment": 731.2523396547123
-                },
-                "Internal": {
-                    "baseline": 951.4453657539029,
-                    "medium_impairment": 948.3364555116406
-                },
-                "Tinc": {
-                    "baseline": 618.07057971737
-                },
-                "Wireguard": {
-                    "baseline": 901.0194937701826,
-                    "low_impairment": 907.6855819469704,
-                    "medium_impairment": 907.7990845556591
-                },
-                "Zerotier": {
-                    "baseline": 848.7119787474518
-                }
-            },
-            "cpu": {
-                "Headscale": {
-                    "baseline": 117.33358643526327,
-                    "medium_impairment": 125.05097944424773
-                },
-                "Internal": {
-                    "baseline": 54.05681447419464,
-                    "medium_impairment": 113.7118453278619
-                },
-                "Tinc": {
-                    "baseline": 116.77680014784382
-                },
-                "Wireguard": {
-                    "baseline": 64.63366170417237,
-                    "low_impairment": 110.24954709992629,
-                    "medium_impairment": 109.70602805778404
-                },
-                "Zerotier": {
-                    "baseline": 116.96366348628875
-                }
-            },
-            "failed": {
-                "Headscale": [
-                    "low_impairment"
-                ],
-                "Internal": [
-                    "low_impairment"
-                ],
-                "Tinc": [
-                    "low_impairment",
-                    "medium_impairment"
-                ],
-                "Zerotier": [
-                    "low_impairment",
-                    "medium_impairment"
-                ]
-            }
+  "status": "success",
+  "data": {
+    "heatmap": {
+      "tc_profiles": ["baseline", "low_impairment", "medium_impairment"],
+      "throughput": {
+        "Headscale": {
+          "baseline": 875.5605877890945,
+          "medium_impairment": 731.2523396547123
         },
-        "scatter": {
-            "dimensions": [
-                "throughput",
-                "payload_size",
-                "received_bytes_gb",
-                "vpn_index",
-                "profile_index"
-            ],
-            "vpn_names": [
-                "Headscale",
-                "Internal",
-                "Tinc",
-                "Wireguard",
-                "Zerotier"
-            ],
-            "tc_profiles": [
-                "baseline",
-                "low_impairment",
-                "medium_impairment"
-            ],
-            "data": [
-                [
-                    875.5605877890945,
-                    1208.0,
-                    3.0648317461212478,
-                    0.0,
-                    0.0
-                ],
-                [
-                    731.2523396547123,
-                    1208.0,
-                    2.555947206914425,
-                    0.0,
-                    2.0
-                ],
-                [
-                    951.4453657539029,
-                    1448.0,
-                    3.3231242820620537,
-                    1.0,
-                    0.0
-                ],
-                [
-                    948.3364555116406,
-                    1448.0,
-                    3.314360022544861,
-                    1.0,
-                    2.0
-                ],
-                [
-                    618.07057971737,
-                    1353.0,
-                    2.163759277202189,
-                    2.0,
-                    0.0
-                ],
-                [
-                    901.0194937701826,
-                    1368.0,
-                    3.146984115242958,
-                    3.0,
-                    0.0
-                ],
-                [
-                    907.6855819469704,
-                    1368.0,
-                    3.172229826450348,
-                    3.0,
-                    1.0
-                ],
-                [
-                    907.7990845556591,
-                    1368.0,
-                    3.1727916821837425,
-                    3.0,
-                    2.0
-                ],
-                [
-                    848.7119787474518,
-                    2728.0,
-                    2.972198215623697,
-                    4.0,
-                    0.0
-                ]
-            ]
+        "Internal": {
+          "baseline": 951.4453657539029,
+          "medium_impairment": 948.3364555116406
+        },
+        "Tinc": {
+          "baseline": 618.07057971737
+        },
+        "Wireguard": {
+          "baseline": 901.0194937701826,
+          "low_impairment": 907.6855819469704,
+          "medium_impairment": 907.7990845556591
+        },
+        "Zerotier": {
+          "baseline": 848.7119787474518
         }
+      },
+      "sender_host_cpu": {
+        "Headscale": {},
+        "Internal": {},
+        "Tinc": {},
+        "Wireguard": {},
+        "Zerotier": {}
+      },
+      "failed": {
+        "Headscale": ["low_impairment"],
+        "Internal": ["low_impairment"],
+        "Tinc": ["low_impairment", "medium_impairment"],
+        "Zerotier": ["low_impairment", "medium_impairment"]
+      }
+    },
+    "scatter": {
+      "dimensions": [
+        "throughput",
+        "payload_size",
+        "received_bytes_gb",
+        "vpn_index",
+        "profile_index"
+      ],
+      "vpn_names": ["Headscale", "Internal", "Tinc", "Wireguard", "Zerotier"],
+      "tc_profiles": ["baseline", "low_impairment", "medium_impairment"],
+      "data": [
+        [875.5605877890945, 1208.0, 3.0648317461212478, 0.0, 0.0],
+        [731.2523396547123, 1208.0, 2.555947206914425, 0.0, 2.0],
+        [951.4453657539029, 1448.0, 3.3231242820620537, 1.0, 0.0],
+        [948.3364555116406, 1448.0, 3.314360022544861, 1.0, 2.0],
+        [618.07057971737, 1353.0, 2.163759277202189, 2.0, 0.0],
+        [901.0194937701826, 1368.0, 3.146984115242958, 3.0, 0.0],
+        [907.6855819469704, 1368.0, 3.172229826450348, 3.0, 1.0],
+        [907.7990845556591, 1368.0, 3.1727916821837425, 3.0, 2.0],
+        [848.7119787474518, 2728.0, 2.972198215623697, 4.0, 0.0]
+      ]
     }
+  }
 }

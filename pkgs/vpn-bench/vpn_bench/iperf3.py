@@ -1,19 +1,55 @@
 import json
 import logging
+import re
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
+from typing import Any, NotRequired, TypedDict
 
 from clan_lib.async_run import AsyncRuntime
 from clan_lib.cmd import Log, RunOpts
 from clan_lib.machines.machines import Machine
 
+from vpn_bench.cpu import (
+    SNAPSHOT_FUNCTION_SH,
+    CpuSnapshot,
+    CpuUsageDict,
+    cpu_usage,
+    parse_cpu_snapshot,
+    take_cpu_snapshot,
+)
 from vpn_bench.data import BenchMachine
 
 log = logging.getLogger(__name__)
 
 # iperf3 --connect-timeout is in milliseconds
 CONNECT_TIMEOUT_MS = "5000"
+IPERF3_PORT = 5201
+SS_SAMPLE_DELAY_SECONDS = 5
+
+# Runs the iperf3 client given as "$@" after the VPN unit argument. stdout stays
+# the iperf3 JSON. stderr carries a CPU snapshot before and after the run and
+# one `ss` sample of the test's TCP sockets taken while data flows.
+_CLIENT_SH = (
+    SNAPSHOT_FUNCTION_SH
+    + f"""unit=$1
+shift
+echo '#cpu-before' >&2
+snap "$unit" >&2
+"$@" &
+pid=$!
+for _ in $(seq {SS_SAMPLE_DELAY_SECONDS}); do
+  sleep 1
+  kill -0 "$pid" 2>/dev/null || break
+done
+echo '#ss' >&2
+ss -tinH state established '( dport = :{IPERF3_PORT} )' >&2
+wait "$pid"
+rc=$?
+echo '#cpu-after' >&2
+snap "$unit" >&2
+exit "$rc"
+"""
+)
 
 
 @dataclass
@@ -23,11 +59,88 @@ class IperfCreds:
     pubkey: Path
 
 
+class IperfCpuDict(TypedDict):
+    client: CpuUsageDict
+    server: CpuUsageDict
+
+
+class VpbIperfDict(TypedDict):
+    """Measurements vpb adds under the "vpb" key of an iperf3 result."""
+
+    cpu: NotRequired[IperfCpuDict]
+    client_data_mss: NotRequired[int]  # MSS of the client's sending data socket
+
+
+@dataclass(frozen=True)
+class IperfClientRun:
+    result: dict[str, Any]
+    cpu_before: CpuSnapshot
+    cpu_after: CpuSnapshot
+    data_mss: int | None
+
+
+def _stderr_sections(stderr: str) -> dict[str, list[str]]:
+    sections: dict[str, list[str]] = {}
+    current: list[str] | None = None
+    for line in stderr.splitlines():
+        if line in ("#cpu-before", "#ss", "#cpu-after"):
+            current = sections.setdefault(line[1:], [])
+        elif current is not None:
+            current.append(line)
+    return sections
+
+
+def sending_socket_mss(ss_lines: list[str]) -> int | None:
+    """Return the MSS of the socket that sent the most data in an `ss -ti` sample."""
+    best_acked = -1
+    best_mss: int | None = None
+    for line in ss_lines:
+        mss = re.search(r"\bmss:(\d+)", line)
+        acked = re.search(r"\bbytes_acked:(\d+)", line)
+        if mss and acked and int(acked.group(1)) > best_acked:
+            best_acked = int(acked.group(1))
+            best_mss = int(mss.group(1))
+    return best_mss
+
+
+def _run_iperf_client(
+    machine: Machine,
+    bench_cmd: list[str],
+    creds: IperfCreds,
+    vpn_unit: str | None,
+    timeout: int,
+) -> IperfClientRun:
+    host = machine.target_host().override(host_key_check="none")
+    with host.host_connection() as ssh:
+        res = ssh.run(
+            ["bash", "-c", _CLIENT_SH, "vpb-iperf", vpn_unit or "", *bench_cmd],
+            RunOpts(log=Log.BOTH, timeout=timeout),
+            extra_env={"IPERF3_PASSWORD": creds.password},
+        )
+    sections = _stderr_sections(res.stderr)
+    return IperfClientRun(
+        result=json.loads(res.stdout),
+        cpu_before=parse_cpu_snapshot(sections.get("cpu-before", [])),
+        cpu_after=parse_cpu_snapshot(sections.get("cpu-after", [])),
+        data_mss=sending_socket_mss(sections.get("ss", [])),
+    )
+
+
+def _restart_iperf_server(target_machine: Machine) -> None:
+    target = target_machine.target_host().override(host_key_check="none")
+    with target.host_connection() as ssh:
+        ssh.run(
+            ["systemctl", "restart", "iperf3.service"],
+            RunOpts(log=Log.BOTH),
+        )
+
+
 def run_iperf_test(
     machine: Machine,
     target_host: str,
     creds: IperfCreds,
     target_machine: Machine,
+    vpn_unit: str | None,
     udp_mode: bool = False,
     timeout: int = 250,
 ) -> dict[str, Any]:
@@ -38,12 +151,18 @@ def run_iperf_test(
     connect reply, and with netem jitter a data datagram overtaking that reply
     makes the client abort with "unable to read from stream socket".
 
+    The iperf3 JSON gets a "vpb" entry (VpbIperfDict) with host and VPN process
+    CPU on both ends and, for TCP, the MSS of the client's data socket. iperf3's
+    own cpu_utilization_percent only covers the iperf3 processes, and its
+    tcp_mss_default is the control socket's MSS.
+
     Args:
         machine: The source machine to run the test from
         target_host: The VPN hostname to connect to (e.g., "vpn.yuki")
         creds: Iperf3 credentials
-        udp_mode: Whether to run in UDP mode
         target_machine: The target Machine object for SSH access (uses public IP)
+        vpn_unit: systemd unit of the VPN daemon, None for kernel or no VPN
+        udp_mode: Whether to run in UDP mode
         timeout: SSH command timeout in seconds (default 250 for TCP, use 120 for UDP)
     """
 
@@ -68,27 +187,20 @@ def run_iperf_test(
     else:
         bench_cmd.append("--bidir")
 
-    # Restart iperf3 service on target (server) before running the test
-    if target_machine:
-        # Use the target machine's public IP for SSH
-        target = target_machine.target_host().override(host_key_check="none")
-    with target.host_connection() as ssh:
-        ssh.run(
-            ["systemctl", "restart", "iperf3.service"],
-            RunOpts(log=Log.BOTH),
-        )
+    _restart_iperf_server(target_machine)
+    server_before = take_cpu_snapshot(target_machine, vpn_unit)
+    client = _run_iperf_client(machine, bench_cmd, creds, vpn_unit, timeout)
+    server_after = take_cpu_snapshot(target_machine, vpn_unit)
 
-    # Run iperf3 client on source machine
-    host = machine.target_host().override(host_key_check="none")
-    with host.host_connection() as ssh:
-        # Set the password for the iperf3 server
-        res = ssh.run(
-            bench_cmd,
-            RunOpts(log=Log.BOTH, timeout=timeout),
-            extra_env={"IPERF3_PASSWORD": creds.password},
-        )
-
-    return json.loads(res.stdout)
+    vpb: VpbIperfDict = {
+        "cpu": {
+            "client": cpu_usage(client.cpu_before, client.cpu_after),
+            "server": cpu_usage(server_before, server_after),
+        }
+    }
+    if not udp_mode and client.data_mss is not None:
+        vpb["client_data_mss"] = client.data_mss
+    return {**client.result, "vpb": vpb}
 
 
 def _run_single_parallel_iperf(
@@ -101,6 +213,7 @@ def _run_single_parallel_iperf(
     """Run a single iperf3 TCP test from source to target.
 
     This is a helper for the parallel test - it restarts the server and runs the client.
+    CPU is not recorded because every machine is client and server at once.
 
     Args:
         source: Source machine running iperf3 client
@@ -127,24 +240,13 @@ def _run_single_parallel_iperf(
         str(creds.pubkey),
     ]
 
-    # Restart iperf3 service on target (server) before running the test
-    target_ssh_host = target.cmachine.target_host().override(host_key_check="none")
-    with target_ssh_host.host_connection() as ssh:
-        ssh.run(
-            ["systemctl", "restart", "iperf3.service"],
-            RunOpts(log=Log.BOTH),
-        )
+    _restart_iperf_server(target.cmachine)
+    client = _run_iperf_client(source.cmachine, bench_cmd, creds, None, timeout)
 
-    # Run iperf3 client on source machine
-    source_ssh_host = source.cmachine.target_host().override(host_key_check="none")
-    with source_ssh_host.host_connection() as ssh:
-        res = ssh.run(
-            bench_cmd,
-            RunOpts(log=Log.BOTH, timeout=timeout),
-            extra_env={"IPERF3_PASSWORD": creds.password},
-        )
-
-    return json.loads(res.stdout)
+    vpb: VpbIperfDict = {}
+    if client.data_mss is not None:
+        vpb["client_data_mss"] = client.data_mss
+    return {**client.result, "vpb": vpb}
 
 
 @dataclass

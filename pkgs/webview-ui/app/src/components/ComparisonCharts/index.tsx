@@ -390,9 +390,10 @@ interface DualBarChartData {
 
 function metricsToDualBarData<T>(
   vpnMap: VpnComparisonResultMap<T>,
-  getSenderMetric: (data: T) => MetricStats,
-  getReceiverMetric: (data: T) => MetricStats,
+  getSenderMetric: (data: T) => MetricStats | undefined,
+  getReceiverMetric: (data: T) => MetricStats | undefined,
   allVpnNames?: string[],
+  notMeasuredMessage = "Not measured for this VPN",
 ): DualBarChartData[] {
   const result: DualBarChartData[] = [];
 
@@ -400,6 +401,21 @@ function metricsToDualBarData<T>(
     if (entry.status === "success") {
       const senderMetric = getSenderMetric(entry.data);
       const receiverMetric = getReceiverMetric(entry.data);
+      if (senderMetric === undefined || receiverMetric === undefined) {
+        result.push({
+          name: vpnName,
+          senderValue: 0,
+          senderMin: 0,
+          senderMax: 0,
+          receiverValue: 0,
+          receiverMin: 0,
+          receiverMax: 0,
+          isIncomplete: true,
+          isCrashed: false,
+          errorMessage: notMeasuredMessage,
+        });
+        return;
+      }
       result.push({
         name: vpnName,
         senderValue: senderMetric.average,
@@ -785,7 +801,9 @@ export const TcpWindowSizeComparisonChart = (props: {
   );
 };
 
-export const TcpCpuComparisonChart = (props: {
+const NOT_SAMPLED = "Not measured: this result predates vpb's CPU sampling";
+
+export const TcpVpnCpuComparisonChart = (props: {
   data: VpnComparisonResultMap<TcpIperfComparisonData>;
   height?: number;
   allVpnNames?: string[];
@@ -793,20 +811,77 @@ export const TcpCpuComparisonChart = (props: {
   const chartData = () =>
     metricsToDualBarData(
       props.data,
-      (d) => d.host_cpu_percent,
-      (d) => d.remote_cpu_percent,
+      (d) => d.client_vpn_cpu_percent,
+      (d) => d.server_vpn_cpu_percent,
+      props.allVpnNames,
+      "Not measured: no VPN daemon (kernel WireGuard, Internal) " +
+        "or a result from before vpb's CPU sampling",
+    );
+  return (
+    <DualComparisonBarChart
+      data={chartData()}
+      title="TCP VPN Process CPU"
+      yAxisLabel="CPU (% of one core)"
+      height={props.height ?? 400}
+      firstColor="#e74c3c"
+      secondColor="#3498db"
+      firstLabel="Client"
+      secondLabel="Server"
+      labelFormatter={(v) => v.toFixed(1) + "%"}
+    />
+  );
+};
+
+export const TcpHostCpuComparisonChart = (props: {
+  data: VpnComparisonResultMap<TcpIperfComparisonData>;
+  height?: number;
+  allVpnNames?: string[];
+}) => {
+  const chartData = () =>
+    metricsToDualBarData(
+      props.data,
+      (d) => d.client_host_cpu_percent,
+      (d) => d.server_host_cpu_percent,
+      props.allVpnNames,
+      NOT_SAMPLED,
+    );
+  return (
+    <DualComparisonBarChart
+      data={chartData()}
+      title="TCP Host CPU"
+      yAxisLabel="CPU (% of all cores)"
+      height={props.height ?? 400}
+      firstColor="#e74c3c"
+      secondColor="#3498db"
+      firstLabel="Client"
+      secondLabel="Server"
+      labelFormatter={(v) => v.toFixed(1) + "%"}
+    />
+  );
+};
+
+export const TcpIperf3CpuComparisonChart = (props: {
+  data: VpnComparisonResultMap<TcpIperfComparisonData>;
+  height?: number;
+  allVpnNames?: string[];
+}) => {
+  const chartData = () =>
+    metricsToDualBarData(
+      props.data,
+      (d) => d.iperf3_client_cpu_percent,
+      (d) => d.iperf3_server_cpu_percent,
       props.allVpnNames,
     );
   return (
     <DualComparisonBarChart
       data={chartData()}
-      title="TCP CPU Utilization"
-      yAxisLabel="CPU Utilization (%)"
+      title="TCP iperf3 Process CPU"
+      yAxisLabel="CPU (% of one core)"
       height={props.height ?? 400}
       firstColor="#e74c3c"
       secondColor="#3498db"
-      firstLabel="Host"
-      secondLabel="Remote"
+      firstLabel="iperf3 Client"
+      secondLabel="iperf3 Server"
       labelFormatter={(v) => v.toFixed(1) + "%"}
     />
   );
@@ -1307,7 +1382,15 @@ export const TcpComparisonSection = (props: {
         data={props.data}
         allVpnNames={props.allVpnNames}
       />
-      <TcpCpuComparisonChart
+      <TcpVpnCpuComparisonChart
+        data={props.data}
+        allVpnNames={props.allVpnNames}
+      />
+      <TcpHostCpuComparisonChart
+        data={props.data}
+        allVpnNames={props.allVpnNames}
+      />
+      <TcpIperf3CpuComparisonChart
         data={props.data}
         allVpnNames={props.allVpnNames}
       />

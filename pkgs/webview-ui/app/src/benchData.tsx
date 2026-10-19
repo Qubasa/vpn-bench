@@ -262,7 +262,16 @@ export interface VideoStreamingComparisonData {
   packets_dropped: MetricStats;
 }
 
-export interface TcpIperfComparisonData {
+// CPU that vpb sampled around an iperf3 run. Missing in older results. VPN CPU is
+// also missing for kernel datapaths (WireGuard, Internal).
+export interface IperfCpuComparisonData {
+  client_host_cpu_percent?: MetricStats; // busy share of all cores
+  server_host_cpu_percent?: MetricStats;
+  client_vpn_cpu_percent?: MetricStats; // VPN daemon, % of one core
+  server_vpn_cpu_percent?: MetricStats;
+}
+
+export interface TcpIperfComparisonData extends IperfCpuComparisonData {
   client_to_server_mbps: MetricStats;
   server_to_client_mbps: MetricStats;
   retransmits: MetricStats;
@@ -272,11 +281,11 @@ export interface TcpIperfComparisonData {
   client_to_server_bytes: MetricStats;
   server_to_client_bytes: MetricStats;
   duration_seconds: MetricStats;
-  host_cpu_percent: MetricStats;
-  remote_cpu_percent: MetricStats;
+  iperf3_client_cpu_percent: MetricStats; // iperf3 process only, % of one core
+  iperf3_server_cpu_percent: MetricStats;
 }
 
-export interface UdpIperfComparisonData {
+export interface UdpIperfComparisonData extends IperfCpuComparisonData {
   sender_throughput_mbps: MetricStats;
   receiver_throughput_mbps: MetricStats;
   jitter_ms: MetricStats;
@@ -285,8 +294,8 @@ export interface UdpIperfComparisonData {
   total_bytes_received: MetricStats;
   duration_seconds: MetricStats;
   blksize_bytes: MetricStats; // UDP payload/datagram size
-  host_cpu_percent: MetricStats; // Host CPU utilization
-  remote_cpu_percent: MetricStats; // Remote CPU utilization
+  iperf3_client_cpu_percent: MetricStats; // iperf3 process only, % of one core
+  iperf3_server_cpu_percent: MetricStats;
 }
 
 export interface NixCacheComparisonData {
@@ -424,7 +433,7 @@ export interface CrossProfileTcpData {
 export interface UdpHeatmapData {
   tc_profiles: string[]; // Keep for ordered iteration
   throughput: Record<string, Record<string, number>>; // {vpn: {profile: receiver_throughput_mbps}}
-  cpu: Record<string, Record<string, number>>; // {vpn: {profile: host_cpu_percent}}
+  sender_host_cpu: Record<string, Record<string, number>>; // {vpn: {profile: client host CPU %}}
   failed: Record<string, string[]>; // {vpn: [failed_profiles]}
 }
 

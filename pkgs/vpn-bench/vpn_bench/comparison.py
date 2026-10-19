@@ -5,11 +5,13 @@ This module reads benchmark data from multiple VPNs, averages results
 across machines, and writes aggregated comparison data for visualization.
 """
 
+import ipaddress
 import json
 import logging
 import statistics
+from collections.abc import Sequence
 from pathlib import Path
-from typing import Any, TypedDict
+from typing import Any, Literal, TypedDict
 
 from vpn_bench.errors import save_bench_report
 
@@ -18,6 +20,11 @@ log = logging.getLogger(__name__)
 # Default TCP MSS for Ethernet (MTU 1500 - 40 bytes IP/TCP headers)
 # Used as fallback when iperf3 doesn't report the actual MSS
 DEFAULT_TCP_MSS_BYTES = 1448
+
+# Linux caps a socket's MSS at half the largest window its peer advertised. iperf3's
+# control socket has only seen the 64 KiB initial window when tcp_mss_default is read.
+CONTROL_SOCKET_MSS_CAP = 65535 // 2
+TCP_HEADER_WITH_TIMESTAMPS_BYTES = 32
 
 
 def calculate_retransmit_percent(
@@ -31,7 +38,7 @@ def calculate_retransmit_percent(
     Args:
         retransmits: Number of TCP retransmissions
         bytes_sent: Total bytes sent
-        mss: TCP Maximum Segment Size (from iperf3's tcp_mss_default).
+        mss: MSS of the sending data socket (see tcp_data_mss).
              Falls back to DEFAULT_TCP_MSS_BYTES if not provided.
     """
     if bytes_sent <= 0:
@@ -41,6 +48,45 @@ def calculate_retransmit_percent(
     if estimated_packets <= 0:
         return 0.0
     return (retransmits / estimated_packets) * 100
+
+
+def _path_mtu_mss(data: dict[str, Any]) -> int | None:
+    """MSS implied by the path MTU iperf3 reports for the client's sending stream."""
+    connected = data.get("start", {}).get("connected", [])
+    if not connected:
+        return None
+    local_host = str(connected[0].get("local_host", "")).split("%")[0]
+    try:
+        ip_header = 40 if ipaddress.ip_address(local_host).version == 6 else 20
+    except ValueError:
+        return None
+    for interval in data.get("intervals", []):
+        for stream in interval.get("streams", []):
+            if stream.get("sender") and stream.get("pmtu"):
+                return (
+                    int(stream["pmtu"]) - ip_header - TCP_HEADER_WITH_TIMESTAMPS_BYTES
+                )
+    return None
+
+
+def tcp_data_mss(data: dict[str, Any]) -> int | None:
+    """MSS of the client's sending data socket in an iperf3 TCP result.
+
+    vpb reads it with `ss` while the test runs (vpb.client_data_mss). Older results
+    only carry iperf3's tcp_mss_default, which is the control socket's MSS. That
+    matches the data socket unless the control socket hit CONTROL_SOCKET_MSS_CAP,
+    which happens on jumbo-MTU tunnels. Then the path MTU gives the data MSS.
+    """
+    measured = data.get("vpb", {}).get("client_data_mss")
+    if measured:
+        return int(measured)
+    control_mss = data.get("start", {}).get("tcp_mss_default")
+    if control_mss is None:
+        return None
+    pmtu_mss = _path_mtu_mss(data)
+    if pmtu_mss is not None and control_mss <= CONTROL_SOCKET_MSS_CAP < pmtu_mss:
+        return pmtu_mss
+    return int(control_mss)
 
 
 # --- TypedDict Definitions ---
@@ -88,7 +134,34 @@ class RistComparisonDict(TypedDict):
     packets_dropped: MetricStatsDict
 
 
-class TcpIperfComparisonDict(TypedDict):
+class CpuComparisonDict(TypedDict, total=False):
+    """CPU that vpb measured around an iperf3 run (only in results that have it).
+
+    Host CPU is the busy share of all logical CPUs. VPN CPU is the VPN daemon's
+    cgroup in % of one CPU, missing for kernel datapaths (Wireguard, Internal).
+    """
+
+    client_host_cpu_percent: MetricStatsDict
+    server_host_cpu_percent: MetricStatsDict
+    client_vpn_cpu_percent: MetricStatsDict
+    server_vpn_cpu_percent: MetricStatsDict
+
+
+type CpuMetricKey = Literal[
+    "client_host_cpu_percent",
+    "server_host_cpu_percent",
+    "client_vpn_cpu_percent",
+    "server_vpn_cpu_percent",
+]
+CPU_METRIC_KEYS: tuple[CpuMetricKey, ...] = (
+    "client_host_cpu_percent",
+    "server_host_cpu_percent",
+    "client_vpn_cpu_percent",
+    "server_vpn_cpu_percent",
+)
+
+
+class TcpIperfComparisonDict(CpuComparisonDict, total=True):
     """Comparison data for TCP iperf3 benchmarks across VPNs.
 
     TCP runs with --bidir, so both directions are measured at the same time.
@@ -105,11 +178,11 @@ class TcpIperfComparisonDict(TypedDict):
     client_to_server_bytes: MetricStatsDict
     server_to_client_bytes: MetricStatsDict
     duration_seconds: MetricStatsDict  # Test duration in seconds
-    host_cpu_percent: MetricStatsDict  # Host CPU utilization
-    remote_cpu_percent: MetricStatsDict  # Remote CPU utilization
+    iperf3_client_cpu_percent: MetricStatsDict  # iperf3 client process only
+    iperf3_server_cpu_percent: MetricStatsDict  # iperf3 server process only
 
 
-class UdpIperfComparisonDict(TypedDict):
+class UdpIperfComparisonDict(CpuComparisonDict, total=True):
     """Comparison data for UDP iperf3 benchmarks across VPNs."""
 
     sender_throughput_mbps: MetricStatsDict
@@ -120,8 +193,8 @@ class UdpIperfComparisonDict(TypedDict):
     total_bytes_received: MetricStatsDict  # Total bytes received during test
     duration_seconds: MetricStatsDict  # Test duration in seconds
     blksize_bytes: MetricStatsDict  # UDP payload/datagram size
-    host_cpu_percent: MetricStatsDict  # Host CPU utilization
-    remote_cpu_percent: MetricStatsDict  # Remote CPU utilization
+    iperf3_client_cpu_percent: MetricStatsDict  # iperf3 client process only
+    iperf3_server_cpu_percent: MetricStatsDict  # iperf3 server process only
 
 
 class NixCacheComparisonDict(TypedDict):
@@ -236,7 +309,8 @@ class CrossProfileUdpHeatmapDict(TypedDict):
     throughput: dict[
         str, dict[str, float]
     ]  # {vpn: {profile: receiver_throughput_mbps}}
-    cpu: dict[str, dict[str, float]]  # {vpn: {profile: host_cpu_percent}}
+    # {vpn: {profile: client host CPU}}, only where vpb measured it
+    sender_host_cpu: dict[str, dict[str, float]]
     failed: dict[str, list[str]]  # {vpn: [failed_profiles]}
 
 
@@ -858,10 +932,51 @@ def aggregate_rist_data(
     }
 
 
+def _single_value_stats(value: float) -> MetricStatsDict:
+    return {
+        "min": value,
+        "average": value,
+        "max": value,
+        "percentiles": {"p25": value, "p50": value, "p75": value},
+    }
+
+
+def extract_cpu_metrics(data: dict[str, Any]) -> CpuComparisonDict:
+    """Extract the host and VPN CPU vpb recorded under data["vpb"]["cpu"]."""
+    cpu = data.get("vpb", {}).get("cpu")
+    if not cpu:
+        return {}
+    client = cpu["client"]
+    server = cpu["server"]
+    metrics: CpuComparisonDict = {
+        "client_host_cpu_percent": _single_value_stats(float(client["host_percent"])),
+        "server_host_cpu_percent": _single_value_stats(float(server["host_percent"])),
+    }
+    if client["vpn_process_percent"] is not None:
+        metrics["client_vpn_cpu_percent"] = _single_value_stats(
+            float(client["vpn_process_percent"])
+        )
+    if server["vpn_process_percent"] is not None:
+        metrics["server_vpn_cpu_percent"] = _single_value_stats(
+            float(server["vpn_process_percent"])
+        )
+    return metrics
+
+
+def aggregate_cpu_metrics(
+    metrics_list: Sequence[CpuComparisonDict],
+) -> CpuComparisonDict:
+    aggregated: CpuComparisonDict = {}
+    for key in CPU_METRIC_KEYS:
+        values = [m[key] for m in metrics_list if key in m]
+        if values:
+            aggregated[key] = aggregate_metric_stats(values)
+    return aggregated
+
+
 def extract_tcp_iperf_metrics(data: dict[str, Any]) -> TcpIperfComparisonDict | None:
     """Extract key metrics from a bidirectional iperf3 TCP JSON output."""
     try:
-        start = data.get("start", {})
         end = data.get("end", {})
         sum_sent = end.get("sum_sent", {})
         forward = end.get("sum_received", {})
@@ -870,9 +985,7 @@ def extract_tcp_iperf_metrics(data: dict[str, Any]) -> TcpIperfComparisonDict | 
             log.warning("TCP iperf3 result has no reverse direction (not --bidir)")
             return None
 
-        # Get actual MSS from iperf3 (negotiated during connection)
-        tcp_mss = start.get("tcp_mss_default")
-
+        tcp_mss = tcp_data_mss(data)
         retransmits = sum_sent.get("retransmits", 0)
         bytes_sent = sum_sent.get("bytes", 0)
         duration_seconds = sum_sent.get("seconds", 0)
@@ -890,43 +1003,38 @@ def extract_tcp_iperf_metrics(data: dict[str, Any]) -> TcpIperfComparisonDict | 
                 max_snd_cwnd = max(max_snd_cwnd, sender_data.get("max_snd_cwnd", 0))
                 max_snd_wnd = max(max_snd_wnd, sender_data.get("max_snd_wnd", 0))
 
-        # Calculate retransmit percentage using actual MSS from iperf3
         retransmit_pct = calculate_retransmit_percent(retransmits, bytes_sent, tcp_mss)
 
-        # Extract CPU utilization
-        cpu_util = end.get("cpu_utilization_percent", {})
-        host_cpu = cpu_util.get("host_total", 0)
-        remote_cpu = cpu_util.get("remote_total", 0)
+        # iperf3 reports the CPU of its own client and server processes only
+        iperf3_cpu = end.get("cpu_utilization_percent", {})
 
-        # Create MetricStatsDict for single values
-        def single_value_stats(value: float) -> MetricStatsDict:
-            return {
-                "min": value,
-                "average": value,
-                "max": value,
-                "percentiles": {"p25": value, "p50": value, "p75": value},
-            }
-
-        return {
-            "client_to_server_mbps": single_value_stats(client_to_server_mbps),
-            "server_to_client_mbps": single_value_stats(server_to_client_mbps),
-            "retransmits": single_value_stats(float(retransmits)),
-            "retransmit_percent": single_value_stats(retransmit_pct),
-            "max_snd_cwnd_bytes": single_value_stats(float(max_snd_cwnd)),
-            "max_snd_wnd_bytes": single_value_stats(float(max_snd_wnd)),
-            "client_to_server_bytes": single_value_stats(
+        metrics: TcpIperfComparisonDict = {
+            "client_to_server_mbps": _single_value_stats(client_to_server_mbps),
+            "server_to_client_mbps": _single_value_stats(server_to_client_mbps),
+            "retransmits": _single_value_stats(float(retransmits)),
+            "retransmit_percent": _single_value_stats(retransmit_pct),
+            "max_snd_cwnd_bytes": _single_value_stats(float(max_snd_cwnd)),
+            "max_snd_wnd_bytes": _single_value_stats(float(max_snd_wnd)),
+            "client_to_server_bytes": _single_value_stats(
                 float(forward.get("bytes", 0))
             ),
-            "server_to_client_bytes": single_value_stats(
+            "server_to_client_bytes": _single_value_stats(
                 float(reverse.get("bytes", 0))
             ),
-            "duration_seconds": single_value_stats(float(duration_seconds)),
-            "host_cpu_percent": single_value_stats(float(host_cpu)),
-            "remote_cpu_percent": single_value_stats(float(remote_cpu)),
+            "duration_seconds": _single_value_stats(float(duration_seconds)),
+            "iperf3_client_cpu_percent": _single_value_stats(
+                float(iperf3_cpu.get("host_total", 0))
+            ),
+            "iperf3_server_cpu_percent": _single_value_stats(
+                float(iperf3_cpu.get("remote_total", 0))
+            ),
         }
+        metrics.update(extract_cpu_metrics(data))
     except (KeyError, TypeError) as e:
         log.warning(f"Failed to extract TCP iperf metrics: {e}")
         return None
+    else:
+        return metrics
 
 
 def aggregate_tcp_iperf_data(
@@ -953,7 +1061,7 @@ def aggregate_tcp_iperf_data(
     if not metrics_list:
         return None
 
-    return {
+    aggregated: TcpIperfComparisonDict = {
         "client_to_server_mbps": aggregate_metric_stats(
             [m["client_to_server_mbps"] for m in metrics_list]
         ),
@@ -979,13 +1087,15 @@ def aggregate_tcp_iperf_data(
         "duration_seconds": aggregate_metric_stats(
             [m["duration_seconds"] for m in metrics_list]
         ),
-        "host_cpu_percent": aggregate_metric_stats(
-            [m["host_cpu_percent"] for m in metrics_list]
+        "iperf3_client_cpu_percent": aggregate_metric_stats(
+            [m["iperf3_client_cpu_percent"] for m in metrics_list]
         ),
-        "remote_cpu_percent": aggregate_metric_stats(
-            [m["remote_cpu_percent"] for m in metrics_list]
+        "iperf3_server_cpu_percent": aggregate_metric_stats(
+            [m["iperf3_server_cpu_percent"] for m in metrics_list]
         ),
     }
+    aggregated.update(aggregate_cpu_metrics(metrics_list))
+    return aggregated
 
 
 def extract_udp_iperf_metrics(data: dict[str, Any]) -> UdpIperfComparisonDict | None:
@@ -997,8 +1107,9 @@ def extract_udp_iperf_metrics(data: dict[str, Any]) -> UdpIperfComparisonDict | 
     - jitter_ms: from end.sum_received (receiver-side jitter measurement)
     - lost_percent: from end.sum_received (receiver-side packet loss)
     - blksize_bytes: from start.test_start.blksize (UDP payload size)
-    - host_cpu_percent: from end.cpu_utilization_percent.host_total
-    - remote_cpu_percent: from end.cpu_utilization_percent.remote_total
+    - iperf3_client_cpu_percent / iperf3_server_cpu_percent: iperf3's own
+      processes, from end.cpu_utilization_percent.host_total / remote_total
+    - host and VPN CPU that vpb measured, see extract_cpu_metrics
     """
     try:
         end = data.get("end", {})
@@ -1026,34 +1137,31 @@ def extract_udp_iperf_metrics(data: dict[str, Any]) -> UdpIperfComparisonDict | 
         test_start = start.get("test_start", {})
         blksize = test_start.get("blksize", 0)
 
-        # Extract CPU utilization
-        cpu_util = end.get("cpu_utilization_percent", {})
-        host_cpu = cpu_util.get("host_total", 0)
-        remote_cpu = cpu_util.get("remote_total", 0)
+        # iperf3 reports the CPU of its own client and server processes only
+        iperf3_cpu = end.get("cpu_utilization_percent", {})
 
-        def single_value_stats(value: float) -> MetricStatsDict:
-            return {
-                "min": value,
-                "average": value,
-                "max": value,
-                "percentiles": {"p25": value, "p50": value, "p75": value},
-            }
-
-        return {
-            "sender_throughput_mbps": single_value_stats(sender_mbps),
-            "receiver_throughput_mbps": single_value_stats(receiver_mbps),
-            "jitter_ms": single_value_stats(jitter_ms),
-            "lost_percent": single_value_stats(lost_percent),
-            "total_bytes_sent": single_value_stats(float(bytes_sent)),
-            "total_bytes_received": single_value_stats(float(bytes_received)),
-            "duration_seconds": single_value_stats(float(duration_seconds)),
-            "blksize_bytes": single_value_stats(float(blksize)),
-            "host_cpu_percent": single_value_stats(float(host_cpu)),
-            "remote_cpu_percent": single_value_stats(float(remote_cpu)),
+        metrics: UdpIperfComparisonDict = {
+            "sender_throughput_mbps": _single_value_stats(sender_mbps),
+            "receiver_throughput_mbps": _single_value_stats(receiver_mbps),
+            "jitter_ms": _single_value_stats(jitter_ms),
+            "lost_percent": _single_value_stats(lost_percent),
+            "total_bytes_sent": _single_value_stats(float(bytes_sent)),
+            "total_bytes_received": _single_value_stats(float(bytes_received)),
+            "duration_seconds": _single_value_stats(float(duration_seconds)),
+            "blksize_bytes": _single_value_stats(float(blksize)),
+            "iperf3_client_cpu_percent": _single_value_stats(
+                float(iperf3_cpu.get("host_total", 0))
+            ),
+            "iperf3_server_cpu_percent": _single_value_stats(
+                float(iperf3_cpu.get("remote_total", 0))
+            ),
         }
+        metrics.update(extract_cpu_metrics(data))
     except (KeyError, TypeError) as e:
         log.warning(f"Failed to extract UDP iperf metrics: {e}")
         return None
+    else:
+        return metrics
 
 
 def aggregate_udp_iperf_data(
@@ -1080,7 +1188,7 @@ def aggregate_udp_iperf_data(
     if not metrics_list:
         return None
 
-    return {
+    aggregated: UdpIperfComparisonDict = {
         "sender_throughput_mbps": aggregate_metric_stats(
             [m["sender_throughput_mbps"] for m in metrics_list]
         ),
@@ -1103,13 +1211,15 @@ def aggregate_udp_iperf_data(
         "blksize_bytes": aggregate_metric_stats(
             [m["blksize_bytes"] for m in metrics_list]
         ),
-        "host_cpu_percent": aggregate_metric_stats(
-            [m["host_cpu_percent"] for m in metrics_list]
+        "iperf3_client_cpu_percent": aggregate_metric_stats(
+            [m["iperf3_client_cpu_percent"] for m in metrics_list]
         ),
-        "remote_cpu_percent": aggregate_metric_stats(
-            [m["remote_cpu_percent"] for m in metrics_list]
+        "iperf3_server_cpu_percent": aggregate_metric_stats(
+            [m["iperf3_server_cpu_percent"] for m in metrics_list]
         ),
     }
+    aggregated.update(aggregate_cpu_metrics(metrics_list))
+    return aggregated
 
 
 def extract_nix_cache_metrics(data: dict[str, Any]) -> NixCacheComparisonDict | None:
@@ -1213,7 +1323,6 @@ def extract_parallel_tcp_metrics(
             if result is None:
                 continue  # Skip failed pairs
 
-            start = result.get("start", {})
             end = result.get("end", {})
 
             sum_sent = end.get("sum_sent", {})
@@ -1229,7 +1338,7 @@ def extract_parallel_tcp_metrics(
             # Get duration and MSS from first successful pair (all pairs run same duration)
             if successful_pairs == 0:
                 duration_seconds = sum_sent.get("seconds", 0)
-                tcp_mss = start.get("tcp_mss_default")
+                tcp_mss = tcp_data_mss(result)
 
             # Extract max window sizes from streams
             streams = end.get("streams", [])
@@ -1644,7 +1753,7 @@ def generate_cross_profile_udp_data(
 ) -> CrossProfileUdpDict | None:
     """Generate cross-profile UDP performance data for visualization.
 
-    Combines UDP throughput, payload size, and CPU usage data
+    Combines UDP throughput, payload size, and the sender's host CPU
     across all VPNs and TC profiles for heatmap and scatter chart visualization.
 
     Args:
@@ -1661,7 +1770,7 @@ def generate_cross_profile_udp_data(
 
     # Dict-based heatmap data
     throughput: dict[str, dict[str, float]] = {}
-    cpu: dict[str, dict[str, float]] = {}
+    sender_host_cpu: dict[str, dict[str, float]] = {}
     failed: dict[str, list[str]] = {}
 
     # Collect data for scatter plots (keep index-based for scatter)
@@ -1669,7 +1778,7 @@ def generate_cross_profile_udp_data(
 
     for vpn_idx, vpn_name in enumerate(vpn_names):
         throughput[vpn_name] = {}
-        cpu[vpn_name] = {}
+        sender_host_cpu[vpn_name] = {}
 
         for profile_idx, run_alias in enumerate(tc_profiles):
             # Get UDP data for this VPN and profile
@@ -1677,13 +1786,14 @@ def generate_cross_profile_udp_data(
 
             if udp_data:
                 throughput_val = udp_data["receiver_throughput_mbps"]["average"]
-                cpu_val = udp_data["host_cpu_percent"]["average"]
+                host_cpu = udp_data.get("client_host_cpu_percent")
                 payload_size = udp_data["blksize_bytes"]["average"]
                 received_bytes = udp_data["total_bytes_received"]["average"]
 
                 # Add to dict-based heatmap data
                 throughput[vpn_name][run_alias] = throughput_val
-                cpu[vpn_name][run_alias] = cpu_val
+                if host_cpu is not None:
+                    sender_host_cpu[vpn_name][run_alias] = host_cpu["average"]
 
                 # Add to scatter data: [throughput, payload_size, received_bytes_gb, vpn_idx, profile_idx]
                 received_bytes_gb = received_bytes / (1024 * 1024 * 1024)
@@ -1722,7 +1832,7 @@ def generate_cross_profile_udp_data(
         "heatmap": {
             "tc_profiles": tc_profiles,
             "throughput": throughput,
-            "cpu": cpu,
+            "sender_host_cpu": sender_host_cpu,
             "failed": failed,
         },
         "scatter": {

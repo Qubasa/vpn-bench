@@ -38,6 +38,7 @@ export interface IperfTcpReportData {
       bytes?: number;
       seconds?: number;
     };
+    // iperf3's own client (host) and server (remote) processes, % of one core
     cpu_utilization_percent: {
       host_total: number;
       remote_total: number;
@@ -68,6 +69,19 @@ export interface IperfTcpReportData {
       sender: boolean; // Confirming sum_bidir_reverse relates to sender=false
     };
   }[];
+  vpb?: VpbIperfData;
+}
+
+// CPU that vpb sampled around the run (absent in older results)
+export interface VpbCpuUsage {
+  window_seconds: number;
+  host_percent: number; // busy share of all cores
+  vpn_process_percent: number | null; // VPN daemon, % of one core
+}
+
+export interface VpbIperfData {
+  cpu?: { client: VpbCpuUsage; server: VpbCpuUsage };
+  client_data_mss?: number;
 }
 
 // Combined report interface with name and data
@@ -597,12 +611,64 @@ const createThroughputOption = (reports: IperfTcpReport[]) => {
     ],
   };
 };
-// CPU Utilization Chart Creator
+// Per-process CPU chart (all series in % of one core)
 const createCpuOption = (reports: IperfTcpReport[]) => {
+  const percentLabel = { show: true, position: "top", formatter: "{c} %" };
+  const vpnPercent = (
+    report: IperfTcpReport,
+    side: "client" | "server",
+  ): string | null =>
+    report.data.vpb?.cpu?.[side].vpn_process_percent?.toFixed(1) ?? null;
+  const hasVpnCpu = reports.some(
+    (report) =>
+      vpnPercent(report, "client") !== null ||
+      vpnPercent(report, "server") !== null,
+  );
+  const vpnSeries = hasVpnCpu
+    ? [
+        {
+          name: "VPN Client",
+          type: "bar",
+          data: reports.map((report) => vpnPercent(report, "client")),
+          color: "#2c3e50",
+          label: percentLabel,
+        },
+        {
+          name: "VPN Server",
+          type: "bar",
+          data: reports.map((report) => vpnPercent(report, "server")),
+          color: "#7f8c8d",
+          label: percentLabel,
+        },
+      ]
+    : [];
+  const iperf3Series = [
+    {
+      name: "iperf3 Client",
+      type: "bar",
+      data: reports.map((report) =>
+        report.data.end.cpu_utilization_percent.host_total.toFixed(1),
+      ),
+      color: "#9b59b6",
+      label: percentLabel,
+    },
+    {
+      name: "iperf3 Server",
+      type: "bar",
+      data: reports.map((report) =>
+        report.data.end.cpu_utilization_percent.remote_total.toFixed(1),
+      ),
+      color: "#e74c3c",
+      label: percentLabel,
+    },
+  ];
+  const series = [...vpnSeries, ...iperf3Series];
   return {
     title: {
-      text: "Average CPU Utilization",
-      subtext: "Lower is better",
+      text: "Average Process CPU",
+      subtext: hasVpnCpu
+        ? "Lower is better"
+        : "Lower is better | VPN process not measured (kernel datapath or older result)",
       left: "center",
       subtextStyle: { color: "#888", fontSize: 12 },
     },
@@ -613,7 +679,7 @@ const createCpuOption = (reports: IperfTcpReport[]) => {
       },
     },
     legend: {
-      data: ["Host CPU", "Remote CPU"],
+      data: series.map((s) => s.name),
       top: 50,
     },
     grid: {
@@ -635,38 +701,10 @@ const createCpuOption = (reports: IperfTcpReport[]) => {
     },
     yAxis: {
       type: "value",
-      name: "Percentage (%)",
-      max: 100,
+      name: "% of one core",
       axisLabel: { formatter: formatAxisValue },
     },
-    series: [
-      {
-        name: "Host CPU",
-        type: "bar",
-        data: reports.map((report) =>
-          report.data.end.cpu_utilization_percent.host_total.toFixed(1),
-        ),
-        color: "#9b59b6",
-        label: {
-          show: true,
-          position: "top",
-          formatter: "{c} %",
-        },
-      },
-      {
-        name: "Remote CPU",
-        type: "bar",
-        data: reports.map((report) =>
-          report.data.end.cpu_utilization_percent.remote_total.toFixed(1),
-        ),
-        color: "#e74c3c",
-        label: {
-          show: true,
-          position: "top",
-          formatter: "{c} %",
-        },
-      },
-    ],
+    series,
   };
 };
 

@@ -206,15 +206,16 @@ const createThroughputHeatmapOption = (
 };
 
 /**
- * Creates the ECharts option for CPU usage heatmap.
- * Lower is better (green = low CPU).
+ * Creates the ECharts option for the sender's host CPU heatmap.
+ * Lower is better (green = low CPU). Cells without a vpb CPU sample stay empty.
  */
 const createCpuHeatmapOption = (data: UdpHeatmapData): EChartsCoreOption => {
-  const vpnNames = Object.keys(data.cpu);
+  const cpu = data.sender_host_cpu;
+  const vpnNames = Object.keys(cpu);
 
   // Sort by baseline CPU ascending (lowest first = best)
   const sortedVpnNames = [...vpnNames].sort(
-    (a, b) => (data.cpu[a]?.baseline ?? 100) - (data.cpu[b]?.baseline ?? 100),
+    (a, b) => (cpu[a]?.baseline ?? 100) - (cpu[b]?.baseline ?? 100),
   );
 
   // Build failed markers first (need to know which cells to exclude from heatmap)
@@ -235,8 +236,9 @@ const createCpuHeatmapOption = (data: UdpHeatmapData): EChartsCoreOption => {
     data.tc_profiles
       .map((profile, profileIdx) => {
         const key = `${profileIdx}-${vpnIdx}`;
-        if (failedCellKeys.has(key)) return null; // Skip failed cells
-        return [profileIdx, vpnIdx, data.cpu[vpn]?.[profile] ?? 0];
+        const value = cpu[vpn]?.[profile];
+        if (failedCellKeys.has(key) || value === undefined) return null;
+        return [profileIdx, vpnIdx, value];
       })
       .filter((item): item is [number, number, number] => item !== null),
   );
@@ -245,8 +247,11 @@ const createCpuHeatmapOption = (data: UdpHeatmapData): EChartsCoreOption => {
 
   return {
     title: {
-      text: "UDP CPU Usage Heatmap",
-      subtext: "Lower is better (green)" + (hasFailures ? " | ✕ = Failed" : ""),
+      text: "UDP Sender Host CPU Heatmap",
+      subtext:
+        "Busy share of all cores on the client | Lower is better (green)" +
+        (heatmapData.length === 0 ? " | Not measured in these results" : "") +
+        (hasFailures ? " | ✕ = Failed" : ""),
       left: "center",
     },
     toolbox: {

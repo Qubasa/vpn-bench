@@ -38,8 +38,11 @@ log = logging.getLogger(__name__)
 VPN_SETTLE_SECONDS = 80
 
 
-def get_vpn_service_name(vpn: VPN) -> str:
-    """Get the systemd service name for a given VPN type."""
+def get_vpn_service_name(vpn: VPN) -> str | None:
+    """Get the systemd unit of the VPN daemon, None when no daemon carries traffic.
+
+    Internal has no VPN and Wireguard runs in the kernel.
+    """
     match vpn:
         case VPN.Zerotier:
             return "zerotierone.service"
@@ -61,9 +64,8 @@ def get_vpn_service_name(vpn: VPN) -> str:
             return "tinc.tincr.service"
         case VPN.Headscale:
             return "tailscaled.service"
-        case _:
-            msg = f"Unknown VPN type: {vpn}"
-            raise ValueError(msg)
+        case VPN.Internal | VPN.Wireguard:
+            return None
 
 
 def get_test_service_name(test: TestType) -> str | None:
@@ -130,15 +132,14 @@ def restart_vpn_service(bmachines: list[BenchMachine], vpn: VPN) -> VpnRestartRe
         VpnRestartResult with timing breakdown. The settle time is counted in
         connectivity_wait_duration_seconds.
     """
-    if vpn == VPN.Internal or vpn == VPN.Wireguard:
-        # No VPN service to restart for internal tests
+    service_name = get_vpn_service_name(vpn)
+    if service_name is None:
         return VpnRestartResult(
             retries=0,
             restart_duration_seconds=0.0,
             connectivity_wait_duration_seconds=0.0,
         )
 
-    service_name = get_vpn_service_name(vpn)
     log.info(f"Restarting VPN service {service_name} on all machines")
 
     restart_start = time.time()
@@ -378,6 +379,7 @@ def run_benchmarks(
                         creds,
                         udp_mode=False,
                         target_machine=next_bmachine.cmachine,
+                        vpn_unit=get_vpn_service_name(vpn),
                     )
                     tcp_duration = time.time() - start_time
                     tcp_logs = collect_logs_on_failure(
@@ -392,6 +394,7 @@ def run_benchmarks(
                             "vpn." + next_bmachine.cmachine.name,
                             creds,
                             target_machine=next_bmachine.cmachine,
+                            vpn_unit=get_vpn_service_name(vpn),
                             udp_mode=True,
                             timeout=120,
                         )

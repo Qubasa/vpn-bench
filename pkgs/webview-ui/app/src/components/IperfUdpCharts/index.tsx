@@ -1,6 +1,7 @@
 import { Echart } from "../Echarts"; // Assuming Echart component handles rendering
 import { createErrorBarSeries } from "../Echarts/errorBars";
 import { formatAxisValue } from "../Echarts/formatters";
+import type { VpbIperfData } from "../IperfTcpCharts";
 /* eslint-disable  @typescript-eslint/no-explicit-any */
 
 // Define interfaces for UDP reports based on provided JSON
@@ -137,8 +138,8 @@ export interface IperfUdpReportData {
       lost_percent: number;
       sender: boolean;
     };
+    // iperf3's own client (host) and server (remote) processes, % of one core
     cpu_utilization_percent?: {
-      // Make optional as it might be missing
       host_total: number;
       host_user: number;
       host_system: number;
@@ -189,6 +190,7 @@ export interface IperfUdpReportData {
       sender: boolean; // false
     };
   }[];
+  vpb?: VpbIperfData;
 }
 
 export interface IperfUdpReport {
@@ -749,20 +751,74 @@ const createUdpCpuOption = (
     return aCpu - bCpu;
   });
 
-  const cpuData = sortedReports.map((report) => ({
-    name: report.name ?? "Unknown Report",
-    host: (report.data?.end?.cpu_utilization_percent?.host_total ?? 0).toFixed(
-      1,
-    ),
-    remote: (
-      report.data?.end?.cpu_utilization_percent?.remote_total ?? 0
-    ).toFixed(1),
-  }));
+  const vpnPercent = (
+    report: IperfUdpReport,
+    side: "client" | "server",
+  ): string | null =>
+    report.data?.vpb?.cpu?.[side].vpn_process_percent?.toFixed(1) ?? null;
+  const hasVpnCpu = sortedReports.some(
+    (report) =>
+      vpnPercent(report, "client") !== null ||
+      vpnPercent(report, "server") !== null,
+  );
+  const barLabel = {
+    show: true,
+    position: "top" as const,
+    formatter: "{c} %",
+    fontSize: 10,
+  };
+  const vpnSeries: echarts.SeriesOption[] = hasVpnCpu
+    ? [
+        {
+          name: "VPN Client",
+          type: "bar",
+          data: sortedReports.map((report) => vpnPercent(report, "client")),
+          color: "#2c3e50",
+          label: barLabel,
+          emphasis: { focus: "series" },
+        },
+        {
+          name: "VPN Server",
+          type: "bar",
+          data: sortedReports.map((report) => vpnPercent(report, "server")),
+          color: "#7f8c8d",
+          label: barLabel,
+          emphasis: { focus: "series" },
+        },
+      ]
+    : [];
+  const series: echarts.SeriesOption[] = [
+    ...vpnSeries,
+    {
+      name: "iperf3 Client",
+      type: "bar",
+      data: sortedReports.map((report) =>
+        (report.data?.end?.cpu_utilization_percent?.host_total ?? 0).toFixed(1),
+      ),
+      color: "#f39c12",
+      label: barLabel,
+      emphasis: { focus: "series" },
+    },
+    {
+      name: "iperf3 Server",
+      type: "bar",
+      data: sortedReports.map((report) =>
+        (report.data?.end?.cpu_utilization_percent?.remote_total ?? 0).toFixed(
+          1,
+        ),
+      ),
+      color: "#16a085",
+      label: barLabel,
+      emphasis: { focus: "series" },
+    },
+  ];
 
   return {
     title: {
-      text: "Average CPU Utilization", // Clarified Title
-      subtext: "Lower is better",
+      text: "Average Process CPU",
+      subtext: hasVpnCpu
+        ? "Lower is better"
+        : "Lower is better | VPN process not measured (kernel datapath or older result)",
       left: "center",
       subtextStyle: { color: "#888", fontSize: 12 },
     },
@@ -771,7 +827,7 @@ const createUdpCpuOption = (
       axisPointer: { type: "shadow" },
     },
     legend: {
-      data: ["Host CPU", "Remote CPU"],
+      data: series.map((s) => String(s.name)),
       bottom: 10,
     },
     grid: {
@@ -792,7 +848,7 @@ const createUdpCpuOption = (
     },
     xAxis: {
       type: "category",
-      data: cpuData.map((item) => item.name),
+      data: sortedReports.map((report) => report.name ?? "Unknown Report"),
       axisLabel: {
         interval: 0,
         rotate: reports.length > 5 ? 30 : 0,
@@ -800,40 +856,13 @@ const createUdpCpuOption = (
     },
     yAxis: {
       type: "value",
-      name: "Percentage (%)",
+      name: "% of one core",
       max: (value) => Math.max(100, Math.ceil(value.max / 20) * 20), // Adjust max dynamically but ensure at least 100
       min: 0,
       axisLabel: { formatter: formatAxisValue },
       nameTextStyle: { align: "left" },
     },
-    series: [
-      {
-        name: "Host CPU",
-        type: "bar",
-        data: cpuData.map((item) => item.host),
-        color: "#f39c12", // Changed color
-        label: {
-          show: true,
-          position: "top",
-          formatter: "{c} %",
-          fontSize: 10,
-        },
-        emphasis: { focus: "series" },
-      },
-      {
-        name: "Remote CPU",
-        type: "bar",
-        data: cpuData.map((item) => item.remote),
-        color: "#16a085", // Changed color
-        label: {
-          show: true,
-          position: "top",
-          formatter: "{c} %",
-          fontSize: 10,
-        },
-        emphasis: { focus: "series" },
-      },
-    ],
+    series,
   };
 };
 
