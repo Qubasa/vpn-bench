@@ -709,8 +709,8 @@ export const TcpThroughputComparisonChart = (props: {
   const chartData = () =>
     metricsToDualBarData(
       props.data,
-      (d) => d.sender_throughput_mbps,
-      (d) => d.receiver_throughput_mbps,
+      (d) => d.client_to_server_mbps,
+      (d) => d.server_to_client_mbps,
       props.allVpnNames,
     );
   return (
@@ -721,6 +721,8 @@ export const TcpThroughputComparisonChart = (props: {
       height={props.height ?? 400}
       firstColor="#52c41a"
       secondColor="#1890ff"
+      firstLabel="Client → Server"
+      secondLabel="Server → Client"
       labelFormatter={(v) => v.toFixed(0)}
     />
   );
@@ -819,16 +821,16 @@ export const TcpTotalDataComparisonChart = (props: {
     metricsToDualBarData(
       props.data,
       (d) => ({
-        ...d.total_bytes_sent,
-        average: d.total_bytes_sent.average / 1_000_000_000, // Convert to GB
-        min: d.total_bytes_sent.min / 1_000_000_000,
-        max: d.total_bytes_sent.max / 1_000_000_000,
+        ...d.client_to_server_bytes,
+        average: d.client_to_server_bytes.average / 1_000_000_000, // Convert to GB
+        min: d.client_to_server_bytes.min / 1_000_000_000,
+        max: d.client_to_server_bytes.max / 1_000_000_000,
       }),
       (d) => ({
-        ...d.total_bytes_received,
-        average: d.total_bytes_received.average / 1_000_000_000,
-        min: d.total_bytes_received.min / 1_000_000_000,
-        max: d.total_bytes_received.max / 1_000_000_000,
+        ...d.server_to_client_bytes,
+        average: d.server_to_client_bytes.average / 1_000_000_000,
+        min: d.server_to_client_bytes.min / 1_000_000_000,
+        max: d.server_to_client_bytes.max / 1_000_000_000,
       }),
       props.allVpnNames,
     );
@@ -840,8 +842,8 @@ export const TcpTotalDataComparisonChart = (props: {
       height={props.height ?? 400}
       firstColor="#722ed1"
       secondColor="#13c2c2"
-      firstLabel="Sent"
-      secondLabel="Received"
+      firstLabel="Client → Server"
+      secondLabel="Server → Client"
     />
   );
 };
@@ -1517,8 +1519,8 @@ export const ParallelTcpThroughputComparisonChart = (props: {
   const chartData = () =>
     metricsToDualBarData(
       props.data,
-      (d) => d.sender_throughput_mbps,
-      (d) => d.receiver_throughput_mbps,
+      (d) => d.client_to_server_mbps,
+      (d) => d.server_to_client_mbps,
       props.allVpnNames,
     );
   return (
@@ -1529,6 +1531,8 @@ export const ParallelTcpThroughputComparisonChart = (props: {
       height={props.height ?? 400}
       firstColor="#52c41a"
       secondColor="#1890ff"
+      firstLabel="Client → Server"
+      secondLabel="Server → Client"
       labelFormatter={(v) => v.toFixed(0)}
     />
   );
@@ -1600,16 +1604,16 @@ export const ParallelTcpTotalDataComparisonChart = (props: {
     metricsToDualBarData(
       props.data,
       (d) => ({
-        ...d.total_bytes_sent,
-        average: d.total_bytes_sent.average / 1_000_000_000, // Convert to GB
-        min: d.total_bytes_sent.min / 1_000_000_000,
-        max: d.total_bytes_sent.max / 1_000_000_000,
+        ...d.client_to_server_bytes,
+        average: d.client_to_server_bytes.average / 1_000_000_000, // Convert to GB
+        min: d.client_to_server_bytes.min / 1_000_000_000,
+        max: d.client_to_server_bytes.max / 1_000_000_000,
       }),
       (d) => ({
-        ...d.total_bytes_received,
-        average: d.total_bytes_received.average / 1_000_000_000,
-        min: d.total_bytes_received.min / 1_000_000_000,
-        max: d.total_bytes_received.max / 1_000_000_000,
+        ...d.server_to_client_bytes,
+        average: d.server_to_client_bytes.average / 1_000_000_000,
+        min: d.server_to_client_bytes.min / 1_000_000_000,
+        max: d.server_to_client_bytes.max / 1_000_000_000,
       }),
       props.allVpnNames,
     );
@@ -1621,8 +1625,8 @@ export const ParallelTcpTotalDataComparisonChart = (props: {
       height={props.height ?? 400}
       firstColor="#722ed1"
       secondColor="#13c2c2"
-      firstLabel="Sent"
-      secondLabel="Received"
+      firstLabel="Client → Server"
+      secondLabel="Server → Client"
     />
   );
 };

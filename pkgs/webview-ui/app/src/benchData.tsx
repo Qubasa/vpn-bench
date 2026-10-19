@@ -263,14 +263,14 @@ export interface VideoStreamingComparisonData {
 }
 
 export interface TcpIperfComparisonData {
-  sender_throughput_mbps: MetricStats;
-  receiver_throughput_mbps: MetricStats;
+  client_to_server_mbps: MetricStats;
+  server_to_client_mbps: MetricStats;
   retransmits: MetricStats;
   retransmit_percent: MetricStats;
   max_snd_cwnd_bytes: MetricStats;
   max_snd_wnd_bytes: MetricStats;
-  total_bytes_sent: MetricStats;
-  total_bytes_received: MetricStats;
+  client_to_server_bytes: MetricStats;
+  server_to_client_bytes: MetricStats;
   duration_seconds: MetricStats;
   host_cpu_percent: MetricStats;
   remote_cpu_percent: MetricStats;
@@ -297,14 +297,14 @@ export interface NixCacheComparisonData {
 }
 
 export interface ParallelTcpComparisonData {
-  sender_throughput_mbps: MetricStats;
-  receiver_throughput_mbps: MetricStats;
+  client_to_server_mbps: MetricStats;
+  server_to_client_mbps: MetricStats;
   total_retransmits: MetricStats;
   retransmit_percent: MetricStats;
   max_snd_cwnd_bytes: MetricStats;
   max_snd_wnd_bytes: MetricStats;
-  total_bytes_sent: MetricStats;
-  total_bytes_received: MetricStats;
+  client_to_server_bytes: MetricStats;
+  server_to_client_bytes: MetricStats;
   duration_seconds: MetricStats;
 }
 

@@ -89,16 +89,21 @@ class RistComparisonDict(TypedDict):
 
 
 class TcpIperfComparisonDict(TypedDict):
-    """Comparison data for TCP iperf3 benchmarks across VPNs."""
+    """Comparison data for TCP iperf3 benchmarks across VPNs.
 
-    sender_throughput_mbps: MetricStatsDict
-    receiver_throughput_mbps: MetricStatsDict
+    TCP runs with --bidir, so both directions are measured at the same time.
+    Throughput and bytes are receiver-side for each direction. Retransmits and
+    window sizes cover the client→server direction.
+    """
+
+    client_to_server_mbps: MetricStatsDict  # end.sum_received
+    server_to_client_mbps: MetricStatsDict  # end.sum_received_bidir_reverse
     retransmits: MetricStatsDict
     retransmit_percent: MetricStatsDict  # Retransmits as % of estimated packets
     max_snd_cwnd_bytes: MetricStatsDict  # Max congestion window in bytes
     max_snd_wnd_bytes: MetricStatsDict  # Max send window in bytes
-    total_bytes_sent: MetricStatsDict  # Total bytes sent during test
-    total_bytes_received: MetricStatsDict  # Total bytes received during test
+    client_to_server_bytes: MetricStatsDict
+    server_to_client_bytes: MetricStatsDict
     duration_seconds: MetricStatsDict  # Test duration in seconds
     host_cpu_percent: MetricStatsDict  # Host CPU utilization
     remote_cpu_percent: MetricStatsDict  # Remote CPU utilization
@@ -129,18 +134,19 @@ class NixCacheComparisonDict(TypedDict):
 
 
 class ParallelTcpComparisonDict(TypedDict):
-    """Comparison data for Parallel TCP iperf3 benchmarks across VPNs."""
+    """Comparison data for Parallel TCP iperf3 benchmarks across VPNs.
 
-    sender_throughput_mbps: MetricStatsDict  # Total sender throughput (sum_sent)
-    receiver_throughput_mbps: (
-        MetricStatsDict  # Total receiver throughput (sum_received)
-    )
+    Same direction semantics as TcpIperfComparisonDict, summed across all pairs.
+    """
+
+    client_to_server_mbps: MetricStatsDict
+    server_to_client_mbps: MetricStatsDict
     total_retransmits: MetricStatsDict  # Sum of retransmits
     retransmit_percent: MetricStatsDict  # Retransmits as % of estimated packets
     max_snd_cwnd_bytes: MetricStatsDict  # Max congestion window across all pairs
     max_snd_wnd_bytes: MetricStatsDict  # Max send window across all pairs
-    total_bytes_sent: MetricStatsDict  # Total bytes sent across all pairs
-    total_bytes_received: MetricStatsDict  # Total bytes received across all pairs
+    client_to_server_bytes: MetricStatsDict
+    server_to_client_bytes: MetricStatsDict
     duration_seconds: MetricStatsDict  # Test duration in seconds
 
 
@@ -853,40 +859,26 @@ def aggregate_rist_data(
 
 
 def extract_tcp_iperf_metrics(data: dict[str, Any]) -> TcpIperfComparisonDict | None:
-    """Extract key metrics from iperf3 TCP JSON output."""
+    """Extract key metrics from a bidirectional iperf3 TCP JSON output."""
     try:
         start = data.get("start", {})
         end = data.get("end", {})
         sum_sent = end.get("sum_sent", {})
-        sum_received = end.get("sum_received", {})
+        forward = end.get("sum_received", {})
+        reverse = end.get("sum_received_bidir_reverse")
+        if reverse is None:
+            log.warning("TCP iperf3 result has no reverse direction (not --bidir)")
+            return None
 
         # Get actual MSS from iperf3 (negotiated during connection)
         tcp_mss = start.get("tcp_mss_default")
 
-        # Convert bits_per_second to Mbps
-        sender_bps = sum_sent.get("bits_per_second", 0)
         retransmits = sum_sent.get("retransmits", 0)
-
-        # In bidir mode, end.sum_received is the forward direction's received
-        # confirmation. The actual reverse direction throughput is in
-        # end.sum_received_bidir_reverse.
-        is_bidir = start.get("test_start", {}).get("bidir", 0) == 1
-        sum_received_bidir_reverse = end.get("sum_received_bidir_reverse", {})
-        if is_bidir and sum_received_bidir_reverse:
-            receiver_bps = sum_received_bidir_reverse.get("bits_per_second", 0)
-        else:
-            receiver_bps = sum_received.get("bits_per_second", 0)
-
-        sender_mbps = sender_bps / 1_000_000
-        receiver_mbps = receiver_bps / 1_000_000
-
-        # Extract total bytes and duration
         bytes_sent = sum_sent.get("bytes", 0)
-        if is_bidir and sum_received_bidir_reverse:
-            bytes_received = sum_received_bidir_reverse.get("bytes", 0)
-        else:
-            bytes_received = sum_received.get("bytes", 0)
         duration_seconds = sum_sent.get("seconds", 0)
+
+        client_to_server_mbps = forward.get("bits_per_second", 0) / 1_000_000
+        server_to_client_mbps = reverse.get("bits_per_second", 0) / 1_000_000
 
         # Extract max window sizes from streams (sender stream has window data)
         max_snd_cwnd = 0
@@ -916,14 +908,18 @@ def extract_tcp_iperf_metrics(data: dict[str, Any]) -> TcpIperfComparisonDict | 
             }
 
         return {
-            "sender_throughput_mbps": single_value_stats(sender_mbps),
-            "receiver_throughput_mbps": single_value_stats(receiver_mbps),
+            "client_to_server_mbps": single_value_stats(client_to_server_mbps),
+            "server_to_client_mbps": single_value_stats(server_to_client_mbps),
             "retransmits": single_value_stats(float(retransmits)),
             "retransmit_percent": single_value_stats(retransmit_pct),
             "max_snd_cwnd_bytes": single_value_stats(float(max_snd_cwnd)),
             "max_snd_wnd_bytes": single_value_stats(float(max_snd_wnd)),
-            "total_bytes_sent": single_value_stats(float(bytes_sent)),
-            "total_bytes_received": single_value_stats(float(bytes_received)),
+            "client_to_server_bytes": single_value_stats(
+                float(forward.get("bytes", 0))
+            ),
+            "server_to_client_bytes": single_value_stats(
+                float(reverse.get("bytes", 0))
+            ),
             "duration_seconds": single_value_stats(float(duration_seconds)),
             "host_cpu_percent": single_value_stats(float(host_cpu)),
             "remote_cpu_percent": single_value_stats(float(remote_cpu)),
@@ -958,11 +954,11 @@ def aggregate_tcp_iperf_data(
         return None
 
     return {
-        "sender_throughput_mbps": aggregate_metric_stats(
-            [m["sender_throughput_mbps"] for m in metrics_list]
+        "client_to_server_mbps": aggregate_metric_stats(
+            [m["client_to_server_mbps"] for m in metrics_list]
         ),
-        "receiver_throughput_mbps": aggregate_metric_stats(
-            [m["receiver_throughput_mbps"] for m in metrics_list]
+        "server_to_client_mbps": aggregate_metric_stats(
+            [m["server_to_client_mbps"] for m in metrics_list]
         ),
         "retransmits": aggregate_metric_stats([m["retransmits"] for m in metrics_list]),
         "retransmit_percent": aggregate_metric_stats(
@@ -974,11 +970,11 @@ def aggregate_tcp_iperf_data(
         "max_snd_wnd_bytes": aggregate_metric_stats(
             [m["max_snd_wnd_bytes"] for m in metrics_list]
         ),
-        "total_bytes_sent": aggregate_metric_stats(
-            [m["total_bytes_sent"] for m in metrics_list]
+        "client_to_server_bytes": aggregate_metric_stats(
+            [m["client_to_server_bytes"] for m in metrics_list]
         ),
-        "total_bytes_received": aggregate_metric_stats(
-            [m["total_bytes_received"] for m in metrics_list]
+        "server_to_client_bytes": aggregate_metric_stats(
+            [m["server_to_client_bytes"] for m in metrics_list]
         ),
         "duration_seconds": aggregate_metric_stats(
             [m["duration_seconds"] for m in metrics_list]
@@ -1188,30 +1184,26 @@ def aggregate_nix_cache_data(
 def extract_parallel_tcp_metrics(
     data: dict[str, Any],
 ) -> ParallelTcpComparisonDict | None:
-    """Extract key metrics from parallel TCP iperf3 JSON output.
+    """Extract key metrics from parallel bidirectional TCP iperf3 JSON output.
 
-    For bidirectional TCP tests, we extract:
-    - sender_throughput_mbps: from sum_sent (total sent across all pairs)
-    - receiver_throughput_mbps: from sum_received (total received across all pairs)
-    - total_retransmits: sum of retransmits across all pairs
-    - max_snd_cwnd_bytes: max congestion window across all pairs
-    - max_snd_wnd_bytes: max send window across all pairs
-    - total_bytes_sent: sum of bytes sent across all pairs
-    - total_bytes_received: sum of bytes received across all pairs
-    - duration_seconds: test duration (from first successful pair)
+    Throughput and bytes are summed per direction across all successful pairs,
+    receiver-side (sum_received for client→server, sum_received_bidir_reverse
+    for server→client). Retransmits and windows cover client→server.
+    Duration and MSS come from the first successful pair.
     """
     try:
         pairs = data.get("pairs", [])
         if not pairs:
             return None
 
-        total_sender_throughput = 0.0
-        total_receiver_throughput = 0.0
+        total_client_to_server_mbps = 0.0
+        total_server_to_client_mbps = 0.0
         total_retransmits = 0
         max_snd_cwnd = 0
         max_snd_wnd = 0
         total_bytes_sent = 0
-        total_bytes_received = 0
+        total_client_to_server_bytes = 0
+        total_server_to_client_bytes = 0
         duration_seconds = 0.0  # Use duration from first successful pair
         tcp_mss: int | None = None  # Use MSS from first successful pair
         successful_pairs = 0
@@ -1224,22 +1216,15 @@ def extract_parallel_tcp_metrics(
             start = result.get("start", {})
             end = result.get("end", {})
 
-            # Get sender stats from sum_sent
             sum_sent = end.get("sum_sent", {})
-            sender_bps = sum_sent.get("bits_per_second", 0)
             retransmits = sum_sent.get("retransmits", 0)
             bytes_sent = sum_sent.get("bytes", 0)
 
-            # Get receiver stats - in bidir mode, use reverse direction data
-            sum_received = end.get("sum_received", {})
-            is_bidir = start.get("test_start", {}).get("bidir", 0) == 1
-            sum_received_bidir_reverse = end.get("sum_received_bidir_reverse", {})
-            if is_bidir and sum_received_bidir_reverse:
-                receiver_bps = sum_received_bidir_reverse.get("bits_per_second", 0)
-                bytes_received = sum_received_bidir_reverse.get("bytes", 0)
-            else:
-                receiver_bps = sum_received.get("bits_per_second", 0)
-                bytes_received = sum_received.get("bytes", 0)
+            forward = end.get("sum_received", {})
+            reverse = end.get("sum_received_bidir_reverse")
+            if reverse is None:
+                log.warning("Parallel TCP pair has no reverse direction (not --bidir)")
+                return None
 
             # Get duration and MSS from first successful pair (all pairs run same duration)
             if successful_pairs == 0:
@@ -1254,11 +1239,12 @@ def extract_parallel_tcp_metrics(
                     max_snd_cwnd = max(max_snd_cwnd, sender_data.get("max_snd_cwnd", 0))
                     max_snd_wnd = max(max_snd_wnd, sender_data.get("max_snd_wnd", 0))
 
-            total_sender_throughput += sender_bps / 1_000_000
-            total_receiver_throughput += receiver_bps / 1_000_000
+            total_client_to_server_mbps += forward.get("bits_per_second", 0) / 1_000_000
+            total_server_to_client_mbps += reverse.get("bits_per_second", 0) / 1_000_000
             total_retransmits += retransmits
             total_bytes_sent += bytes_sent
-            total_bytes_received += bytes_received
+            total_client_to_server_bytes += forward.get("bytes", 0)
+            total_server_to_client_bytes += reverse.get("bytes", 0)
             successful_pairs += 1
 
         if successful_pairs == 0:
@@ -1278,14 +1264,18 @@ def extract_parallel_tcp_metrics(
             }
 
         return {
-            "sender_throughput_mbps": single_value_stats(total_sender_throughput),
-            "receiver_throughput_mbps": single_value_stats(total_receiver_throughput),
+            "client_to_server_mbps": single_value_stats(total_client_to_server_mbps),
+            "server_to_client_mbps": single_value_stats(total_server_to_client_mbps),
             "total_retransmits": single_value_stats(float(total_retransmits)),
             "retransmit_percent": single_value_stats(retransmit_pct),
             "max_snd_cwnd_bytes": single_value_stats(float(max_snd_cwnd)),
             "max_snd_wnd_bytes": single_value_stats(float(max_snd_wnd)),
-            "total_bytes_sent": single_value_stats(float(total_bytes_sent)),
-            "total_bytes_received": single_value_stats(float(total_bytes_received)),
+            "client_to_server_bytes": single_value_stats(
+                float(total_client_to_server_bytes)
+            ),
+            "server_to_client_bytes": single_value_stats(
+                float(total_server_to_client_bytes)
+            ),
             "duration_seconds": single_value_stats(float(duration_seconds)),
         }
     except (KeyError, TypeError) as e:
@@ -1561,7 +1551,7 @@ def generate_cross_profile_tcp_data(
             tcp_data = aggregate_tcp_iperf_data(bench_dir, vpn_name, run_alias)
 
             if tcp_data:
-                throughput = tcp_data["sender_throughput_mbps"]["average"]
+                throughput = tcp_data["client_to_server_mbps"]["average"]
                 window_size = tcp_data["max_snd_wnd_bytes"]["average"]
                 cwnd = tcp_data["max_snd_cwnd_bytes"]["average"]
 
@@ -1585,7 +1575,7 @@ def generate_cross_profile_tcp_data(
             parallel_data = aggregate_parallel_tcp_data(bench_dir, vpn_name, run_alias)
 
             if parallel_data:
-                throughput = parallel_data["sender_throughput_mbps"]["average"]
+                throughput = parallel_data["client_to_server_mbps"]["average"]
                 window_size = parallel_data["max_snd_wnd_bytes"]["average"]
                 cwnd = parallel_data["max_snd_cwnd_bytes"]["average"]
 

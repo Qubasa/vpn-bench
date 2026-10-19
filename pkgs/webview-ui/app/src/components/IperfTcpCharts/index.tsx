@@ -452,7 +452,12 @@ const getThroughputStats = (reportData: IperfTcpReportData) => {
   };
 };
 
-// Throughput Chart Creator - MODIFIED
+// --bidir runs both directions at once: sum_sent is client→server, the
+// bidir_reverse summaries are server→client.
+const CLIENT_TO_SERVER = "Client → Server";
+const SERVER_TO_CLIENT = "Server → Client";
+
+// Throughput Chart Creator
 const createThroughputOption = (reports: IperfTcpReport[]) => {
   // Pre-calculate stats for easier access in tooltip
   const throughputStats = reports.map((report) => ({
@@ -491,28 +496,25 @@ const createThroughputOption = (reports: IperfTcpReport[]) => {
 
         let tooltipText = `${reportStat.name}<br/>`;
 
-        // Find sent and received data in params based on seriesName
-        const sentParam = params.find((p) => p.seriesName === "Average Sent");
-        const recvParam = params.find(
-          (p) => p.seriesName === "Average Received",
-        );
+        const sentParam = params.find((p) => p.seriesName === CLIENT_TO_SERVER);
+        const recvParam = params.find((p) => p.seriesName === SERVER_TO_CLIENT);
 
         if (sentParam) {
-          tooltipText += `${sentParam.marker} Avg Sent: ${reportStat.stats.avgSentMbps.toFixed(1)} Mbps<br/>`;
-          tooltipText += `&nbsp;&nbsp;&nbsp;Min Sent: ${reportStat.stats.minSentMbps.toFixed(1)} Mbps<br/>`;
-          tooltipText += `&nbsp;&nbsp;&nbsp;Max Sent: ${reportStat.stats.maxSentMbps.toFixed(1)} Mbps<br/>`;
+          tooltipText += `${sentParam.marker} ${CLIENT_TO_SERVER} avg: ${reportStat.stats.avgSentMbps.toFixed(1)} Mbps<br/>`;
+          tooltipText += `&nbsp;&nbsp;&nbsp;Min: ${reportStat.stats.minSentMbps.toFixed(1)} Mbps<br/>`;
+          tooltipText += `&nbsp;&nbsp;&nbsp;Max: ${reportStat.stats.maxSentMbps.toFixed(1)} Mbps<br/>`;
         }
         if (recvParam) {
-          tooltipText += `${recvParam.marker} Avg Recv: ${reportStat.stats.avgRecvMbps.toFixed(1)} Mbps<br/>`;
-          tooltipText += `&nbsp;&nbsp;&nbsp;Min Recv: ${reportStat.stats.minRecvMbps.toFixed(1)} Mbps<br/>`;
-          tooltipText += `&nbsp;&nbsp;&nbsp;Max Recv: ${reportStat.stats.maxRecvMbps.toFixed(1)} Mbps`;
+          tooltipText += `${recvParam.marker} ${SERVER_TO_CLIENT} avg: ${reportStat.stats.avgRecvMbps.toFixed(1)} Mbps<br/>`;
+          tooltipText += `&nbsp;&nbsp;&nbsp;Min: ${reportStat.stats.minRecvMbps.toFixed(1)} Mbps<br/>`;
+          tooltipText += `&nbsp;&nbsp;&nbsp;Max: ${reportStat.stats.maxRecvMbps.toFixed(1)} Mbps`;
         }
 
         return tooltipText;
       },
     },
     legend: {
-      data: ["Average Sent", "Average Received"], // Updated legend labels
+      data: [CLIENT_TO_SERVER, SERVER_TO_CLIENT],
       top: 50,
     },
     grid: {
@@ -549,14 +551,14 @@ const createThroughputOption = (reports: IperfTcpReport[]) => {
     },
     series: [
       {
-        name: "Average Sent", // Updated series name
+        name: CLIENT_TO_SERVER,
         type: "bar",
         data: throughputStats.map((item) => item.stats.avgSentMbps.toFixed(1)), // Plot average
         color: "#3498db",
         label: { show: false },
       },
       {
-        name: "Average Received", // Updated series name
+        name: SERVER_TO_CLIENT,
         type: "bar",
         data: throughputStats.map((item) => item.stats.avgRecvMbps.toFixed(1)), // Plot average
         color: "#2ecc71",
