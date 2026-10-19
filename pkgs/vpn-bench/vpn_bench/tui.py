@@ -711,6 +711,7 @@ class BenchmarkTUI(App[None]):
         self._log_handler: TUILogHandler | None = None
         self._original_handlers: list[logging.Handler] = []
         self._main_thread_id: int | None = None
+        self.failed_vpns: list[tuple[VPN, str]] = []
 
     def compose(self) -> ComposeResult:
         yield Header()
@@ -867,8 +868,7 @@ class BenchmarkTUI(App[None]):
 
         worker = get_current_worker()
 
-        failed_vpns: list[tuple[VPN, str]] = []
-
+        failed_vpns = self.failed_vpns
         # Use capture_output_context to route all run() output to TUI
         with self.tracker.capture_output_context():
             for entry_idx, entry in enumerate(self.entries):

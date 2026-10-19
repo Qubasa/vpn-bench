@@ -422,9 +422,10 @@ def run_cli() -> None:
                 optimized=args.optimized,
             )
             app.run()
+            failed_vpns = app.failed_vpns
         else:
             # Run without TUI (standard logging)
-            failed_vpns: list[tuple[VPN, str]] = []
+            failed_vpns = []
             for entry in entries:
                 log.info(f"========== Running benchmark for {entry.vpn} ==========")
                 log.info(
@@ -451,11 +452,12 @@ def run_cli() -> None:
                     log.info("Continuing with next VPN...")
                     continue
 
-            if failed_vpns:
-                log.warning("The following VPNs failed during benchmarking:")
-                for vpn, error in failed_vpns:
-                    log.warning(f"  - {vpn.value}: {error}")
-                log.warning(f"Total: {len(failed_vpns)}/{len(entries)} VPNs failed")
+        if failed_vpns:
+            details = "".join(
+                f"\n  - {vpn.value}: {error}" for vpn, error in failed_vpns
+            )
+            msg = f"{len(failed_vpns)}/{len(entries)} VPN benchmarks failed:{details}"
+            raise VpnBenchError(msg)
 
     elif args.subcommand == "plot":
         machines = tr_metadata(config)
