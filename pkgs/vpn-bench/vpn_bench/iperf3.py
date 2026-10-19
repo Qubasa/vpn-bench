@@ -12,6 +12,9 @@ from vpn_bench.data import BenchMachine
 
 log = logging.getLogger(__name__)
 
+# iperf3 --connect-timeout is in milliseconds
+CONNECT_TIMEOUT_MS = "5000"
+
 
 @dataclass
 class IperfCreds:
@@ -30,6 +33,11 @@ def run_iperf_test(
 ) -> dict[str, Any]:
     """Run a single iperf3 test and return the results.
 
+    TCP runs with --bidir. UDP runs forward only (client sends, server receives):
+    in UDP --bidir the server starts its data flood right after the 4-byte
+    connect reply, and with netem jitter a data datagram overtaking that reply
+    makes the client abort with "unable to read from stream socket".
+
     Args:
         machine: The source machine to run the test from
         target_host: The VPN hostname to connect to (e.g., "vpn.yuki")
@@ -41,9 +49,8 @@ def run_iperf_test(
 
     bench_cmd = [
         "iperf",
-        "--bidir",
         "--connect-timeout",
-        "600",  # 5 seconds
+        CONNECT_TIMEOUT_MS,
         "--time",
         "30",  # 30 seconds
         "--json",
@@ -58,6 +65,8 @@ def run_iperf_test(
 
     if udp_mode:
         bench_cmd.extend(["-u", "--udp-counters-64bit", "-b", "0"])
+    else:
+        bench_cmd.append("--bidir")
 
     # Restart iperf3 service on target (server) before running the test
     if target_machine:
@@ -105,7 +114,7 @@ def _run_single_parallel_iperf(
         "iperf",
         "--bidir",
         "--connect-timeout",
-        "600",  # 5 minutes
+        CONNECT_TIMEOUT_MS,
         "--time",
         str(bench_time),  # default 30 seconds
         "--json",

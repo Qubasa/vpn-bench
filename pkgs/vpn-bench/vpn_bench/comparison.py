@@ -995,7 +995,7 @@ def aggregate_tcp_iperf_data(
 def extract_udp_iperf_metrics(data: dict[str, Any]) -> UdpIperfComparisonDict | None:
     """Extract key metrics from iperf3 UDP JSON output.
 
-    For bidirectional UDP tests, we extract:
+    UDP tests run forward only (client sends to server). We extract:
     - sender_throughput_mbps: from end.sum_sent (client sending to server)
     - receiver_throughput_mbps: from end.sum_received (what server actually received)
     - jitter_ms: from end.sum_received (receiver-side jitter measurement)
