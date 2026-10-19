@@ -9,6 +9,8 @@ from clan_lib.async_run import AsyncRuntime
 from clan_lib.cmd import Log, RunOpts
 from clan_lib.machines.machines import Machine
 
+from vpn_bench.errors import VpnBenchError
+
 # Define TypeVar for numeric types (int or float)
 T = TypeVar("T", int, float)
 
@@ -61,7 +63,18 @@ class QperfSummaryDict(TypedDict):
     conn_time_ms: MetricStatsDict
 
 
-# --- Parsing Function (Unchanged) ---
+class QperfHandshakeError(VpnBenchError):
+    """qperf exited without completing the QUIC handshake."""
+
+
+def _match_line(lines: list[str], pattern: str) -> re.Match[str] | None:
+    for line in lines:
+        match = re.match(pattern, line)
+        if match:
+            return match
+    return None
+
+
 def parse_qperf_output(output_text: str) -> QperfOutputDict:
     lines = output_text.strip().split("\n")
     result: QperfOutputDict = {
@@ -71,11 +84,9 @@ def parse_qperf_output(output_text: str) -> QperfOutputDict:
         "per_second_stats": [],
         "connection_status": "",
     }
-    # Parse the first line for configuration details
-    config_line = lines[0]
-    config_match = re.match(
+    config_match = _match_line(
+        lines,
         r"starting client with host ([^,]+), port (\d+), runtime (\d+)s, cc (\w+), iw (\d+)",
-        config_line,
     )
     if config_match:
         result["config"] = {
@@ -85,11 +96,15 @@ def parse_qperf_output(output_text: str) -> QperfOutputDict:
             "cc": config_match.group(4),
             "iw": int(config_match.group(5)),
         }
-    # Parse connection times
-    conn_time_match = re.match(r"connection establishment time: (\d+)ms", lines[1])
-    if conn_time_match:
-        result["connection_establishment_time_ms"] = int(conn_time_match.group(1))
-    ttfb_match = re.match(r"time to first byte: (\d+)ms", lines[2])
+    conn_time_match = _match_line(lines, r"connection establishment time: (\d+)ms")
+    if conn_time_match is None:
+        msg = (
+            f"QUIC handshake failed: qperf reported no connection establishment time. "
+            f"Output: {output_text.strip()!r}"
+        )
+        raise QperfHandshakeError(msg)
+    result["connection_establishment_time_ms"] = int(conn_time_match.group(1))
+    ttfb_match = _match_line(lines, r"time to first byte: (\d+)ms")
     if ttfb_match:
         result["time_to_first_byte_ms"] = int(ttfb_match.group(1))
     # Parse per-second statistics
@@ -104,7 +119,7 @@ def parse_qperf_output(output_text: str) -> QperfOutputDict:
     pattern = re.compile(
         r"second (\d+): ([\d.]+) (gbit/s|mbit/s|kbit/s), cpu (\d+): ([\d.]+)%"
     )
-    for line in lines[3:connection_closed_index]:
+    for line in lines[:connection_closed_index]:
         second_match = pattern.match(line)
         if second_match:
             second_num = int(second_match.group(1))
