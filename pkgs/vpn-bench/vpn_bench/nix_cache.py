@@ -11,6 +11,7 @@ from clan_lib.persist.inventory_store import InventoryStore
 from clan_lib.ssh.remote import Remote
 
 from vpn_bench.data import VPN, BenchMachine, Config
+from vpn_bench.remote import ssh_run
 from vpn_bench.terraform import TrMachine
 
 log = logging.getLogger(__name__)
@@ -87,7 +88,7 @@ def init_nix_cache_path(host: Remote, cache_target: Machine) -> None:
     ]
 
     with host.host_connection() as ssh:
-        ssh.run(nix_command(cmd), RunOpts(log=Log.BOTH))
+        ssh_run(ssh, nix_command(cmd), RunOpts(log=Log.BOTH))
 
 
 def run_nix_cache_test(
@@ -98,7 +99,8 @@ def run_nix_cache_test(
     # Restart harmonia service on cache_target (server) before running the test
     cache_host = cache_target.cmachine.target_host().override(host_key_check="none")
     with cache_host.host_connection() as ssh:
-        ssh.run(
+        ssh_run(
+            ssh,
             ["systemctl", "restart", "harmonia.service"],
             RunOpts(log=Log.BOTH),
         )
@@ -142,9 +144,11 @@ def run_nix_cache_test(
             urls,
         ]
 
-        ssh.run(cmd, RunOpts(log=Log.BOTH, timeout=700))  # 11 minutes
+        ssh_run(ssh, cmd, RunOpts(log=Log.BOTH, timeout=700))  # 11 minutes
 
-        res = ssh.run(["cat", f"{vpn.value}_nix-cache.json"], RunOpts(log=Log.BOTH))
+        res = ssh_run(
+            ssh, ["cat", f"{vpn.value}_nix-cache.json"], RunOpts(log=Log.BOTH)
+        )
         return json.loads(res.stdout)
 
 

@@ -12,11 +12,11 @@ from clan_lib.flake import Flake
 from clan_lib.machines.machines import Machine
 from clan_lib.nix_models.clan import InventoryInstance, Unknown
 from clan_lib.persist.inventory_store import InventoryStore
-from clan_lib.ssh.upload import upload
 
 from vpn_bench.assets import get_script_asset
 from vpn_bench.data import VPN, BenchMachine, Config, delete_dirs
 from vpn_bench.errors import save_bench_report
+from vpn_bench.remote import ssh_run, ssh_upload
 from vpn_bench.retry import MaxRetriesExceededError, retry_operation
 from vpn_bench.terraform import TrMachine
 
@@ -80,7 +80,8 @@ def download_connection_timings(
     def download_save(machine: Machine, dest: Path) -> None:
         host = machine.target_host().override(host_key_check="none")
         with host.host_connection() as ssh:
-            res = ssh.run(
+            res = ssh_run(
+                ssh,
                 ["cat", "/var/lib/connection-check/connection_timings.json"],
                 RunOpts(log=Log.BOTH),
             )
@@ -133,7 +134,8 @@ def wait_for_vpn_connectivity(
         def _do_mkdir() -> None:
             host = machine.target_host().override(host_key_check="none")
             with host.host_connection() as ssh:
-                ssh.run(
+                ssh_run(
+                    ssh,
                     ["mkdir", "-p", "/var/lib/connection-check"],
                     RunOpts(log=Log.BOTH),
                 )
@@ -155,7 +157,8 @@ def wait_for_vpn_connectivity(
         def _do_restart() -> None:
             host = machine.target_host().override(host_key_check="none")
             with host.host_connection() as ssh:
-                ssh.run(
+                ssh_run(
+                    ssh,
                     ["systemctl", "restart", "connection-check.service"],
                     RunOpts(log=Log.BOTH),
                 )
@@ -180,8 +183,9 @@ def wait_for_vpn_connectivity(
         def _do_wait() -> None:
             host = machine.target_host().override(host_key_check="none")
             with host.host_connection() as ssh:
-                upload(ssh, script, wait_service_path, file_mode=0o777)
-                ssh.run(
+                ssh_upload(ssh, script, wait_service_path, file_mode=0o777)
+                ssh_run(
+                    ssh,
                     [f"{wait_service_path}", "-s", "connection-check.service"],
                     RunOpts(log=Log.BOTH, timeout=120),  # Add 2 minute timeout
                 )
@@ -219,6 +223,8 @@ def reboot_connection_timings(
     def _reboot(machine: Machine) -> None:
         host = machine.target_host().override(host_key_check="none")
         with host.host_connection() as ssh:
+            # Plain ssh.run: ssh exits with 255 when reboot closes the connection,
+            # which ssh_run would take for a connection failure and reboot again.
             ssh.run(
                 ["reboot"],
                 RunOpts(log=Log.BOTH),
@@ -272,8 +278,9 @@ def reboot_connection_timings(
         def _do_wait() -> None:
             host = machine.target_host().override(host_key_check="none")
             with host.host_connection() as ssh:
-                upload(ssh, script, wait_service_path, file_mode=0o777)
-                ssh.run(
+                ssh_upload(ssh, script, wait_service_path, file_mode=0o777)
+                ssh_run(
+                    ssh,
                     [f"{wait_service_path}", "-s", "connection-check.service"],
                     RunOpts(log=Log.BOTH, timeout=120),  # Add 2 minute timeout
                 )

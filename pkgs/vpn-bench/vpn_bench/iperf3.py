@@ -18,6 +18,7 @@ from vpn_bench.cpu import (
     take_cpu_snapshot,
 )
 from vpn_bench.data import BenchMachine
+from vpn_bench.remote import ssh_run
 
 log = logging.getLogger(__name__)
 
@@ -112,7 +113,8 @@ def _run_iperf_client(
 ) -> IperfClientRun:
     host = machine.target_host().override(host_key_check="none")
     with host.host_connection() as ssh:
-        res = ssh.run(
+        res = ssh_run(
+            ssh,
             ["bash", "-c", _CLIENT_SH, "vpb-iperf", vpn_unit or "", *bench_cmd],
             RunOpts(log=Log.BOTH, timeout=timeout),
             extra_env={"IPERF3_PASSWORD": creds.password},
@@ -129,7 +131,8 @@ def _run_iperf_client(
 def _restart_iperf_server(target_machine: Machine) -> None:
     target = target_machine.target_host().override(host_key_check="none")
     with target.host_connection() as ssh:
-        ssh.run(
+        ssh_run(
+            ssh,
             ["systemctl", "restart", "iperf3.service"],
             RunOpts(log=Log.BOTH),
         )

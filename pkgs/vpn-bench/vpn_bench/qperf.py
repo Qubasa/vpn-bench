@@ -10,6 +10,7 @@ from clan_lib.cmd import Log, RunOpts
 from clan_lib.machines.machines import Machine
 
 from vpn_bench.errors import VpnBenchError
+from vpn_bench.remote import ssh_run
 
 # Define TypeVar for numeric types (int or float)
 T = TypeVar("T", int, float)
@@ -327,7 +328,7 @@ def _qperf_test(
             "-c",
             target_host,
         ]
-        res = ssh.run(cmd, RunOpts(log=Log.BOTH, timeout=250))
+        res = ssh_run(ssh, cmd, RunOpts(log=Log.BOTH, timeout=250))
     return parse_qperf_output(res.stdout)
 
 
@@ -350,12 +351,12 @@ def run_qperf_test(
         # Use the target machine's public IP for SSH
         target = target_machine.target_host().override(host_key_check="none")
     with target.host_connection() as ssh:
-        ssh.run(["systemctl", "restart", "qperf.service"], RunOpts(log=Log.BOTH))
+        ssh_run(ssh, ["systemctl", "restart", "qperf.service"], RunOpts(log=Log.BOTH))
 
     # Get number of cores from source machine
     host = machine.target_host().override(host_key_check="none")
     with host.host_connection() as ssh:
-        num_cores = int(ssh.run(["nproc"], RunOpts(log=Log.BOTH)).stdout.strip())
+        num_cores = int(ssh_run(ssh, ["nproc"], RunOpts(log=Log.BOTH)).stdout.strip())
 
     with AsyncRuntime() as runtime:
         futures = []

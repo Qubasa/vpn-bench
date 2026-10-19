@@ -10,6 +10,8 @@ from clan_lib.errors import ClanCmdError
 from clan_lib.machines.machines import Machine
 from clan_lib.ssh.remote import Remote
 
+from vpn_bench.remote import ssh_run
+
 log = logging.getLogger(__name__)
 
 
@@ -466,7 +468,8 @@ def run_rist_test(
 
     # Restart the RIST receiver service on the target
     with target.host_connection() as ssh:
-        ssh.run(
+        ssh_run(
+            ssh,
             ["systemctl", "restart", "rist-stream.service"],
             RunOpts(log=Log.BOTH),
         )
@@ -498,7 +501,8 @@ def run_rist_test(
     # Run ffmpeg sender and collect encoding stats
     with host.host_connection() as ssh:
         try:
-            res = ssh.run(
+            res = ssh_run(
+                ssh,
                 cmd,
                 RunOpts(log=Log.BOTH, timeout=duration + 30),  # Add buffer to duration
             )
@@ -522,7 +526,8 @@ def run_rist_test(
     # Collect RIST network stats from the receiver via journalctl
     with target.host_connection() as ssh:
         try:
-            journalctl_res = ssh.run(
+            journalctl_res = ssh_run(
+                ssh,
                 [
                     "journalctl",
                     "-u",

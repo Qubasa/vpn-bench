@@ -18,6 +18,7 @@ from clan_lib.ssh.remote import Remote
 
 from vpn_bench.data import JITTER_DISTRIBUTION, TCSettings
 from vpn_bench.errors import VpnBenchError
+from vpn_bench.remote import ssh_run
 
 log = logging.getLogger(__name__)
 
@@ -97,7 +98,7 @@ def _gro_state_file(interface: str) -> str:
 
 
 def _primary_interface(ssh: Remote) -> str:
-    result = ssh.run(["ip", "route", "show", "default"], RunOpts(log=Log.BOTH))
+    result = ssh_run(ssh, ["ip", "route", "show", "default"], RunOpts(log=Log.BOTH))
     parts = result.stdout.split()
     if "dev" in parts:
         dev_idx = parts.index("dev")
@@ -107,7 +108,7 @@ def _primary_interface(ssh: Remote) -> str:
 
 
 def _read_gro(ssh: Remote, interface: str) -> str:
-    result = ssh.run(["ethtool", "-k", interface], RunOpts(log=Log.STDERR))
+    result = ssh_run(ssh, ["ethtool", "-k", interface], RunOpts(log=Log.STDERR))
     for line in result.stdout.splitlines():
         key, _, value = line.partition(":")
         if key.strip() == "generic-receive-offload" and value.split():
@@ -117,7 +118,7 @@ def _read_gro(ssh: Remote, interface: str) -> str:
 
 
 def _read_link_speed_mbit(ssh: Remote, interface: str) -> int:
-    result = ssh.run(["cat", f"/sys/class/net/{interface}/speed"], _quiet())
+    result = ssh_run(ssh, ["cat", f"/sys/class/net/{interface}/speed"], _quiet())
     try:
         speed = int(result.stdout.strip())
     except ValueError:
@@ -130,21 +131,29 @@ def _clear_impairment(ssh: Remote, interface: str) -> None:
 
     Absent objects are skipped, so this also brings a clean machine to a clean state.
     """
-    ingress = ssh.run(["tc", "qdisc", "show", "dev", interface, "ingress"], _quiet())
+    ingress = ssh_run(
+        ssh, ["tc", "qdisc", "show", "dev", interface, "ingress"], _quiet()
+    )
     if ingress.stdout.strip():
-        ssh.run(
-            ["tc", "qdisc", "del", "dev", interface, "ingress"], RunOpts(log=Log.BOTH)
+        ssh_run(
+            ssh,
+            ["tc", "qdisc", "del", "dev", interface, "ingress"],
+            RunOpts(log=Log.BOTH),
         )
-    if ssh.run(["ip", "link", "show", "dev", IFB_DEVICE], _quiet()).returncode == 0:
-        ssh.run(["ip", "link", "del", "dev", IFB_DEVICE], RunOpts(log=Log.BOTH))
+    if (
+        ssh_run(ssh, ["ip", "link", "show", "dev", IFB_DEVICE], _quiet()).returncode
+        == 0
+    ):
+        ssh_run(ssh, ["ip", "link", "del", "dev", IFB_DEVICE], RunOpts(log=Log.BOTH))
     state_file = _gro_state_file(interface)
-    gro_before = ssh.run(["cat", state_file], _quiet())
+    gro_before = ssh_run(ssh, ["cat", state_file], _quiet())
     if gro_before.returncode == 0 and gro_before.stdout.strip():
-        ssh.run(
+        ssh_run(
+            ssh,
             ["ethtool", "-K", interface, "gro", gro_before.stdout.strip()],
             RunOpts(log=Log.BOTH),
         )
-        ssh.run(["rm", "-f", state_file], RunOpts(log=Log.BOTH))
+        ssh_run(ssh, ["rm", "-f", state_file], RunOpts(log=Log.BOTH))
 
 
 def _apply_to_machine(machine: Machine, settings: TCSettings) -> MachineImpairment:
@@ -159,7 +168,8 @@ def _apply_to_machine(machine: Machine, settings: TCSettings) -> MachineImpairme
             f"{machine.name}: netem on ingress of {interface} via {IFB_DEVICE}: {args}"
         )
         state_file = _gro_state_file(interface)
-        ssh.run(
+        ssh_run(
+            ssh,
             ["sh", "-c", 'printf "%s\\n" "$1" > "$2"', "sh", gro_before, state_file],
             RunOpts(log=Log.BOTH),
         )
@@ -174,8 +184,8 @@ def _apply_to_machine(machine: Machine, settings: TCSettings) -> MachineImpairme
             f"ethtool -K {interface} gro {GRO_DURING_PROFILE}",
         ]
         for command in commands:
-            ssh.run(command.split(), RunOpts(log=Log.BOTH))
-        ssh.run(["tc", "qdisc", "show", "dev", IFB_DEVICE], RunOpts(log=Log.BOTH))
+            ssh_run(ssh, command.split(), RunOpts(log=Log.BOTH))
+        ssh_run(ssh, ["tc", "qdisc", "show", "dev", IFB_DEVICE], RunOpts(log=Log.BOTH))
     return MachineImpairment(
         interface=interface,
         ifb=IFB_DEVICE,

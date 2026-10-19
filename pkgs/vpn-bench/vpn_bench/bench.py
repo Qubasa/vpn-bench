@@ -8,7 +8,6 @@ from typing import Any, ParamSpec
 
 from clan_lib.cmd import Log, RunOpts
 from clan_lib.machines.machines import Machine
-from clan_lib.ssh.upload import upload
 
 from vpn_bench.assets import get_iperf_asset
 from vpn_bench.comparison import generate_comparison_data
@@ -27,6 +26,7 @@ from vpn_bench.nix_cache import run_nix_cache_test
 from vpn_bench.ping import run_ping_test
 from vpn_bench.progress import ProgressTracker
 from vpn_bench.qperf import run_qperf_test
+from vpn_bench.remote import ssh_run, ssh_upload
 from vpn_bench.retry import interruptible_sleep, retry_operation_with_info
 from vpn_bench.rist_stream import run_rist_test
 from vpn_bench.tc import AppliedImpairment, apply_tc_settings
@@ -124,7 +124,8 @@ def get_service_logs(
     try:
         host = machine.target_host().override(host_key_check="none")
         with host.host_connection() as ssh:
-            result = ssh.run(
+            result = ssh_run(
+                ssh,
                 ["journalctl", "-u", service_name, "--since", since, "--no-pager"],
                 RunOpts(log=Log.BOTH, timeout=30),
             )
@@ -170,7 +171,8 @@ def restart_vpn_service(bmachines: list[BenchMachine], vpn: VPN) -> VpnRestartRe
         def _restart() -> None:
             host = bmachine.cmachine.target_host().override(host_key_check="none")
             with host.host_connection() as ssh:
-                ssh.run(
+                ssh_run(
+                    ssh,
                     ["systemctl", "restart", service_name],
                     RunOpts(log=Log.BOTH),
                 )
@@ -239,7 +241,7 @@ def run_benchmarks(
     for bmachine in bmachines:
         host = bmachine.cmachine.target_host().override(host_key_check="none")
         with host.host_connection() as ssh:
-            upload(ssh, local_pubkey, remote_iperf3_pubkey)
+            ssh_upload(ssh, local_pubkey, remote_iperf3_pubkey)
 
     # Filter tests into parallel (run once) and per-machine tests
     parallel_tests: list[TestType] = [
