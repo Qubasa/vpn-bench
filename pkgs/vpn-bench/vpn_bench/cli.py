@@ -125,7 +125,14 @@ def create_parser() -> argparse.ArgumentParser:
     )
     bench_parser.add_argument(
         "--tc-profile",
-        help="TC profiles to run (baseline, low, medium, high, extreme), default is baseline only",
+        help=(
+            "Impairment profiles to run, default is baseline only. Each machine "
+            "applies tc netem to the traffic it receives (ifb redirect, GRO off, "
+            "rate = link speed, normal jitter, no reordering). Per direction: "
+            "low 2.5 ms +/- 0.625 ms, 0.01%% loss; medium 10 ms +/- 2.5 ms, "
+            "0.01%% loss; high 20 ms +/- 5 ms, 0.05%% loss. The added RTT is "
+            "twice the delay."
+        ),
         action="append",
         choices=[t.value for t in TCProfile] + ["all"],
         default=[],
