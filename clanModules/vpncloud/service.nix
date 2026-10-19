@@ -75,7 +75,6 @@ let
           --public-key "$PUBLIC_KEY" \
           --log-file "/var/log/vpncloud.log" \
           --daemon \
-          --stats-file "/var/log/vpncloud.stats" \
           --pid-file "/run/vpncloud.pid" \
           --listen "${toString cfg.port}" \
           --ip "${cfg.ipAddr}" \
