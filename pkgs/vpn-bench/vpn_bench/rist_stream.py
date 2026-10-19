@@ -21,7 +21,7 @@ class RistConfigDict(TypedDict):
     port: int
     duration: int
     buffer_ms: int
-    bitrate_mbps: float
+    bitrate: str  # ffmpeg -b:v argument, e.g. "25M"
     profile: str
 
 
@@ -103,7 +103,11 @@ class RistCombinedSummaryDict(TypedDict):
 
 
 def parse_ffmpeg_stats(
-    output_text: str, target_host: str, duration: int, profile: str = "main"
+    output_text: str,
+    target_host: str,
+    duration: int,
+    bitrate: str,
+    profile: str = "main",
 ) -> RistOutputDict:
     """
     Parse ffmpeg progress output to extract streaming statistics.
@@ -122,7 +126,7 @@ def parse_ffmpeg_stats(
             "port": 40052,
             "duration": duration,
             "buffer_ms": 400,
-            "bitrate_mbps": 5.0,
+            "bitrate": bitrate,
             "profile": profile,
         },
         "per_second_stats": [],
@@ -134,9 +138,10 @@ def parse_ffmpeg_stats(
 
     # Regex to parse ffmpeg progress output
     # Example: frame=   90 fps= 30 q=28.0 size=     512KiB time=00:00:03.00 bitrate=1396.8kbits/s speed=   1x
+    # The final summary line uses "Lsize=" instead of "size=" and carries the total frame count.
     # Note: size can be either "kB" or "KiB" depending on ffmpeg version
     pattern = re.compile(
-        r"frame=\s*(\d+)\s+fps=\s*([\d.]+)\s+q=[\d.-]+\s+size=\s*(\d+)KiB\s+time=([\d:.]+)\s+bitrate=\s*([\d.]+)kbits/s"
+        r"frame=\s*(\d+)\s+fps=\s*([\d.]+)\s+q=[\d.-]+\s+L?size=\s*(\d+)KiB\s+time=([\d:.]+)\s+bitrate=\s*([\d.]+)kbits/s"
     )
 
     last_second = -1
@@ -188,7 +193,8 @@ def parse_ffmpeg_stats(
             [s["fps"] for s in result["per_second_stats"]]
         )
 
-    # Detect dropped frames (if actual fps is significantly lower than expected)
+    # Frames the encoder failed to produce in real time. Network loss is reported
+    # separately by ristreceiver as packets_dropped.
     expected_frames = duration * 30  # 30 fps expected
     result["dropped_frames"] = max(0, expected_frames - total_frames)
 
@@ -508,7 +514,9 @@ def run_rist_test(
                 raise
 
     # Parse ffmpeg encoding stats
-    parsed_encoding = parse_ffmpeg_stats(stderr, target_host, duration, profile)
+    parsed_encoding = parse_ffmpeg_stats(
+        stderr, target_host, duration, bitrate, profile
+    )
     encoding_summary = calculate_rist_summary([parsed_encoding])
 
     # Collect RIST network stats from the receiver via journalctl
