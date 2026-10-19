@@ -2,6 +2,7 @@ import { Echart } from "../Echarts";
 import { formatAxisValue } from "../Echarts/formatters";
 import { Show, createSignal, createEffect, createMemo, For } from "solid-js";
 import { ComparisonData, TCSettingsData } from "@/src/benchData";
+import { impairmentPanel } from "@/src/impairment";
 import { sortTcProfiles } from "@/src/index";
 import { Tabs } from "@kobalte/core/tabs";
 import {
@@ -234,20 +235,7 @@ const FallbackMessage = (props: { message?: string }) => (
 const TCSettingsDisplay = (props: {
   tcSettings: TCSettingsData | null | undefined;
 }) => {
-  const getTotalLatency = () => props.tcSettings?.settings?.latency_ms ?? null;
-  const getTotalJitter = () => props.tcSettings?.settings?.jitter_ms ?? null;
-  const getTotalPacketLoss = () =>
-    props.tcSettings?.settings?.packet_loss_percent ?? null;
-  const getTotalReorder = () =>
-    props.tcSettings?.settings?.reorder_percent ?? null;
-
-  const hasSettings = () =>
-    props.tcSettings?.settings &&
-    (props.tcSettings.settings.latency_ms != null ||
-      props.tcSettings.settings.jitter_ms != null ||
-      props.tcSettings.settings.packet_loss_percent != null ||
-      props.tcSettings.settings.reorder_percent != null ||
-      props.tcSettings.settings.bandwidth_mbit != null);
+  const panel = () => impairmentPanel(props.tcSettings);
 
   return (
     <div
@@ -269,143 +257,66 @@ const TCSettingsDisplay = (props: {
       >
         Network Conditions
       </h3>
-      {hasSettings() ? (
-        <>
-          <p
-            style={{
-              "font-size": "0.75rem",
-              "font-style": "italic",
-              color: "#6b7280",
-            }}
-          >
-            Total round-trip impairment (half applied to each endpoint)
+      <Show
+        when={panel()}
+        fallback={
+          <p style={{ "font-size": "1rem", color: "#374151" }}>
+            No network impairment applied
           </p>
-          <div
-            style={{
-              "margin-top": "0.75rem",
-              display: "grid",
-              "grid-template-columns": "repeat(auto-fit, minmax(100px, 1fr))",
-              gap: "0.75rem",
-              "font-size": "0.875rem",
-            }}
-          >
-            {getTotalLatency() !== null && (
-              <div
-                style={{
-                  "border-radius": "0.25rem",
-                  "background-color": "white",
-                  padding: "0.5rem",
-                }}
-              >
-                <div style={{ "font-weight": "500", color: "#4b5563" }}>
-                  Latency
-                </div>
-                <div
-                  style={{
-                    "font-size": "1.125rem",
-                    "font-weight": "600",
-                    color: "#111827",
-                  }}
-                >
-                  {getTotalLatency()}ms
-                </div>
-              </div>
-            )}
-            {getTotalJitter() !== null && (
-              <div
-                style={{
-                  "border-radius": "0.25rem",
-                  "background-color": "white",
-                  padding: "0.5rem",
-                }}
-              >
-                <div style={{ "font-weight": "500", color: "#4b5563" }}>
-                  Jitter
-                </div>
-                <div
-                  style={{
-                    "font-size": "1.125rem",
-                    "font-weight": "600",
-                    color: "#111827",
-                  }}
-                >
-                  {getTotalJitter()}ms
-                </div>
-              </div>
-            )}
-            {getTotalPacketLoss() !== null && (
-              <div
-                style={{
-                  "border-radius": "0.25rem",
-                  "background-color": "white",
-                  padding: "0.5rem",
-                }}
-              >
-                <div style={{ "font-weight": "500", color: "#4b5563" }}>
-                  Packet Loss
-                </div>
-                <div
-                  style={{
-                    "font-size": "1.125rem",
-                    "font-weight": "600",
-                    color: "#111827",
-                  }}
-                >
-                  {getTotalPacketLoss()}%
-                </div>
-              </div>
-            )}
-            {getTotalReorder() !== null && (
-              <div
-                style={{
-                  "border-radius": "0.25rem",
-                  "background-color": "white",
-                  padding: "0.5rem",
-                }}
-              >
-                <div style={{ "font-weight": "500", color: "#4b5563" }}>
-                  Reordering
-                </div>
-                <div
-                  style={{
-                    "font-size": "1.125rem",
-                    "font-weight": "600",
-                    color: "#111827",
-                  }}
-                >
-                  {getTotalReorder()}%
-                </div>
-              </div>
-            )}
-            {props.tcSettings?.settings?.bandwidth_mbit != null && (
-              <div
-                style={{
-                  "border-radius": "0.25rem",
-                  "background-color": "white",
-                  padding: "0.5rem",
-                }}
-              >
-                <div style={{ "font-weight": "500", color: "#4b5563" }}>
-                  Bandwidth
-                </div>
-                <div
-                  style={{
-                    "font-size": "1.125rem",
-                    "font-weight": "600",
-                    color: "#111827",
-                  }}
-                >
-                  {props.tcSettings.settings.bandwidth_mbit} Mbit/s
-                </div>
-              </div>
-            )}
-          </div>
-        </>
-      ) : (
-        <p style={{ "font-size": "1rem", color: "#374151" }}>
-          No network impairment applied
-        </p>
-      )}
+        }
+      >
+        {(p) => (
+          <>
+            <p
+              style={{
+                "font-size": "0.75rem",
+                "font-style": "italic",
+                color: "#6b7280",
+              }}
+            >
+              Values per direction (applied on each machine). Method:{" "}
+              {p().methodLabel}
+            </p>
+            <div
+              style={{
+                "margin-top": "0.75rem",
+                display: "grid",
+                "grid-template-columns": "repeat(auto-fit, minmax(100px, 1fr))",
+                gap: "0.75rem",
+                "font-size": "0.875rem",
+              }}
+            >
+              <For each={p().tiles}>
+                {(tile) => (
+                  <div
+                    style={{
+                      "border-radius": "0.25rem",
+                      "background-color": "white",
+                      padding: "0.5rem",
+                    }}
+                  >
+                    <div style={{ "font-weight": "500", color: "#4b5563" }}>
+                      {tile.label}
+                    </div>
+                    <div
+                      style={{
+                        "font-size": "1.125rem",
+                        "font-weight": "600",
+                        color: "#111827",
+                      }}
+                    >
+                      {tile.value}
+                    </div>
+                    <div style={{ "font-size": "0.75rem", color: "#6b7280" }}>
+                      {tile.detail}
+                    </div>
+                  </div>
+                )}
+              </For>
+            </div>
+          </>
+        )}
+      </Show>
     </div>
   );
 };

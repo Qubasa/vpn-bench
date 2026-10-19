@@ -200,7 +200,7 @@ The event loop handles:
 The single-packet-per-iteration model with epoll maxevents=1 is the most critical performance bottleneck:
 - Forces one syscall per packet
 - Under packet loss/reordering conditions, throughput degrades significantly
-- VpnCloud performs substantially worse than Tailscale under 5% reordering + 2% loss conditions (Tailscale: 41 Mbps, WireGuard: 9 Mbps, VpnCloud likely similar to or worse than WireGuard)
+- VpnCloud performs substantially worse than Tailscale under the old sender-side Medium profile (2.5% reordering and 1% loss per direction, 5% and 2% combined; Tailscale: 41 Mbps, WireGuard: 9 Mbps, VpnCloud likely similar to or worse than WireGuard)
 
 Architectural advantages:
 - FNV hasher for fast internal hash maps

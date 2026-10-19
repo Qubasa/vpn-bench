@@ -267,7 +267,7 @@ The control server is designed for multi-core scalability:
 
 **Performance Results:**
 
-Under adverse network conditions (5% reordering, 2% packet loss), Tailscale achieves **41 Mbps** vs raw WireGuard's **9 Mbps** and direct connection's **30 Mbps**. This counterintuitive performance gain is due to:
+Under the old sender-side Medium profile (2.5% reordering and 1% packet loss per direction, 5% and 2% combined), Tailscale achieves **41 Mbps** vs raw WireGuard's **9 Mbps** and direct connection's **30 Mbps**. This counterintuitive performance gain is due to:
 
 1. **128-packet batching** (+50%): Reduces syscall overhead
 2. **7 MB socket buffers** (+100%): Absorbs reordering before TCP sees it

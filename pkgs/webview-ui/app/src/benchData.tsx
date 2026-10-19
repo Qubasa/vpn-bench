@@ -187,16 +187,41 @@ export interface Machine {
 }
 
 // --- TC Settings Interface ---
+// Old runs (no `method`) used sender-side root netem and stored doubled values.
+export interface SenderRootTCSettings {
+  method?: undefined;
+  bandwidth_mbit: number | null;
+  latency_ms: number | null;
+  jitter_ms: number | null;
+  packet_loss_percent: number | null;
+  reorder_percent: number | null;
+  reorder_correlation: number | null;
+}
+
+export interface ReceiverIfbMachineSettings {
+  interface: string;
+  ifb: string;
+  rate_mbit: number;
+  gro_before: string;
+  netem_args: string;
+}
+
+// Receiver-side netem on an ifb device, values per direction (per machine).
+export interface ReceiverIfbTCSettings {
+  method: "receiver-ifb";
+  latency_ms: number | null;
+  jitter_ms: number | null;
+  jitter_distribution: string | null;
+  packet_loss_percent: number | null;
+  added_rtt_ms: number | null;
+  bandwidth_mbit: number | null;
+  gro_during_profile: string;
+  machines: Record<string, ReceiverIfbMachineSettings>;
+}
+
 export interface TCSettingsData {
   alias: string;
-  settings: {
-    bandwidth_mbit: number | null;
-    latency_ms: number | null;
-    jitter_ms: number | null;
-    packet_loss_percent: number | null;
-    reorder_percent: number | null;
-    reorder_correlation: number | null;
-  } | null;
+  settings: SenderRootTCSettings | ReceiverIfbTCSettings | null;
 }
 
 // --- Run-level data (data that applies to the whole run, not individual machines) ---

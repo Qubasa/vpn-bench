@@ -127,7 +127,7 @@ EasyTier supports both single-threaded and multi-threaded operation via runtime 
 - ArcSwap for lock-free ACL hot-reload
 
 **Performance vs Tailscale:**
-EasyTier underperforms Tailscale under adverse network conditions (5% reordering, 2% loss). While Tailscale achieves 41 Mbps, EasyTier performs worse due to:
+EasyTier underperforms Tailscale under the old sender-side Medium profile (2.5% reordering and 1% loss per direction, 5% and 2% combined). While Tailscale achieves 41 Mbps, EasyTier performs worse due to:
 - More syscalls (no recvmmsg/sendmmsg batching)
 - Smaller socket buffers
 - No tuned congestion control in the userspace TCP stack

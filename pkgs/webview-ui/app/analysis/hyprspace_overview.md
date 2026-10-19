@@ -118,7 +118,7 @@ Hyprspace uses Go's goroutine-based concurrency model but has significant perfor
 - **Long write timeout**: 25-second deadline delays failure detection
 
 **Performance Under Loss/Reordering:**
-Under 5% packet reordering and 2% packet loss conditions, Hyprspace performs significantly worse than optimized mesh VPNs like Tailscale due to the limitations above. The hardcoded `BatchSize=1` creates 128x syscall overhead compared to implementations that batch packets.
+Under the old sender-side Medium profile (2.5% reordering and 1% loss per direction, 5% and 2% combined), Hyprspace performs significantly worse than optimized mesh VPNs like Tailscale due to the limitations above. The hardcoded `BatchSize=1` creates 128x syscall overhead compared to implementations that batch packets.
 
 ## Performance Optimizations Checklist
 
