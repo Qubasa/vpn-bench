@@ -21,7 +21,7 @@ from clan_lib.nix_models.clan import InventoryMachine, InventoryMachineDeploy
 from clan_lib.persist.inventory_store import InventoryStore, set_value_by_path_tuple
 from clan_lib.ssh.remote import Remote
 
-from vpn_bench.data import Config, Provider
+from vpn_bench.data import Config, Provider, flake_ref
 from vpn_bench.errors import VpnBenchError
 from vpn_bench.install import install_single_machine
 from vpn_bench.terraform import TrMachine
@@ -78,15 +78,10 @@ def update_flake_nix(clan_dir: Path, vpnbench_clan: Path) -> None:
     flake_nix = clan_dir / "flake.nix"
     # vpnbench_flake = Flake(str(vpnbench_clan))
     # vpnbench_flake.prefetch()
-    with flake_nix.open("r+") as f:
-        text = f.read().replace(
-            "__VPN_BENCH_PATH__",
-            f"path://{vpnbench_clan}",
-        )
-        f.seek(0)
-        f.write(text)
+    text = flake_nix.read_text().replace("__VPN_BENCH_PATH__", flake_ref(vpnbench_clan))
+    flake_nix.write_text(text)
     commit_file(flake_nix, clan_dir, "Update flake.nix with correct path")
-    run(nix_command(["flake", "lock"]), RunOpts(cwd=clan_dir))
+    run(nix_command(["flake", "lock", "--allow-dirty-locks"]), RunOpts(cwd=clan_dir))
 
 
 @dataclass

@@ -512,9 +512,21 @@ def install_vpn(
             return timing.operation(name)
         return nullcontext()
 
-    # Update cvpn-bench flake input, else error because of mismatched input
+    # Update cvpn-bench flake input, else error because of mismatched input.
+    # The checkout is a git+file input with uncommitted changes, which Nix only
+    # locks, by NAR hash, when asked to.
     with timed_op("nix_flake_update"):
-        run(["nix", "flake", "update", "cvpn-bench", "--flake", str(config.clan_dir)])
+        run(
+            [
+                "nix",
+                "flake",
+                "update",
+                "cvpn-bench",
+                "--allow-dirty-locks",
+                "--flake",
+                str(config.clan_dir),
+            ]
+        )
 
     with timed_op("create_base_inventory"):
         create_base_inventory(config, tr_machines)

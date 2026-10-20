@@ -368,6 +368,19 @@ class Config:
         return self.data_dir / "hardware_machines.json"
 
 
+def flake_ref(flake_dir: Path) -> str:
+    """Return the flake reference Nix's CLI would pick for a local directory.
+
+    A `path:` reference copies the whole tree, ignored files included: `.git`,
+    `.terraform`, mypy caches and `node_modules`, several hundred MiB that every
+    deploy then uploads to each machine. It also fails on sockets such as git's
+    `fsmonitor--daemon.ipc`. `git+file:` takes only the files git tracks.
+    """
+    if (flake_dir / ".git").exists():
+        return f"git+file://{flake_dir}"
+    return f"path:{flake_dir}"
+
+
 def _delete_dir(machine: Machine, state_dirs: list[str]) -> None:
     ssh_run(
         machine_connection(machine),

@@ -10,23 +10,11 @@ from clan_lib.cmd import run
 from clan_lib.nix import nix_build, nix_config
 
 from vpn_bench.connection_timings import analyse_connection_timings
-from vpn_bench.data import Config
+from vpn_bench.data import Config, flake_ref
 from vpn_bench.errors import VpnBenchError
 from vpn_bench.terraform import TrMachine
 
 log = logging.getLogger(__name__)
-
-
-def flake_ref(flake_dir: Path) -> str:
-    """Return the flake reference Nix's CLI would pick for a local directory.
-
-    `builtins.getFlake` turns a bare path into a `path:` input, which copies
-    the whole tree including `.git` and fails on sockets such as git's
-    `fsmonitor--daemon.ipc`. The CLI uses `git+file:` for git checkouts instead.
-    """
-    if (flake_dir / ".git").exists():
-        return f"git+file://{flake_dir}"
-    return f"path:{flake_dir}"
 
 
 def build_ui(bench_dir: Path, create_symlink: bool = False) -> Path:
