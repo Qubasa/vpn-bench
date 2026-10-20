@@ -8,10 +8,9 @@ from clan_lib.flake import Flake
 from clan_lib.machines.machines import Machine
 from clan_lib.nix import nix_command
 from clan_lib.persist.inventory_store import InventoryStore
-from clan_lib.ssh.remote import Remote
 
 from vpn_bench.data import VPN, BenchMachine, Config
-from vpn_bench.remote import ssh_run
+from vpn_bench.remote import machine_connection, ssh_run
 from vpn_bench.terraform import TrMachine
 
 log = logging.getLogger(__name__)
@@ -78,7 +77,7 @@ def install_nix_cache(
         f.write(json.dumps(data, indent=4))
 
 
-def init_nix_cache_path(host: Remote, cache_target: Machine) -> None:
+def init_nix_cache_path(cache_target: Machine) -> None:
     firefox = cache_target.select("pkgs.firefox.outPath")
     cmd = [
         "copy",
@@ -87,8 +86,7 @@ def init_nix_cache_path(host: Remote, cache_target: Machine) -> None:
         firefox,
     ]
 
-    with host.host_connection() as ssh:
-        ssh_run(ssh, nix_command(cmd), RunOpts(log=Log.BOTH))
+    ssh_run(machine_connection(cache_target), nix_command(cmd), RunOpts(log=Log.BOTH))
 
 
 def run_nix_cache_test(
@@ -97,59 +95,52 @@ def run_nix_cache_test(
     cache_target: BenchMachine,
 ) -> dict[str, Any]:
     # Restart harmonia service on cache_target (server) before running the test
-    cache_host = cache_target.cmachine.target_host().override(host_key_check="none")
-    with cache_host.host_connection() as ssh:
-        ssh_run(
-            ssh,
-            ["systemctl", "restart", "harmonia.service"],
-            RunOpts(log=Log.BOTH),
-        )
+    ssh_run(
+        machine_connection(cache_target.cmachine),
+        ["systemctl", "restart", "harmonia.service"],
+        RunOpts(log=Log.BOTH),
+    )
 
     # Copy firefox to the cache SERVER (yuki) so harmonia can serve it
-    init_nix_cache_path(cache_host, cache_target.cmachine)
+    init_nix_cache_path(cache_target.cmachine)
 
-    host = fetch_machine.cmachine.target_host().override(host_key_check="none")
+    ssh = machine_connection(fetch_machine.cmachine)
     firefox = fetch_machine.cmachine.select("pkgs.firefox.outPath")
-    with host.host_connection() as ssh:
-        clear_cache_cmd = (
-            "rm -R ~/.cache/nix/binary-cache-*.sqlite*; rm -rf /tmp/cache;"
-        )
+    clear_cache_cmd = "rm -R ~/.cache/nix/binary-cache-*.sqlite*; rm -rf /tmp/cache;"
 
-        nix_copy_cmd_list = [
-            "nix",
-            "copy",
-            "--from",
-            "{url}",
-            "--to",
-            "file:///tmp/cache?compression=none",
-            firefox,
-        ]
+    nix_copy_cmd_list = [
+        "nix",
+        "copy",
+        "--from",
+        "{url}",
+        "--to",
+        "file:///tmp/cache?compression=none",
+        firefox,
+    ]
 
-        urls = ",".join([f"http://cache.vpn.{cache_target.cmachine.name}"])
+    urls = ",".join([f"http://cache.vpn.{cache_target.cmachine.name}"])
 
-        cmd = [
-            "hyperfine",
-            "-w",
-            "1",
-            "-r",
-            "2",
-            "--show-output",
-            "--export-json",
-            f"{vpn.value}_nix-cache.json",
-            "--prepare",
-            clear_cache_cmd,
-            " ".join(nix_copy_cmd_list),
-            "-L",
-            "url",
-            urls,
-        ]
+    cmd = [
+        "hyperfine",
+        "-w",
+        "1",
+        "-r",
+        "2",
+        "--show-output",
+        "--export-json",
+        f"{vpn.value}_nix-cache.json",
+        "--prepare",
+        clear_cache_cmd,
+        " ".join(nix_copy_cmd_list),
+        "-L",
+        "url",
+        urls,
+    ]
 
-        ssh_run(ssh, cmd, RunOpts(log=Log.BOTH, timeout=700))  # 11 minutes
+    ssh_run(ssh, cmd, RunOpts(log=Log.BOTH, timeout=700))  # 11 minutes
 
-        res = ssh_run(
-            ssh, ["cat", f"{vpn.value}_nix-cache.json"], RunOpts(log=Log.BOTH)
-        )
-        return json.loads(res.stdout)
+    res = ssh_run(ssh, ["cat", f"{vpn.value}_nix-cache.json"], RunOpts(log=Log.BOTH))
+    return json.loads(res.stdout)
 
 
 def save_nix_cache_results(result_dir: Path, json_data: dict[str, Any]) -> None:

@@ -7,7 +7,7 @@ from clan_lib.cmd import Log, RunOpts
 from clan_lib.machines.machines import Machine
 
 from vpn_bench.errors import VpnBenchError
-from vpn_bench.remote import ssh_run
+from vpn_bench.remote import machine_connection, ssh_run
 
 log = logging.getLogger(__name__)
 
@@ -69,13 +69,11 @@ def parse_cpu_snapshot(lines: list[str]) -> CpuSnapshot:
 
 
 def take_cpu_snapshot(machine: Machine, unit: str | None) -> CpuSnapshot:
-    host = machine.target_host().override(host_key_check="none")
-    with host.host_connection() as ssh:
-        res = ssh_run(
-            ssh,
-            ["bash", "-c", SNAPSHOT_FUNCTION_SH + 'snap "$1"', "vpb-cpu", unit or ""],
-            RunOpts(log=Log.STDERR),
-        )
+    res = ssh_run(
+        machine_connection(machine),
+        ["bash", "-c", SNAPSHOT_FUNCTION_SH + 'snap "$1"', "vpb-cpu", unit or ""],
+        RunOpts(log=Log.STDERR),
+    )
     return parse_cpu_snapshot(res.stdout.splitlines())
 
 

@@ -6,7 +6,7 @@ from typing import TypedDict
 from clan_lib.cmd import Log, RunOpts
 from clan_lib.machines.machines import Machine
 
-from vpn_bench.remote import ssh_run
+from vpn_bench.remote import machine_connection, ssh_run
 
 log = logging.getLogger(__name__)
 
@@ -263,54 +263,53 @@ def run_ping_test(
     log.info(f"Running ping test from {machine.name} to {target_host}")
 
     parsed_outputs: list[PingRawDict] = []
-    host = machine.target_host().override(host_key_check="none")
+    ssh = machine_connection(machine)
 
     for run in range(num_runs):
         log.debug(f"Ping test run {run + 1}/{num_runs}")
 
-        with host.host_connection() as ssh:
-            # Run ping command
-            # -c: count of packets
-            # -i: interval between packets (0.2 = 200ms for faster testing)
-            # -W: timeout for each packet (1 second)
-            cmd = [
-                "ping",
-                "-c",
-                str(count),
-                "-i",
-                "0.2",  # 200ms interval for faster testing
-                "-W",
-                "1",  # 1 second timeout
-                target_host,
-            ]
+        # Run ping command
+        # -c: count of packets
+        # -i: interval between packets (0.2 = 200ms for faster testing)
+        # -W: timeout for each packet (1 second)
+        cmd = [
+            "ping",
+            "-c",
+            str(count),
+            "-i",
+            "0.2",  # 200ms interval for faster testing
+            "-W",
+            "1",  # 1 second timeout
+            target_host,
+        ]
 
-            try:
-                # Timeout should be count * interval + some buffer
-                timeout = int(count * 0.3) + 10
-                res = ssh_run(ssh, cmd, RunOpts(log=Log.BOTH, timeout=timeout))
-                parsed = parse_ping_output(res.stdout, target_host, count)
-                parsed_outputs.append(parsed)
-            except Exception as e:
-                log.error(f"Ping test run {run + 1} failed: {e}")
-                # Add a failed result
-                parsed_outputs.append(
-                    {
-                        "config": {
-                            "target_host": target_host,
-                            "packet_count": count,
-                            "packet_size": 56,
-                            "interval_ms": 200,
-                        },
-                        "packets_transmitted": count,
-                        "packets_received": 0,
-                        "packet_loss_percent": 100.0,
-                        "time_ms": 0,
-                        "rtt_min_ms": 0.0,
-                        "rtt_avg_ms": 0.0,
-                        "rtt_max_ms": 0.0,
-                        "rtt_mdev_ms": 0.0,
-                        "individual_rtts_ms": [],
-                    }
-                )
+        try:
+            # Timeout should be count * interval + some buffer
+            timeout = int(count * 0.3) + 10
+            res = ssh_run(ssh, cmd, RunOpts(log=Log.BOTH, timeout=timeout))
+            parsed = parse_ping_output(res.stdout, target_host, count)
+            parsed_outputs.append(parsed)
+        except Exception as e:
+            log.error(f"Ping test run {run + 1} failed: {e}")
+            # Add a failed result
+            parsed_outputs.append(
+                {
+                    "config": {
+                        "target_host": target_host,
+                        "packet_count": count,
+                        "packet_size": 56,
+                        "interval_ms": 200,
+                    },
+                    "packets_transmitted": count,
+                    "packets_received": 0,
+                    "packet_loss_percent": 100.0,
+                    "time_ms": 0,
+                    "rtt_min_ms": 0.0,
+                    "rtt_avg_ms": 0.0,
+                    "rtt_max_ms": 0.0,
+                    "rtt_mdev_ms": 0.0,
+                    "individual_rtts_ms": [],
+                }
+            )
 
     return calculate_ping_summary(parsed_outputs)

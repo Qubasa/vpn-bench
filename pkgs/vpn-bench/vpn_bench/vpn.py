@@ -25,7 +25,7 @@ from vpn_bench.connection_timings import (
 from vpn_bench.data import VPN, BenchMachine, Config, Provider, SSHKeyPair, delete_dirs
 from vpn_bench.errors import VpnBenchError
 from vpn_bench.nix_cache import install_nix_cache
-from vpn_bench.remote import ssh_run
+from vpn_bench.remote import machine_connection, ssh_run
 from vpn_bench.retry import retry_operation
 from vpn_bench.setup import create_base_inventory
 from vpn_bench.terraform import TrMachine
@@ -390,11 +390,11 @@ def get_vpn_ips(
                 vpn_ip = get_machine_var(machine, "tincr-tincr/ip").value.decode()
             case VPN.Headscale:
                 # Headscale assigns IPs dynamically, query IPv6 via tailscale CLI
-                host = machine.target_host().override(host_key_check="none")
-                with host.host_connection() as ssh:
-                    result = ssh_run(
-                        ssh, ["tailscale", "ip", "-6"], RunOpts(log=Log.BOTH)
-                    )
+                result = ssh_run(
+                    machine_connection(machine),
+                    ["tailscale", "ip", "-6"],
+                    RunOpts(log=Log.BOTH),
+                )
                 vpn_ip = result.stdout.strip()
             case VPN.Wireguard:
                 # TODO: We hardcode the IP address here

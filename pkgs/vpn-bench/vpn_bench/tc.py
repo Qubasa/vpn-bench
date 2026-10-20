@@ -18,7 +18,7 @@ from clan_lib.ssh.remote import Remote
 
 from vpn_bench.data import JITTER_DISTRIBUTION, TCSettings
 from vpn_bench.errors import VpnBenchError
-from vpn_bench.remote import ssh_run
+from vpn_bench.remote import machine_connection, ssh_run
 
 log = logging.getLogger(__name__)
 
@@ -157,35 +157,34 @@ def _clear_impairment(ssh: Remote, interface: str) -> None:
 
 
 def _apply_to_machine(machine: Machine, settings: TCSettings) -> MachineImpairment:
-    host = machine.target_host().override(host_key_check="none")
-    with host.host_connection() as ssh:
-        interface = _primary_interface(ssh)
-        _clear_impairment(ssh, interface)
-        gro_before = _read_gro(ssh, interface)
-        rate_mbit = netem_rate_mbit(settings, _read_link_speed_mbit(ssh, interface))
-        args = netem_args(settings, rate_mbit)
-        log.info(
-            f"{machine.name}: netem on ingress of {interface} via {IFB_DEVICE}: {args}"
-        )
-        state_file = _gro_state_file(interface)
-        ssh_run(
-            ssh,
-            ["sh", "-c", 'printf "%s\\n" "$1" > "$2"', "sh", gro_before, state_file],
-            RunOpts(log=Log.BOTH),
-        )
-        commands = [
-            "modprobe ifb numifbs=0",
-            f"ip link add {IFB_DEVICE} type ifb",
-            f"ip link set dev {IFB_DEVICE} up",
-            f"tc qdisc add dev {IFB_DEVICE} root netem {args}",
-            f"tc qdisc add dev {interface} handle {INGRESS_HANDLE} ingress",
-            f"tc filter add dev {interface} parent {INGRESS_HANDLE} matchall"
-            f" action mirred egress redirect dev {IFB_DEVICE}",
-            f"ethtool -K {interface} gro {GRO_DURING_PROFILE}",
-        ]
-        for command in commands:
-            ssh_run(ssh, command.split(), RunOpts(log=Log.BOTH))
-        ssh_run(ssh, ["tc", "qdisc", "show", "dev", IFB_DEVICE], RunOpts(log=Log.BOTH))
+    ssh = machine_connection(machine)
+    interface = _primary_interface(ssh)
+    _clear_impairment(ssh, interface)
+    gro_before = _read_gro(ssh, interface)
+    rate_mbit = netem_rate_mbit(settings, _read_link_speed_mbit(ssh, interface))
+    args = netem_args(settings, rate_mbit)
+    log.info(
+        f"{machine.name}: netem on ingress of {interface} via {IFB_DEVICE}: {args}"
+    )
+    state_file = _gro_state_file(interface)
+    ssh_run(
+        ssh,
+        ["sh", "-c", 'printf "%s\\n" "$1" > "$2"', "sh", gro_before, state_file],
+        RunOpts(log=Log.BOTH),
+    )
+    commands = [
+        "modprobe ifb numifbs=0",
+        f"ip link add {IFB_DEVICE} type ifb",
+        f"ip link set dev {IFB_DEVICE} up",
+        f"tc qdisc add dev {IFB_DEVICE} root netem {args}",
+        f"tc qdisc add dev {interface} handle {INGRESS_HANDLE} ingress",
+        f"tc filter add dev {interface} parent {INGRESS_HANDLE} matchall"
+        f" action mirred egress redirect dev {IFB_DEVICE}",
+        f"ethtool -K {interface} gro {GRO_DURING_PROFILE}",
+    ]
+    for command in commands:
+        ssh_run(ssh, command.split(), RunOpts(log=Log.BOTH))
+    ssh_run(ssh, ["tc", "qdisc", "show", "dev", IFB_DEVICE], RunOpts(log=Log.BOTH))
     return MachineImpairment(
         interface=interface,
         ifb=IFB_DEVICE,
@@ -196,11 +195,10 @@ def _apply_to_machine(machine: Machine, settings: TCSettings) -> MachineImpairme
 
 
 def _clear_machine(machine: Machine) -> None:
-    host = machine.target_host().override(host_key_check="none")
-    with host.host_connection() as ssh:
-        interface = _primary_interface(ssh)
-        log.info(f"{machine.name}: clearing impairment on {interface}")
-        _clear_impairment(ssh, interface)
+    ssh = machine_connection(machine)
+    interface = _primary_interface(ssh)
+    log.info(f"{machine.name}: clearing impairment on {interface}")
+    _clear_impairment(ssh, interface)
 
 
 def _apply_to_all(

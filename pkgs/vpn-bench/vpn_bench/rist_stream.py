@@ -10,7 +10,7 @@ from clan_lib.errors import ClanCmdError
 from clan_lib.machines.machines import Machine
 from clan_lib.ssh.remote import Remote
 
-from vpn_bench.remote import ssh_run
+from vpn_bench.remote import machine_connection, remote_connection, ssh_run
 
 log = logging.getLogger(__name__)
 
@@ -461,20 +461,17 @@ def run_rist_test(
     # Set up target connection
     if target_machine:
         # Use the target machine's public IP for SSH
-        target = target_machine.target_host().override(host_key_check="none")
+        target = machine_connection(target_machine)
     else:
         # Fallback for backwards compatibility
-        target = Remote(target_host).override(host_key_check="none")
+        target = remote_connection(Remote(target_host).override(host_key_check="none"))
 
     # Restart the RIST receiver service on the target
-    with target.host_connection() as ssh:
-        ssh_run(
-            ssh,
-            ["systemctl", "restart", "rist-stream.service"],
-            RunOpts(log=Log.BOTH),
-        )
-
-    host = machine.target_host().override(host_key_check="none")
+    ssh_run(
+        target,
+        ["systemctl", "restart", "rist-stream.service"],
+        RunOpts(log=Log.BOTH),
+    )
 
     # Build the ffmpeg command to stream test pattern
     # Generate 4K@30fps test pattern with H.264 encoding
@@ -499,23 +496,22 @@ def run_rist_test(
     ]
 
     # Run ffmpeg sender and collect encoding stats
-    with host.host_connection() as ssh:
-        try:
-            res = ssh_run(
-                ssh,
-                cmd,
-                RunOpts(log=Log.BOTH, timeout=duration + 30),  # Add buffer to duration
-            )
-            stderr = res.stderr
-        except ClanCmdError as e:
-            # RIST often fails on close even after successful transmission
-            # Capture stderr from the exception to parse stats
-            log.warning(
-                f"ffmpeg exited with error code {e.cmd.returncode} (likely RIST close timeout)"
-            )
-            stderr = e.cmd.stderr
-            if not stderr:
-                raise
+    try:
+        res = ssh_run(
+            machine_connection(machine),
+            cmd,
+            RunOpts(log=Log.BOTH, timeout=duration + 30),  # Add buffer to duration
+        )
+        stderr = res.stderr
+    except ClanCmdError as e:
+        # RIST often fails on close even after successful transmission
+        # Capture stderr from the exception to parse stats
+        log.warning(
+            f"ffmpeg exited with error code {e.cmd.returncode} (likely RIST close timeout)"
+        )
+        stderr = e.cmd.stderr
+        if not stderr:
+            raise
 
     # Parse ffmpeg encoding stats
     parsed_encoding = parse_ffmpeg_stats(
@@ -524,26 +520,25 @@ def run_rist_test(
     encoding_summary = calculate_rist_summary([parsed_encoding])
 
     # Collect RIST network stats from the receiver via journalctl
-    with target.host_connection() as ssh:
-        try:
-            journalctl_res = ssh_run(
-                ssh,
-                [
-                    "journalctl",
-                    "-u",
-                    "rist-stream.service",
-                    "--since",
-                    f"{duration + 10} seconds ago",
-                    "--no-pager",
-                    "-o",
-                    "cat",  # Output just the message, no timestamp prefix
-                ],
-                RunOpts(log=Log.BOTH),
-            )
-            journalctl_output = journalctl_res.stdout
-        except ClanCmdError as e:
-            log.warning(f"Failed to collect journalctl logs: {e}")
-            journalctl_output = ""
+    try:
+        journalctl_res = ssh_run(
+            target,
+            [
+                "journalctl",
+                "-u",
+                "rist-stream.service",
+                "--since",
+                f"{duration + 10} seconds ago",
+                "--no-pager",
+                "-o",
+                "cat",  # Output just the message, no timestamp prefix
+            ],
+            RunOpts(log=Log.BOTH),
+        )
+        journalctl_output = journalctl_res.stdout
+    except ClanCmdError as e:
+        log.warning(f"Failed to collect journalctl logs: {e}")
+        journalctl_output = ""
 
     # Parse ristreceiver network stats
     network_stats = parse_ristreceiver_stats(journalctl_output)

@@ -16,7 +16,12 @@ from clan_lib.persist.inventory_store import InventoryStore
 from vpn_bench.assets import get_script_asset
 from vpn_bench.data import VPN, BenchMachine, Config, delete_dirs
 from vpn_bench.errors import save_bench_report
-from vpn_bench.remote import ssh_run, ssh_upload
+from vpn_bench.remote import (
+    close_machine_connection,
+    machine_connection,
+    ssh_run,
+    ssh_upload,
+)
 from vpn_bench.retry import MaxRetriesExceededError, retry_operation
 from vpn_bench.terraform import TrMachine
 
@@ -78,17 +83,15 @@ def download_connection_timings(
     benchmark_run_alias: str = "default",
 ) -> None:
     def download_save(machine: Machine, dest: Path) -> None:
-        host = machine.target_host().override(host_key_check="none")
-        with host.host_connection() as ssh:
-            res = ssh_run(
-                ssh,
-                ["cat", "/var/lib/connection-check/connection_timings.json"],
-                RunOpts(log=Log.BOTH),
-            )
-            res = json.loads(res.stdout)
+        res = ssh_run(
+            machine_connection(machine),
+            ["cat", "/var/lib/connection-check/connection_timings.json"],
+            RunOpts(log=Log.BOTH),
+        )
+        res = json.loads(res.stdout)
 
-            with dest.open("w") as f:
-                json.dump(res, f, indent=4)
+        with dest.open("w") as f:
+            json.dump(res, f, indent=4)
 
     with AsyncRuntime() as runtime:
         for index, machine in enumerate(machines):
@@ -132,13 +135,11 @@ def wait_for_vpn_connectivity(
     # Recreate the directory (needed for WorkingDirectory in connection-check.service)
     def _mkdir(machine: Machine) -> None:
         def _do_mkdir() -> None:
-            host = machine.target_host().override(host_key_check="none")
-            with host.host_connection() as ssh:
-                ssh_run(
-                    ssh,
-                    ["mkdir", "-p", "/var/lib/connection-check"],
-                    RunOpts(log=Log.BOTH),
-                )
+            ssh_run(
+                machine_connection(machine),
+                ["mkdir", "-p", "/var/lib/connection-check"],
+                RunOpts(log=Log.BOTH),
+            )
 
         retry_operation(
             _do_mkdir,
@@ -155,13 +156,11 @@ def wait_for_vpn_connectivity(
 
     def _restart_connection_check(machine: Machine) -> None:
         def _do_restart() -> None:
-            host = machine.target_host().override(host_key_check="none")
-            with host.host_connection() as ssh:
-                ssh_run(
-                    ssh,
-                    ["systemctl", "restart", "connection-check.service"],
-                    RunOpts(log=Log.BOTH),
-                )
+            ssh_run(
+                machine_connection(machine),
+                ["systemctl", "restart", "connection-check.service"],
+                RunOpts(log=Log.BOTH),
+            )
 
         retry_operation(
             _do_restart,
@@ -181,14 +180,13 @@ def wait_for_vpn_connectivity(
         script = get_script_asset("wait_service.sh")
 
         def _do_wait() -> None:
-            host = machine.target_host().override(host_key_check="none")
-            with host.host_connection() as ssh:
-                ssh_upload(ssh, script, wait_service_path, file_mode=0o777)
-                ssh_run(
-                    ssh,
-                    [f"{wait_service_path}", "-s", "connection-check.service"],
-                    RunOpts(log=Log.BOTH, timeout=120),  # Add 2 minute timeout
-                )
+            ssh = machine_connection(machine)
+            ssh_upload(ssh, script, wait_service_path, file_mode=0o777)
+            ssh_run(
+                ssh,
+                [f"{wait_service_path}", "-s", "connection-check.service"],
+                RunOpts(log=Log.BOTH, timeout=120),  # Add 2 minute timeout
+            )
 
         retry_operation(
             _do_wait,
@@ -221,14 +219,15 @@ def reboot_connection_timings(
     delete_dirs(["/var/lib/connection-check", "/tmp/wait_service.sh"], machines)
 
     def _reboot(machine: Machine) -> None:
-        host = machine.target_host().override(host_key_check="none")
-        with host.host_connection() as ssh:
+        try:
             # Plain ssh.run: ssh exits with 255 when reboot closes the connection,
             # which ssh_run would take for a connection failure and reboot again.
-            ssh.run(
+            machine_connection(machine).run(
                 ["reboot"],
                 RunOpts(log=Log.BOTH),
             )
+        finally:
+            close_machine_connection(machine)
 
     # Reboot machines
     with AsyncRuntime() as runtime:
@@ -276,14 +275,13 @@ def reboot_connection_timings(
         script = get_script_asset("wait_service.sh")
 
         def _do_wait() -> None:
-            host = machine.target_host().override(host_key_check="none")
-            with host.host_connection() as ssh:
-                ssh_upload(ssh, script, wait_service_path, file_mode=0o777)
-                ssh_run(
-                    ssh,
-                    [f"{wait_service_path}", "-s", "connection-check.service"],
-                    RunOpts(log=Log.BOTH, timeout=120),  # Add 2 minute timeout
-                )
+            ssh = machine_connection(machine)
+            ssh_upload(ssh, script, wait_service_path, file_mode=0o777)
+            ssh_run(
+                ssh,
+                [f"{wait_service_path}", "-s", "connection-check.service"],
+                RunOpts(log=Log.BOTH, timeout=120),  # Add 2 minute timeout
+            )
 
         retry_operation(
             _do_wait,

@@ -8,7 +8,7 @@ from clan_lib.async_run import AsyncRuntime
 from clan_lib.cmd import Log, RunOpts
 from clan_lib.machines.machines import Machine
 
-from vpn_bench.remote import ssh_run
+from vpn_bench.remote import machine_connection, ssh_run
 
 
 @dataclass
@@ -369,13 +369,11 @@ class Config:
 
 
 def _delete_dir(machine: Machine, state_dirs: list[str]) -> None:
-    host = machine.target_host().override(host_key_check="none")
-    with host.host_connection() as ssh:
-        ssh_run(
-            ssh,
-            ["rm", "-rf", *state_dirs],
-            RunOpts(log=Log.BOTH),
-        )
+    ssh_run(
+        machine_connection(machine),
+        ["rm", "-rf", *state_dirs],
+        RunOpts(log=Log.BOTH),
+    )
 
 
 def delete_dirs(state_dirs: list[str], machines: list[Machine]) -> None:

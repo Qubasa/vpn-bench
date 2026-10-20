@@ -26,7 +26,7 @@ from vpn_bench.nix_cache import run_nix_cache_test
 from vpn_bench.ping import run_ping_test
 from vpn_bench.progress import ProgressTracker
 from vpn_bench.qperf import run_qperf_test
-from vpn_bench.remote import ssh_run, ssh_upload
+from vpn_bench.remote import machine_connection, ssh_run, ssh_upload
 from vpn_bench.retry import interruptible_sleep, retry_operation_with_info
 from vpn_bench.rist_stream import run_rist_test
 from vpn_bench.tc import AppliedImpairment, apply_tc_settings
@@ -122,17 +122,15 @@ def get_service_logs(
         The service logs as a string, or error message if fetching fails
     """
     try:
-        host = machine.target_host().override(host_key_check="none")
-        with host.host_connection() as ssh:
-            result = ssh_run(
-                ssh,
-                ["journalctl", "-u", service_name, "--since", since, "--no-pager"],
-                RunOpts(log=Log.BOTH, timeout=30),
-            )
-            return result.stdout
+        result = ssh_run(
+            machine_connection(machine),
+            ["journalctl", "-u", service_name, "--since", since, "--no-pager"],
+            RunOpts(log=Log.BOTH, timeout=30),
+        )
     except Exception as e:
         log.warning(f"Failed to fetch logs for {service_name} from {machine.name}: {e}")
         return f"Failed to fetch logs: {e}"
+    return result.stdout
 
 
 @dataclass
@@ -169,13 +167,11 @@ def restart_vpn_service(bmachines: list[BenchMachine], vpn: VPN) -> VpnRestartRe
 
     def restart_service_on_machine(bmachine: BenchMachine) -> int:
         def _restart() -> None:
-            host = bmachine.cmachine.target_host().override(host_key_check="none")
-            with host.host_connection() as ssh:
-                ssh_run(
-                    ssh,
-                    ["systemctl", "restart", service_name],
-                    RunOpts(log=Log.BOTH),
-                )
+            ssh_run(
+                machine_connection(bmachine.cmachine),
+                ["systemctl", "restart", service_name],
+                RunOpts(log=Log.BOTH),
+            )
 
         result = retry_operation_with_info(
             _restart,
@@ -239,9 +235,9 @@ def run_benchmarks(
 
     # Upload iperf3 public key to all machines
     for bmachine in bmachines:
-        host = bmachine.cmachine.target_host().override(host_key_check="none")
-        with host.host_connection() as ssh:
-            ssh_upload(ssh, local_pubkey, remote_iperf3_pubkey)
+        ssh_upload(
+            machine_connection(bmachine.cmachine), local_pubkey, remote_iperf3_pubkey
+        )
 
     # Filter tests into parallel (run once) and per-machine tests
     parallel_tests: list[TestType] = [
