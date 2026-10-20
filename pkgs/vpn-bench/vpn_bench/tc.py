@@ -14,11 +14,10 @@ from typing import Any
 from clan_lib.async_run import AsyncFuture, AsyncRuntime
 from clan_lib.cmd import Log, RunOpts
 from clan_lib.machines.machines import Machine
-from clan_lib.ssh.remote import Remote
 
 from vpn_bench.data import JITTER_DISTRIBUTION, TCSettings
 from vpn_bench.errors import VpnBenchError
-from vpn_bench.remote import machine_connection, ssh_run
+from vpn_bench.remote import SharedConnection, machine_connection, ssh_run
 
 log = logging.getLogger(__name__)
 
@@ -97,7 +96,7 @@ def _gro_state_file(interface: str) -> str:
     return f"/run/vpb-gro-before-{interface}"
 
 
-def _primary_interface(ssh: Remote) -> str:
+def _primary_interface(ssh: SharedConnection) -> str:
     result = ssh_run(ssh, ["ip", "route", "show", "default"], RunOpts(log=Log.BOTH))
     parts = result.stdout.split()
     if "dev" in parts:
@@ -107,7 +106,7 @@ def _primary_interface(ssh: Remote) -> str:
     return "eth0"
 
 
-def _read_gro(ssh: Remote, interface: str) -> str:
+def _read_gro(ssh: SharedConnection, interface: str) -> str:
     result = ssh_run(ssh, ["ethtool", "-k", interface], RunOpts(log=Log.STDERR))
     for line in result.stdout.splitlines():
         key, _, value = line.partition(":")
@@ -117,7 +116,7 @@ def _read_gro(ssh: Remote, interface: str) -> str:
     raise VpnBenchError(msg)
 
 
-def _read_link_speed_mbit(ssh: Remote, interface: str) -> int:
+def _read_link_speed_mbit(ssh: SharedConnection, interface: str) -> int:
     result = ssh_run(ssh, ["cat", f"/sys/class/net/{interface}/speed"], _quiet())
     try:
         speed = int(result.stdout.strip())
@@ -126,7 +125,7 @@ def _read_link_speed_mbit(ssh: Remote, interface: str) -> int:
     return speed if speed > 0 else FALLBACK_LINK_SPEED_MBIT
 
 
-def _clear_impairment(ssh: Remote, interface: str) -> None:
+def _clear_impairment(ssh: SharedConnection, interface: str) -> None:
     """Remove the ingress redirect and the ifb device, and restore GRO.
 
     Absent objects are skipped, so this also brings a clean machine to a clean state.

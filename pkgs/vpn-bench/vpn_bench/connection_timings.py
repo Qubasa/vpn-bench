@@ -19,6 +19,7 @@ from vpn_bench.errors import save_bench_report
 from vpn_bench.remote import (
     close_machine_connection,
     machine_connection,
+    session,
     ssh_run,
     ssh_upload,
 )
@@ -220,12 +221,11 @@ def reboot_connection_timings(
 
     def _reboot(machine: Machine) -> None:
         try:
-            # Plain ssh.run: ssh exits with 255 when reboot closes the connection,
-            # which ssh_run would take for a connection failure and reboot again.
-            machine_connection(machine).run(
-                ["reboot"],
-                RunOpts(log=Log.BOTH),
-            )
+            # Plain Remote.run: ssh exits with 255 when reboot closes the
+            # connection, which ssh_run would take for a connection failure and
+            # reboot again.
+            with session(machine_connection(machine)) as ssh:
+                ssh.run(["reboot"], RunOpts(log=Log.BOTH))
         finally:
             close_machine_connection(machine)
 
