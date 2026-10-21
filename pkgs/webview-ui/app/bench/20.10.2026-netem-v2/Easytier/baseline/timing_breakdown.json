@@ -1,0 +1,96 @@
+{
+  "vpn_name": "easytier",
+  "total_duration_seconds": 2453.433563879982,
+  "start_timestamp": 1792550989.3619926,
+  "end_timestamp": 1792553442.795557,
+  "phases": [
+    {
+      "phase": "vpn_installation",
+      "duration_seconds": 619.8232328849845,
+      "start_timestamp": 1792550989.3620007,
+      "operations": [
+        {
+          "name": "nix_flake_update",
+          "duration_seconds": 0.718048450013157,
+          "start_timestamp": 1792550989.3620112,
+          "success": true
+        },
+        {
+          "name": "create_base_inventory",
+          "duration_seconds": 8.41900438599987,
+          "start_timestamp": 1792550990.0800745,
+          "success": true
+        },
+        {
+          "name": "install_easytier_config",
+          "duration_seconds": 4.872124204004649,
+          "start_timestamp": 1792550998.525644,
+          "success": true
+        },
+        {
+          "name": "get_vpn_ips",
+          "duration_seconds": 2.8953380559687503,
+          "start_timestamp": 1792551003.8727283,
+          "success": true
+        },
+        {
+          "name": "install_nix_cache",
+          "duration_seconds": 0.06827409903053194,
+          "start_timestamp": 1792551006.7680738,
+          "success": true
+        },
+        {
+          "name": "install_connection_timings_service",
+          "duration_seconds": 0.45488059596391395,
+          "start_timestamp": 1792551006.8363626,
+          "success": true
+        },
+        {
+          "name": "run_generators",
+          "duration_seconds": 2.9423508920008317,
+          "start_timestamp": 1792551007.676142,
+          "success": true
+        },
+        {
+          "name": "deploy_vpn_machines",
+          "duration_seconds": 598.5662544899969,
+          "start_timestamp": 1792551010.618502,
+          "success": true
+        }
+      ],
+      "metadata": {
+        "cvpn_bench_lock": {
+          "rev": "4e96299bbe86dd363f59cc608762dafbb573563f",
+          "narHash": "sha256-s9g9SsA43ljAd8xxHQGNif0+5ppCz/cp4EW8KAd7y6k=",
+          "lastModified": 1792505743,
+          "type": "git"
+        }
+      }
+    },
+    {
+      "phase": "benchmarking",
+      "duration_seconds": 1833.6101395690348,
+      "start_timestamp": 1792551609.1854117,
+      "operations": [
+        {
+          "name": "tc_stabilization",
+          "duration_seconds": 30.0003875210532,
+          "start_timestamp": 1792551611.3104885,
+          "success": true
+        },
+        {
+          "name": "run_tests",
+          "duration_seconds": 1799.3733204650343,
+          "start_timestamp": 1792551641.3109317,
+          "success": true,
+          "metadata": {
+            "profile": "baseline"
+          }
+        }
+      ],
+      "metadata": {
+        "profile": "baseline"
+      }
+    }
+  ]
+}

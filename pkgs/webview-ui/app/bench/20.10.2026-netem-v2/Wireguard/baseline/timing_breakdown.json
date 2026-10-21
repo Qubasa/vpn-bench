@@ -1,0 +1,96 @@
+{
+  "vpn_name": "wireguard",
+  "total_duration_seconds": 734.415520939976,
+  "start_timestamp": 1792538894.7060506,
+  "end_timestamp": 1792539629.1215718,
+  "phases": [
+    {
+      "phase": "vpn_installation",
+      "duration_seconds": 50.50460932502756,
+      "start_timestamp": 1792538894.706059,
+      "operations": [
+        {
+          "name": "nix_flake_update",
+          "duration_seconds": 0.7126334930071607,
+          "start_timestamp": 1792538894.7060728,
+          "success": true
+        },
+        {
+          "name": "create_base_inventory",
+          "duration_seconds": 22.45259288797388,
+          "start_timestamp": 1792538895.4187212,
+          "success": true
+        },
+        {
+          "name": "install_wireguard_config",
+          "duration_seconds": 4.247139650979079,
+          "start_timestamp": 1792538917.9006112,
+          "success": true
+        },
+        {
+          "name": "get_vpn_ips",
+          "duration_seconds": 2.9461095560109243,
+          "start_timestamp": 1792538922.6238546,
+          "success": true
+        },
+        {
+          "name": "install_nix_cache",
+          "duration_seconds": 0.044414172996766865,
+          "start_timestamp": 1792538925.5699725,
+          "success": true
+        },
+        {
+          "name": "install_connection_timings_service",
+          "duration_seconds": 0.4967637210502289,
+          "start_timestamp": 1792538925.6143944,
+          "success": true
+        },
+        {
+          "name": "run_generators",
+          "duration_seconds": 3.081836507015396,
+          "start_timestamp": 1792538926.5349138,
+          "success": true
+        },
+        {
+          "name": "deploy_vpn_machines",
+          "duration_seconds": 15.593648898007814,
+          "start_timestamp": 1792538929.6167607,
+          "success": true
+        }
+      ],
+      "metadata": {
+        "cvpn_bench_lock": {
+          "rev": "4e96299bbe86dd363f59cc608762dafbb573563f",
+          "narHash": "sha256-s9g9SsA43ljAd8xxHQGNif0+5ppCz/cp4EW8KAd7y6k=",
+          "lastModified": 1792505743,
+          "type": "git"
+        }
+      }
+    },
+    {
+      "phase": "benchmarking",
+      "duration_seconds": 683.9108008070034,
+      "start_timestamp": 1792538945.2107654,
+      "operations": [
+        {
+          "name": "tc_stabilization",
+          "duration_seconds": 30.000213972991332,
+          "start_timestamp": 1792538946.130842,
+          "success": true
+        },
+        {
+          "name": "run_tests",
+          "duration_seconds": 651.657050394977,
+          "start_timestamp": 1792538976.1311114,
+          "success": true,
+          "metadata": {
+            "profile": "baseline"
+          }
+        }
+      ],
+      "metadata": {
+        "profile": "baseline"
+      }
+    }
+  ]
+}
