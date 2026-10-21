@@ -36,10 +36,9 @@ def install_nix_cache(
                 f"internal.v6.{machine['name']}",
                 f"cache.internal.v6.{machine['name']}",
             ]
-        ip_to_hostnames[bmachines[index].vpn_ip] = [
-            f"vpn.{machine['name']}",
-            f"cache.vpn.{machine['name']}",
-        ]
+        ip_to_hostnames.setdefault(bmachines[index].vpn_ip, []).extend(
+            [f"vpn.{machine['name']}", f"cache.vpn.{machine['name']}"]
+        )
 
     conf = {
         "module": {"name": "my-static-hosts-new", "input": "cvpn-bench"},
