@@ -142,6 +142,7 @@ let
             network_name = "${instanceName}4";
             listeners = [
               "tcp://0.0.0.0:11010"
+              "udp://0.0.0.0:11010"
             ];
             peers = bootstrapPeers;
             dhcp = true;

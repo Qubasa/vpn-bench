@@ -18,6 +18,10 @@
     key = config.clan.core.vars.generators."nebula-${instanceName}".files.node-key.path;
     cert = config.clan.core.vars.generators."nebula-${instanceName}".files.node-crt.path;
     ca = config.clan.core.vars.generators."nebula-${instanceName}-ca".files.ca-crt.path;
+    # Fixed port on every node, not only the lighthouse: with the default port 0 the non-lighthouse
+    # nodes listen on a random UDP port that the NixOS firewall does not open, so traffic between
+    # them dropped once the conntrack entry expired. A fixed port makes the module open it.
+    listen.port = 4242;
 
     firewall.inbound = [
       {
