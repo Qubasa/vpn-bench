@@ -31,14 +31,22 @@ let
       allMachines = (roles.peer.machines or { }) // (roles.bootstrap.machines or { });
       isBootstrap = machineName: roles.bootstrap.machines ? ${machineName};
       bootstrapMachines = lib.filterAttrs (name: _: isBootstrap name) allMachines;
-      bootstrapPeers = lib.mapAttrsToList (
-        _name: machine:
-        let
-          addr = machine.settings.publicAddress;
-          port = machine.settings.port or 11010;
-        in
-        "tcp://${addr}:${toString port}"
-      ) bootstrapMachines;
+      # Dial each bootstrap node over TCP and UDP. With TCP only, the pairs with the bootstrap
+      # node never got a UDP link (EasyTier does not hole-punch to an already connected peer)
+      # and ran TCP-in-TCP.
+      bootstrapPeers = lib.concatLists (
+        lib.mapAttrsToList (
+          _name: machine:
+          let
+            addr = machine.settings.publicAddress;
+            port = machine.settings.port or 11010;
+          in
+          [
+            "tcp://${addr}:${toString port}"
+            "udp://${addr}:${toString port}"
+          ]
+        ) bootstrapMachines
+      );
     in
     {
       # vars
