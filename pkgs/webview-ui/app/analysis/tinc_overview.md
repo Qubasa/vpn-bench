@@ -8,24 +8,24 @@ Tinc is a mature mesh VPN implementation initially developed in 1998, creating a
 - **Meta Protocol**: TCP-based control protocol for node authentication and network topology exchange
 - **Packet Protocol**: UDP-based data protocol for VPN packet transmission
 - **SPTPS**: Simple Peer-to-Peer Security protocol providing modern authenticated encryption
-- **Graph Algorithms**: Dijkstra's SSSP and Kruskal's MST algorithms for mesh routing decisions
-- **Event Loop**: Single-threaded event-driven architecture using select/poll/epoll/kqueue for I/O multiplexing
+- **Graph Algorithms**: Kruskal's MST for broadcast routing and a breadth-first single-source shortest-path search (fewest hops, edge weight as tie-breaker) for unicast routing
+- **Event Loop**: Single-threaded event-driven architecture using epoll (Linux), kqueue (BSD), select (macOS, Solaris) or WSAWaitForMultipleEvents (Windows) for I/O multiplexing
 
 # Protocol
 
 Tinc uses a dual-protocol architecture separating control plane from data plane:
 
-**Control Plane (Meta Protocol)**: Uses ASCII text-based messages over TCP connections for authentication, topology synchronization, and key exchange. Messages include ID (identity exchange), ADD_EDGE/DEL_EDGE (topology updates), ADD_SUBNET/DEL_SUBNET (subnet announcements), REQ_KEY/ANS_KEY (session key requests), and PING/PONG (keepalive).
+**Control Plane (Meta Protocol)**: Uses ASCII text-based messages over TCP connections for authentication, topology synchronization, and key exchange. With the 1.1 protocol the meta connection is itself protected by an SPTPS stream session; only the initial ID message (node name and protocol version) is sent in cleartext. Messages include ID (identity exchange), ADD_EDGE/DEL_EDGE (topology updates), ADD_SUBNET/DEL_SUBNET (subnet announcements), REQ_KEY/ANS_KEY (session key requests, also used to carry SPTPS handshakes and relayed packets), KEY_CHANGED, UDP_INFO/MTU_INFO (address and MTU hints), and PING/PONG (keepalive, default every 60 s).
 
-**Data Plane (Packet Protocol)**: Encrypted VPN packets are transmitted over UDP with the format: `| seqno (4 bytes) | encrypted data | MAC |`. The sequence number provides replay protection while the MAC authenticates the packet.
+**Data Plane (Packet Protocol)**: VPN packets are transmitted over UDP. In SPTPS mode the datagram format is `| dst node ID (6) | src node ID (6) | seqno (4) | encrypted type + payload | Poly1305 tag (16) |`; node IDs are the first 6 bytes of SHA-512(node name), and the destination ID is zeroed for direct packets. In router mode the 14-byte Ethernet header is stripped before encryption, so the per-packet overhead is 33 bytes plus UDP/IP. The legacy format is `| seqno (4 bytes) | encrypted data | truncated HMAC |`. In both modes the sequence number drives replay protection.
 
-Tinc supports both modern SPTPS handshake (ECDH key exchange with Ed25519 signatures) and legacy RSA-based handshake for backward compatibility with older nodes. The meta protocol's reliance on TCP means control plane messages can experience head-of-line blocking under packet loss conditions, potentially delaying route updates and key exchanges.
+Tinc supports both modern SPTPS (ephemeral X25519 ECDH authenticated with Ed25519 signatures), which is used automatically when the node has an Ed25519 key (`ExperimentalProtocol`, on by default in 1.1), and the legacy RSA-based handshake for backward compatibility with tinc 1.0 nodes. The meta protocol's reliance on TCP means control plane messages can experience head-of-line blocking under packet loss conditions, potentially delaying route updates and key exchanges.
 
 ## Protocol Features Checklist
 
 ### Transport
 - [x] **UDP transport** - Primary transport protocol for VPN data packets
-- [x] **TCP fallback** - Meta protocol uses TCP; can tunnel all traffic over TCP with TCPOnly mode
+- [x] **TCP fallback** - Packets automatically go over the TCP meta connection (or are relayed over other nodes' meta connections) until UDP is confirmed, when they exceed the discovered path MTU, or always with `TCPOnly`; outgoing meta connections can also traverse SOCKS4/4a/5, HTTP CONNECT or exec proxies
 - [ ] **QUIC support** - No QUIC implementation
 - [ ] **WebSocket support** - No WebSocket tunneling support
 
@@ -41,44 +41,46 @@ Tinc supports both modern SPTPS handshake (ECDH key exchange with Ed25519 signat
 
 ### Advanced
 - [ ] **Multipath/bonding** - No support for aggregating multiple network paths
-- [ ] **QoS/traffic shaping** - Priority inheritance (TOS/DSCP preservation) only, no queues or classes
-- [x] **Multicast support** - Virtual broadcast using MST-based routing or direct mode
+- [ ] **QoS/traffic shaping** - Only opt-in `PriorityInheritance` (copies inner TOS/DSCP to the outer UDP header, legacy UDP path only); no queues, classes or rate limits
+- [x] **Multicast support** - Broadcast and multicast (default broadcast subnets ff:ff:ff:ff:ff:ff, 255.255.255.255, 224.0.0.0/4, ff00::/8) are flooded along the MST (default) or to direct neighbours only (`Broadcast = direct`)
 
 # Encryption
 
 Tinc provides two encryption protocols: modern SPTPS and legacy RSA-based encryption.
 
-**Modern SPTPS Protocol**: Uses ECDH key exchange with Curve25519 or NIST P-256 curves for establishing shared secrets. Authentication is performed using Ed25519 or ECDSA signatures over the handshake messages. Data encryption uses ChaCha20-Poly1305 AEAD (Authenticated Encryption with Associated Data), providing both confidentiality and authenticity. Session keys are derived using HMAC-SHA512 as a PRF (Pseudorandom Function). The handshake provides perfect forward secrecy through ephemeral ECDH keys.
+**Modern SPTPS Protocol**: Uses ephemeral ECDH on Curve25519 (ephemeral Ed25519-format keys converted to X25519 for the exchange) to establish shared secrets; there is no NIST P-256 support. Authentication is performed using Ed25519 signatures over both KEX messages, the initiator flag and a session label. Data encryption uses ChaCha20-Poly1305 AEAD in the original 64-bit-nonce construction (as in OpenSSH's chacha20-poly1305), with the record sequence number as nonce. Session keys are derived using HMAC-SHA512 as a PRF (Pseudorandom Function). The handshake provides perfect forward secrecy through ephemeral ECDH keys.
 
-**Legacy Protocol**: Optional backward-compatible mode using RSA (1024-8192 bits) for key exchange and various symmetric ciphers (AES-128/192/256-CFB, Blowfish, etc.) via OpenSSL. MACs use SHA256, SHA1, or MD5. Notably, the RSA implementation explicitly avoids OAEP padding, which is a security concern.
+**Legacy Protocol**: Optional backward-compatible mode using RSA (1024-8192 bits; 2048+ recommended) for key exchange and any OpenSSL/libgcrypt cipher selected by name (`Cipher`, default `aes-256-cbc`; `none` is allowed). Packets are authenticated with a truncated HMAC (`Digest`, default SHA-256; `MACLength`, default 4 bytes). The RSA key exchange uses raw RSA without any padding (no OAEP or PKCS#1), and the legacy mode has no forward secrecy.
 
-Tinc can use either OpenSSL or libgcrypt for cryptographic operations, with standalone Ed25519/ChaCha20 implementations available for builds without these libraries. Key regeneration is triggered automatically after 2^30 packets to prevent sequence number rollover issues.
+The SPTPS primitives (Ed25519, X25519, ChaCha20-Poly1305, SHA-512) are always tinc's own bundled portable-C implementations. OpenSSL (default) or libgcrypt is only needed for the legacy protocol; a `nolegacy` build drops it entirely. Key regeneration is triggered by the `KeyExpire` timer (default 3600 s plus jitter), which re-keys legacy sessions and forces a fresh SPTPS key exchange with every reachable node; the legacy receive path additionally re-keys after 2^30 packets. The timer is compiled only in builds with legacy support, so `nolegacy` builds (as used for Android) never re-key SPTPS sessions automatically.
 
 ## Encryption Checklist
 
 ### Key Exchange
-- [x] **Modern key exchange** - Curve25519 ECDH (or NIST P-256 as fallback)
+- [x] **Modern key exchange** - Curve25519 (X25519) ECDH in SPTPS; no other curves
 - [x] **Perfect Forward Secrecy** - Ephemeral ECDH session keys in SPTPS
 - [ ] **Post-quantum readiness** - No hybrid or PQ key exchange support
-- [x] **Key rotation** - Automatic regeneration after 2^30 packets to prevent rollover
+- [x] **Key rotation** - `KeyExpire` (default 3600 s) forces SPTPS re-KEX and legacy re-keying; legacy also re-keys after 2^30 packets (not in `nolegacy` builds)
 
 ### Symmetric Encryption
 - [x] **Authenticated encryption** - ChaCha20-Poly1305 AEAD in SPTPS protocol
-- [ ] **Hardware-accelerated crypto** - No explicit AES-NI or ARM NEON support (depends on OpenSSL)
-- [x] **Constant-time operations** - Ed25519 implementation uses constant-time operations
+- [ ] **Hardware-accelerated crypto** - SPTPS uses bundled portable C ChaCha20-Poly1305 (no SIMD, no AES-NI); only legacy ciphers go through OpenSSL/libgcrypt and may use AES-NI
+- [x] **Constant-time operations** - Ed25519/X25519 (ref10-derived), ChaCha20 and poly1305-donna are constant-time designs
 
 ### Protocol Security
-- [x] **Replay protection** - Sliding window verification (configurable size: 16-32 packets)
-- [ ] **Noise Protocol or equivalent** - SPTPS is custom but well-designed, not Noise Protocol
-- [x] **No cleartext metadata** - SPTPS encrypts all data after handshake; legacy protocol encrypts payloads
+- [x] **Replay protection** - Sliding bitmap window; default 16 bytes (128 packets) for SPTPS and 32 bytes (256 packets) for legacy, both set via `ReplayWindow` (in bytes)
+- [ ] **Noise Protocol or equivalent** - SPTPS is a custom protocol, not a Noise Protocol pattern
+- [ ] **No cleartext metadata** - The meta connection starts with a cleartext ID message containing the node name, and every SPTPS UDP packet carries cleartext 6-byte source/destination node IDs derived from node names
 
 # Performance
 
-Tinc uses a fundamentally **single-threaded event-driven architecture**. The main event loop in `main_loop()` uses an event system based on splay trees for I/O events and timeouts, with I/O multiplexing via select/poll/kqueue/epoll depending on the platform.
+Tinc uses a fundamentally **single-threaded event-driven architecture**. The main event loop in `main_loop()` keeps I/O events and timeouts in splay trees, with I/O multiplexing via epoll (Linux, up to 32 events per wakeup), kqueue (BSD), select (macOS, Solaris) or WSAWaitForMultipleEvents (Windows).
 
 **Threading Exception**: The only multi-threaded component is the optional UPnP-IGD client which runs in a separate pthread to periodically refresh port mappings without blocking the main event loop.
 
 **Performance Implication**: The single-threaded design means tinc cannot utilize multiple CPU cores for encryption/decryption or packet processing. All cryptographic operations, packet routing, and I/O handling occur in the main thread. High-throughput scenarios are limited by single-core performance, and one slow packet can stall the entire pipeline.
+
+**Packet I/O Details**: On Linux, UDP reception uses `recvmmsg()` with a static batch of 64 packets. Everything else is per-packet: each TUN/TAP read returns one packet (no IFF_VNET_HDR, no multi-queue), each packet is routed, encrypted and sent with its own `sendto()`, and SPTPS packets are copied twice on the send path (record buffer, then node-ID-prefixed datagram buffer). Listening UDP sockets get 1 MiB send and receive buffers by default (`UDPSndBuf`/`UDPRcvBuf`) and the DF bit (`IP_PMTUDISC_DO`) when PMTU discovery is on. The internal frame limit is 1518 bytes (1500 + Ethernet + VLAN header), or 9018 bytes in builds with the `jumbograms` option.
 
 ## Performance Optimizations Checklist
 
@@ -89,37 +91,37 @@ Tinc uses a fundamentally **single-threaded event-driven architecture**. The mai
 ### Packet I/O
 - [x] **Batch UDP receives** - Uses `recvmmsg` on Linux for receiving multiple packets per syscall
 - [ ] **Batch UDP sends** - Uses individual `sendto()` per packet, no `sendmmsg` support
-- [x] **Large batch sizes** - Receives 64 packets per `recvmmsg` batch
+- [x] **Large batch sizes** - Receives up to 64 packets per `recvmmsg` call (UDP receive only; TUN reads and UDP sends are one packet per syscall)
 
 ### UDP Offload
 - [ ] **UDP GSO (Generic Segmentation Offload)** - No GSO support
 - [ ] **UDP GRO (Generic Receive Offload)** - No GRO support
 
 ### Buffer Management
-- [x] **Buffer pool reuse** - Limited: uses two-buffer swap pattern for compression/encryption; static array of 64 `vpn_packet_t` structures for batch receive
+- [x] **Buffer pool reuse** - Partial: no pool allocator; the 64-entry `recvmmsg` array is static and reused, other packet buffers live on the stack
 - [x] **Large UDP socket buffers** - 1MB default for both send and receive (vs ~200KB kernel default)
 
 ### Userspace TCP Stack (optional)
-- [ ] **Userspace TCP implementation** - Relies on kernel TCP entirely
-- [ ] **Large TCP RX/TX buffers** - Uses kernel default buffers (~128KB)
-- [ ] **Tuned congestion control** - Uses kernel TCP congestion control (typically CUBIC)
-- [ ] **Reordering tolerance** - Subject to kernel TCP reordering behavior
+- [ ] **Userspace TCP implementation** - No userspace TCP/IP stack; tunneled traffic goes through the kernel stack via tun/tap
+- [ ] **Large TCP RX/TX buffers** - N/A (no userspace TCP stack)
+- [ ] **Tuned congestion control** - N/A (no userspace TCP stack)
+- [ ] **Reordering tolerance** - N/A (no userspace TCP stack)
 
 ### Receive Path
 - [ ] **TCP/packet coalescing on ingress** - No explicit coalescing
 - [ ] **RX checksum offload** - Depends on NIC/kernel, not controlled by tinc
 
 ### MTU Handling
-- [x] **Conservative MTU** - Discovers and uses appropriate MTU per path
-- [x] **Path MTU discovery** - Active PMTU discovery with UDP probes
+- [ ] **Conservative MTU** - Tinc does not set the interface MTU; it stays at the OS default (1500 on Linux tun/tap) unless set in `tinc-up`. Oversized packets are answered with ICMP Fragmentation Needed / Packet Too Big, fragmented (IPv4 without DF), or sent over TCP, and TCP MSS is clamped (`ClampMSS`, default on)
+- [x] **Path MTU discovery** - Active per-node PMTU discovery with UDP probes (exponential probe sizing, 20 probe rounds, then periodic re-probing of maxmtu/maxmtu+1); on by default unless `TCPOnly`
 
 ### Peer Management
-- [x] **Lazy peer removal** - AutoConnect feature manages connections intelligently
+- [x] **Lazy peer removal** - Unreachable nodes and their subnets stay known until an explicit `tinc purge`; AutoConnect keeps about 3 meta connections
 - [x] **Endpoint caching** - Address cache maintains recently seen addresses
-- [x] **Efficient keepalive timers** - Configurable UDP discovery keepalive intervals
+- [x] **Efficient keepalive timers** - UDP probes are only sent while traffic is flowing (2 s discovery, 10 s keepalive, 30 s timeout); meta connections ping every 60 s
 
 ### Packet Processing
-- [ ] **Zero-allocation parsing** - Uses `alloca()` and `malloc()` in packet path
+- [x] **Zero-allocation parsing** - No heap allocation on the per-packet path; packet buffers are stack or static (`alloca()` for temporary SPTPS buffers)
 - [ ] **Zero-copy filtering** - Packets copied into buffers with offset mechanism
 
 ### State Synchronization
@@ -127,65 +129,68 @@ Tinc uses a fundamentally **single-threaded event-driven architecture**. The mai
 - [ ] **Compression** - No compression of control plane messages
 
 ### Data Plane Compression
-- [x] **Tunnel compression** - Supports LZ4, LZO (low/high), and Zlib (levels 1-9)
-- [x] **Configurable compression level** - Multiple compression algorithms and levels available
+- [x] **Tunnel compression** - Optional per-node compression for both SPTPS and legacy: zlib levels 1-9, LZO fast (10) / best (11), LZ4 (12); off by default
+- [x] **Configurable compression level** - Each node declares via `Compression` the level it wants to receive; peers compress accordingly
 
 # Security
 
 Tinc has had several security vulnerabilities discovered and patched over its history:
 
-**CVE-2018-16737 & CVE-2018-16738** (2018): Oracle attacks in the legacy protocol allowed attackers to decrypt traffic by observing error messages. These were preventable padding oracle vulnerabilities in the legacy RSA-based encryption mode.
+**CVE-2018-16737 & CVE-2018-16738** (2018): Oracle attacks against the legacy protocol's broken authentication (CWE-287) let an attacker get past authentication and inject traffic. This was an integrity flaw; it did not let the attacker decrypt traffic. Fixed in the 1.1 branch with 1.1pre17.
 
 **CVE-2018-16758** (2018): Man-in-the-middle attack could force a NULL cipher for UDP traffic in the legacy protocol, completely removing encryption. This demonstrated the dangers of cipher negotiation without proper authentication.
 
-**CVE-2013-1428** (2013): Large packets forwarded via TCP were not properly validated, leading to potential buffer overflows. Packets exceeding MTU when forwarded over TCP connections could cause crashes or potentially code execution.
+**CVE-2013-1428** (2013): A stack-based buffer overflow in `receive_tcppacket()`: packets forwarded via TCP were not checked against the buffer size, so an authenticated peer could crash the daemon or potentially execute code. Oversized TCP-forwarded packets are now dropped.
 
 **Security Concerns**:
-- Legacy protocol still supported with known weaknesses (RSA without OAEP padding, CFB mode instead of AEAD)
-- Bypass security mode (`--bypass-security` flag) completely disables authentication - dangerous if accidentally enabled
+- Legacy protocol still supported with known weaknesses (raw RSA without padding, CBC with a 4-byte truncated HMAC by default, no forward secrecy, `Cipher = none` allowed)
+- Bypass security mode (`--bypass-security` flag) disables meta protocol authentication and uses null ciphers (meant for debugging only); dangerous if accidentally enabled
+- If a node's Ed25519 public key is not in its host file, tinc requests it over the meta network (REQ_PUBKEY/ANS_PUBKEY) and stores the answer: trust on first use relayed through intermediate nodes
+- Any authenticated node can announce edges and subnets for the whole mesh; only `StrictSubnets`/`TunnelServer` restrict this
+- SPTPS uses 32-bit record sequence numbers as ChaCha20 nonces, and `nolegacy` builds have no time-based re-keying, so very long-lived sessions there rely on reconnects for fresh keys
 - C codebase with manual memory management presents ongoing memory safety risks
-- Replay window is static (16-32 packets) which may be insufficient for high-latency networks
+- Replay window defaults (128 packets for SPTPS, 256 for legacy) may drop legitimately reordered packets on high-rate links unless `ReplayWindow` is raised
 
 ## Security Features Checklist
 
 ### Network Security
-- [ ] **Rate limiting** - No built-in rate limiting for DoS prevention
+- [x] **Rate limiting** - Incoming meta connections are tarpitted above `MaxConnectionBurst` (default 10) per host and overall; SPTPS restarts after decode errors are limited to one per 10 s
 - [ ] **Stateful packet filter** - No connection tracking for ACLs
 - [ ] **Fine-grained ACLs** - No per-port/protocol access control
 - [ ] **Capability-based access** - Simple subnet-based routing only
 
 ### Identity & Authentication
-- [x] **Identity validation** - Ed25519 public key cryptographic verification in SPTPS
+- [x] **Identity validation** - Node names are bound to Ed25519 (or RSA) public keys pinned in host files; handshakes verify signatures (but see the TOFU caveat above)
 - [ ] **Signed configuration updates** - Config files exchanged but not cryptographically signed
-- [ ] **Certificate pinning** - Uses public key verification, not certificate-based
+- [x] **Certificate pinning** - No CA/WebPKI; raw public keys of meta peers are pinned in `hosts/` files (invitations pin the inviter's key via a hash in the URL)
 
 ### Implementation
 - [ ] **Memory-safe language** - Written in C with manual memory management
-- [x] **Privilege separation** - Supports chroot and setuid for privilege dropping
-- [x] **Sandboxing** - seccomp (Linux), Capsicum (FreeBSD), pledge (OpenBSD) support
-- [ ] **Audit logging** - Basic logging but no dedicated security event logging
+- [x] **Privilege separation** - Opt-in `--user` (setuid/setgid) and `--chroot` after setup; no separate privileged helper
+- [x] **Sandboxing** - Partial: pledge(2)/unveil(2) on OpenBSD only (`Sandbox = normal` by default there, `high` optional); `--chroot` elsewhere; no seccomp or Capsicum
+- [ ] **Audit logging** - Authentication and connection events go to the normal syslog/logfile; no dedicated security audit log
 
 # NAT Traversal
 
-Tinc has **limited NAT traversal capabilities** compared to modern mesh VPNs. It relies primarily on UPnP port forwarding and basic UDP hole punching through the meta protocol's reflexive address discovery.
+Tinc has **limited NAT traversal capabilities** compared to modern mesh VPNs. It relies on peer-assisted UDP hole punching, where intermediate nodes report the reflexive addresses they observe, plus optional UPnP port forwarding.
 
-**UPnP-IGD Support**: Optional automatic port forwarding using the miniupnpc library. A dedicated pthread periodically refreshes port mappings with configurable intervals. Supports both TCP and UDP port mappings.
+**UPnP-IGD Support**: Optional automatic port forwarding using the miniupnpc library (disabled in the default build, enabled at runtime with `UPnP = yes|udponly`). A dedicated pthread refreshes the mappings every `UPnPRefreshPeriod` (default 60 s, lease 2× that). Supports both TCP and UDP port mappings.
 
-**Reflexive Address Discovery**: During key exchange, ANS_KEY messages include the reflexive UDP address/port discovered from the source of incoming packets. Nodes share these discovered addresses via the meta protocol, allowing peers to attempt direct connections.
+**Reflexive Address Discovery**: When an intermediate node forwards an ANS_KEY message, it appends the reflexive UDP address/port it observed for the sender. UDP_INFO messages propagate observed addresses along the path in the same way. Nodes do not learn their own public endpoint; they learn their peers' endpoints from third nodes.
 
-**UDP Probing**: Active UDP probing attempts to discover working paths between nodes with configurable discovery intervals, keepalive intervals, and timeout values. Local discovery attempts to find direct paths on the same LAN.
+**UDP Probing**: Active UDP probing tries to establish and keep direct paths, with configurable discovery interval (2 s), keepalive interval (10 s) and timeout (30 s). With `LocalDiscovery` (on by default), tinc also probes the peer's advertised local address while UDP is unconfirmed.
 
-**Major Limitations**: No STUN/TURN protocol support means inability to traverse symmetric NAT. No ICE (Interactive Connectivity Establishment) protocol implementation. No relay fallback system for working through double NAT without manual port forwarding. UDP hole punching is rudimentary compared to modern coordination mechanisms.
+**Major Limitations**: No STUN/TURN protocol support and no ICE. No port prediction, so symmetric NATs cannot be traversed directly. In that case traffic is relayed automatically through other mesh nodes, over UDP or over their TCP meta connections. There are no dedicated relay servers.
 
 ## NAT Traversal Checklist
 
 ### Discovery
-- [ ] **STUN support** - No STUN protocol implementation
-- [ ] **Multiple STUN servers** - N/A
+- [ ] **STUN support** - No STUN; peers' reflexive UDP addresses are reported by intermediate nodes (ANS_KEY, UDP_INFO), not a node's own endpoint
+- [ ] **Multiple STUN servers** - N/A (no STUN)
 - [ ] **NAT type detection** - No formal NAT type detection
 
 ### Port Mapping
-- [x] **UPnP port mapping** - Via miniupnpc library with configurable refresh periods
+- [x] **UPnP port mapping** - Via miniupnpc (build option, off by default; runtime `UPnP = yes|udponly`)
 - [ ] **NAT-PMP support** - No NAT-PMP implementation
 - [ ] **PCP support** - No Port Control Protocol support
 
@@ -195,10 +200,10 @@ Tinc has **limited NAT traversal capabilities** compared to modern mesh VPNs. It
 - [x] **Rendezvous coordination** - Meta protocol coordinates address sharing between peers
 
 ### Fallback
-- [ ] **Relay fallback** - No automatic relay when direct connection fails
-- [ ] **Multiple relay regions** - N/A
-- [ ] **Automatic relay selection** - N/A
-- [x] **TCP relay support** - Can relay through intermediate nodes but not dedicated relay servers
+- [x] **Relay fallback** - Automatic: until direct UDP is confirmed (or permanently, e.g. behind symmetric NAT or with `IndirectData`), packets go via the next hop on the mesh graph, over UDP or TCP
+- [ ] **Multiple relay regions** - N/A (no relay infrastructure; any node can relay)
+- [x] **Automatic relay selection** - Partial: next hop chosen by fewest hops, then lowest edge weight (meta-connection RTT estimate in ms, overridable with `Weight`)
+- [x] **TCP relay support** - Packets can be carried over the TCP meta connections of intermediate nodes; SPTPS payloads stay end-to-end encrypted
 
 # Local Routing
 
@@ -210,31 +215,31 @@ Tinc supports three routing modes providing different levels of network transpar
 
 **Hub Mode (RMODE_HUB)**: Broadcasts all packets to all nodes. Simplest but least efficient mode, suitable for small networks or special requirements.
 
-**Local Traffic Optimization**: The local discovery feature attempts to find direct paths on the same LAN by having peers share their local addresses. When nodes are on the same subnet, tinc prefers the direct LAN path over routing through the internet. Local addresses are randomly selected from available edges to distribute load.
+**Local Traffic Optimization**: With `LocalDiscovery` (on by default), each edge carries the local socket address of its meta connection. While UDP to a peer is not yet confirmed, tinc sends an extra probe to the local address of a randomly chosen edge of that peer. If the peer answers there first, the LAN path is used. There is no broadcast/multicast LAN discovery and no explicit same-subnet check.
 
 ## Local Routing Checklist
 
 ### LAN Discovery
-- [x] **Broadcast/multicast discovery** - Local discovery tries direct LAN paths
-- [x] **Direct path advertisement** - Peers share reachable endpoints via meta protocol
-- [x] **Same-subnet detection** - Identifies and prefers peers on same network
+- [ ] **Broadcast/multicast discovery** - No LAN broadcast/multicast discovery; local discovery uses unicast probes to advertised local addresses
+- [x] **Direct path advertisement** - ADD_EDGE carries each meta connection's local address
+- [ ] **Same-subnet detection** - No subnet comparison; local addresses are simply probed
 
 ### LAN Optimization
-- [x] **Automatic LAN preference** - Prefers local over WAN paths when available
-- [ ] **Trusted path mode** - No option to skip encryption on trusted LANs
+- [x] **Automatic LAN preference** - Partial: local-address probes are sent in parallel with WAN probes only while UDP is unconfirmed; no explicit LAN-over-WAN preference afterwards
+- [ ] **Trusted path mode** - No LAN-aware bypass; only the legacy protocol allows `Cipher = none`/`Digest = none` globally
 - [ ] **LAN-only mode** - No restriction to local network only
 
 ### Routing Features
 - [x] **Subnet routes** - ADD_SUBNET messages advertise subnet routing through peers
-- [x] **Full tunnel mode** - Can route all traffic through a peer (router mode)
+- [x] **Full tunnel mode** - A node can advertise `Subnet = 0.0.0.0/0` / `::/0`; default routes must be set up by the user in `tinc-up`/`subnet-up` scripts
 - [x] **Split tunneling** - Subnet-based routing provides selective VPN routing
-- [ ] **Route priorities** - No explicit HA/failover route selection (uses graph algorithms)
+- [x] **Route priorities** - Subnet weights (`Subnet = 10.0.0.0/24#5`): the reachable owner with the lowest weight wins, with automatic failover when it becomes unreachable
 
 # Central Point of Failure
 
 **Tinc has NO central point of failure** - it is a true peer-to-peer mesh network.
 
-**Decentralized Topology**: Each node maintains a full network graph with all edge and subnet information. Nodes share topology updates via ADD_EDGE/DEL_EDGE and ADD_SUBNET/DEL_SUBNET messages over the meta protocol. Routing is recalculated automatically when nodes join or leave the network using Kruskal's MST for broadcast routing and Dijkstra's SSSP for unicast routing.
+**Decentralized Topology**: Each node maintains a full network graph with all edge and subnet information. Nodes share topology updates via ADD_EDGE/DEL_EDGE and ADD_SUBNET/DEL_SUBNET messages over the meta protocol. Routing is recalculated automatically when nodes join or leave the network, using Kruskal's MST for broadcast routing and a breadth-first shortest-path search (hop count, then edge weight) for unicast routing.
 
 **AutoConnect Feature**: Automatic connection management maintains mesh connectivity by maintaining approximately 3 connections per node, automatically connecting to unreachable nodes, and dropping superfluous connections when the mesh is well-connected.
 
@@ -278,9 +283,9 @@ Tinc provides both modern and legacy authentication methods for nodes joining th
 ## Authentication Checklist
 
 ### Enrollment Methods
-- [x] **Pre-authentication keys** - Host config files allow headless/automated enrollment
+- [x] **Pre-authentication keys** - Single-use invitation URLs (`tinc invite`, valid 1 week by default via `InvitationExpire`) or manual exchange of host files
 - [ ] **OAuth/OIDC** - No SSO integration
-- [x] **Interactive login** - Invitation system provides URL-based enrollment
+- [ ] **Interactive login** - No interactive/browser login; invitations are pre-shared URLs
 - [x] **CLI authentication** - `tinc join` command for command-line enrollment
 
 ### Authorization
@@ -298,25 +303,25 @@ Tinc provides both modern and legacy authentication methods for nodes joining th
 
 Tinc provides broad cross-platform support with implementations for most major operating systems.
 
-**Platform Implementations**: Linux support uses native tun/tap devices with netlink for route management. BSD family (FreeBSD, OpenBSD, NetBSD, DragonFlyBSD) uses tun/tap with auto-clone devices. macOS uses utun devices or the tunemu fallback implementation. Windows uses the TAP-Windows adapter. Solaris has dedicated device support. Android is supported via fd (file descriptor) passing for non-root operation.
+**Platform Implementations**: Linux uses native tun/tap devices (no netlink; routes and addresses are set by user scripts such as `tinc-up`). The BSD family (FreeBSD, OpenBSD, NetBSD, DragonFlyBSD) uses tun/tap devices. macOS uses utun, tap or the tunemu fallback. Windows uses the TAP-Windows adapter. Solaris has dedicated device support. Additional device types include raw_socket, multicast, UML, VDE and dummy. Android is supported by building tincd with the NDK and passing the VpnService tun fd over a Unix socket (`DeviceType = fd`); there is no Android app in the repository.
 
 **Implementation Details**: Tinc runs entirely in userspace, with the main daemon process handling all packet encryption, decryption, and routing. Packets are read from the tun/tap device, encrypted, and sent over UDP (or TCP). Received encrypted packets are decrypted and written to the tun/tap device for the kernel to route.
 
-**Security Features**: Platform-specific sandboxing includes seccomp on Linux, Capsicum on FreeBSD, and pledge on OpenBSD. All platforms support privilege dropping via chroot and setuid after initialization. Optional memory locking (mlockall) prevents swapping of sensitive key material.
+**Security Features**: Sandboxing exists only on OpenBSD (pledge/unveil). On Unix platforms, tincd can drop privileges via `--chroot` and `--user` after initialization. Optional memory locking (`--mlock`, mlockall) prevents swapping of sensitive key material.
 
 ## Platform Checklist
 
 ### Desktop/Server
-- [x] **Linux** - Full support with tun/tap, netlink, seccomp
+- [x] **Linux** - Full support with tun/tap, recvmmsg, systemd units and watchdog
 - [x] **macOS** - Full support with utun/tunemu
 - [x] **Windows** - Full support with TAP-Windows adapter
-- [x] **FreeBSD/OpenBSD** - Full BSD family support with Capsicum/pledge
+- [x] **FreeBSD/OpenBSD** - Full BSD family support (kqueue); pledge/unveil sandbox on OpenBSD
 
 ### Mobile
-- [ ] **iOS** - No official iOS app
-- [x] **Android** - Supported via fd passing (DeviceType = fd) for non-root operation
+- [ ] **iOS** - No iOS app or NetworkExtension integration (INSTALL.md only notes that cross-compiling should work)
+- [x] **Android** - Partial: NDK build target plus `DeviceType = fd` for a tun fd supplied by a third-party VpnService app; no official app
 
 ### Implementation
 - [ ] **Kernel-mode datapath** - No in-kernel packet processing
 - [x] **Userspace implementation** - Runs entirely in userspace with tun/tap devices
-- [x] **Container support** - Works in containers with appropriate tun/tap device access
+- [ ] **Container support** - No official container image or Kubernetes integration; runs in containers given /dev/net/tun access

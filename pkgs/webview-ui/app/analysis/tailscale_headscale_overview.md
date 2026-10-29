@@ -16,7 +16,7 @@
 - **MagicSock** (wgengine/magicsock/magicsock.go): UDP socket that actively manages endpoints and performs NAT traversal
 - **Control Client** (control/controlclient/client.go): Maintains communication with the control server
 - **Local Backend** (ipn/ipnlocal/local.go): Orchestrates all components and handles state management
-- **Netstack (gVisor)** (wgengine/netstack/netstack.go): Userspace TCP/IP stack with aggressive tuning for performance
+- **Netstack (gVisor)** (wgengine/netstack/netstack.go): Userspace TCP/IP stack with tuned TCP settings. In the default Linux TUN mode it only terminates Tailscale-local services (peerAPI/Taildrop, Tailscale SSH, Serve, MagicDNS at 100.100.100.100, 4via6). It carries all tunneled traffic only with `--tun=userspace-networking`, plus subnet and exit-node traffic on Windows, macOS (tailscaled), FreeBSD, OpenBSD and Synology
 
 **Headscale Control Server:**
 - **Control Plane Server** (hscontrol/app.go): Main HTTP/gRPC server handling node registration and coordination
@@ -25,7 +25,7 @@
 - **Policy Manager** (hscontrol/policy/v2/policy.go): ACL evaluation and enforcement
 - **Mapper** (hscontrol/mapper/mapper.go): Converts internal state to Tailscale protocol format
 
-**Important Distinction:** Headscale is **control plane only**. All VPN data traffic flows directly between Tailscale clients using WireGuard, never touching the Headscale server. Headscale only handles registration, authentication, key distribution, and policy management.
+**Important Distinction:** Headscale is **control plane only**. VPN data traffic flows directly between Tailscale clients using WireGuard. The one exception is Headscale's optional embedded DERP server: when it is enabled, relayed traffic (still WireGuard-encrypted) passes through the Headscale process. Headscale handles registration, authentication, key distribution, and policy management.
 
 # Protocol
 
@@ -35,18 +35,18 @@ The Tailscale ecosystem uses two distinct protocol layers:
 
 The **TS2021 protocol** (Noise-based encryption) secures communication between clients and control servers (both Tailscale and Headscale):
 
-- **Transport**: WebSocket upgrade to `/ts2021` endpoint
+- **Transport**: HTTP/1.1 `Upgrade: tailscale-control-protocol` on the `/ts2021` endpoint. Only browser (js/wasm) clients use a WebSocket upgrade instead
 - **Encryption**: Noise Protocol Framework (IK pattern) with Curve25519, ChaCha20-Poly1305, and BLAKE2s
 - **Message Framing**: Maximum 4096 bytes per frame with 3-byte header
 - **HTTP/2 over Noise**: After handshake, HTTP/2 is served over the encrypted Noise connection
 
 **Communication Flow:**
-1. Client initiates WebSocket connection to control server
-2. Noise handshake establishes encrypted channel with early payload challenge
+1. Client fetches the server's Noise public key from `/key`, then opens an HTTP Upgrade connection to `/ts2021`
+2. Noise handshake establishes the encrypted channel. The server's early payload carries a per-connection NodeKeyChallenge
 3. HTTP/2 runs over Noise connection
 4. Client sends MapRequest via long-polling to `/machine/map`
 5. Server responds with MapResponse containing network configuration
-6. Keep-alive interval: 50 seconds
+6. Keep-alive interval: 50 seconds plus 0–9 s random jitter (Headscale; hardcoded, not configurable)
 
 **MapRequest/MapResponse Protocol:**
 - **MapRequest**: Contains node endpoints, hostinfo, capabilities, network information (NAT type, available endpoints), TKA (Tailscale Key Authority) head hash
@@ -58,19 +58,19 @@ The **TS2021 protocol** (Noise-based encryption) secures communication between c
 
 All actual VPN traffic uses **WireGuard** protocol:
 
-- **Primary Transport**: UDP on ephemeral ports
+- **Primary Transport**: UDP. The kernel picks the port unless `--port`/`PORT` is set (the shipped systemd defaults file and Windows use 41641)
 - **WireGuard Implementation**: wireguard-go (userspace implementation in Go)
 - **Encryption**: ChaCha20-Poly1305 (WireGuard standard)
 - **Key Exchange**: Curve25519 (WireGuard standard)
 - **TCP Fallback**: Not supported natively by WireGuard
 - **DERP Relay Fallback**: When direct UDP fails, encrypted WireGuard packets are relayed over DERP
-  - DERP supports both TCP and WebSocket transports
+  - DERP runs over HTTP(S)/TCP (HTTP Upgrade, normally TLS on port 443). WebSocket is used only by browser (js/wasm) clients or with the `TS_DEBUG_DERP_WS_CLIENT` debug knob
   - DERP relay is encrypted (WireGuard packets remain encrypted inside DERP tunnel)
 
 **Protocol Support:**
 - **UDP**: Primary transport for WireGuard tunnels
 - **TCP**: Via DERP relay servers (WireGuard packets encapsulated in TCP)
-- **WebSocket**: DERP supports WebSocket for restrictive firewalls
+- **WebSocket**: DERP servers accept WebSocket, but native clients use plain HTTP Upgrade; only browser (js/wasm) clients use WebSocket
 - **IPv4**: Full support for both control and data plane
 - **IPv6**: Full support for both control and data plane
 
@@ -80,7 +80,7 @@ All actual VPN traffic uses **WireGuard** protocol:
 - [x] **UDP transport** - Primary WireGuard transport protocol
 - [x] **TCP fallback** - Works through restrictive firewalls via DERP relay over TCP
 - [ ] **QUIC support** - No QUIC transport in DERP (not implemented in codebase)
-- [x] **WebSocket support** - DERP relay supports WebSocket for HTTP-compatible tunneling
+- [x] **WebSocket support** - Partial: DERP servers (including Headscale's embedded DERP) accept WebSocket, but only browser (js/wasm) clients use it. Native clients need the `TS_DEBUG_DERP_WS_CLIENT` debug knob
 
 ### IP Support
 - [x] **IPv4 support** - Full IPv4 tunnel traffic support
@@ -89,7 +89,7 @@ All actual VPN traffic uses **WireGuard** protocol:
 
 ### Network Layer Mode
 - [x] **Layer 3 (IP) mode** - IP packet routing only (WireGuard operates at Layer 3)
-- [ ] **Layer 2 (Ethernet) mode** - No Ethernet frame tunneling capability
+- [ ] **Layer 2 (Ethernet) mode** - No Ethernet frame tunneling. The experimental Linux `--tun=tap:` mode only answers ARP/DHCP locally and still forwards IP packets to peers
 - [ ] **Bridging support** - Cannot bridge non-VPN devices onto network
 
 ### Advanced
@@ -108,7 +108,7 @@ The Noise Protocol Framework secures all communication between Tailscale clients
 - **Symmetric Encryption**: ChaCha20-Poly1305 (authenticated encryption)
 - **Hash Function**: BLAKE2s
 - **Perfect Forward Secrecy**: Yes, via Noise protocol ephemeral keys
-- **Early Payload**: Challenge-response in initial handshake prevents server spoofing
+- **Early Payload**: Before HTTP/2 starts, the server sends a per-connection NodeKeyChallenge, which the client uses to prove possession of its node key. Server authenticity comes from the IK pattern itself: the client must already know the server's static key
 - **Handshake Hash**: Binds subsequent messages to connection (prevents replay attacks)
 
 **Key Types:**
@@ -123,13 +123,14 @@ The Noise Protocol Framework secures all communication between Tailscale clients
 2. **NodeKey** (Curve25519):
    - Key for WireGuard tunnels, persisted to disk (not ephemeral/per-session)
    - Distributed to peers via control server
-   - Can be manually rotated independently of MachineKey
+   - Rotated on re-authentication (`tailscale up --force-reauth`, interactive login) or node-key expiry; the MachineKey stays the same
    - Used for peer-to-peer WireGuard encryption
 
 3. **DiscoKey** (Curve25519):
    - Discovery/endpoint probing key
    - Used for NAT traversal and endpoint discovery
    - Published to peers for "Call-Me-Maybe" protocol
+   - Regenerated at every tailscaled start; sent in cleartext in the header of every disco packet
 
 **Data Plane Encryption (WireGuard):**
 
@@ -148,12 +149,12 @@ All peer-to-peer traffic encrypted by WireGuard:
 - **WireGuard Automatic Rotation**: Keys automatically rotated by WireGuard protocol (~2 minutes)
 - **NodeKey Manual Rotation**: NodeKey can be manually rotated via client commands
 - **MachineKey Rotation**: Requires re-registration (not automatic)
-- **No Auto-Rotation Policy**: Enterprise automatic key rotation not implemented in open-source
+- **No Auto-Rotation Without Re-Login**: Node-key expiry forces re-authentication, which creates a new NodeKey; nothing rotates NodeKeys automatically in between
 
 **Hardware Acceleration:**
 
-- **AES-NI**: Not used (ChaCha20 preferred)
-- **ChaCha20 Optimization**: Uses optimized implementations (including SIMD when available)
+- **AES-NI**: Not used (WireGuard is fixed to ChaCha20-Poly1305)
+- **ChaCha20 Optimization**: golang.org/x/crypto ships assembly ChaCha20-Poly1305 for amd64 (SSSE3/AVX2) and ChaCha20 for arm64 (NEON), ppc64le and s390x
 - **Constant-Time Operations**: All cryptographic operations use constant-time algorithms to prevent timing attacks
 
 ## Encryption Checklist
@@ -166,13 +167,13 @@ All peer-to-peer traffic encrypted by WireGuard:
 
 ### Symmetric Encryption
 - [x] **Authenticated encryption** - ChaCha20-Poly1305 for both control and data plane
-- [ ] **Hardware-accelerated crypto** - ChaCha20 doesn't use AES-NI (but has optimized SIMD implementations)
+- [x] **Hardware-accelerated crypto** - SIMD assembly ChaCha20-Poly1305 from golang.org/x/crypto (amd64 SSSE3/AVX2, arm64 NEON); no AES-NI
 - [x] **Constant-time operations** - Timing attack resistant (constant-time key comparison implemented)
 
 ### Protocol Security
 - [x] **Replay protection** - 64-bit counter/nonce verification in WireGuard, handshake hash binding in Noise
 - [x] **Noise Protocol or equivalent** - Full Noise IK implementation for control plane, WireGuard (Noise_IKpsk2) for data plane
-- [x] **No cleartext metadata** - Control plane encrypted via Noise, data plane via WireGuard (encrypted headers/identities)
+- [x] **No cleartext metadata** - Partial: WireGuard handshakes and control traffic hide long-term keys, but every disco packet (NAT-traversal ping/pong, CallMeMaybe) carries the sender's 32-byte DiscoKey in cleartext. The DiscoKey is regenerated at each tailscaled start, but it links all of a node's endpoints for that run
 
 # Performance
 
@@ -184,12 +185,12 @@ Both Tailscale client and Headscale use **Go's goroutine model** for concurrent 
 
 The client uses extensive parallelism with careful synchronization:
 
-- **WireGuard Device**: Runs in separate goroutines for packet processing (managed by wireguard-go)
+- **WireGuard Device**: wireguard-go starts one encryption, one decryption and one handshake goroutine per CPU (`runtime.NumCPU()`); per-peer staged/inbound/outbound queues keep each peer's packets in order
 - **Control Client**: Dedicated long-polling goroutine for map updates
-- **MagicSock**: Separate read/write goroutines for UDP socket operations
+- **MagicSock**: wireguard-go runs one receive goroutine per receive function (UDPv4, UDPv6, DERP). There is one UDP socket per address family, with no SO_REUSEPORT fan-out
 - **Network Monitor**: Background goroutine listening for system network changes
 - **Router**: Asynchronous OS routing table updates
-- **Netstack (gVisor)**: Userspace TCP/IP stack with per-connection goroutines
+- **Netstack (gVisor)**: Userspace TCP/IP stack with per-connection goroutines, used only for the traffic it terminates (see Netstack Integration)
 
 **Concurrency Patterns:**
 - `sync.Mutex` for shared state protection in userspaceEngine
@@ -202,8 +203,8 @@ The client uses extensive parallelism with careful synchronization:
 
 The control server is designed for multi-core scalability:
 
-- **Copy-on-Write NodeStore**: Lock-free reads using `atomic.Pointer`, writes are batched
-- **Worker Pools**: Configurable parallel workers for MapResponse generation
+- **Copy-on-Write NodeStore**: Lock-free reads using `atomic.Pointer`; writes are batched (`tuning.node_store_batch_size` 100, `tuning.node_store_batch_timeout` 500 ms)
+- **Worker Pools**: `tuning.batcher_workers` (default ¾ of CPU cores) generate MapResponses in parallel
 - **Concurrent Map Access**: `xsync.Map` for thread-safe maps in batcher
 - `sync.WaitGroup` for client stream management
 - `sync.Mutex` and `deadlock.Mutex` (optional) for thread safety
@@ -218,44 +219,46 @@ The control server is designed for multi-core scalability:
 ## Performance Optimizations Checklist
 
 ### Threading
-- [x] **Multi-threaded processing** - Go goroutines provide parallel packet handling across CPU cores
+- [x] **Multi-threaded processing** - wireguard-go runs NumCPU encryption/decryption goroutines, so crypto uses all cores
 - [x] **Per-peer packet queues** - wireguard-go uses per-peer queues to reduce lock contention
 
 ### Packet I/O
-- [x] **Batch UDP receives** - Uses `recvmmsg` on Linux for receiving multiple packets per syscall
-- [x] **Batch UDP sends** - Uses `sendmmsg` on Linux for sending multiple packets per syscall
-- [x] **Large batch sizes** - Ideal batch size of 128 packets per batch
+- [x] **Batch UDP receives** - `recvmmsg` on Linux (not Android): 128 messages per call without UDP GRO. With GRO enabled a read fills only 2 messages, each holding up to 64 coalesced datagrams
+- [x] **Batch UDP sends** - `sendmmsg` with up to 128 messages per call on Linux; other platforms send one packet per call
+- [x] **Large batch sizes** - `IdealBatchSize` = 128 for the UDP socket and the TUN device (Linux only; batch size 1 elsewhere)
 
 ### UDP Offload
-- [x] **UDP GSO (Generic Segmentation Offload)** - Kernel segments outgoing packets (up to 64 packets per GSO segment)
-- [x] **UDP GRO (Generic Receive Offload)** - Kernel coalesces incoming packets before delivery
+- [x] **UDP GSO (Generic Segmentation Offload)** - `UDP_SEGMENT` control message; up to 64 datagrams coalesced per send (Linux)
+- [x] **UDP GRO (Generic Receive Offload)** - `UDP_GRO` socket option enabled when the kernel supports it (Linux)
+- [x] **TUN offload (virtio-net header)** - TUN opened with `IFF_VNET_HDR`; `TUNSETOFFLOAD` enables CSUM/TSO4/TSO6, plus USO4/USO6 on kernel ≥ 6.2. wireguard-go splits TSO super-packets on read and GRO-coalesces TCP/UDP before writing to the TUN. Linux only (not Android); TUN GRO is probed at start-up and disabled on EINVAL
+- [ ] **Multi-queue TUN / per-core sockets** - Single TUN fd (no `IFF_MULTI_QUEUE`) and one UDP socket per address family (no `SO_REUSEPORT`)
 
 ### Buffer Management
 - [x] **Buffer pool reuse** - `sync.Pool` reuses allocated buffers to reduce GC pressure
-- [x] **Large UDP socket buffers** - 7 MB socket buffers (vs ~200 KB kernel default)
+- [x] **Large UDP socket buffers** - 7 MiB requested via `SO_RCVBUFFORCE`/`SO_SNDBUFFORCE` (needs CAP_NET_ADMIN); the `SO_RCVBUF`/`SO_SNDBUF` fallback is clamped by `net.core.rmem_max`/`wmem_max`
 
-### Userspace TCP Stack (optional)
-- [x] **Userspace TCP implementation** - gVisor netstack for tunneled traffic (optional, not all deployments)
-- [x] **Large TCP RX/TX buffers** - 8 MB RX / 6 MB TX buffers in netstack (vs ~128 KB kernel default)
-- [x] **Tuned congestion control** - Reno set explicitly (gVisor has int overflow bug with CUBIC); RACK disabled (gVisor's RACK implementation handles ACKs poorly, causing spurious retransmits)
-- [x] **Reordering tolerance** - Large buffers and disabled RACK reduce spurious retransmits under reordering
+### Userspace TCP Stack (not in the default Linux data path)
+- [x] **Userspace TCP implementation** - Partial: gVisor netstack is always built in, but in Linux kernel-TUN mode it only terminates Tailscale-local services (peerAPI/Taildrop, Tailscale SSH, Serve, MagicDNS, 4via6). It carries all traffic only with `--tun=userspace-networking`, plus subnet/exit-node traffic on Windows, macOS tailscaled, FreeBSD, OpenBSD and Synology
+- [x] **Large TCP RX/TX buffers** - netstack maximum 8 MiB receive / 6 MiB send (smaller on iOS)
+- [x] **Tuned congestion control** - Reno pinned explicitly (gVisor's int-overflow bug is more likely with CUBIC), SACK enabled, RACK loss detection disabled (gVisor's RACK caused spurious retransmits)
+- [ ] **Reordering tolerance** - Not improved: with RACK disabled, gVisor falls back to a fixed 3-duplicate-ACK threshold. Large buffers only prevent window stalls
 
 ### Receive Path
-- [x] **TCP/packet coalescing on ingress** - GRO coalesces TCP segments before processing
-- [x] **RX checksum offload** - Skips redundant checksum validation (RXChecksumValidated = true)
+- [x] **TCP/packet coalescing on ingress** - wireguard-go GRO-coalesces TCP (and UDP on kernel ≥ 6.2) before TUN writes; netstack has its own TCP GRO on Linux
+- [x] **RX checksum offload** - netstack GRO marks coalesced packets `RXChecksumValidated` (netstack path only); TUN writes use virtio-net checksum offload
 
 ### MTU Handling
-- [x] **Conservative MTU** - Uses safe 1280 byte MTU (IPv6 minimum) to avoid fragmentation
-- [x] **Path MTU discovery** - MTU probing discovers optimal path MTU per peer
+- [x] **Conservative MTU** - TUN MTU 1280 (IPv6 minimum; 1360-byte wire MTU with 80 bytes of WireGuard overhead); override with `TS_DEBUG_MTU`
+- [x] **Path MTU discovery** - Partial: off by default. `TS_DEBUG_ENABLE_PMTUD` or the control knob `NodeAttrPeerMTUEnable` (Headscale does not send it) sets DF and sends sized disco probes, but the TUN MTU stays at 1280
 
 ### Peer Management
-- [x] **Lazy peer removal** - Delays removing inactive peers for 5 minutes to reduce config churn
+- [x] **Lazy peer removal** - Peers whose AllowedIPs are all single IPs stay out of the wireguard-go config until they send or receive traffic, and are trimmed again after 5 minutes idle
 - [x] **Endpoint caching** - Caches best endpoints to minimize probe overhead
-- [x] **Efficient keepalive timers** - Per-endpoint heartbeat management with batched processing
+- [x] **Efficient keepalive timers** - Disco heartbeat every 3 s only while a session is active; stops after 45 s idle
 
 ### Packet Processing
 - [x] **Zero-allocation parsing** - Parses packets without heap allocations on hot paths (packet.Parsed struct)
-- [x] **Zero-copy filtering** - Filters packets without copying data (stateful filter with LRU cache)
+- [x] **Zero-copy filtering** - The filter decides on the parsed header in place. It is stateless for TCP (only SYNs are checked) and tracks UDP/SCTP flows in a 512-entry LRU
 
 ### State Synchronization
 - [x] **Delta updates** - Only changed peers sent in MapResponse (PeersChanged/PeersRemoved)
@@ -267,16 +270,17 @@ The control server is designed for multi-core scalability:
 
 **Performance Results:**
 
-Under the old sender-side Medium profile (2.5% reordering and 1% packet loss per direction, 5% and 2% combined), Tailscale achieves **41 Mbps** vs raw WireGuard's **9 Mbps** and direct connection's **30 Mbps**. This counterintuitive performance gain is due to:
+Under the old sender-side Medium profile (2.5% reordering and 1% packet loss per direction, 5% and 2% combined), the benchmark measured Tailscale at **41 Mbps**, raw WireGuard at **9 Mbps** and a direct connection at **30 Mbps**.
 
-1. **128-packet batching** (+50%): Reduces syscall overhead
-2. **7 MB socket buffers** (+100%): Absorbs reordering before TCP sees it
-3. **8 MB TCP buffers + SACK** (+80%): Prevents window collapse
-4. **RACK disabled + Reno CC** (+40%): Works around gVisor RACK/CUBIC implementation bugs that cause spurious retransmits
-5. **GSO/GRO** (+20%): Reduced CPU overhead
-6. **Combined Effect**: 9 Mbps → 41 Mbps (+355%)
+The source code does not support the per-feature attribution given earlier (+50% batching, +100% socket buffers, ...). In the default Linux TUN mode, iperf TCP runs in the host kernel on both ends. The gVisor netstack settings (8 MiB buffers, SACK, RACK off, Reno) are therefore **not** on that path. They apply only if tailscaled runs with `--tun=userspace-networking`, or for subnet/exit traffic on the platforms listed under Netstack Integration.
 
-The userspace gVisor TCP stack with aggressive tuning absorbs packet loss/reordering so completely that the VPN overhead becomes negligible while kernel TCP experiences congestion collapse.
+These datapath differences from kernel WireGuard are active in Linux kernel-TUN mode:
+
+1. **128-packet batching** via `recvmmsg`/`sendmmsg` and batched TUN reads/writes
+2. **7 MiB UDP socket buffers** (`SO_RCVBUFFORCE`/`SO_SNDBUFFORCE`)
+3. **UDP GSO/GRO** on the outer socket
+4. **TUN offload**: TSO/USO via the virtio-net header, plus GRO coalescing of inbound segments before they reach the kernel
+5. **1280-byte TUN MTU** (kernel WireGuard setups typically use 1420)
 
 # Security
 
@@ -295,13 +299,13 @@ The userspace gVisor TCP stack with aggressive tuning absorbs packet loss/reorde
    - Separate identity keys (MachineKey) from WireGuard keys (NodeKey)
 
 3. **Protocol Security**:
-   - Early Noise payload with challenge prevents server spoofing
+   - Noise IK authenticates the server (client must know its static key); the early payload adds a NodeKeyChallenge for node-key proof of possession
    - Unique machine key per client
    - Handshake hash prevents replay attacks
    - WireGuard replay protection via 64-bit counter
 
 4. **Network Security**:
-   - Stateful packet filter with connection tracking (512-flow LRU cache)
+   - Inbound packet filter: TCP checked on SYN only; UDP/SCTP return traffic tracked in a 512-flow LRU cache
    - Capability-based access control (fine-grained per-port/protocol ACLs)
    - ACL-based peer visibility filtering
 
@@ -318,7 +322,10 @@ The userspace gVisor TCP stack with aggressive tuning absorbs packet loss/reorde
 
 **Known Security Issues:**
 
-No severe publicly disclosed CVEs for Tailscale client or Headscale at the time of this analysis. The codebase is relatively young (Tailscale: 2020, Headscale: 2020) and has not had major security incidents.
+These advisories come from the projects' GitHub/CVE records, not from the source:
+
+- **Tailscale**: CVE-2022-41924 (critical, RCE via CSRF against the Windows daemon's local API), CVE-2022-41925 (low, information disclosure via CSRF), CVE-2023-28436 (medium, non-interactive Tailscale SSH sessions on FreeBSD could run with tailscaled's effective group ID)
+- **Headscale**: CVE-2023-47390 (versions up to 0.22.3 wrote bearer tokens to info-level logs)
 
 **Potential Security Concerns:**
 
@@ -331,7 +338,7 @@ No severe publicly disclosed CVEs for Tailscale client or Headscale at the time 
 2. **Relay Server Trust**:
    - DERP servers can observe encrypted packet metadata (but cannot decrypt)
    - DERP region selection reveals location preference
-   - Embedded DERP verification can be disabled (should be enabled in production)
+   - Embedded DERP client verification (`verify_clients`, default true) can be disabled; keep it enabled in production
 
 3. **Control Server Trust** (Critical):
    - Control server has **full control** over the mesh network
@@ -341,44 +348,45 @@ No severe publicly disclosed CVEs for Tailscale client or Headscale at the time 
    - Compromised control server = compromised network
 
 4. **DNS Privacy**:
-   - MagicDNS queries visible to whoever operates the control server (Tailscale Inc. for cloud, self for Headscale)
-   - Server sees query patterns
+   - MagicDNS names are answered locally by tailscaled's 100.100.100.100 resolver from the netmap; other queries go to the upstream resolvers the control server configures
+   - The control server sees the DNS configuration, not individual queries, unless it also supplies the upstream resolver
 
 5. **Endpoint Selection**:
    - No randomization in endpoint selection (observable pattern)
    - Could leak usage patterns to network observers
 
 6. **Headscale-Specific Concerns**:
-   - Database credentials stored in config file (supports file-based secrets via `oidc_client_secret_path`)
-   - API key storage (should verify hashing implementation)
-   - No visible rate limiting on registration endpoints (potential brute-force on pre-auth keys)
+   - Database credentials stored in config file (file-based secrets supported, e.g. `oidc.client_secret_path`)
+   - API keys are stored bcrypt-hashed; pre-auth keys are bcrypt-hashed since the 2025-11 migration (legacy plaintext keys are still accepted)
+   - No rate limiting anywhere in Headscale (registration, API, OIDC and Noise endpoints), so pre-auth keys can be brute-forced
    - Debug environment variables expose functionality (should be disabled in production)
    - DERP WebSocket accepts all origins (wildcard) - requires proper reverse proxy protection
 
-7. **Missing Security Features** (vs. Enterprise):
-   - No device posture checks
-   - No hardware attestation (TPM)
-   - No automatic key rotation policy
-   - No security event audit logging (basic logging only)
+7. **Missing Security Features** (Headscale vs. Tailscale SaaS):
+   - Device posture: the client can report posture attributes (feature/posture) for Tailscale SaaS; Headscale does not use them
+   - Hardware attestation: the client supports TPM 2.0 / Secure Enclave / Keystore-bound node identity (`--hardware-attestation`) and TPM-encrypted state (`--encrypt-state`); Headscale ignores attestation
+   - Audit logging: the client sends audit events to `/machine/audit-log` and optional network flow logs (SaaS); Headscale implements neither endpoint
+   - Tailnet Lock (TKA): SaaS only; Headscale does not implement the `/machine/tka/*` endpoints
+   - No automatic node-key rotation without re-login
 
 ## Security Features Checklist
 
 ### Network Security
-- [ ] **Rate limiting** - No visible rate limiting in Headscale (potential DoS/amplification risk)
-- [x] **Stateful packet filter** - Connection tracking for ACLs (512-flow LRU cache)
-- [x] **Fine-grained ACLs** - Per-port/protocol access control with capability-based rules
-- [x] **Capability-based access** - Beyond simple allow/deny (source IP capabilities)
+- [x] **Rate limiting** - wireguard-go limits handshake initiations per source IP (20/s, burst 5) and answers with cookie replies when under load. Headscale itself has no rate limiting on registration/API endpoints
+- [x] **Stateful packet filter** - Partial: TCP is only SYN-checked (no conntrack); UDP/SCTP return flows are tracked in a 512-entry LRU
+- [x] **Fine-grained ACLs** - Per-port/protocol access control, enforced by the receiving node's packet filter
+- [x] **Capability-based access** - Policies on users, groups, tags and autogroups (Headscale); SaaS adds grants with app capabilities
 
 ### Identity & Authentication
-- [ ] **Identity validation** - No proof-of-work or cryptographic challenge for registration (basic key validation only)
-- [x] **Signed configuration updates** - MapResponse cryptographically protected via Noise channel
-- [x] **Certificate pinning** - MachineKey-based authentication prevents MITM on control plane
+- [ ] **Identity validation** - Tailscale IPs are assigned by the control server, not derived from keys. Tailnet Lock (SaaS only) lets nodes verify Ed25519 signatures on peer node keys; Headscale has no TKA
+- [ ] **Signed configuration updates** - MapResponses are only authenticated by the Noise channel, not signed. Tailnet Lock (SaaS only) signs node keys, not the whole netmap; Headscale does not implement it
+- [ ] **Certificate pinning** - At every start the client fetches the server's Noise key from `/key` over HTTPS (WebPKI; plain HTTP if the control URL is http://) and does not persist it. Only DERP nodes can be pinned, via a `sha256-raw:` certificate hash in the DERP map
 
 ### Implementation
 - [x] **Memory-safe language** - Go for both Tailscale client and Headscale
-- [ ] **Privilege separation** - tailscaled runs as root/admin (required for TUN interface and routing)
-- [ ] **Sandboxing** - No process isolation (tailscaled runs with elevated privileges)
-- [ ] **Audit logging** - Basic logging only, no comprehensive security event logging
+- [x] **Privilege separation** - Partial: tailscaled runs as root/SYSTEM; only helper children (Tailscale SSH incubator, Taildrive server) drop to the target user. Userspace-networking mode can run unprivileged
+- [ ] **Sandboxing** - No seccomp/landlock; the shipped systemd unit has no hardening directives
+- [ ] **Audit logging** - Headscale: none (only normal logs). Tailscale SaaS: client audit events and network flow logs
 
 # NAT Traversal
 
@@ -389,7 +397,7 @@ The Tailscale client uses STUN to discover public endpoints:
 - **netcheck Package**: Probes network conditions and performs STUN queries
 - **STUN Protocol**: Generates binding requests and parses responses to discover public IP:port
 - **Multiple STUN Servers**: Uses multiple DERP servers as STUN servers for redundancy
-- **NAT Type Detection**: Identifies NAT behavior (cone, symmetric, etc.) to inform hole-punching strategy
+- **NAT Type Detection**: Detects whether the NAT mapping varies by destination IP (easy vs. hard NAT) and whether port mapping is available
 
 **Port Mapping Protocols:**
 
@@ -417,8 +425,8 @@ The endpoint module manages aggressive hole-punching:
 
 - **Multiple Candidate Endpoints**: Tracks all possible endpoints per peer (IPv4, IPv6, local, STUN-discovered)
 - **Simultaneous Probing**: Tests all candidate endpoints in parallel
-- **MTU Probing**: Discovers path MTU to optimize packet size
-- **Symmetric NAT Handling**: Works with per-destination port randomization (though success rate varies)
+- **MTU Probing**: Only with opt-in peer path MTU discovery (off by default)
+- **Symmetric NAT Handling**: No port prediction or birthday probing. Works when the other side is behind an easy NAT; otherwise relies on port mapping, peer relays (SaaS) or DERP
 
 **DERP (Designated Encrypted Relay for Packets):**
 
@@ -430,22 +438,28 @@ When direct connections fail, DERP provides reliable fallback:
 - **TCP and WebSocket Support**: DERP relay works over TCP when UDP is blocked
 - **Client Pools**: Maintains connection pool to active DERP regions for fast failover
 
+**Peer Relays (UDP relay):**
+
+- Any node can act as a UDP relay server (`tailscale set --relay-server-port`); traffic is Geneve-encapsulated and stays WireGuard-encrypted
+- Preferred over DERP but ranked below direct paths
+- Requires `tailscale.com/cap/relay` grants from the control server, so it works only with Tailscale SaaS. Headscale has no grants, so peer relays are unavailable there
+
 **Headscale DERP Support:**
 
 Headscale can operate embedded DERP servers or use external relays:
 
-- **Embedded DERP Server**: Can run DERP server alongside control plane
-- **Embedded STUN Server**: Provides STUN for NAT discovery
-- **External DERP Maps**: Can use Tailscale's public DERP or custom DERP infrastructure
-- **Client Verification**: Optional verification for DERP access (should be enabled)
-- **WebSocket Support**: DERP supports WebSocket for HTTP-compatible environments
+- **Embedded DERP Server**: Optional DERP server alongside the control plane (`derp.server.enabled`, off by default)
+- **Embedded STUN Server**: Runs together with the embedded DERP server
+- **External DERP Maps**: `derp.urls`/`derp.paths`; the example config uses Tailscale's public map (`https://controlplane.tailscale.com/derpmap/default`)
+- **Client Verification**: `verify_clients` (default true) restricts the embedded DERP to known nodes
+- **WebSocket Support**: The embedded DERP accepts WebSocket from any origin (`OriginPatterns: *`)
 
 ## NAT Traversal Checklist
 
 ### Discovery
 - [x] **STUN support** - Discovers public IP/port via STUN servers (uses DERP servers as STUN)
-- [x] **Multiple STUN servers** - Redundancy for NAT detection (multiple DERP regions)
-- [x] **NAT type detection** - Identifies NAT behavior (netcheck package)
+- [x] **Multiple STUN servers** - netcheck probes STUN on every DERP region in the map (Headscale with only the embedded DERP has a single STUN server)
+- [x] **NAT type detection** - netcheck reports `MappingVariesByDestIP` (endpoint-dependent vs. independent mapping)
 
 ### Port Mapping
 - [x] **UPnP port mapping** - Automatic router port forwarding
@@ -454,7 +468,7 @@ Headscale can operate embedded DERP servers or use external relays:
 
 ### Hole Punching
 - [x] **UDP hole punching** - Direct peer-to-peer through NAT via disco protocol
-- [x] **Symmetric NAT handling** - Works with per-destination port randomization (success varies)
+- [x] **Symmetric NAT handling** - Partial: hard NAT is detected, but there is no port prediction or birthday probing; it relies on the peer being behind an easy NAT, on port mapping, or on relays
 - [x] **Rendezvous coordination** - Server-assisted hole punching via control plane endpoint exchange
 
 ### Fallback
@@ -479,7 +493,7 @@ Peers discover each other's local endpoints through the control server:
 
 **LAN Detection:**
 
-- **Same-Subnet Detection**: Client compares peer endpoints with local network interfaces to identify same-subnet peers
+- **Same-Subnet Detection**: No explicit subnet comparison. LAN candidates are probed, and private, link-local and loopback addresses get bonus points in path selection
 - **Direct Path Testing**: Disco protocol actively probes all endpoints including local IPs
 - **No Broadcast/Multicast**: Does not use broadcast or multicast for discovery (all coordination via control server)
 
@@ -491,7 +505,7 @@ Once local peers are identified:
 - **Path Selection**: Prioritizes:
   1. Direct local LAN IPv4/IPv6 (lowest latency)
   2. Direct WAN IPv4/IPv6 (medium latency)
-  3. UDP relay via Geneve encapsulation (experimental, lower preference than direct)
+  3. Peer relay via Geneve encapsulation (needs SaaS grants; unavailable with Headscale)
   4. DERP relay (fallback)
 - **Encryption Still Required**: **All LAN traffic is still WireGuard-encrypted** - no trusted path mode
 - **No LAN-Only Mode**: Cannot restrict to local network only (always connects to control server)
@@ -517,10 +531,10 @@ The combined Tailscale/Headscale system supports advanced routing:
 ### LAN Discovery
 - [ ] **Broadcast/multicast discovery** - No LAN broadcast/multicast (uses control server for endpoint exchange)
 - [x] **Direct path advertisement** - Peers share all reachable endpoints via control server
-- [x] **Same-subnet detection** - Identifies peers on same network by comparing endpoints
+- [x] **Same-subnet detection** - Partial: no explicit subnet match; private and link-local endpoints get a path-selection bonus
 
 ### LAN Optimization
-- [x] **Automatic LAN preference** - Prefers local paths over WAN (latency-based selection)
+- [x] **Automatic LAN preference** - Prefers local paths (latency score plus a +20 bonus for private and +30 for link-local addresses)
 - [ ] **Trusted path mode** - No option to skip encryption on LANs (all traffic encrypted via WireGuard)
 - [ ] **LAN-only mode** - Cannot restrict to local network (requires control server connectivity)
 
@@ -528,7 +542,7 @@ The combined Tailscale/Headscale system supports advanced routing:
 - [x] **Subnet routes** - Route traffic for other networks through peer (requires approval)
 - [x] **Full tunnel mode** - Route all traffic through a peer (exit node functionality)
 - [x] **Split tunneling** - Selective routing through VPN (default mode)
-- [x] **Route priorities** - HA/failover route selection (primary routes)
+- [x] **Route priorities** - HA failover between subnet routers advertising the same prefix (Headscale primary routes; its docs call HA support limited)
 
 # Central Point of Failure
 
@@ -547,9 +561,9 @@ The combined Tailscale/Headscale system supports advanced routing:
 **Mitigation Factors:**
 
 1. **Local State Caching**:
-   - Tailscale client caches full network map locally (persisted to disk)
-   - Peer information, endpoints, and keys remain available
-   - Direct connections work based on cached endpoints
+   - The Tailscale client keeps the network map in memory only. An on-disk netmap cache exists only as a declared build-feature tag and is not implemented in this checkout; prefs and keys are persisted
+   - Peer information, endpoints and keys stay available while tailscaled keeps running; after a restart during an outage the client has no peers
+   - Direct connections keep working based on the in-memory endpoints
 
 2. **WireGuard Independence**:
    - WireGuard tunnels persist until key expiry (typically not an issue for short outages)
@@ -569,14 +583,14 @@ The combined Tailscale/Headscale system supports advanced routing:
 
 - **Configurable Expiry**: Nodes have expiry timestamps enforced by control server
 - **Expired Nodes**: Marked as unauthorized, peers stop accepting their traffic
-- **Ephemeral Nodes**: Automatically cleaned up after inactivity timeout
+- **Ephemeral Nodes**: Removed after `ephemeral_node_inactivity_timeout` (Headscale; 120 s code default, 30 min in the example config)
 - **Long Outage Risk**: If control server down during expiry, nodes may lose connectivity
 
 **Headscale-Specific Considerations:**
 
-- **Self-Hosted Control**: You control availability (can run HA setup)
+- **Self-Hosted Control**: You control availability (no built-in HA; see next point)
 - **No Controller Redundancy**: Headscale does not support active-active or failover (single instance only)
-- **Database Dependency**: PostgreSQL/SQLite must be available
+- **Database Dependency**: SQLite (default, recommended) or PostgreSQL (discouraged, legacy support only) must be available
 - **No Multi-Region**: Cannot distribute control server across regions
 
 **Recommendations for High Availability:**
@@ -591,20 +605,20 @@ The combined Tailscale/Headscale system supports advanced routing:
 
 ### Offline Operation
 - [x] **Existing connections survive** - WireGuard tunnels stay up without controller
-- [x] **Local state caching** - Persists peer/config information to disk
+- [ ] **Local state caching** - The netmap is held in memory only: it survives control outages but not a tailscaled restart (only prefs/keys are persisted)
 - [x] **Cached credentials** - MachineKey persists, authentication survives restart
 - [x] **Graceful degradation** - Clear behavior: network frozen in last-known state
 
 ### Redundancy
 - [x] **Self-hosted controller** - Can run own control plane (Headscale)
 - [ ] **Controller redundancy** - Multiple controllers NOT supported (single Headscale instance only)
-- [x] **Relay redundancy** - Multiple DERP relay servers supported (configure external relays)
+- [x] **Relay redundancy** - Multiple DERP regions/nodes in the DERP map; Headscale can combine its embedded DERP with external maps
 - [ ] **No single root of trust** - Control server is single root of trust (can push malicious configs)
 
 ### Efficiency
 - [x] **Delta/incremental updates** - Only changed peers sent (PeersChanged/PeersRemoved)
-- [x] **Long polling / push updates** - Efficient change notification via WebSocket long-polling
-- [x] **Configurable sync interval** - Adjustable update frequency (50s keep-alive default)
+- [x] **Long polling / push updates** - Changes are pushed over the long-poll `/machine/map` stream (HTTP/2 over Noise)
+- [ ] **Configurable sync interval** - Headscale's 50 s keep-alive (+0–9 s jitter) is hardcoded; updates are pushed, not polled
 
 # Authentication
 
@@ -624,11 +638,11 @@ The combined Tailscale/Headscale system supports multiple authentication methods
 **2. OAuth/OIDC (OpenID Connect):**
 
 - **Full OAuth2/OIDC Flow**: Standards-compliant SSO integration
-- **PKCE Support**: Both S256 and plain methods for secure public clients
+- **PKCE Support**: S256 and plain (off by default in Headscale; S256 is the default method)
 - **Domain Filtering**: Restrict by email domain (e.g., @company.com)
 - **Group Filtering**: Filter by OIDC groups (supported in both Headscale and Tailscale cloud)
 - **User Filtering**: Allowlist specific users
-- **Email Verification**: Optional requirement for verified emails
+- **Email Verification**: `oidc.email_verified_required` (default true)
 - **IdP Support**: Works with any OIDC provider (Google, Okta, Azure AD, Keycloak, etc.)
 - **Headscale OIDC**: Fully supported with profile updates from IdP
 
@@ -636,7 +650,7 @@ The combined Tailscale/Headscale system supports multiple authentication methods
 
 - **Browser-Based Flow**: Client opens browser for authentication
 - **Registration Cache**: Temporary cache with expiration for registration flow
-- **Manual Approval**: Admin can approve nodes via CLI/API (Headscale) or dashboard (Tailscale)
+- **Manual Approval**: Headscale web (non-OIDC) registration requires an admin to run `headscale nodes register --key <id> --user <user>`; OIDC logins register immediately. Tailscale SaaS offers optional device approval
 - **Auth Code Exchange**: Server provides auth code, client completes registration
 
 **Authorization Workflow:**
@@ -647,7 +661,7 @@ The combined Tailscale/Headscale system supports multiple authentication methods
    - Server assigns Tailscale IP from available pool
 
 2. **Admin Approval** (if required):
-   - Headscale: `headscale nodes register --key <key>`
+   - Headscale: `headscale nodes register --key <registration-id> --user <user>`
    - Tailscale cloud: Approve via web dashboard
    - Can require manual approval for security
 
@@ -657,10 +671,10 @@ The combined Tailscale/Headscale system supports multiple authentication methods
    - Tagged devices auto-approved based on key tags
 
 4. **Node Expiry**:
-   - Nodes have configurable expiry time
+   - Headscale uses `oidc.expiry` (default 180 days, 0 = never) for OIDC logins; for pre-auth-key/CLI registrations it uses the expiry requested by the client. Admins can expire nodes with `headscale nodes expire`
    - Expired nodes marked as unauthorized
    - Nodes **cannot extend their own expiry** (security feature)
-   - Headscale: Manual re-approval required
+   - After expiry, the node must re-authenticate (interactive registration needs another `headscale nodes register`; OIDC needs a new login)
 
 **Identity Models:**
 
@@ -685,15 +699,15 @@ The combined Tailscale/Headscale system supports multiple authentication methods
 - [x] **CLI authentication** - Command-line auth flow supported
 
 ### Authorization
-- [x] **Admin approval workflow** - Manual device authorization by admin (Headscale CLI/Tailscale dashboard)
+- [x] **Admin approval workflow** - Headscale interactive registration needs `headscale nodes register`; OIDC registers without approval; SaaS device approval is optional
 - [x] **Automated enrollment rules** - Conditional automatic authorization via pre-auth keys and auto-approvers
-- [x] **Ephemeral nodes** - Auto-cleanup of temporary devices after inactivity
+- [x] **Ephemeral nodes** - Auto-cleanup of temporary devices after inactivity (`ephemeral_node_inactivity_timeout`)
 - [x] **Node expiry** - Time-limited authorization with enforcement (nodes cannot self-extend)
 
 ### Identity
 - [x] **Stable device identity** - MachineKey persistent across restarts
-- [ ] **Identity portability** - Cannot move MachineKey between devices (re-registration required)
-- [x] **Multi-user support** - Multiple users per device supported (user-owned vs tagged model)
+- [ ] **Identity portability** - Identity is bound to the device's state file; `--hardware-attestation` can bind it to TPM/Secure Enclave keys
+- [x] **Multi-user support** - Multiple users per tailnet (Headscale users; tagged nodes are owned by `TaggedDevices`); the client supports several login profiles (`tailscale switch`)
 
 # Platform Support
 
@@ -727,7 +741,7 @@ The Tailscale client (tailscaled) supports extensive platform coverage:
   - Always uses wireguard-go userspace implementation
   - Pure Go implementation (no kernel dependencies)
   - Kernel WireGuard is NOT used because Tailscale's magicsock layer must intercept all WireGuard packets to handle endpoint selection, DERP relay, and disco protocol — this is incompatible with the kernel WireGuard module which sends packets directly via the kernel network stack
-  - Performance is compensated via UDP batching (recvmmsg/sendmmsg), GSO/GRO on the outer UDP socket, and 7 MB socket buffers
+  - Performance is compensated (Linux only) via UDP batching (recvmmsg/sendmmsg), GSO/GRO on the outer UDP socket, TUN TSO/GRO offload via the virtio-net header, and 7 MiB socket buffers
 
 **TUN Interface:**
 
@@ -745,14 +759,12 @@ The Tailscale client (tailscaled) supports extensive platform coverage:
 
 **Netstack Integration:**
 
-- **gVisor Netstack**: Optional userspace TCP/IP stack
+- **gVisor Netstack**: Always built in; which traffic it handles depends on the mode
 - **Use Cases**:
-  - Subnet routing (intercept and forward traffic)
-  - Exit nodes (full tunnel mode)
-  - Taildrop file sharing
-  - Tailscale SSH
-  - Enhanced performance under packet loss
-- **Platforms**: Available on all platforms (Go-based, portable)
+  - Linux kernel-TUN mode (default): only Tailscale-local services: peerAPI (Taildrop), Tailscale SSH, Serve/VIP services, MagicDNS (100.100.100.100), 4via6
+  - `--tun=userspace-networking`: all tunneled traffic (local IPs and subnets); no root needed
+  - Subnet routers / exit nodes on Windows, macOS (tailscaled), FreeBSD, OpenBSD, Solaris/illumos and Synology, or with `TS_DEBUG_NETSTACK_SUBNETS`
+- **Platforms**: All Go platforms; netstack GSO/GRO only on Linux
 
 **Container Support:**
 
@@ -765,15 +777,14 @@ The Tailscale client (tailscaled) supports extensive platform coverage:
 
 Headscale control server is much simpler (control plane only):
 
-- **Linux**: Primary deployment target (amd64, arm64)
-- **macOS**: Development/testing (not recommended for production)
-- **Windows**: Not officially supported (Go builds possible but untested)
-- **Docker**: Official Docker images available
-- **Kubernetes**: Can deploy via standard K8s deployment
+- **Linux / BSD**: The docs require a reasonably modern Linux or BSD; official binaries and DEB packages
+- **Other OSes**: Not covered by the official docs
+- **Docker**: Container images are published (`ghcr.io/juanfont/headscale`, `headscale/headscale`), but Docker deployment is not officially supported
+- **Kubernetes**: No manifests in the repo; only community projects are linked
 
 **Database Support (Headscale):**
-- **SQLite**: Embedded database (default, good for small deployments)
-- **PostgreSQL**: External database (recommended for production, better performance)
+- **SQLite**: Embedded database (default and recommended)
+- **PostgreSQL**: Supported only for legacy reasons; upstream discourages it (maintenance mode)
 
 ## Platform Checklist
 

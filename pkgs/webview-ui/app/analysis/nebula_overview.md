@@ -8,29 +8,31 @@ Nebula is a scalable, open-source mesh VPN developed by Slack (now maintained by
 
 **Lighthouse-assisted discovery**: Lightweight discovery servers (called "lighthouses") help nodes find each other's public IP addresses and ports. Lighthouses are only involved in the control plane - they do not relay data traffic under normal circumstances.
 
-**Certificate-based PKI**: Nebula uses a custom X.509-like certificate format that defines network membership, assigned IP addresses, groups, and routing capabilities. All nodes must have certificates signed by a trusted Certificate Authority (CA).
+**Certificate-based PKI**: Nebula uses its own certificate format (v1: protobuf, single IPv4 address; v2 since 1.10.0: ASN.1, IPv6 and multiple addresses) that defines network membership, assigned IP addresses, groups, and routable unsafe networks. All nodes must have certificates signed by a trusted Certificate Authority (CA).
 
-**UDP-based transport**: All control and data plane traffic flows over encrypted UDP packets with a custom 16-byte wire protocol header.
+**UDP-based transport**: All control and data plane traffic flows over UDP with a custom 16-byte wire protocol header. Everything after the handshake is AEAD-encrypted; the exceptions are the first handshake message (sent before any key exists), unauthenticated `recv_error` replies and 1-byte hole-punch packets.
 
-**Multi-threaded packet processing**: Nebula supports SO_REUSEPORT for parallel UDP processing on Linux, macOS, BSD, and Android. Multi-queue TUN devices (IFF_MULTI_QUEUE) are Linux-only.
+**Multi-threaded packet processing**: Each "routine" is a pair of run-to-completion goroutines (one TUN reader that encrypts and sends, one UDP reader that decrypts and writes to TUN). The `routines` setting (default 1) adds more pairs using SO_REUSEPORT UDP sockets and IFF_MULTI_QUEUE TUN queues. This only works on Linux; every other platform (including Android) logs a warning and falls back to one routine.
 
 # Protocol
 
-Nebula uses a custom wire protocol exclusively over UDP. All communication - both control plane and data plane - happens through encrypted UDP packets.
+Nebula uses a custom wire protocol exclusively over UDP. Control plane (lighthouse, relay control, test) and data plane messages travel inside the same encrypted peer tunnels; only handshakes, `recv_error` and punch packets are unencrypted.
 
 ## Control Plane
 
 The control plane uses several message types defined in the Nebula header:
-- **Handshake messages** - Noise Protocol IX handshake for tunnel establishment
-- **Lighthouse messages** - Peer discovery queries and address advertisements
-- **Control messages** - Relay management and coordination
-- **Test messages** - Tunnel connectivity testing
+- **Handshake messages** - Noise IX handshake for tunnel establishment (2 messages, 1 round trip)
+- **Lighthouse messages** - HostQuery/HostQueryReply, HostUpdateNotification and HostPunchNotification, carried inside the encrypted tunnel to the lighthouse
+- **Control messages** - Relay management (CreateRelayRequest/Response)
+- **Test messages** - Tunnel liveness tests and path probing
+- **CloseTunnel** - Authenticated tunnel teardown
+- **RecvError** - Unauthenticated hint ("I have no tunnel for this index") that speeds up re-handshakes
 
-Nodes periodically send HostUpdateNotification messages to configured lighthouses (default every 10 seconds) to advertise their current IP addresses. When connecting to a new peer, nodes send HostQuery messages to lighthouses to learn the target peer's addresses.
+Nodes periodically send HostUpdateNotification messages to configured lighthouses (default every 10 seconds, `lighthouse.interval`) to advertise their current IP addresses. When connecting to a new peer, nodes send HostQuery messages to all lighthouses to learn the target peer's addresses. The lighthouse answers and at the same time sends a HostPunchNotification to the target so it punches back toward the querier.
 
 ## Data Plane
 
-Once a tunnel is established through the Noise IX handshake, all data packets flow directly between peers as encrypted UDP datagrams. Each packet has a 16-byte Nebula header containing version, message type, remote index, and a 64-bit message counter for replay protection.
+Once a tunnel is established through the Noise IX handshake, all data packets flow directly between peers as encrypted UDP datagrams. Each packet has a 16-byte Nebula header containing version, message type/subtype, remote index, and a 64-bit message counter that serves as nonce and for replay protection. Per-packet overhead is 32 bytes (16-byte header + 16-byte AEAD tag) on top of the outer UDP/IP headers; relayed packets add another 32 bytes.
 
 The data plane operates at Layer 3 (IP), routing IP packets through the encrypted tunnel. Nebula performs stateful firewall checks with connection tracking on both inbound and outbound packets.
 
@@ -59,21 +61,21 @@ The data plane operates at Layer 3 (IP), routing IP packets through the encrypte
 
 # Encryption
 
-Nebula implements the Noise Protocol Framework, specifically the **Noise IX** (Interactive with identity exchange) handshake pattern. This provides mutual authentication where both parties exchange and verify certificates during the handshake.
+Nebula implements the Noise Protocol Framework, specifically the **Noise IX** (Interactive with identity exchange) handshake pattern via `flynn/noise`. Both parties exchange and verify certificates during the handshake. The header subtype is named `ix_psk0`, but the pre-shared key is always empty, so it behaves as plain IX. In IX the initiator's first message carries its static public key and its certificate before any Diffie-Hellman has taken place, so they travel in cleartext. Only the responder's identity is encrypted.
 
 ## Encryption Layer Details
 
 **Key Exchange**: Nebula supports two elliptic curves, either of which can be used with both v1 and v2 certificates:
 - **Curve25519** (default) - Ed25519 signatures, X25519 ECDH
-- **P-256 (NIST)** - ECDSA signatures, ECDH; with optional PKCS#11 HSM support
+- **P-256 (NIST)** - ECDSA signatures, ECDH; PKCS#11 HSM-backed keys only when built with the `pkcs11` build tag (cgo)
 
 **Symmetric Ciphers**: Two AEAD cipher options are available:
 - **AES-256-GCM** (default) - Hardware-accelerated on platforms with AES-NI
 - **ChaCha20-Poly1305** - Better performance on platforms without AES-NI
 
-All nodes in the network must use the same cipher configuration.
+All nodes in the network must use the same cipher configuration (`cipher: aes` or `cipher: chachapoly`); it cannot be changed by config reload. A `boringcrypto` build (FIPS) swaps AES-GCM to BoringSSL's TLS-style GCM, which needs a per-tunnel lock around encryption.
 
-**Nonce Construction**: Encryption uses a 12-byte nonce composed of 4 zero bytes + an 8-byte message counter. The message counter starts at 2 and increments for each packet, providing replay protection.
+**Nonce Construction**: Encryption uses a 12-byte nonce composed of 4 zero bytes + the 8-byte message counter (big-endian for AES-GCM, little-endian for ChaCha20-Poly1305). The counter is initialized to 2 (the two handshake messages), so the first data packet uses counter 3. It is an atomic counter shared by all routines.
 
 **Replay Protection**: Nebula implements a 1024-packet sliding window bitmap to detect and reject replayed packets.
 
@@ -85,7 +87,7 @@ All nodes in the network must use the same cipher configuration.
 - [x] **Modern key exchange** - Curve25519/X25519 ECDH (default) or P-256
 - [x] **Perfect Forward Secrecy** - Noise IX handshake uses ephemeral Diffie-Hellman keys, providing PFS for each tunnel establishment. No timer-based periodic rekeying for long-lived sessions.
 - [ ] **Post-quantum readiness** - No hybrid or PQ key exchange support
-- [x] **Key rotation** - Certificates can be replaced with new keys via hot-reload (SIGHUP) without updating all peers. Blocklist available for exposed keys.
+- [ ] **Key rotation** - No automatic session re-keying: a tunnel keeps its handshake keys until it is closed. A re-handshake happens only when the local certificate changes (reload/SIGHUP) or the certificate version should be upgraded. Certificates can be replaced via hot-reload, and a blocklist exists for exposed keys.
 
 ### Symmetric Encryption
 - [x] **Authenticated encryption** - ChaCha20-Poly1305 and AES-256-GCM supported
@@ -95,53 +97,55 @@ All nodes in the network must use the same cipher configuration.
 ### Protocol Security
 - [x] **Replay protection** - 1024-packet sliding window with bitmap verification
 - [x] **Noise Protocol or equivalent** - Noise IX handshake framework
-- [ ] **No cleartext metadata** - The 16-byte header (version, type, remote index, message counter) is sent in cleartext but authenticated as AEAD associated data. Identities are exchanged encrypted during the Noise handshake.
+- [ ] **No cleartext metadata** - The 16-byte header (version, type, remote index, message counter) is sent in cleartext but authenticated as AEAD associated data. More importantly, Noise IX sends the initiator's static public key and full certificate (name, VPN IPs, groups, issuer) unencrypted in the first handshake message, so a passive observer learns the initiator's identity. Only the responder's certificate is encrypted.
 
 # Performance
 
-Nebula is written in Go and uses a goroutine-based concurrency model with optional multi-core support on Linux.
+Nebula is written in Go and uses a goroutine-based, run-to-completion concurrency model, with optional multi-core scaling on Linux.
 
 ## Threading Model
 
-**Single-threaded mode** (default on non-Linux platforms and Linux by default):
-- One goroutine reads from TUN device
-- One goroutine reads from UDP socket
-- Additional goroutines handle handshakes, lighthouse queries, and timers
+**Default (`routines: 1`, all platforms)**:
+- One goroutine reads one packet per `read()` from the TUN device, runs the outbound firewall/conntrack, encrypts and calls `sendto()` inline
+- One goroutine reads from the UDP socket (Linux: `recvmmsg`, 64 packets per call), decrypts, runs the inbound firewall and writes each packet to TUN inline
+- Both data-path goroutines are pinned to OS threads via `runtime.LockOSThread()`, so encryption and decryption can run on two cores in parallel, but each direction is single-core
+- There is no separate crypto worker pool and no per-peer queue
+- Additional goroutines handle handshakes, lighthouse queries/updates, connection management and timers
 
-**Multi-threaded mode** (configured via `routines` setting):
-- Uses IFF_MULTI_QUEUE flag for TUN device, creating N file descriptors (Linux only)
-- Uses SO_REUSEPORT for UDP socket, allowing N readers (Linux, macOS, BSD, Android)
-- Each TUN reader goroutine is pinned to an OS thread via runtime.LockOSThread()
-- Kernel load-balances incoming UDP packets across goroutines
-- Reduces lock contention and enables true parallel packet processing
+**Multi-routine mode** (configured via `routines: N`, Linux only):
+- Uses IFF_MULTI_QUEUE for the TUN device, creating N queue file descriptors
+- Opens N UDP sockets bound to the same port with SO_REUSEPORT, one per routine; routine *i* sends on socket *i*
+- Other platforms (macOS, BSD, Windows, Android, iOS) report no multi-reader/multi-queue support and fall back to one routine with a warning
+- The kernel distributes incoming UDP packets across sockets (and outgoing flows across TUN queues) by flow hash, so a single peer-to-peer tunnel with a single flow mostly stays on one routine; scaling comes from many peers/flows
+- Traffic sent through a relay always uses the first UDP socket
 
 **Concurrency primitives**:
-- HostMap uses sync.RWMutex for thread-safe peer lookups
-- ConnectionState uses atomic counters for message sequence numbers
-- Per-routine conntrack cache reduces lock contention on firewall checks
+- HostMap uses sync.RWMutex for peer lookups
+- ConnectionState uses an atomic message counter; no lock on encrypt unless built with boringcrypto
+- The firewall conntrack table is a single map behind one mutex that is taken per packet. A per-routine conntrack cache (`firewall.conntrack.routine_cache_timeout`) avoids this lock, but it is enabled by default (1 s) only when `routines > 1`
 
 ## Performance Optimizations Checklist
 
 ### Threading
-- [x] **Multi-threaded processing** - Parallel packet handling across CPU cores (Linux only)
-- [x] **Per-core packet queues** - Multi-queue TUN and SO_REUSEPORT UDP (Linux only)
+- [x] **Multi-threaded processing** - Partial: by default one goroutine per direction (encrypt and decrypt on separate cores); full multi-core scaling only with `routines > 1` on Linux
+- [ ] **Per-peer packet queues** - No per-peer queues; packets are processed run-to-completion by the reader goroutine. Per-core parallelism comes from multi-queue TUN + SO_REUSEPORT (Linux, `routines`)
 
 ### Packet I/O
-- [x] **Batch UDP receives** - Uses `recvmmsg` with default 64 packets per syscall (Linux)
-- [ ] **Batch UDP sends** - Does NOT use `sendmmsg`, individual sendto() per packet
-- [x] **Large batch sizes** - 64 packets per receive batch, configurable
+- [x] **Batch UDP receives** - Uses `recvmmsg` with default 64 packets per syscall (`listen.batch`, Linux non-Android only); Windows uses Registered I/O (RIO); other platforms read one packet per call
+- [ ] **Batch UDP sends** - Does NOT use `sendmmsg`; one `sendto()` per packet
+- [x] **Large batch sizes** - 64 packets per UDP receive batch (configurable, not reloadable); TUN reads and writes are one packet per syscall
 
 ### UDP Offload
 - [ ] **UDP GSO (Generic Segmentation Offload)** - Not implemented
 - [ ] **UDP GRO (Generic Receive Offload)** - Not implemented
 
 ### Buffer Management
-- [x] **Buffer pool reuse** - Pre-allocated buffers per goroutine, reused across packets
-- [x] **Large UDP socket buffers** - Configurable read_buffer/write_buffer (defaults to system settings ~200KB)
+- [x] **Buffer pool reuse** - Fixed buffers pre-allocated per routine (recvmmsg ring of 64 × 9001 bytes, plaintext/ciphertext scratch buffers) and reused for every packet; no per-packet allocation
+- [ ] **Large UDP socket buffers** - Not set by default (kernel `rmem_default`/`wmem_default`, typically ~200 KB). `listen.read_buffer`/`listen.write_buffer` can raise them via SO_RCVBUFFORCE/SO_SNDBUFFORCE (Linux)
 
 ### Userspace TCP Stack (optional)
-- [x] **Userspace TCP implementation** - gVisor netstack used for the service-mode embedded host (`service/service.go`)
-- [ ] **Large TCP RX/TX buffers** - No custom buffer configuration; inherits gVisor's stock 1 MiB defaults / 4 MiB max. No Tailscale-style explicit overrides.
+- [x] **Userspace TCP implementation** - gVisor netstack, used only by the `service` package when Nebula is embedded as a Go library with `overlay.NewUserDeviceFromConfig`. The shipped `nebula` binaries always use a kernel TUN device. The netstack NIC uses MTU 1280 and an IPv4-only address.
+- [ ] **Large TCP RX/TX buffers** - No custom buffer configuration (forwarder receive window 0 = default); inherits gVisor's stock 1 MiB defaults / 4 MiB max. Only TCP SACK is explicitly enabled. No Tailscale-style explicit overrides.
 - [ ] **Tuned congestion control** - No congestion control overrides; inherits gVisor's default Reno. Tailscale's workarounds for gVisor's CUBIC integer-overflow bug (gvisor/issues/11632) are not applied because Nebula stays on the default and never enables CUBIC.
 - [ ] **Reordering tolerance** - Inherits gVisor's default RACK loss-detection (`TCPRACKLossDetection`), which Tailscale found triggers spurious retransmits under reordering (tailscale/issues/9707) and explicitly disables. Nebula does not apply that workaround.
 
@@ -150,17 +154,17 @@ Nebula is written in Go and uses a goroutine-based concurrency model with option
 - [ ] **RX checksum offload** - Relies on kernel/hardware offload
 
 ### MTU Handling
-- [x] **Conservative MTU** - Configurable MTU, default 1300 bytes for tunnel interface
-- [ ] **Path MTU discovery** - No active PMTU probing; uses conservative static MTU (configurable via `tun.mtu`)
+- [x] **Conservative MTU** - Configurable MTU (`tun.mtu`), default 1300 bytes for the tunnel interface; per-`unsafe_routes` MTU overrides
+- [ ] **Path MTU discovery** - No PMTU probing and no handling of ICMP "fragmentation needed"; relies on the conservative static MTU
 
 ### Peer Management
 - [x] **Lazy peer removal** - Peers remain in hostmap until timeout
 - [x] **Endpoint caching** - Caches discovered endpoints in lighthouse addrMap
-- [x] **Efficient keepalive timers** - Punchy keepalive system for NAT hole punching
+- [x] **Efficient keepalive timers** - Timer-wheel driven connection manager (`timers.connection_alive_interval` 5 s); test packets only when traffic flows one way. NAT keepalive punches require `punchy.punch` (default off)
 
 ### Packet Processing
-- [x] **Zero-allocation parsing** - Pre-allocated buffers reduce allocations on hot path
-- [ ] **Zero-copy filtering** - Some copying occurs during firewall processing
+- [x] **Zero-allocation parsing** - Header and firewall tuple parsed into reused per-routine structs; no heap allocation on the hot path
+- [x] **Zero-copy filtering** - The firewall reads addresses and ports in place from the packet buffer; only a small fixed-size 5-tuple struct is copied for the conntrack lookup
 
 ### State Synchronization
 - [ ] **Delta updates** - Lighthouse updates send full address list
@@ -172,26 +176,32 @@ Nebula is written in Go and uses a goroutine-based concurrency model with option
 
 # Security
 
-Nebula has had relatively few security vulnerabilities. The most notable issue was discovered and patched in version 1.9.7.
+Nebula has had relatively few security vulnerabilities. The most notable recent issue was fixed in version 1.9.7.
 
 ## Known Security Issues
 
-**CVE-2025 (v1.9.7 fix, October 2025)**: Nebula could incorrectly accept and process packets from an erroneous source IP when the sender's certificate was configured with unsafe_routes (cert v1/v2) or multiple IPs (cert v2). This allowed a potential IP spoofing attack where traffic could be accepted from unauthorized source addresses. Fixed by enforcing stricter source IP validation.
+**Source-IP acceptance bug (fixed in v1.9.7, 2025-10-10, PR #1494)**: Nebula could incorrectly accept and process packets from an erroneous source IP when the sender's certificate was configured with unsafe_routes (cert v1/v2) or multiple IPs (cert v2). This allowed IP spoofing from inside the overlay. The fix enforces stricter source IP validation against the certificate's networks.
+
+**Dependency fixes**: v1.8.1 updated `golang.org/x/crypto` for CVE-2023-48795 (Terrapin), and v1.5.2 fixed an SSH server panic; both affect only the optional debug SSH server (`sshd`, disabled by default).
 
 ## Potential Security Concerns
 
-**No automatic periodic rekeying for long-lived sessions**: The Noise IX handshake provides PFS through ephemeral Diffie-Hellman key exchange — compromise of long-term keys does not expose past session traffic. However, there is no timer-based periodic rekeying mechanism for long-lived tunnels. The message counter increments indefinitely, meaning compromise of a session key exposes traffic on that session until the tunnel is torn down and re-established.
+**Initiator identity in cleartext**: Because the handshake is Noise IX, the initiator's certificate (name, VPN IPs, groups, public key) is sent unencrypted in the first handshake message. Passive observers can tell which node is connecting.
 
-**RecvError packet amplification**: Unauthenticated packets can trigger RecvError responses, which could be used for network scanning or amplification attacks. Mitigated by setting `send_recv_error: never` or `private`. As of v1.10.1, `accept_recv_error` gives the receiving side control over whether to process these messages.
+**No automatic periodic rekeying for long-lived sessions**: The Noise IX handshake provides PFS through ephemeral Diffie-Hellman key exchange, so compromise of long-term keys does not expose past session traffic. However, there is no timer- or volume-based rekeying for long-lived tunnels. The message counter increments indefinitely, so compromise of a session key exposes traffic on that session until the tunnel is torn down and re-established.
 
-**Roaming validation**: Hosts can roam to new addresses after authentication. Roamed packets must still decrypt correctly with the established session keys, so an attacker cannot hijack a tunnel without possessing them. The `remote_allow_list` provides an additional layer of restriction on which source IPs are accepted for roaming.
+**Unauthenticated recv_error**: Packets for unknown tunnel indexes trigger a 16-byte `recv_error` reply by default (`listen.send_recv_error: always`). The reply is not larger than the trigger, so it is not an amplifier, but it reveals that Nebula is running. Received `recv_error` packets are unauthenticated and tear down the matching tunnel if they come from the peer's current address, so an attacker who can spoof that address can force re-handshakes. Mitigation: `send_recv_error: never` or `private`. Since 1.9.7 no `recv_error` is sent for packets outside the replay window.
+
+**No handshake rate limiting**: There is no rate limiting or cookie mechanism for incoming handshakes; every handshake message from the internet costs a DH operation and certificate verification.
+
+**Roaming validation**: Hosts can roam to new addresses after authentication. Roaming only happens on packets that decrypt correctly with the established session keys, so an attacker cannot hijack a tunnel without possessing them. The `remote_allow_list` provides an additional layer of restriction on which source IPs are accepted for roaming.
 
 **Certificate blocklist distribution**: No automatic distribution mechanism exists. Revoked certificates may remain valid until manual config reload occurs across all nodes.
 
 ## Security Features Checklist
 
 ### Network Security
-- [x] **Rate limiting** - Handshake rate limiting to prevent amplification attacks
+- [ ] **Rate limiting** - No handshake or control-packet rate limiting; only `send_recv_error` limits which unauthenticated replies are sent
 - [x] **Stateful packet filter** - Connection tracking for stateful firewall rules
 - [x] **Fine-grained ACLs** - Per-port, protocol, host, group, CIDR access control
 - [x] **Capability-based access** - Group-based and CA-based rule matching
@@ -199,7 +209,7 @@ Nebula has had relatively few security vulnerabilities. The most notable issue w
 ### Identity & Authentication
 - [x] **Identity validation** - Certificate-based cryptographic verification during handshake
 - [ ] **Signed configuration updates** - Config files are not signed. Certificates are signed by the CA and can be hot-reloaded via SIGHUP, but the config itself has no integrity protection.
-- [x] **Certificate pinning** - CA pool and blocklist prevent unauthorized certificates
+- [x] **Certificate pinning** - No WebPKI involvement: lighthouses and relays are authenticated by the private CA pool (`pki.ca`) and their fixed VPN IP; blocklist by certificate fingerprint
 
 ### Implementation
 - [x] **Memory-safe language** - Written in Go (garbage collected, memory safe)
@@ -219,12 +229,13 @@ Nebula implements sophisticated NAT traversal through UDP hole punching coordina
 
 **Hole Punching**: The lighthouse sends a HostPunchNotification to Node B, telling it to initiate punching to Node A's addresses. Both nodes send UDP packets to each other's addresses, creating NAT mappings.
 
-**Punchy Configuration**: The `punchy` subsystem provides ongoing keepalive punching:
-- `punchy.punch` - Continues punching to maintain NAT mappings
-- `punchy.respond` - Responds to punch notifications for symmetric NAT
-- `punchy.delay` - Delay before punch response (handles misbehaving NATs)
+**Punchy Configuration**: Receiving a HostPunchNotification always triggers 1-byte punches (after `punchy.delay`, default 1 s). The `punchy` section adds:
+- `punchy.punch` (default false; the example config enables it) - Sends periodic punch packets on tunnels to keep NAT mappings alive
+- `punchy.respond` (default false) - After `punchy.respond_delay` (default 5 s), the punched node sends a test packet back, which makes it initiate a handshake toward the querier. This helps when only the querying side is behind a hard (e.g. symmetric) NAT
+- `punchy.delay` - Delay before punching (handles misbehaving NATs)
+- `punchy.target_all_remotes` - Punch all known addresses instead of only the current one
 
-**Relay Fallback**: For symmetric NAT or double NAT scenarios where hole punching fails, Nebula uses relay tunnels. Nodes configured as relays (`am_relay: true`) can forward encrypted traffic between peers that cannot establish direct connections.
+**Relay Fallback**: For symmetric NAT or double NAT scenarios where hole punching fails, Nebula (since 1.6.0) uses relay tunnels. A node lists in `relay.relays` the VPN IPs of nodes that may relay traffic *to it*. Those relay nodes must set `relay.am_relay: true` and advertise themselves to the lighthouse. Peers learn them from the lighthouse and, with `relay.use_relays` (default true), request relayed tunnels through all of them in parallel. Relaying is single-hop (relays cannot use relays). The relay only authenticates the outer hop; the inner packet stays end-to-end encrypted between the two peers.
 
 ## NAT Traversal Checklist
 
@@ -240,13 +251,13 @@ Nebula implements sophisticated NAT traversal through UDP hole punching coordina
 
 ### Hole Punching
 - [x] **UDP hole punching** - Bidirectional hole punching coordinated by lighthouse
-- [x] **Symmetric NAT handling** - Punchy respond mode for symmetric NAT scenarios
+- [x] **Symmetric NAT handling** - Partial: no port prediction or birthday attack; `punchy.respond` (off by default) reverses the connection direction when one side is behind a symmetric NAT, otherwise relays are needed
 - [x] **Rendezvous coordination** - Lighthouse-assisted punch notification system
 
 ### Fallback
 - [x] **Relay fallback** - Encrypted relay tunnels when direct connection fails
-- [x] **Multiple relay regions** - Can configure multiple relay nodes
-- [x] **Automatic relay selection** - Users configure a list of relays (`relay.relays`) and set `use_relays: true`; Nebula automatically iterates through configured relays and uses the first available one when direct connection fails
+- [x] **Multiple relay regions** - Partial: any number of self-hosted relay nodes can be listed per host; there is no region/geo concept
+- [x] **Automatic relay selection** - Partial: the initiator requests relay tunnels through every relay the target advertised and uses the first established one; selection is not latency-based
 - [ ] **TCP relay support** - Relay uses UDP only (no TCP relay option)
 
 # Local Routing
@@ -255,11 +266,13 @@ Nebula does not have automatic LAN discovery. Peers discover each other exclusiv
 
 ## Peer Discovery on LANs
 
-Nodes advertise their local IP addresses to lighthouses (filtered by `local_allow_list`). When a peer queries the lighthouse, it receives both public and private IPs for the target. The node will attempt to establish tunnels to all advertised addresses in parallel and use whichever connects first.
+Nodes advertise their local IP addresses to lighthouses (filtered by `local_allow_list`). When a peer queries the lighthouse, it receives both public and private IPs for the target. The node sends handshakes to all advertised addresses in parallel, and the address of the first handshake reply becomes the tunnel endpoint. Without `preferred_ranges`, the candidate list is ordered public IPv4 first, then private IPv4, then IPv6.
 
-**Preferred Ranges**: The `preferred_ranges` configuration provides hints about local network ranges, which can speed up discovering the fastest path by prioritizing local addresses during connection attempts.
+**Preferred Ranges**: The `preferred_ranges` configuration lists local network ranges. Matching addresses are sorted first, and established tunnels periodically probe preferred addresses and roam to them (`TryPromoteBest`).
 
 **Static Host Map**: For small networks or specific peering relationships, the static_host_map allows pre-configuring peer addresses, bypassing lighthouse queries entirely.
+
+**Lighthouse DNS**: A lighthouse can optionally serve DNS (`lighthouse.serve_dns`, default off, `lighthouse.dns.host/port`). It answers A/AAAA queries for the certificate names of hosts it has a tunnel with, and TXT queries (from Nebula IPs or localhost only) with the peer's certificate. Nodes do not configure the OS resolver automatically; clients must point at or delegate to the lighthouse.
 
 ## Routing Features
 
@@ -268,19 +281,19 @@ Nodes advertise their local IP addresses to lighthouses (filtered by `local_allo
 - Per-route MTU configuration
 - Metric-based route selection
 
-**System Route Table Integration**: On Linux, Nebula can inject routes into the system routing table, enabling advanced routing scenarios including full tunnel mode (0.0.0.0/0 unsafe route).
+**System Route Table Integration**: Unsafe routes are installed into the OS routing table by default (`install: true`) on Linux, macOS, BSD and Windows, enabling full tunnel mode (0.0.0.0/0 unsafe route; on Linux use `listen.so_mark` to keep Nebula's own UDP traffic out of the tunnel). On Linux, `tun.use_system_route_table` additionally lets Nebula read routes for its device from the kernel table.
 
 ## Local Routing Checklist
 
 ### LAN Discovery
 - [ ] **Broadcast/multicast discovery** - No broadcast/multicast LAN announcements
 - [x] **Direct path advertisement** - Nodes share local IPs through lighthouse
-- [x] **Same-subnet detection** - Preferred ranges hint at local networks
+- [ ] **Same-subnet detection** - No automatic detection; `preferred_ranges` is a manual hint
 
 ### LAN Optimization
-- [x] **Automatic LAN preference** - Preferred_ranges prioritizes local address attempts
+- [x] **Automatic LAN preference** - Handshakes go to all known addresses and the first reply wins (usually the LAN path); `preferred_ranges` makes the preference explicit and enables later promotion
 - [ ] **Trusted path mode** - No option to skip encryption on trusted LANs
-- [x] **LAN-only mode** - Achievable via `lighthouse.remote_allow_list` restricting to private CIDRs, `preferred_ranges` for LAN preference, and firewall rules (no dedicated toggle)
+- [x] **LAN-only mode** - Partial: no dedicated toggle; achievable via `lighthouse.remote_allow_list` restricting remotes to private CIDRs (plus `preferred_ranges` and firewall rules)
 
 ### Routing Features
 - [x] **Subnet routes** - Unsafe routes to other networks through gateway peer
@@ -300,7 +313,7 @@ Lighthouses are **NOT** a single point of failure for data plane operations. How
 
 **Static host map still works**: Peers configured in static_host_map can be reached without lighthouse queries.
 
-**Peer roaming may not update**: If a peer's IP address changes (mobile device, DHCP change), existing peers may not learn the new address without a functioning lighthouse.
+**Peer roaming still mostly works**: An authenticated packet from a new address updates the peer's endpoint directly, so roaming between two peers that already share a tunnel works without the lighthouse as long as the roaming side keeps sending. Without a lighthouse, a peer whose address changed and that does not send cannot be found again by others.
 
 ## Mitigation Strategies
 
@@ -316,7 +329,7 @@ Lighthouses are **NOT** a single point of failure for data plane operations. How
 
 ### Offline Operation
 - [x] **Existing connections survive** - Tunnels stay up without lighthouse
-- [x] **Local state caching** - Lighthouse responses cached in addrMap
+- [x] **Local state caching** - Partial: lighthouse responses and learned endpoints are cached in memory (RemoteList); nothing is persisted across restarts
 - [x] **Cached credentials** - Certificates are local files valid without control server contact; no ongoing connectivity required to maintain network identity
 - [x] **Graceful degradation** - Existing tunnels work, new discoveries fail
 
@@ -355,7 +368,7 @@ Nodes authenticate and join the network through Nebula's certificate-based PKI s
 - Certificates can be hot-reloaded with SIGHUP signal
 - Blocklist updates can revoke compromised certificates
 - No automatic renewal in open-source Nebula - certificates must be manually regenerated before expiry (Defined Networking's managed Nebula service provides automatic renewal)
-- `pki.disconnect_invalid` option can force disconnection of expired certificates
+- `pki.disconnect_invalid` (default true) tears down tunnels whose peer certificate has expired or became invalid; blocklisted certificates are always disconnected
 
 ## Authentication Checklist
 
@@ -375,7 +388,7 @@ Nodes authenticate and join the network through Nebula's certificate-based PKI s
 ### Identity
 - [x] **Stable device identity** - Certificate public key provides persistent identity
 - [x] **Identity portability** - Can copy certificate files to new device
-- [x] **Multi-user support** - Multiple Nebula instances with separate identities can run on the same device
+- [ ] **Multi-user support** - No user concept: identity is a per-host certificate. Multiple Nebula instances with separate certificates can run on one device
 
 # Platform Support
 
@@ -384,9 +397,9 @@ Nebula supports a wide range of platforms with full userspace implementation for
 ## Supported Platforms
 
 **Desktop/Server**:
-- Linux (x86_64, ARM, ARM64, MIPS, loong64)
+- Linux (amd64, 386, arm v5/v6/v7, arm64, ppc64le, mips/mipsle/mips64/mips64le, riscv64, loong64)
 - macOS (Intel and Apple Silicon)
-- Windows (amd64, 386)
+- Windows (amd64, arm64)
 - FreeBSD, OpenBSD, NetBSD
 
 **Mobile**:
@@ -403,29 +416,29 @@ Nebula supports a wide range of platforms with full userspace implementation for
 
 **TUN Device**: Uses Layer 3 TUN devices (IFF_TUN flag on Linux) for IP packet routing. Does not support TAP devices or Layer 2 Ethernet frames.
 
-**Windows Implementation**: Uses WinTun userspace driver on Windows for TUN device support.
+**Windows Implementation**: Uses the WinTun driver for the TUN device and Registered I/O (RIO) for UDP, falling back to standard sockets if RIO is unavailable.
 
-**Container Support**: Works in containers with appropriate capabilities (NET_ADMIN). No specialized Kubernetes CNI plugin, but can run as sidecar or node-level daemon.
+**Container Support**: Official distroless image `nebulaoss/nebula` (since 1.9.0, built from `docker/Dockerfile`). Needs NET_ADMIN and `/dev/net/tun`. No specialized Kubernetes CNI plugin, but it can run as a sidecar or node-level daemon.
 
 **Performance Optimizations**:
-- Linux: Multi-queue TUN (IFF_MULTI_QUEUE) for per-core TUN queues
-- Linux, macOS, BSD, Android: SO_REUSEPORT for multi-core UDP scaling
-- Linux: recvmmsg batch packet reception
-- All platforms: Buffer pooling and per-routine caching
+- Linux only: `routines` with multi-queue TUN (IFF_MULTI_QUEUE) and SO_REUSEPORT UDP sockets
+- Linux: recvmmsg batch packet reception (64 per call); Windows: RIO
+- All platforms: preallocated per-routine buffers; per-routine conntrack cache when `routines > 1`
+- Not implemented: sendmmsg, UDP GSO/GRO, TUN offloads (IFF_VNET_HDR), PMTU discovery
 
 ## Platform Checklist
 
 ### Desktop/Server
-- [x] **Linux** - Full support with multi-core optimizations
+- [x] **Linux** - Full support, the only platform with multi-routine scaling and recvmmsg
 - [x] **macOS** - Full support (userspace only)
 - [x] **Windows** - Full support using WinTun driver
 - [x] **FreeBSD/OpenBSD** - BSD support
 
 ### Mobile
-- [x] **iOS** - Mobile app available
-- [x] **Android** - Mobile app available
+- [x] **iOS** - In-repo iOS TUN support (`tun_ios.go`); app is the separate Mobile Nebula project
+- [x] **Android** - In-repo Android TUN support (`tun_android.go`, single routine, no recvmmsg); app is the separate Mobile Nebula project
 
 ### Implementation
 - [ ] **Kernel-mode datapath** - No kernel-mode packet processing
 - [x] **Userspace implementation** - Runs entirely in userspace with TUN devices
-- [x] **Container support** - Works in Docker/Kubernetes with NET_ADMIN capability
+- [x] **Container support** - Official `nebulaoss/nebula` image; works in Docker/Kubernetes with NET_ADMIN and `/dev/net/tun`

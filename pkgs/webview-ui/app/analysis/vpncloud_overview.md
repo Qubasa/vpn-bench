@@ -1,10 +1,10 @@
 # Overview
 
-VpnCloud is a high-performance peer-to-peer mesh VPN written in Rust that operates over UDP. It creates virtual network interfaces (TUN or TAP devices) and forwards all received data via UDP to destination peers. The system features strong end-to-end encryption based on elliptic curve keys (Curve25519) and authenticated encryption (AES-GCM or ChaCha20-Poly1305).
+VpnCloud is a peer-to-peer mesh VPN written in Rust that operates over UDP (default port 3210). It creates virtual network interfaces (TUN or TAP devices) and forwards all received data via UDP to destination peers. Nodes authenticate with Ed25519 identity keys; session keys come from ephemeral X25519 (Curve25519) ECDH, and traffic is protected with authenticated encryption (AES-128-GCM, AES-256-GCM or ChaCha20-Poly1305, all from the `ring` library).
 
 ## Key Architecture Components
 
-**Single-Threaded Event Loop**: VpnCloud uses a single-threaded architecture with epoll-based event multiplexing. The main loop processes one event at a time (maxevents=1 in epoll_wait), handling socket events, device events, and periodic housekeeping tasks sequentially.
+**Single-Threaded Event Loop**: VpnCloud uses a single-threaded architecture with epoll-based event multiplexing over exactly two file descriptors: one UDP socket and one TUN/TAP device. The main loop processes one event at a time (maxevents=1 in epoll_wait), handling socket events, device events, and once-per-second housekeeping sequentially. The epoll backend is only compiled for Linux/Android; there is no kqueue or Windows backend.
 
 **Modular Design**: The codebase is organized into separate components:
 - Crypto layer (init.rs, core.rs, rotate.rs) handles key exchange, encryption, and key rotation
@@ -20,56 +20,63 @@ VpnCloud is a high-performance peer-to-peer mesh VPN written in Rust that operat
 - **Switch mode**: Learn addresses dynamically like a network switch
 - **Hub mode**: Broadcast all data to all peers
 
-**No Dependencies**: VpnCloud is a single binary with no external dependencies or kernel modules required. It's written in 100% Rust and uses the standard Linux TUN/TAP interface.
+**Few Runtime Dependencies**: VpnCloud is a single binary and needs no kernel module. It is written in Rust, but uses `unsafe` FFI for the TUN/TAP and interface ioctls and for epoll, and the `ring` crypto library contains C and assembly. The Debian package links against glibc (`libc6`), so the binary is not fully static. Device handling is Linux-specific (`/dev/net/tun`, `TUNSETIFF`, `/proc/net/route`, `/proc/sys`).
 
 # Protocol
 
-VpnCloud uses a custom UDP-based protocol with four message types:
+VpnCloud uses a custom UDP-based protocol. Handshake (init) messages start with the byte 0xFF and are sent unencrypted but signed. All other messages are AEAD-encrypted, and the message type is the first byte inside the ciphertext:
 - DATA (0x00): Encrypted payload packets
 - NODE_INFO (0x01): Peer and subnet claim announcements
-- KEEPALIVE (0x02): Connection heartbeat
+- KEEPALIVE (0x02): Defined and handled on receive, but never sent; NODE_INFO broadcasts act as keepalives
+- ROTATION (0x10): Key-rotation messages (internal to the crypto layer)
 - CLOSE (0xFF): Graceful connection termination
 
 ## Control Plane Communication
 
 **3-Way Handshake (Ping-Pong-Peng)**:
 
-1. **PING**: Initiator sends salted node ID hash, ephemeral X25519 ECDH public key, supported encryption algorithms with benchmark speeds, and Ed25519 signature
-2. **PONG**: Responder sends own salted node ID hash, ECDH public key, algorithms, and encrypted payload using negotiated session key
-3. **PENG**: Initiator confirms with encrypted payload
+1. **PING**: Initiator sends a salted node ID hash (4-byte random salt plus 16 bytes of SHA-256 over the salt and the per-run random node ID), an ephemeral X25519 ECDH public key, its supported encryption algorithms with benchmark speeds, and an Ed25519 signature. The Ed25519 public key itself is not sent: it is identified by a 4-byte random salt plus the first 4 bytes of SHA-256(public key ‖ salt), which the receiver matches against its trusted keys
+2. **PONG**: Responder sends own salted node ID hash, ECDH public key, algorithms, and its NODE_INFO payload encrypted with the negotiated session key
+3. **PENG**: Initiator confirms with its own encrypted NODE_INFO payload
 
-The handshake includes automatic role negotiation for concurrent connections (higher node_id wins) and algorithm selection based on performance benchmarks from both peers.
+The handshake includes automatic role negotiation for concurrent connections (the side with the higher salted node ID hash wins) and algorithm selection: for every algorithm both sides support, the slower of the two reported speeds counts, and the algorithm with the highest such value is chosen. Unanswered handshake messages are retransmitted every second, up to 120 times, before the attempt is aborted.
 
-**Peer Discovery**: Peers exchange NODE_INFO messages every 5 minutes containing:
-- Their own addresses (learned from peers and local configuration)
-- List of known peers
+**Session key derivation**: The raw X25519 shared secret is truncated to the cipher's key length and used directly as the AEAD key. There is no KDF, no hashing of the handshake transcript, and the same key is used in both directions, with the nonce space split between the two peers.
+
+**Peer Discovery**: Peers broadcast NODE_INFO messages periodically, by default every 90 seconds (`keepalive` defaults to `peer_timeout / 2 - 60` with `peer_timeout` = 300 s), containing:
+- Their own addresses (configured advertise addresses, the local socket address, UPnP internal/external addresses, and addresses peers reported back)
+- Up to 20 randomly chosen known peers with their addresses
 - Claimed subnet ranges
 - Peer timeout settings
+
+Each NODE_INFO is a full snapshot, not a delta.
 
 ## Data Plane
 
 **Packet Flow**:
 1. Application writes packet to virtual TUN/TAP interface
-2. VpnCloud reads packet via read() syscall
-3. Destination address looked up in routing table
-4. Packet encrypted with session key (in-place, no buffer copy)
-5. Sent via UDP send_to() to destination peer
-6. Receiving peer decrypts and writes to virtual interface
+2. VpnCloud wakes from `epoll_wait` and reads exactly one packet via `read()` into a reused 64 KiB buffer
+3. Destination address looked up in the claim table (hash-map cache first, then longest-prefix scan over claims)
+4. Packet encrypted with the peer's session key in place (an 8-byte key ID + nonce header is prepended and a 16-byte tag appended; no buffer copy)
+5. Sent via one blocking UDP `sendto()` to the destination peer
+6. Receiving peer does `epoll_wait` + `recvfrom()`, decrypts in place, and `write()`s the packet to its virtual interface
 
-**Transport Protocol**: UDP only. VpnCloud does not support TCP for tunnel transport. However, it includes an optional WebSocket proxy mode for restrictive network environments where UDP is blocked.
+That is at least three syscalls per packet on each side. There is no batching (`recvmmsg`/`sendmmsg`), no UDP GSO/GRO, no socket buffer tuning, and no TUN offload (`IFF_VNET_HDR`) or multi-queue TUN.
+
+**Transport Protocol**: Normally UDP only; there is no native TCP transport. The optional WebSocket proxy mode replaces a node's UDP socket: if `listen` is set to a `ws://` URL, the node opens a single plain WebSocket (TCP) connection to a `vpncloud ws-proxy` server. That proxy opens a UDP socket on its own public address and forwards datagrams between the node and its UDP peers. This mode is chosen manually per node and is not an automatic fallback. Only `ws://` works: `wss://`/TLS is not supported.
 
 ## Protocol Features Checklist
 
 ### Transport
 - [x] **UDP transport** - Primary and only transport protocol for peer-to-peer communication
-- [ ] **TCP fallback** - No native TCP transport support
+- [x] **TCP fallback** - Partial: no native TCP transport. A node can be configured to send all its traffic over a WebSocket/TCP connection to a ws-proxy, but this is manual and not an automatic fallback
 - [ ] **QUIC support** - Not implemented
-- [x] **WebSocket support** - WebSocket proxy mode for restrictive firewalls (tunnels UDP over WebSocket/TCP)
+- [x] **WebSocket support** - WebSocket proxy mode for restrictive firewalls (UDP datagrams tunneled over plain `ws://`, not `wss://`)
 
 ### IP Support
 - [x] **IPv4 support** - Full IPv4 tunnel traffic support
 - [x] **IPv6 support** - Native IPv6 tunneling support
-- [x] **Dual-stack** - Simultaneous IPv4 and IPv6 (socket listens on all IPs)
+- [x] **Dual-stack** - TUN mode carries IPv4 and IPv6 packets on the same interface; the outer socket listens on `[::]` (IPv4-mapped). `--ip` and auto-claim only handle IPv4, so IPv6 addresses and claims must be configured manually (ifup script and `--claim`)
 
 ### Network Layer Mode
 - [x] **Layer 3 (IP) mode** - TUN device for IP packet routing
@@ -79,7 +86,7 @@ The handshake includes automatic role negotiation for concurrent connections (hi
 ### Advanced
 - [ ] **Multipath/bonding** - No support for aggregating multiple network paths
 - [ ] **QoS/traffic shaping** - No priority queues or traffic classes
-- [x] **Multicast support** - Virtual multicast/broadcast supported in hub and switch modes
+- [x] **Multicast support** - Broadcast/multicast and unknown destinations are flooded to all peers (one encrypted unicast per peer) in TAP normal, switch and hub mode, and in TUN hub mode; TUN normal/router mode drops them
 
 # Encryption
 
@@ -94,18 +101,18 @@ VpnCloud implements strong end-to-end encryption using modern cryptographic prim
 
 **Session Encryption**:
 - Negotiated per-peer based on performance benchmarks
-- AES-128-GCM, AES-256-GCM, or ChaCha20-Poly1305
+- AES-128-GCM, AES-256-GCM, or ChaCha20-Poly1305 (default allows all three; the fastest common one wins). An optional `plain` setting disables encryption if both peers allow it
 - All are authenticated encryption with associated data (AEAD) modes
 - In-place encryption (no data copying during encrypt/decrypt operations)
 
 **Nonce Management**:
-- 12-byte nonce (192 bits total)
-- Only 7 bytes transmitted (5 bytes saved per packet)
+- 12-byte nonce (96 bits)
+- Only 7 bytes transmitted, plus 1 key-ID byte (8-byte header; 5 nonce bytes saved per packet)
 - Most significant byte differs between peers (0x00 vs 0x80) to prevent self-decryption
-- Nonce pinning rejects old nonces after ~1 second to prevent replay attacks
+- Nonce pinning: once per second, the minimum accepted nonce per key is raised to the highest nonce seen in the previous interval plus one. Older packets are rejected after 1–2 seconds, which tolerates reordering within that window. There is no per-nonce bitmap, so an exact duplicate that arrives inside the window is accepted
 
 **Key Rotation**:
-- Automatic rotation every 120 seconds
+- Automatic rotation every 120 seconds (per peer, counted by the 1-second housekeeping tick)
 - Turn-based rotation where peers alternately propose new ECDH keys
 - Crypto core maintains 4 key slots for seamless rotation without packet loss
 - Provides forward secrecy by limiting exposure window
@@ -124,9 +131,9 @@ VpnCloud implements strong end-to-end encryption using modern cryptographic prim
 - [x] **Constant-time operations** - Uses `ring` library which implements constant-time crypto
 
 ### Protocol Security
-- [x] **Replay protection** - Nonce counter verification and nonce pinning
+- [x] **Replay protection** - Partial: nonce pinning rejects packets older than ~1–2 s, but there is no sliding-window bitmap, so duplicates within that window are accepted
 - [ ] **Noise Protocol or equivalent** - Custom protocol, not Noise framework
-- [x] **No cleartext metadata** - Node identities transmitted as salted hashes, payloads fully encrypted
+- [x] **No cleartext metadata** - The Ed25519 public key is never sent; it appears only as a 4-byte salted truncated hash (confirmable only by an observer who already knows the key). Node IDs are random per run and salted. Everything after the handshake is encrypted
 
 # Performance
 
@@ -138,7 +145,7 @@ The main event loop uses epoll with `maxevents=1`, processing exactly one event 
 - One packet at a time from UDP socket OR device
 - No parallel processing of encryption/decryption
 - Cannot utilize multiple CPU cores
-- Only beacon command execution spawns separate threads (not for core packet processing)
+- Helper threads exist only for side tasks: beacon commands and hook scripts run in detached threads, and the separate `ws-proxy` server spawns one thread per client. None of them process tunnel packets
 
 The event loop handles:
 1. Socket events (incoming UDP packets from peers)
@@ -161,7 +168,7 @@ The event loop handles:
 - [ ] **UDP GRO (Generic Receive Offload)** - Not implemented
 
 ### Buffer Management
-- [x] **Buffer pool reuse** - Single reusable MsgBuffer (65KB fixed buffer) allocated at loop start
+- [x] **Buffer pool reuse** - No pool, but a single 64 KiB `MsgBuffer` (65535-byte array) allocated once at loop start is reused for every packet; the hot path does no heap allocation
 - [ ] **Large UDP socket buffers** - Uses Linux kernel defaults (~200KB), no socket buffer tuning
 
 ### Userspace TCP Stack (optional)
@@ -175,20 +182,20 @@ The event loop handles:
 - [ ] **RX checksum offload** - Relies on kernel defaults
 
 ### MTU Handling
-- [x] **Conservative MTU** - Automatically sets optimal MTU on interface
+- [x] **Conservative MTU** - Partial: at startup the TUN/TAP MTU is set to the default-route interface MTU minus overhead (73 bytes TUN, 87 bytes TAP, assuming an outer IPv6 header), i.e. 1427 (TUN) / 1413 (TAP) on a 1500-byte underlay. The TUN value is above 1420
 - [ ] **Path MTU discovery** - Not explicitly implemented
 
 ### Peer Management
-- [x] **Lazy peer removal** - Peers time out after 5 minutes of inactivity
-- [x] **Endpoint caching** - Routing table with LRU cache for fast lookups
-- [x] **Efficient keepalive timers** - Configurable per-endpoint keepalive with 1-second granularity
+- [x] **Lazy peer removal** - Peers time out after `peer_timeout` (default 300 s) without any message; a reconnect is attempted immediately
+- [x] **Endpoint caching** - Partial: a peer is bound to the socket address its handshake completed on, and its other advertised addresses are stored; there is no best-endpoint selection or path switching. The claim table caches address→peer lookups in a hash map with timeouts (not an LRU)
+- [x] **Efficient keepalive timers** - Periodic NODE_INFO broadcast (default every 90 s, configurable via `keepalive`) checked from a 1-second housekeeping tick; no per-packet timers
 
 ### Packet Processing
-- [ ] **Zero-allocation parsing** - Fixed 65KB buffer allocated, packets copied into buffer
-- [ ] **Zero-copy filtering** - Packets copied from socket to buffer to device
+- [x] **Zero-allocation parsing** - Packets are received into the reused buffer, decrypted in place, and parsed for addresses via a `Cursor` over the slice, with no heap allocation on the UDP path (the WebSocket proxy path allocates a `Vec` per packet)
+- [ ] **Zero-copy filtering** - No packet filter exists; apart from the kernel↔user copies of `recvfrom`/`read`/`write`, the data path works in place without extra userspace copies
 
 ### State Synchronization
-- [x] **Delta updates** - Peers exchange incremental updates via NODE_INFO messages
+- [ ] **Delta updates** - NODE_INFO messages are full periodic snapshots (own addresses, all claims, up to 20 random peers), not incremental updates
 - [ ] **Compression** - No compression of control plane messages
 
 ### Data Plane Compression
@@ -198,9 +205,9 @@ The event loop handles:
 ## Performance Impact
 
 The single-packet-per-iteration model with epoll maxevents=1 is the most critical performance bottleneck:
-- Forces one syscall per packet
-- Under packet loss/reordering conditions, throughput degrades significantly
-- VpnCloud performs substantially worse than Tailscale under the old sender-side Medium profile (2.5% reordering and 1% loss per direction, 5% and 2% combined; Tailscale: 41 Mbps, WireGuard: 9 Mbps, VpnCloud likely similar to or worse than WireGuard)
+- At least three syscalls per packet (epoll_wait + recvfrom/read + sendto/write), no batching, no offloads
+- All encryption and decryption for all peers runs on one core
+- No VpnCloud-specific loss/reordering measurements are available here. Reordering itself is tolerated by the 1–2 s nonce-pinning window, so degradation under loss/reordering comes from the inner TCP flows rather than from VpnCloud dropping reordered packets
 
 Architectural advantages:
 - FNV hasher for fast internal hash maps
@@ -222,13 +229,23 @@ VpnCloud implements strong cryptographic primitives using the `ring` library, bu
 
 2. **Static Salt**: Uses hardcoded salt "vpncloudVPNCLOUDvpncl0udVpnCloud" for key derivation, reducing security
 
-3. **Beacon Encryption Weakness**: Beacon files use 1-byte seed for protection, insufficient against malicious tampering (only protects against random changes)
+3. **Shared-Password Mode = Shared Identity**: With `password`, every node derives the same Ed25519 key pair, so any member can impersonate any other member
 
-4. **Public Key Privacy**: Node identities use 4-byte salted hashes which could be vulnerable to brute-force matching attacks to identify peers
+4. **No KDF for Session Keys**: The raw X25519 shared secret (truncated) is used directly as the AEAD key, without HKDF and without binding to the handshake transcript
 
-5. **Shell Command Injection Risk**: Hook scripts and beacon commands execute via shell without sanitization
+5. **Beacon Encryption Weakness**: Beacons are XOR-masked with a SHA-512 keystream derived from the beacon password and carry only a 1-byte check value, which protects against random corruption but not malicious tampering. Without `beacon_password`, the key is empty
 
-6. **No Rate Limiting**: No protection against connection flood or amplification attacks
+6. **Public Key Privacy**: The Ed25519 public key is identified by a 4-byte salt plus a 4-byte truncated hash, so an observer who knows a candidate key can confirm it
+
+7. **Unauthenticated Claims**: Any trusted peer can claim any subnet, and in switch/TAP mode any peer's source MAC is learned. Claims are not bound to identities
+
+8. **Replay Window**: Duplicate data packets inside the ~1–2 s nonce-pinning window are accepted (no bitmap)
+
+9. **Open WebSocket Proxy**: `vpncloud ws-proxy` accepts any WebSocket client without authentication and sends UDP to any destination the client names (an open UDP relay); the WebSocket link is plain `ws://` without TLS
+
+10. **Hook/Beacon Scripts**: Hook scripts and beacon commands run via `sh -c`. Peer-controlled values (peer address, claims, node ID) are passed as environment variables, not interpolated, so the risk lies in operator scripts that use them unquoted
+
+11. **No Rate Limiting**: No protection against handshake floods; every PING with a trusted key hash triggers signature verification, X25519, and per-address state
 
 ## Security Strengths
 
@@ -250,39 +267,39 @@ VpnCloud implements strong cryptographic primitives using the `ring` library, bu
 ### Identity & Authentication
 - [x] **Identity validation** - Ed25519 signature verification and trusted key validation
 - [ ] **Signed configuration updates** - No cryptographic config verification
-- [ ] **Certificate pinning** - Uses trusted public keys, similar concept
+- [ ] **Certificate pinning** - N/A: no control-plane server; peers are authenticated against a locally configured trusted-key list
 
 ### Implementation
-- [x] **Memory-safe language** - Written in Rust (100% safe Rust, no C code)
-- [x] **Privilege separation** - Supports dropping privileges to specified user/group
-- [ ] **Sandboxing** - No process isolation/sandboxing
+- [x] **Memory-safe language** - Written in Rust (with `unsafe` blocks for ioctl/epoll FFI; `ring` contains C/assembly)
+- [x] **Privilege separation** - Optional `user`/`group` settings drop root after the device is opened (via `privdrop`, or `daemonize` when running with `--daemon`)
+- [x] **Sandboxing** - Partial: no in-process seccomp/chroot, but the shipped systemd units use `ProtectSystem=strict`, `ProtectHome`, `PrivateTmp`, `CapabilityBoundingSet` and `DeviceAllow=/dev/net/tun`
 - [x] **Audit logging** - Security events logged (untrusted peers, signature failures, etc.)
 
 # NAT Traversal
 
-VpnCloud implements NAT traversal through UDP hole-punching and automatic port forwarding, but lacks advanced features like STUN/TURN.
+VpnCloud implements NAT traversal through UDP hole-punching, peer-reflected address learning, and automatic UPnP port forwarding, but has no STUN/TURN.
 
 ## How It Works
 
 **UDP Hole-Punching**: Peers exchange complete address lists in NODE_INFO messages. Each peer attempts connections to all known addresses of other peers from both sides. When a peer behind NAT sends a packet, it opens a temporary hole in the NAT allowing return traffic.
 
-**Address Learning**: Peers learn their own public addresses from other peers during handshake and communication. This discovered address is shared with other peers to facilitate hole-punching.
+**Address Learning**: Peers learn their own public addresses from peer lists: when a NODE_INFO lists an entry carrying this node's own node ID, the addresses in it (as seen by the other peer) are added to the node's own address list. These addresses are then advertised to other peers to facilitate hole-punching. Own addresses are recomputed every 300 seconds.
 
-**UPnP Port Forwarding**: VpnCloud can automatically configure port forwarding on compatible routers using the Internet Gateway Device (IGD) protocol. This creates a permanent mapping without requiring manual router configuration.
+**UPnP Port Forwarding**: Enabled by default (`port_forwarding: true`). VpnCloud uses the IGD protocol (IPv4) to request a UDP mapping, trying the listen port, any port, nearby ports, and random ports. Mappings use an 1800-second lease that is renewed 60 seconds before expiry (permanent only if the router supports nothing else) and are removed on shutdown.
 
-**WebSocket Proxy Fallback**: For restrictive networks where UDP is completely blocked, VpnCloud can use a WebSocket proxy server to tunnel UDP over TCP. The proxy forwards UDP packets between peers that cannot communicate directly.
+**WebSocket Proxy**: For restrictive networks where UDP is blocked, a node can be configured to connect to a WebSocket proxy server, which sends and receives UDP on the node's behalf from the proxy's public address. The proxy only forwards already-encrypted datagrams. It is not an automatic fallback and does not relay between two peers that cannot reach each other.
 
 ## Double NAT Handling
 
 VpnCloud does **not explicitly handle double NAT** (NAT behind NAT scenarios). It relies on:
 - Cross-connection attempts through extensive peer address sharing
-- WebSocket proxy as a fallback when direct connections fail
+- Manually configured WebSocket proxy for nodes whose UDP is blocked (not an automatic fallback)
 - No intelligent symmetric NAT detection or specialized hole-punching techniques
 
 ## NAT Traversal Checklist
 
 ### Discovery
-- [ ] **STUN support** - No STUN protocol implementation
+- [x] **STUN support** - Partial: no STUN protocol; the public endpoint is learned by reflection from peers (NODE_INFO) and from the UPnP gateway's external IP
 - [ ] **Multiple STUN servers** - Not applicable
 - [ ] **NAT type detection** - No explicit NAT type detection
 
@@ -297,10 +314,10 @@ VpnCloud does **not explicitly handle double NAT** (NAT behind NAT scenarios). I
 - [x] **Rendezvous coordination** - Peer exchange and beacon system for hole-punching coordination
 
 ### Fallback
-- [x] **Relay fallback** - WebSocket proxy as encrypted relay when direct UDP fails
+- [x] **Relay fallback** - Partial: no peer relay; a node can be manually configured to route all its traffic through a WebSocket proxy, which forwards encrypted datagrams over UDP
 - [ ] **Multiple relay regions** - No geographic redundancy for relays (user-deployed)
 - [ ] **Automatic relay selection** - Manual configuration only
-- [x] **TCP relay support** - WebSocket proxy uses TCP transport
+- [x] **TCP relay support** - Partial: the WebSocket proxy link runs over TCP (plain `ws://` only)
 
 # Local Routing
 
@@ -331,7 +348,7 @@ VpnCloud supports subnet-based routing through its "claims" system:
 
 **Subnet routes**: Peers announce which IP ranges/subnets they can reach via `--claim` option. Other peers route traffic for those subnets to the claiming peer. This enables:
 - Routing traffic for other networks through a peer
-- Full tunnel mode (claim 0.0.0.0/0 to route all traffic through a peer)
+- Full tunnel mode (a peer claims 0.0.0.0/0; the OS default route, an exclusion for the underlay peer addresses, and NAT on the exit peer must be configured manually, e.g. in ifup scripts)
 - Site-to-site VPN (peers claim their local network ranges)
 
 **VLAN Support**: TAP mode supports IEEE 802.1q VLAN tags, allowing segmentation of Layer 2 traffic.
@@ -345,14 +362,14 @@ VpnCloud supports subnet-based routing through its "claims" system:
 
 ### LAN Optimization
 - [ ] **Automatic LAN preference** - All peer connections treated equally
-- [ ] **Trusted path mode** - No option to skip encryption on LANs
+- [x] **Trusted path mode** - Partial: no LAN-specific option, but the global `plain` algorithm setting disables encryption for peers that both allow it
 - [ ] **LAN-only mode** - No restriction to local network only
 
 ### Routing Features
 - [x] **Subnet routes** - Full support via claims system (announce reachable subnets)
-- [x] **Full tunnel mode** - Route all traffic through peer via 0.0.0.0/0 claim
+- [x] **Full tunnel mode** - Partial: possible via a 0.0.0.0/0 claim, but VpnCloud does not manage OS routes or NAT
 - [ ] **Split tunneling** - No granular per-application routing control
-- [ ] **Route priorities** - No HA/failover route selection (first match wins)
+- [x] **Route priorities** - Partial: longest-prefix match; for equal prefixes the first stored claim wins. If the claiming peer times out or closes, its claims are dropped and another peer's identical claim takes over (passive failover after up to `peer_timeout`)
 
 # Central Point of Failure
 
@@ -362,9 +379,9 @@ VpnCloud is a **fully peer-to-peer mesh VPN with no mandatory central controller
 
 **No central server required**: All peers communicate directly with each other. Any peer can be used as an initial bootstrap peer to join the network.
 
-**Automatic peer discovery**: Once connected to any peer, nodes learn about other peers through periodic peer exchange messages (every 5 minutes). The network self-organizes without central coordination.
+**Automatic peer discovery**: Once connected to any peer, nodes learn about other peers through periodic peer exchange messages (default every 90 seconds). The network self-organizes without central coordination.
 
-**Reconnection handling**: If a peer connection is lost, VpnCloud automatically retries with exponential backoff for up to 120 seconds. Peers maintain routing tables and automatically update them as peers join/leave.
+**Reconnection handling**: Configured peers are retried every second at first; every 10 failed tries the interval doubles, up to a maximum of 3600 seconds, and retries never stop. Peers that time out are re-handshaked immediately. Each handshake attempt retransmits once per second for up to 120 seconds. Peers maintain routing tables and automatically update them as peers join/leave.
 
 ## Optional Centralized Components
 
@@ -372,7 +389,7 @@ These are optional and not required for operation:
 
 1. **Beacon storage**: Optional shared beacon files (filesystem, database, message broker) for peer discovery without fixed IP addresses. If beacon storage is unavailable, peers can still use static peer addresses or peer exchange.
 
-2. **WebSocket proxy**: Optional relay for restrictive networks. Only needed when direct UDP is blocked. Multiple proxies can be deployed for redundancy.
+2. **WebSocket proxy**: Optional proxy for nodes whose UDP is blocked. Each such node is configured with exactly one proxy URL; there is no automatic failover between proxies.
 
 ## What Happens If Components Fail
 
@@ -380,7 +397,7 @@ These are optional and not required for operation:
 
 **If beacon storage fails**: Peers with static addresses or already-connected peers continue working normally. Only affects new peer discovery via beacons.
 
-**If WebSocket proxy fails**: Only affects peers behind restrictive firewalls that require the proxy. Peers using direct UDP connections are unaffected.
+**If WebSocket proxy fails**: Only affects nodes configured to use the proxy. On such a node, a WebSocket read error is fatal and the VpnCloud process exits (it relies on systemd restart). Peers using direct UDP connections are unaffected.
 
 **Network partition**: If the network splits, each partition continues operating independently. When connectivity is restored, peers automatically reconnect and merge.
 
@@ -388,19 +405,19 @@ These are optional and not required for operation:
 
 ### Offline Operation
 - [x] **Existing connections survive** - Peer-to-peer tunnels continue working without any controller
-- [x] **Local state caching** - Routing tables persist in memory, peer information maintained locally
-- [ ] **Cached credentials** - No persistent credential storage (ephemeral session keys only)
+- [ ] **Local state caching** - Peer and claim tables live only in memory; nothing is persisted across restarts (the beacon store only publishes the node's own addresses)
+- [ ] **Cached credentials** - N/A: keys are static local configuration; nothing is fetched from a server
 - [x] **Graceful degradation** - Peers continue forwarding packets even if peer exchange fails
 
 ### Redundancy
-- [x] **Self-hosted controller** - No controller needed; fully peer-to-peer architecture
+- [ ] **Self-hosted controller** - N/A: no controller exists; fully peer-to-peer architecture
 - [ ] **Controller redundancy** - Not applicable (no controller)
-- [x] **Relay redundancy** - Multiple WebSocket proxies can be deployed (manual configuration)
+- [ ] **Relay redundancy** - Several WebSocket proxies can exist, but each node uses one proxy URL with no failover
 - [x] **No single root of trust** - Distributed trust via peer key exchange, no central CA
 
 ### Efficiency
-- [x] **Delta/incremental updates** - NODE_INFO messages contain only current peer/claim state
-- [ ] **Long polling / push updates** - Timer-based periodic exchange (5 minute intervals)
+- [ ] **Delta/incremental updates** - NODE_INFO messages are full snapshots of current peer/claim state
+- [ ] **Long polling / push updates** - Timer-based periodic exchange (default 90-second interval)
 - [x] **Configurable sync interval** - Peer timeout and keepalive intervals are configurable
 
 # Authentication
@@ -410,14 +427,14 @@ VpnCloud uses public key cryptography for node authentication with support for p
 ## Authentication Methods
 
 **Ed25519 Public Key Authentication**: Each node has an Ed25519 keypair that serves as its identity. During the initial handshake:
-1. Node sends salted hash of its public key (4 bytes for privacy)
+1. Node sends a 4-byte random salt plus the first 4 bytes of the salted SHA-256 hash of its public key (for privacy)
 2. Sends full ECDH ephemeral public key and supported algorithms
 3. Signs entire init message with Ed25519 private key
 4. Peer validates signature against trusted public keys
 
 **Trusted Keys List**: Each node maintains a list of trusted Ed25519 public keys. Only peers with trusted keys can join the network. If no trusted keys are configured, only the node's own public key is trusted (creating isolated peer-to-peer pairs).
 
-**Password-Derived Keys**: For simpler setup, VpnCloud can derive Ed25519 keypairs from passwords using PBKDF2-HMAC-SHA256 (4096 iterations). All nodes using the same password derive the same keypair and can authenticate each other. Note: This is less secure than using randomly-generated keys.
+**Password-Derived Keys**: For simpler setup, VpnCloud can derive Ed25519 keypairs from passwords using PBKDF2-HMAC-SHA256 (4096 iterations, static salt). All nodes using the same password derive the same keypair and can authenticate each other, which also means every member shares one identity. Note: This is less secure than using randomly-generated keys.
 
 ## Joining Process
 
@@ -431,8 +448,8 @@ VpnCloud uses public key cryptography for node authentication with support for p
 
 - **Privacy**: Node identities transmitted as salted hashes (not full public keys) during initial handshake
 - **No enrollment workflow**: No manual approval process; authentication is purely cryptographic
-- **Replay prevention**: Nonce pinning and signatures prevent replay of handshake messages
-- **Concurrent connection handling**: When two peers simultaneously initiate, higher node_id wins to prevent duplicate connections
+- **Replay prevention**: Handshake messages carry no timestamp or cookie; a replayed PING is answered with a PONG, but the session cannot be completed without the ephemeral private key. Data packets use nonce pinning (see Encryption)
+- **Concurrent connection handling**: When two peers simultaneously initiate, the side with the higher salted node ID hash wins to prevent duplicate connections
 
 ## Authentication Checklist
 
@@ -440,7 +457,7 @@ VpnCloud uses public key cryptography for node authentication with support for p
 - [x] **Pre-authentication keys** - Ed25519 public keys for headless/automated enrollment
 - [ ] **OAuth/OIDC** - No SSO integration
 - [ ] **Interactive login** - No browser-based authentication
-- [x] **CLI authentication** - Command-line key generation via `vpncloud genkey`
+- [ ] **CLI authentication** - N/A: there is no login step. Keys are generated with `vpncloud genkey` and set via CLI/config (an interactive `vpncloud config` wizard also exists)
 
 ### Authorization
 - [ ] **Admin approval workflow** - Automatic authorization based on trusted keys only
@@ -455,19 +472,19 @@ VpnCloud uses public key cryptography for node authentication with support for p
 
 # Platform Support
 
-VpnCloud primarily targets Linux with varying levels of support for other platforms.
+VpnCloud only targets Linux.
 
 ## Supported Platforms
 
 **Linux**: Full support with all features. Uses standard Linux TUN/TAP interfaces via /dev/net/tun. VpnCloud is packaged for Debian/Ubuntu (DEB) and RedHat/CentOS (RPM) distributions.
 
-**macOS**: Partial support mentioned in README ("help needed"). Rust code compiles, but TUN/TAP interface handling may require platform-specific adjustments. Community contributions welcome.
+**macOS**: Not supported. The event loop (`poll` module) is only compiled for `target_os = "linux"`/`"android"`, and device setup uses Linux `TUNSETIFF`/`/dev/net/tun` and `/proc`. The README asks for help porting to macOS. Leftover BSD/macOS `cfg` branches for the 4-byte TUN header do not make it build.
 
-**Windows**: Partial support mentioned in README ("help needed"). Requires Windows TUN/TAP driver (e.g., TAP-Windows). Community contributions for full Windows support welcome.
+**Windows**: Not supported. The code uses `std::os::unix`, epoll and Linux ioctls; there is no Wintun/TAP-Windows code. The README asks for help porting to Windows.
 
-**FreeBSD/OpenBSD**: Limited/unknown support. Code uses some Linux-specific features (epoll, /proc/sys) that would need BSD equivalents.
+**FreeBSD/OpenBSD**: Not supported (no kqueue backend; Linux-only device and `/proc` code).
 
-**Mobile (iOS/Android)**: No support. No mobile apps available.
+**Mobile (iOS/Android)**: No apps. The epoll code is also enabled for `target_os = "android"`, but there is no VpnService integration.
 
 ## Implementation Details
 
@@ -475,19 +492,19 @@ VpnCloud primarily targets Linux with varying levels of support for other platfo
 
 **TUN/TAP interface**: Uses standard operating system TUN (Layer 3) and TAP (Layer 2) virtual network interfaces. On Linux, this is the standard /dev/net/tun device.
 
-**Single binary**: Statically-linked binary with no external dependencies. Entire VPN runs as a single process.
+**Single binary**: One binary (also contains the `ws-proxy` server and config wizard), dynamically linked against glibc in the Debian package. Entire VPN runs as a single process.
 
 **Privilege requirements**: Requires root/administrator privileges to create TUN/TAP interfaces. After interface creation, can drop privileges to specified user/group for security.
 
-**Container support**: Works in Docker/containers but requires NET_ADMIN capability to create TUN/TAP devices. Can run as systemd service with restrictions.
+**Container support**: No official container image or Kubernetes integration (the only Dockerfile is an asciinema demo recorder in `contrib/`). It can run in a container with NET_ADMIN and `/dev/net/tun`, and ships hardened systemd units (`vpncloud@.service`, `vpncloud-wsproxy.service`).
 
 ## Platform Checklist
 
 ### Desktop/Server
 - [x] **Linux** - Full support with all features
-- [ ] **macOS** - Partial/experimental support (help needed)
-- [ ] **Windows** - Partial/experimental support (help needed)
-- [ ] **FreeBSD/OpenBSD** - No official BSD support
+- [ ] **macOS** - Not supported (Linux-only epoll and TUN code; porting help wanted)
+- [ ] **Windows** - Not supported (Unix/Linux-only code; porting help wanted)
+- [ ] **FreeBSD/OpenBSD** - Not supported
 
 ### Mobile
 - [ ] **iOS** - No mobile app
@@ -496,4 +513,4 @@ VpnCloud primarily targets Linux with varying levels of support for other platfo
 ### Implementation
 - [ ] **Kernel-mode datapath** - No kernel module (not WireGuard-based)
 - [x] **Userspace implementation** - Runs entirely in userspace via TUN/TAP devices
-- [x] **Container support** - Docker/Kubernetes with NET_ADMIN capability
+- [ ] **Container support** - No official image or k8s integration; runs in containers with NET_ADMIN and /dev/net/tun
