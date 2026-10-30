@@ -1,5 +1,7 @@
 # Mesh VPN Feature Matrix
 
+> **Note on the tincr column.** The tincr column describes commit `63f4e588` (2026-10-28). The benchmarks ran the older revision `b234dc79` (2026-04-20, `tincd 0.1.0 (Rust) protocol 17.7`); see the note at the top of `tincr_overview.md`. For `b234dc79` these tincr cells change: Language "Rust" (RustCrypto ChaCha20-Poly1305 with AVX2 fixed at build time, no OpenSSL); Data cipher "ChaCha20-Poly1305 (SPTPS), no cipher choice"; Handshake "SPTPS: ephemeral X25519 + Ed25519"; Data-plane threading "Single-threaded"; Post-quantum readiness ✗; Multi-threaded processing ✗; Multi-queue TUN / per-core sockets ✗; Android ◐ (fd device backend, no app). The scores become Encryption 8/11, Performance 12/16, Platform 2.5/8 and Total 59.5/97 (61%). The tincr caveat about sharding and the Key Takeaways statements about tincr's shards and ML-KEM-768 option do not apply to `b234dc79`.
+
 A comparison of mesh VPN solutions across protocol, encryption, performance, security, NAT traversal, routing, resilience, authentication, and platform support. Every cell was checked against the source code in `~/Projects/meshvpns`; the per-VPN overview documents contain the details behind each value.
 
 **Legend:** ✓ = supported (on by default or a normal config option) | ◐ = partial, opt-in experimental, or limited (see the overview) | ✗ = not supported | N/A = does not apply to this design | ? = unknown

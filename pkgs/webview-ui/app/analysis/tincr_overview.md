@@ -1,5 +1,15 @@
 # Overview
 
+> **Note on the benchmarked revision.** This overview describes tincr at commit `63f4e588` (2026-10-28), the checkout listed in `llm-instructions/2026-10-28-source-versions.md`. The benchmarks ran the older revision `b234dc79` (2026-04-20), whose daemon reports `tincd 0.1.0 (Rust) protocol 17.7`. At `b234dc79` the following statements in this document do not hold:
+>
+> - **Threading**: there is no `Shards` setting and no data-plane worker thread. The event-loop thread runs the whole data path, as in C tinc. The multi-queue TUN open, the classic-BPF reuseport program and the shareable sequence counters exist in the source, but the daemon does not use them. Everything about shard workers, per-shard steering and reordering between shards applies only to the newer commit.
+> - **Crypto**: there is no OpenSSL. SPTPS offers only Ed25519 with X25519 and ChaCha20-Poly1305. The AEAD comes from the RustCrypto crates `chacha20` 0.9 and `poly1305` 0.8 (through `chacha20poly1305` 0.10). The x86_64 Linux build targets x86-64-v3 and sets `chacha20_force_avx2`, so the AVX2 backend is fixed at build time, without runtime dispatch and without an AVX-512 path. `SPTPSCipher` (AES-256-GCM) and `SPTPSKex` (X25519 + ML-KEM-768) do not exist, so neither the cipher nor the key exchange can be chosen. The daemon calls no C crypto library; its only C code is the vendored minilzo.
+> - **Key rotation**: the `KeyExpire` timer (default 3600 s) re-keys every tunnel. There is no re-key after 2^31 records. After 2^32 - 2^16 records under one key, the session refuses further data records until the next re-key. The 2026-10-27 change that makes meta connections re-key before that limit is not included.
+> - **Platforms and packaging**: there is no `android/` app, only the `DeviceType = fd` backend it would use. There is no `tincd-compat` package, no `services.tincr` NixOS module and no nix-darwin module; the benchmark deployed tincr through nixpkgs' `services.tinc`. macOS has no `recvmsg_x`/`sendmsg_x` batching.
+> - **tinc-auth**: only the nginx `auth_request` backend exists, not the OIDC provider.
+>
+> `b234dc79` also has Mainline DHT discovery (`DhtDiscovery`, `tinc-dht-seed`), which this document does not describe.
+
 tincr is a Rust rewrite of tinc 1.1. It reads the same configuration files, speaks the same meta protocol (17.7) and the same SPTPS wire protocol, and provides the same `tinc` command line, so tincr nodes can join an existing tinc 1.1 mesh as drop-in replacements. Like tinc, it builds a decentralized mesh: every node keeps the full network graph, routes traffic to the owner of each subnet, and forwards packets for other nodes when no direct path exists. On top of that it adds a multi-threaded, batched Linux data path, built-in port mapping, in-mesh DNS, an optional AES-256-GCM cipher, an optional post-quantum hybrid key exchange, a Landlock sandbox, and an Android app.
 
 ## Key Architecture Components
