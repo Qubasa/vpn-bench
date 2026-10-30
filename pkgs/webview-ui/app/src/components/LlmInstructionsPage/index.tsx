@@ -1,27 +1,70 @@
 import { useSearchParams } from "@solidjs/router";
-import { createMemo, Show } from "solid-js";
+import { createMemo, For } from "solid-js";
 
-// Import instruction files as raw text
-import overviewInstructions from "@/analysis/llm-instructions/2026-01-13-init-overview-md.txt?raw";
-import analysisInstructions from "@/analysis/llm-instructions/2026-01-13-init-analysis-md.txt?raw";
+// The two 2026-01-13 file names are swapped relative to their content:
+// init-analysis-md.txt holds the overview prompt and vice versa.
+import overviewInstructions from "@/analysis/llm-instructions/2026-01-13-init-analysis-md.txt?raw";
+import analysisInstructions from "@/analysis/llm-instructions/2026-01-13-init-overview-md.txt?raw";
+import verifyInstructions from "@/analysis/llm-instructions/2026-10-28-verify-overviews-update-matrix.txt?raw";
+import addOverviewsInstructions from "@/analysis/llm-instructions/2026-10-28-add-netbird-tincr-overviews.txt?raw";
+import matrixContract from "@/analysis/llm-instructions/2026-10-28-matrix-row-contract.md?raw";
+import sourceVersions from "@/analysis/llm-instructions/2026-10-28-source-versions.md?raw";
 
-const instructions: Record<string, { title: string; content: string }> = {
-  overview: {
+interface Instruction {
+  key: string;
+  label: string;
+  title: string;
+  content: string;
+}
+
+const instructions: Instruction[] = [
+  {
+    key: "overview",
+    label: "Overview Instructions",
     title: "LLM Instructions for Overview Files",
     content: overviewInstructions,
   },
-  analysis: {
+  {
+    key: "analysis",
+    label: "Analysis Instructions",
     title: "LLM Instructions for Initial Analysis",
     content: analysisInstructions,
   },
-};
+  {
+    key: "verify",
+    label: "Verification (2026-10-28)",
+    title:
+      "LLM Instructions for Verifying Overviews and Rebuilding the Feature Matrix",
+    content: verifyInstructions,
+  },
+  {
+    key: "add-overviews",
+    label: "NetBird & tincr (2026-10-28)",
+    title: "LLM Instructions for the NetBird and tincr Overviews",
+    content: addOverviewsInstructions,
+  },
+  {
+    key: "contract",
+    label: "Matrix Row Definitions",
+    title: "Feature Matrix Row Definitions",
+    content: matrixContract,
+  },
+  {
+    key: "versions",
+    label: "Source Versions",
+    title: "Source Versions Used for the 2026-10-28 Verification",
+    content: sourceVersions,
+  },
+];
+
+const defaultInstruction = instructions[0] as Instruction;
 
 export const LlmInstructionsPage = () => {
   const [searchParams] = useSearchParams();
 
   const selectedInstruction = createMemo(() => {
-    const file = searchParams.file || "overview";
-    return instructions[file] || instructions.overview;
+    const key = searchParams.file || defaultInstruction.key;
+    return instructions.find((i) => i.key === key) ?? defaultInstruction;
   });
 
   return (
@@ -30,27 +73,21 @@ export const LlmInstructionsPage = () => {
         {selectedInstruction().title}
       </h1>
 
-      <div class="mb-4 flex gap-2">
-        <a
-          href="/llm-instructions?file=overview"
-          class={`rounded px-3 py-1 text-sm ${
-            (searchParams.file || "overview") === "overview"
-              ? "bg-amber-500 text-white"
-              : "bg-gray-200 text-gray-700 hover:bg-gray-300"
-          }`}
-        >
-          Overview Instructions
-        </a>
-        <a
-          href="/llm-instructions?file=analysis"
-          class={`rounded px-3 py-1 text-sm ${
-            searchParams.file === "analysis"
-              ? "bg-amber-500 text-white"
-              : "bg-gray-200 text-gray-700 hover:bg-gray-300"
-          }`}
-        >
-          Analysis Instructions
-        </a>
+      <div class="mb-4 flex flex-wrap gap-2">
+        <For each={instructions}>
+          {(instruction) => (
+            <a
+              href={`/llm-instructions?file=${instruction.key}`}
+              class={`rounded px-3 py-1 text-sm ${
+                selectedInstruction().key === instruction.key
+                  ? "bg-amber-500 text-white"
+                  : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+              }`}
+            >
+              {instruction.label}
+            </a>
+          )}
+        </For>
       </div>
 
       <div class="rounded-lg border border-gray-200 bg-gray-50 p-4">

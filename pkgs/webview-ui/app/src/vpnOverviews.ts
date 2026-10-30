@@ -3,8 +3,10 @@ import easyTierOverview from "@/analysis/EasyTier_overview.md?raw";
 import hyprspaceOverview from "@/analysis/hyprspace_overview.md?raw";
 import myceliumOverview from "@/analysis/mycelium_overview.md?raw";
 import nebulaOverview from "@/analysis/nebula_overview.md?raw";
+import netbirdOverview from "@/analysis/netbird_overview.md?raw";
 import tailscaleOverview from "@/analysis/tailscale_headscale_overview.md?raw";
 import tincOverview from "@/analysis/tinc_overview.md?raw";
+import tincrOverview from "@/analysis/tincr_overview.md?raw";
 import vpncloudOverview from "@/analysis/vpncloud_overview.md?raw";
 import yggdrasilOverview from "@/analysis/yggdrasil_overview.md?raw";
 import zerotierOverview from "@/analysis/zerotier_overview.md?raw";
@@ -15,9 +17,11 @@ export const vpnOverviews: Record<string, string> = {
   hyprspace: hyprspaceOverview,
   mycelium: myceliumOverview,
   nebula: nebulaOverview,
+  netbird: netbirdOverview,
   tailscale: tailscaleOverview,
   headscale: tailscaleOverview, // Same file for both
   tinc: tincOverview,
+  tincr: tincrOverview,
   vpncloud: vpncloudOverview,
   yggdrasil: yggdrasilOverview,
   zerotier: zerotierOverview,
