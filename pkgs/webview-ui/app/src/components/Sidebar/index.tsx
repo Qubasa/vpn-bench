@@ -1,5 +1,5 @@
-import { For, type JSX, createMemo } from "solid-js";
-import { RouteSectionProps } from "@solidjs/router";
+import { For, type JSX, createEffect, createMemo } from "solid-js";
+import { RouteSectionProps, useLocation } from "@solidjs/router";
 
 import { AppRoute, routes } from "@/src/index";
 import { SidebarHeader } from "./SidebarHeader";
@@ -13,13 +13,23 @@ import { useAlias } from "@/src/AliasContext";
 interface SidebarCategoryProps {
   title: string;
   count?: number;
-  defaultOpen?: boolean;
+  // Opens the category whenever it turns true. Never closes it, so a
+  // category the user expanded by hand stays expanded.
+  open?: boolean;
   children: JSX.Element;
 }
 
 export const SidebarCategory = (props: SidebarCategoryProps) => {
+  let details!: HTMLDetailsElement;
+
+  createEffect(() => {
+    if (props.open) {
+      details.open = true;
+    }
+  });
+
   return (
-    <details class="sidebar__category" open={props.defaultOpen}>
+    <details ref={details} class="sidebar__category">
       <summary class="sidebar__category__header">
         <Typography
           class="inline-flex w-full items-center gap-2 uppercase"
@@ -67,6 +77,12 @@ export const Sidebar = (props: RouteSectionProps) => {
     routes.filter((r) => r.category === "analysis" && !r.hidden),
   );
 
+  const location = useLocation();
+  const onVpnRoute = createMemo(() => {
+    const path = location.pathname.replace(/\/+$/, "");
+    return vpnRoutes().some((r) => r.path === path);
+  });
+
   return (
     <div class="sidebar opacity-95">
       <SidebarHeader clanName={"VPN Benchmarks"} />
@@ -78,11 +94,11 @@ export const Sidebar = (props: RouteSectionProps) => {
           onAliasChange={setCurrentAlias}
         />
 
-        {/* VPNs Section - Collapsed by default */}
+        {/* VPNs Section - Collapsed unless a VPN page is open */}
         <SidebarCategory
           title="VPNs"
           count={vpnRoutes().length}
-          defaultOpen={false}
+          open={onVpnRoute()}
         >
           <For each={vpnRoutes()}>
             {(route: AppRoute) => (
@@ -92,7 +108,7 @@ export const Sidebar = (props: RouteSectionProps) => {
         </SidebarCategory>
 
         {/* Analysis Section - Expanded by default */}
-        <SidebarCategory title="Analysis" defaultOpen={true}>
+        <SidebarCategory title="Analysis" open={true}>
           <For each={analysisRoutes()}>
             {(route: AppRoute) => (
               <SidebarListItem href={route.path} title={route.label} />
