@@ -1,4 +1,4 @@
-{ nebula-src }:
+{ packages }:
 { lib, ... }:
 
 {
@@ -74,8 +74,8 @@
                   lib
                   interface
                   config
-                  nebula-src
                   ;
+                nebula = packages.${pkgs.hostPlatform.system}.nebula;
               })
             ];
 
@@ -146,8 +146,8 @@
                   lib
                   interface
                   config
-                  nebula-src
                   ;
+                nebula = packages.${pkgs.hostPlatform.system}.nebula;
               })
             ];
 

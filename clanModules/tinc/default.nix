@@ -1,3 +1,4 @@
+{ packages }:
 { lib, ... }:
 
 {
@@ -50,6 +51,7 @@
                   roles
                   config
                   ;
+                tinc = packages.${pkgs.hostPlatform.system}.tinc;
               })
             ];
           };
@@ -84,6 +86,7 @@
                   roles
                   config
                   ;
+                tinc = packages.${pkgs.hostPlatform.system}.tinc;
               })
             ];
 

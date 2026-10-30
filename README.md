@@ -112,3 +112,19 @@ This will start the benchmark, with all tests and all vpns.
 ```bash
 vpb bench --test all --vpn all
 ```
+
+## VPN versions
+
+No VPN is taken from nixpkgs. Each one is built from its upstream repository,
+pinned as an input in `flake.nix`:
+
+- Hyprspace and tincr are built by their own flakes.
+- Every other VPN is a package in `pkgs/<name>/package.nix`, exposed as `.#<name>`
+  (for example `nix build .#tailscale`).
+
+WireGuard is the exception: its data plane is the Linux kernel module, which comes
+with the nixpkgs kernel. Only `wireguard-tools` is pinned here.
+
+To change a VPN version, change the input's ref in `flake.nix`, run
+`nix flake update <name>`, then update `version` and the vendor/cargo hash in
+`pkgs/<name>/package.nix`.

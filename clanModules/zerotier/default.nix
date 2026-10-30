@@ -1,3 +1,4 @@
+{ packages }:
 {
   clanLib,
   config,
@@ -21,6 +22,29 @@
       networking.priority = 900;
     };
   }) config.instances;
+
+  perMachine.nixosModule =
+    {
+      config,
+      lib,
+      pkgs,
+      ...
+    }:
+    let
+      zerotierone = packages.${pkgs.hostPlatform.system}.zerotierone;
+    in
+    {
+      # Relicensed like clan-core's pkgs/zerotierone so the controller build evaluates without allowUnfree
+      services.zerotierone.package =
+        if config.clan.core.networking.zerotier.controller.enable then
+          (zerotierone.override { enableUnfree = true; }).overrideAttrs (old: {
+            meta = old.meta // {
+              license = lib.licenses.apsl20;
+            };
+          })
+        else
+          zerotierone;
+    };
 
   roles.peer = {
     description = "A peer that connects to your private Zerotier network.";
@@ -156,6 +180,7 @@
           }:
           let
             uniqueStrings = list: builtins.attrNames (builtins.groupBy lib.id list);
+            zerotierone = packages.${pkgs.hostPlatform.system}.zerotierone;
           in
           {
             imports = [
@@ -196,7 +221,7 @@
                 {
                   wantedBy = [ "multi-user.target" ];
                   after = [ "zerotierone.service" ];
-                  path = [ config.clan.core.clanPkgs.zerotierone ];
+                  path = [ zerotierone ];
                   serviceConfig.ExecStart = pkgs.writeShellScript "zerotier-inventory-autoaccept" ''
                     ${lib.concatMapStringsSep "\n" (host: ''
                       ${config.clan.core.clanPkgs.zerotier-members}/bin/zerotier-members allow --member-ip ${host}

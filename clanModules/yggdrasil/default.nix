@@ -1,3 +1,4 @@
+{ packages }:
 { lib, ... }:
 {
   _class = "clan.service";
@@ -87,6 +88,7 @@
           { pkgs, config, ... }:
 
           let
+            yggdrasil = packages.${pkgs.hostPlatform.system}.yggdrasil;
             machines = lib.attrNames (roles.peer.machines or { });
             machinePubPath =
               name: "${config.clan.core.settings.directory}/vars/per-machine/${name}/yggdrasil/public-key/value";
@@ -134,7 +136,7 @@
               runtimeInputs = [
                 pkgs.coreutils
                 pkgs.jq
-                pkgs.yggdrasil
+                yggdrasil
               ];
 
               script = ''
@@ -183,6 +185,7 @@
 
             services.yggdrasil = {
               enable = true;
+              package = yggdrasil;
               openMulticastPort = settings.enableMulticast;
               configFile = config.clan.core.vars.generators.yggdrasil-config.files.config.path;
             };

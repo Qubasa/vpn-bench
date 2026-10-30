@@ -1,3 +1,4 @@
+{ packages }:
 {
   clanLib,
   lib,
@@ -100,6 +101,9 @@
             lib,
             ...
           }:
+          let
+            mycelium = packages.${pkgs.hostPlatform.system}.mycelium;
+          in
           {
             imports = [
               ./service.nix
@@ -107,6 +111,7 @@
 
             services.custom-mycelium = {
               enable = true;
+              package = mycelium;
               addHostedPublicNodes = lib.mkDefault settings.addHostedPublicNodes;
               openFirewall = lib.mkDefault settings.openFirewall;
               keyFile = config.clan.core.vars.generators.mycelium.files.key.path;
@@ -118,7 +123,7 @@
               files.ip.secret = false;
               files.pubkey.secret = false;
               runtimeInputs = [
-                pkgs.mycelium
+                mycelium
                 pkgs.coreutils
                 pkgs.jq
               ];

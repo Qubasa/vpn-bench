@@ -6,18 +6,15 @@
   ipgenv6,
   interface,
   config,
-  nebula-src,
+  nebula,
 }:
 
-let
-  nebulaPkg = pkgs.callPackage ./package.nix { inherit nebula-src; };
-in
 {
   systemd.services."nebula@${interface}".serviceConfig.Slice = "benchmark.slice";
 
   services.nebula.networks."${interface}" = {
     enable = true;
-    package = nebulaPkg;
+    package = nebula;
     key = config.clan.core.vars.generators."nebula-${instanceName}".files.node-key.path;
     cert = config.clan.core.vars.generators."nebula-${instanceName}".files.node-crt.path;
     ca = config.clan.core.vars.generators."nebula-${instanceName}-ca".files.ca-crt.path;
@@ -49,7 +46,7 @@ in
     };
     share = true;
     runtimeInputs = [
-      nebulaPkg
+      nebula
     ];
     script = ''
       nebula-cert ca -name "${instanceName}" \
@@ -93,7 +90,7 @@ in
       restartUnits = [ "nebula@${interface}.service" ];
     };
     runtimeInputs = [
-      nebulaPkg
+      nebula
       pkgs.coreutils
       pkgs.gnused
       pkgs.gnugrep

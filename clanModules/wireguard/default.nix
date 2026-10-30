@@ -1,9 +1,13 @@
+{ packages }:
 {
   lib,
   ...
 }:
 let
   shared = import ./shared.nix { inherit lib; };
+  wireguardToolsOverlay = final: _prev: {
+    wireguard-tools = packages.${final.stdenv.hostPlatform.system}.wireguard-tools;
+  };
 in
 {
   _class = "clan.service";
@@ -31,6 +35,8 @@ in
               wgName = if settings.name != null then settings.name else config.networking.hostName;
             in
             {
+              nixpkgs.overlays = [ wireguardToolsOverlay ];
+
               systemd.services."wireguard-${instanceName}".serviceConfig.Slice = "benchmark.slice";
 
               networking.firewall.allowedUDPPorts = [ settings.listenPort ];
@@ -111,6 +117,8 @@ in
               wgName = if settings.name != null then settings.name else config.networking.hostName;
             in
             {
+              nixpkgs.overlays = [ wireguardToolsOverlay ];
+
               systemd.services."wireguard-${instanceName}".serviceConfig.Slice = "benchmark.slice";
 
               networking.firewall.allowedUDPPorts = [ settings.listenPort ];

@@ -1,3 +1,4 @@
+{ packages }:
 {
   clanLib,
   config,
@@ -106,6 +107,7 @@
                   config
                   ipgenv6
                   ;
+                inherit (packages.${pkgs.hostPlatform.system}) headscale tailscale;
                 isController = true;
               })
             ];
@@ -212,6 +214,7 @@
                     config
                     ipgenv6
                     ;
+                  inherit (packages.${pkgs.hostPlatform.system}) headscale tailscale;
                   isController = false;
                   isPeer = true;
                 })

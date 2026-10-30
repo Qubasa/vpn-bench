@@ -1,4 +1,5 @@
 {
+  inputs,
   ...
 }:
 {
@@ -9,6 +10,8 @@
     }:
 
     {
-      packages.vpncloud = pkgs.callPackage ./default.nix { };
+      packages.vpncloud = pkgs.callPackage ./package.nix {
+        vpncloud-src = inputs.vpncloud;
+      };
     };
 }

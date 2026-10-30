@@ -1,6 +1,5 @@
 {
   config,
-  pkgs,
   lib,
   utils,
   ...
@@ -39,7 +38,10 @@ in
       default = false;
       description = "Open the firewall for mycelium";
     };
-    package = lib.mkPackageOption pkgs "mycelium" { };
+    package = lib.mkOption {
+      type = lib.types.package;
+      description = "The mycelium package to run.";
+    };
     addHostedPublicNodes = lib.mkOption {
       type = lib.types.bool;
       default = true;

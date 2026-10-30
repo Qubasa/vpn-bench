@@ -4,6 +4,7 @@
   instanceName,
   roles,
   config,
+  tinc,
   ...
 }:
 let
@@ -37,8 +38,10 @@ in
 {
   systemd.services."tinc.${interface}".serviceConfig.Slice = "benchmark.slice";
 
-  environment.systemPackages = with pkgs; [ tinc_pre ];
+  environment.systemPackages = [ tinc ];
   services.tinc.networks."${interface}" = {
+    package = tinc;
+
     ed25519PrivateKeyFile =
       config.clan.core.vars.generators."tinc-${interface}".files."ed25519_key.priv".path;
 
@@ -132,7 +135,7 @@ in
       pkgs.gnused
       pkgs.gnugrep
       ipgenv6
-      pkgs.tinc_pre
+      tinc
     ];
     dependencies = [
       "tinc-${interface}-ula"

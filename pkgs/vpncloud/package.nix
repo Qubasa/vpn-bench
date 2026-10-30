@@ -1,18 +1,14 @@
 {
   lib,
-  fetchFromGitHub,
   rustPlatform,
+
+  vpncloud-src,
 }:
 
-rustPlatform.buildRustPackage rec {
+rustPlatform.buildRustPackage {
   name = "vpncloud";
 
-  src = fetchFromGitHub {
-    owner = "dswd";
-    repo = name;
-    rev = "bef99162fe0d66e2c9fbf6421a69ca8ec2ac8f55";
-    hash = "sha256-nGI5jPAQYPv9YEsl1qCUKJ28IKHf8BCeOVgct+aYfw4=";
-  };
+  src = vpncloud-src;
 
   useFetchCargoVendor = true;
   cargoHash = "sha256-iOOPQziPkxFPiQXMSF3NhJ0mTj3pIV7JDUm+5PS+KLo=";

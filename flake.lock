@@ -89,11 +89,7 @@
       }
     },
     "easytier": {
-      "inputs": {
-        "flake-utils": "flake-utils",
-        "nixpkgs": "nixpkgs_2",
-        "rust-overlay": "rust-overlay"
-      },
+      "flake": false,
       "locked": {
         "lastModified": 1765289776,
         "narHash": "sha256-nv1gO37HsbfhzarqQ5kRh9jxcLGmSg4ke42oJX5ugqQ=",
@@ -105,6 +101,7 @@
       "original": {
         "owner": "EasyTier",
         "repo": "EasyTier",
+        "rev": "7aba65ea32d36588b64bbf19cb02142b1c72a859",
         "type": "github"
       }
     },
@@ -149,21 +146,20 @@
         "type": "github"
       }
     },
-    "flake-utils": {
-      "inputs": {
-        "systems": "systems_2"
-      },
+    "headscale": {
+      "flake": false,
       "locked": {
-        "lastModified": 1731533236,
-        "narHash": "sha256-l0KFg5HjrsfsO/JpG+r7fRrqm12kzFHyUHqHCVpMMbI=",
-        "owner": "numtide",
-        "repo": "flake-utils",
-        "rev": "11707dc2f618dd54ca8739b309ec4fc024de578b",
+        "lastModified": 1761560337,
+        "narHash": "sha256-bWY12OW2gc5m6xdEJYh6xBixUMKYRuSBH4lCkcToL04=",
+        "owner": "juanfont",
+        "repo": "headscale",
+        "rev": "450a7b15ec7b08926738e308bd11ec17753d06ab",
         "type": "github"
       },
       "original": {
-        "owner": "numtide",
-        "repo": "flake-utils",
+        "owner": "juanfont",
+        "ref": "v0.27.0",
+        "repo": "headscale",
         "type": "github"
       }
     },
@@ -187,6 +183,24 @@
       "original": {
         "owner": "hyprspace",
         "repo": "hyprspace",
+        "rev": "a5957e485ff0c2e9133e7da5408ec1273681688e",
+        "type": "github"
+      }
+    },
+    "mycelium": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1747244354,
+        "narHash": "sha256-DP6gCTuWraCwprY5C0JlTR1VrOwrOnUMSVxuPSVMjo0=",
+        "owner": "threefoldtech",
+        "repo": "mycelium",
+        "rev": "a9ba23d7bd020411be51cd2359775f6f11b159e4",
+        "type": "github"
+      },
+      "original": {
+        "owner": "threefoldtech",
+        "ref": "v0.6.1",
+        "repo": "mycelium",
         "type": "github"
       }
     },
@@ -203,6 +217,7 @@
       "original": {
         "owner": "slackhq",
         "repo": "nebula",
+        "rev": "770147264da18f94e582a0b99ad08ed19c0ae9fb",
         "type": "github"
       }
     },
@@ -268,22 +283,6 @@
         "url": "https://nixos.org/channels/nixpkgs-unstable/nixexprs.tar.xz"
       }
     },
-    "nixpkgs_2": {
-      "locked": {
-        "lastModified": 1760284886,
-        "narHash": "sha256-TK9Kr0BYBQ/1P5kAsnNQhmWWKgmZXwUQr4ZMjCzWf2c=",
-        "owner": "NixOS",
-        "repo": "nixpkgs",
-        "rev": "cf3f5c4def3c7b5f1fc012b3d839575dbe552d43",
-        "type": "github"
-      },
-      "original": {
-        "owner": "NixOS",
-        "ref": "nixos-unstable",
-        "repo": "nixpkgs",
-        "type": "github"
-      }
-    },
     "old-nixpkgs": {
       "locked": {
         "lastModified": 1685566663,
@@ -305,36 +304,23 @@
         "clan-core": "clan-core",
         "easytier": "easytier",
         "flake-parts": "flake-parts_2",
+        "headscale": "headscale",
         "hyprspace": "hyprspace",
+        "mycelium": "mycelium",
         "nebula": "nebula",
         "nixpkgs": [
           "clan-core",
           "nixpkgs"
         ],
         "old-nixpkgs": "old-nixpkgs",
+        "tailscale": "tailscale",
+        "tinc": "tinc",
         "tincr": "tincr",
-        "treefmt-nix": "treefmt-nix_3"
-      }
-    },
-    "rust-overlay": {
-      "inputs": {
-        "nixpkgs": [
-          "easytier",
-          "nixpkgs"
-        ]
-      },
-      "locked": {
-        "lastModified": 1760409263,
-        "narHash": "sha256-GvcdHmY3nZnU6GnUkEG1a7pDZPgFcuN+zGv3OgvfPH0=",
-        "owner": "oxalica",
-        "repo": "rust-overlay",
-        "rev": "5694018463c2134e2369996b38deed41b1b9afc1",
-        "type": "github"
-      },
-      "original": {
-        "owner": "oxalica",
-        "repo": "rust-overlay",
-        "type": "github"
+        "treefmt-nix": "treefmt-nix_3",
+        "vpncloud": "vpncloud",
+        "wireguard-tools": "wireguard-tools",
+        "yggdrasil": "yggdrasil",
+        "zerotierone": "zerotierone"
       }
     },
     "sops-nix": {
@@ -373,18 +359,37 @@
         "type": "github"
       }
     },
-    "systems_2": {
+    "tailscale": {
+      "flake": false,
       "locked": {
-        "lastModified": 1681028828,
-        "narHash": "sha256-Vy1rq5AaRuLzOxct8nz4T6wlgyUR7zLU309k9mBC768=",
-        "owner": "nix-systems",
-        "repo": "default",
-        "rev": "da67096a3b9bf56a91d16901293e51ba5b49a27e",
+        "lastModified": 1760463900,
+        "narHash": "sha256-fzJwRTB2U2GuLmv1XUSMLnhyLlp+4kGorLGAvRVjDqw=",
+        "owner": "tailscale",
+        "repo": "tailscale",
+        "rev": "85f4267ee3bcf6a4e6b6d4384b66ee4cb33f1434",
         "type": "github"
       },
       "original": {
-        "owner": "nix-systems",
-        "repo": "default",
+        "owner": "tailscale",
+        "ref": "v1.88.4",
+        "repo": "tailscale",
+        "type": "github"
+      }
+    },
+    "tinc": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1624814956,
+        "narHash": "sha256-1anjTUlVLx57FlUqGwBd590lfkZ2MmrM1qRcMl4P7Sg=",
+        "owner": "gsliepen",
+        "repo": "tinc",
+        "rev": "3217d5efb432f5a03beebd5d00b36392ec4b22ef",
+        "type": "github"
+      },
+      "original": {
+        "owner": "gsliepen",
+        "ref": "release-1.1pre18",
+        "repo": "tinc",
         "type": "github"
       }
     },
@@ -407,6 +412,7 @@
       "original": {
         "owner": "mic92",
         "repo": "tincr",
+        "rev": "b234dc798101a595adb121bab1c7cfe8cb2626a0",
         "type": "github"
       }
     },
@@ -469,6 +475,76 @@
       "original": {
         "owner": "numtide",
         "repo": "treefmt-nix",
+        "type": "github"
+      }
+    },
+    "vpncloud": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1711026955,
+        "narHash": "sha256-nGI5jPAQYPv9YEsl1qCUKJ28IKHf8BCeOVgct+aYfw4=",
+        "owner": "dswd",
+        "repo": "vpncloud",
+        "rev": "bef99162fe0d66e2c9fbf6421a69ca8ec2ac8f55",
+        "type": "github"
+      },
+      "original": {
+        "owner": "dswd",
+        "repo": "vpncloud",
+        "rev": "bef99162fe0d66e2c9fbf6421a69ca8ec2ac8f55",
+        "type": "github"
+      }
+    },
+    "wireguard-tools": {
+      "flake": false,
+      "locked": {
+        "exportIgnore": true,
+        "lastModified": 1747782338,
+        "narHash": "sha256-V9yKf4ZvxpOoVCFkFk18+130YBMhyeMt0641tn0O0e0=",
+        "ref": "refs/tags/v1.0.20250521",
+        "rev": "e2ecaaa739144997ccff89d6ad6ec81698ea6ced",
+        "revCount": 477,
+        "type": "git",
+        "url": "https://git.zx2c4.com/wireguard-tools"
+      },
+      "original": {
+        "exportIgnore": true,
+        "ref": "refs/tags/v1.0.20250521",
+        "type": "git",
+        "url": "https://git.zx2c4.com/wireguard-tools"
+      }
+    },
+    "yggdrasil": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1734561270,
+        "narHash": "sha256-NlNQnYmK//p35pj2MInD6RVsajM/bGDhOuzOZZYoWRw=",
+        "owner": "yggdrasil-network",
+        "repo": "yggdrasil-go",
+        "rev": "213f72b8403ff55a5e38a0fa7d1cd0a093ac4666",
+        "type": "github"
+      },
+      "original": {
+        "owner": "yggdrasil-network",
+        "ref": "v0.5.12",
+        "repo": "yggdrasil-go",
+        "type": "github"
+      }
+    },
+    "zerotierone": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1757613129,
+        "narHash": "sha256-bFfRz695sbdZJd5DIfF7j8lbEqWHSaIqHq/AfXZgZ4s=",
+        "owner": "zerotier",
+        "repo": "ZeroTierOne",
+        "rev": "7b7d39becc4a775d33e8c0f673856fb91dea7f31",
+        "type": "github"
+      },
+      "original": {
+        "owner": "zerotier",
+        "ref": "1.16.0",
+        "repo": "ZeroTierOne",
         "type": "github"
       }
     }

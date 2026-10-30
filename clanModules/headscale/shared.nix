@@ -10,6 +10,8 @@
   isPeer ? true, # By default, all nodes are peers
   config, # For vars generators
   ipgenv6, # For ULA generation
+  headscale,
+  tailscale,
 }:
 let
   # User name for the headscale user (all machines join under this user)
@@ -96,6 +98,7 @@ let
   controllerConfig = lib.optionalAttrs isController {
     services.headscale = {
       enable = true;
+      package = headscale;
       address = "0.0.0.0";
       port = settings.port;
 
@@ -188,7 +191,7 @@ let
       };
 
       path = [
-        pkgs.headscale
+        headscale
         pkgs.coreutils
         pkgs.gnugrep
         pkgs.jq
@@ -272,6 +275,7 @@ let
 
     services.tailscale = {
       enable = true;
+      package = tailscale;
       # Use the interface name for the tunnel
       interfaceName = interface;
     };
@@ -303,7 +307,7 @@ let
       };
 
       path = [
-        pkgs.tailscale
+        tailscale
         pkgs.curl
         pkgs.coreutils
         pkgs.jq
