@@ -7,7 +7,7 @@
 
 buildGoModule rec {
   pname = "nebula";
-  version = "1.9.7";
+  version = "1.9.4-unstable-2025-10-21";
 
   src = nebula-src;
 
