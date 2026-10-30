@@ -65,3 +65,9 @@ for Internal); the third adds only the webview copy of this data. Re-run parts:
 | Zerotier | `sha256-s9g9SsA43ljAd8xxHQGNif0+5ppCz/cp4EW8KAd7y6k=` | 4e96299bbe86dd363f59cc608762dafbb573563f | 1792505743 |
 
 Each profile's `tc_settings.json` records the impairment method (`receiver-ifb` for Medium).
+
+## VPN versions (`<VPN>/vpn_version.json`)
+
+Added on 2026-10-30 from the `vpnVersions` output of the vpn-benchmark-suite flake. Its VPN
+pins equal those locked by the revisions above: easytier, hyprspace, nebula and tincr by rev in
+`flake.lock`, the nixpkgs VPNs by source NAR hash against nixpkgs `e1ebeec`.
