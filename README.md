@@ -127,4 +127,11 @@ with the nixpkgs kernel. Only `wireguard-tools` is pinned here.
 
 To change a VPN version, change the input's ref in `flake.nix`, run
 `nix flake update <name>`, then update `version` and the vendor/cargo hash in
-`pkgs/<name>/package.nix`.
+`pkgs/<name>/package.nix`. Finally add the new rev's `git describe --tags` to
+`vpn-versions.nix`; evaluation fails until you do.
+
+`vpb bench` records the deployed version of each VPN in
+`<alias>/<VPN>/vpn_version.json`. The webview shows it next to the VPN name in the
+sidebar and links it to the source tree at that commit. A VPN built from several
+projects lists the one carrying the traffic first: Headscale shows its Tailscale
+client, with the Headscale server version in the hover text.

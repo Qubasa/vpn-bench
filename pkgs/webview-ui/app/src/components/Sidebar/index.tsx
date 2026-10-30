@@ -9,6 +9,7 @@ import { Typography } from "../Typography";
 import "./css/sidebar.css";
 import Icon from "../icon";
 import { useAlias } from "@/src/AliasContext";
+import { getVpnVersion } from "@/src/benchData";
 
 interface SidebarCategoryProps {
   title: string;
@@ -102,7 +103,11 @@ export const Sidebar = (props: RouteSectionProps) => {
         >
           <For each={vpnRoutes()}>
             {(route: AppRoute) => (
-              <SidebarListItem href={route.path} title={route.label} />
+              <SidebarListItem
+                href={route.path}
+                title={route.label}
+                version={getVpnVersion(currentAlias(), route.label)}
+              />
             )}
           </For>
         </SidebarCategory>

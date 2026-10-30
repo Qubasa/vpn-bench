@@ -1609,3 +1609,35 @@ export function getHardwareDataForAlias(
 }
 
 export const hardwareData = getHardwareDataForAlias();
+
+// --- VPN Version Loading ---
+
+export interface VpnComponent {
+  input: string;
+  rev: string;
+  url: string;
+  version: string;
+}
+
+// Components of a VPN, the one carrying the traffic first
+export type VpnVersion = VpnComponent[];
+
+// Path format: @/bench/<ALIAS>/<VPN>/vpn_version.json
+const vpnVersionFiles = import.meta.glob("@/bench/*/*/vpn_version.json", {
+  eager: true,
+  import: "default",
+});
+
+const allVpnVersions: Record<string, Record<string, VpnVersion>> = {};
+for (const [path, version] of Object.entries(vpnVersionFiles)) {
+  const [alias, vpnName] = path.split("/").slice(-3, -1);
+  allVpnVersions[alias] ??= {};
+  allVpnVersions[alias][vpnName] = version as VpnVersion;
+}
+
+export function getVpnVersion(
+  alias: string,
+  vpnName: string,
+): VpnVersion | undefined {
+  return allVpnVersions[alias]?.[vpnName];
+}

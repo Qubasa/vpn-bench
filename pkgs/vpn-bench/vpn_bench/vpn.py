@@ -424,6 +424,29 @@ def save_machine_layout(
         json.dump(layout, f, indent=4)
 
 
+def save_vpn_version(config: Config, vpn: VPN) -> None:
+    """Save the upstream version of the VPN that the clan deploys.
+
+    The version comes from the `vpnVersions` output of the cvpn-bench input
+    locked in the clan, so it matches what gets deployed, not this checkout.
+    """
+    result = run(
+        [
+            "nix",
+            "eval",
+            "--json",
+            "--inputs-from",
+            str(config.clan_dir),
+            f"cvpn-bench#vpnVersions.{vpn.name}",
+        ],
+        RunOpts(log=Log.STDERR),
+    )
+    result_dir = config.bench_dir / vpn.name
+    result_dir.mkdir(parents=True, exist_ok=True)
+    with (result_dir / "vpn_version.json").open("w") as f:
+        json.dump(json.loads(result.stdout), f, indent=4)
+
+
 def deploy_machines(
     machines: list[Machine],
     build_host: Remote | None,
@@ -527,6 +550,9 @@ def install_vpn(
                 str(config.clan_dir),
             ]
         )
+
+    if vpn != VPN.Internal:
+        save_vpn_version(config, vpn)
 
     with timed_op("create_base_inventory"):
         create_base_inventory(config, tr_machines)

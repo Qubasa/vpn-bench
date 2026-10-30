@@ -92,6 +92,8 @@
         ./pkgs/mycelium/flake-module.nix
       ];
 
+      flake.vpnVersions = import ./vpn-versions.nix { lock = lib.importJSON ./flake.lock; };
+
       clan = {
         # specialArgs = {
         #   inherit inputs;
