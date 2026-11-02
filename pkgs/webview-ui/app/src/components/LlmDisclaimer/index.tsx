@@ -106,7 +106,7 @@ export const FeatureMatrixDisclaimer = () => (
         >
           2026-10-28-add-netbird-tincr-overviews.txt
         </a>{" "}
-        (NetBird and tincr columns)
+        (tincr column; the NetBird column was removed later)
       </li>
       <li>
         <a
@@ -166,7 +166,7 @@ export const OverviewDisclaimer = () => (
         >
           2026-10-28-add-netbird-tincr-overviews.txt
         </a>{" "}
-        (NetBird and tincr)
+        (tincr)
       </li>
     </ul>
     <p>
