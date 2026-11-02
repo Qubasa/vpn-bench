@@ -1,20 +1,21 @@
 { lock }:
 let
   # `git describe --tags` of every pinned commit, as "<tag>+<commits since tag>".
-  # A commit with no reachable tag is named by its short rev.
+  # Tags that are not releases are ignored (EasyTier's moving `nightly`, tincr's `assets`).
+  # A commit with no reachable release tag is named by its short rev.
   describe = {
-    "7aba65ea32d36588b64bbf19cb02142b1c72a859" = "v2.4.5+57";
-    "450a7b15ec7b08926738e308bd11ec17753d06ab" = "v0.27.0";
-    "a5957e485ff0c2e9133e7da5408ec1273681688e" = "v0.10.2+7";
-    "a9ba23d7bd020411be51cd2359775f6f11b159e4" = "v0.6.1";
-    "770147264da18f94e582a0b99ad08ed19c0ae9fb" = "v1.9.4+93";
+    "24e0303fc55e4e645a11818954dd5b712fb94510" = "v2.7.0+75";
+    "c9cf210b8bc84d13177e18b91f555788a44b47b6" = "v0.29.7";
+    "a0d0788b5934999a929cdfbaa769036f035bf118" = "v0.15.0+2";
+    "af95abd80e56b71a08047bf17a870c8adaeafb20" = "v0.7.10";
+    "fb4ef139cbb4af67d142c72083fb735f56460e50" = "v1.12.0";
     "3217d5efb432f5a03beebd5d00b36392ec4b22ef" = "release-1.1pre18";
-    "b234dc798101a595adb121bab1c7cfe8cb2626a0" = "b234dc7";
+    "09804a637976137793e8638670422ce8aebcec19" = "09804a6";
     "bef99162fe0d66e2c9fbf6421a69ca8ec2ac8f55" = "v2.3.0+11";
-    "e2ecaaa739144997ccff89d6ad6ec81698ea6ced" = "v1.0.20250521";
-    "213f72b8403ff55a5e38a0fa7d1cd0a093ac4666" = "v0.5.12";
-    "85f4267ee3bcf6a4e6b6d4384b66ee4cb33f1434" = "v1.88.4";
-    "7b7d39becc4a775d33e8c0f673856fb91dea7f31" = "1.16.0";
+    "49ce333da02056ae7b22ee2aeb6afe8aaed79b19" = "v1.0.20260223";
+    "2c7f050fc5398ecd8ac5f77e9bb5bd91aa2e9e35" = "v0.5.15";
+    "27047635f237d1f3e0b08c0f487674757f30d2f7" = "v1.104.4";
+    "fc5c3ec22090b5b2a0f274e863651fe9ca489bf4" = "1.16.2";
   };
 
   sourceUrl =

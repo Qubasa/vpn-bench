@@ -11,18 +11,23 @@
 }:
 buildGoModule rec {
   pname = "headscale";
-  version = "0.27.0";
+  version = "0.29.7";
 
   src = headscale-src;
 
-  vendorHash = "sha256-GUIzlPRsyEq1uSTzRNds9p1uVu4pTeH5PAxrJ5Njhis=";
+  # headscale reads its version from Go build info, which is empty for this build
+  postPatch = ''
+    substituteInPlace hscontrol/types/version.go \
+      --replace-fail 'Version:   "dev"' 'Version: "v${version}"'
+  '';
+
+  vendorHash = "sha256-ADl65VpgS3uKYX0dYkRPPKcOelD9sJdwlq+CA0eA7Nk=";
 
   subPackages = [ "cmd/headscale" ];
 
   ldflags = [
     "-s"
     "-w"
-    "-X github.com/juanfont/headscale/cmd/headscale/cli.Version=v${version}"
   ];
 
   nativeBuildInputs = [ installShellFiles ];

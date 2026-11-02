@@ -9,13 +9,13 @@
 
 rustPlatform.buildRustPackage rec {
   pname = "mycelium";
-  version = "0.6.1";
+  version = "0.7.10";
 
   sourceRoot = "source/myceliumd";
 
   src = mycelium-src;
 
-  cargoHash = "sha256-5TyJNYBTULSu886D+vy8YRh50oFBubNZ9KkMu1/PvgU=";
+  cargoHash = "sha256-heHR/iR5OUctvXh6HUpfrJtoKeziY6bqT0vkXPOEjIU=";
 
   nativeBuildInputs = [ versionCheckHook ];
 

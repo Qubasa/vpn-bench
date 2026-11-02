@@ -7,11 +7,11 @@
 
 buildGoModule rec {
   pname = "yggdrasil";
-  version = "0.5.12";
+  version = "0.5.15";
 
   src = yggdrasil-src;
 
-  vendorHash = "sha256-xZpUWIR3xTjhhNSwPoHx7GLUgcZJrWfF0FMExlluBmg=";
+  vendorHash = "sha256-pZjyeDNZFpXhFUs50JzBmo46jQv66YghT6OzuOh6eDg=";
 
   subPackages = [
     "cmd/genkeys"

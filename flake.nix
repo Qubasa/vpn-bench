@@ -5,21 +5,26 @@
   #inputs.clan-core.url = "https://git.clan.lol/Qubasa/clan-core/archive/api_fixes.tar.gz";
   inputs.old-nixpkgs.url = "github:NixOS/nixpkgs/23.05";
   inputs.nixpkgs.follows = "clan-core/nixpkgs";
+  # Go and Rust toolchains for VPNs that need newer ones than clan-core's nixpkgs ships.
+  # Only the compiler comes from here; the machines (kernel included) stay on `nixpkgs`.
+  inputs.toolchain-nixpkgs.url = "github:NixOS/nixpkgs/nixos-26.05";
   inputs.flake-parts.url = "github:hercules-ci/flake-parts";
   inputs.flake-parts.inputs.nixpkgs-lib.follows = "nixpkgs";
   inputs.treefmt-nix.url = "github:numtide/treefmt-nix";
   inputs.treefmt-nix.inputs.nixpkgs.follows = "nixpkgs";
-  inputs.hyprspace.url = "github:hyprspace/hyprspace/a5957e485ff0c2e9133e7da5408ec1273681688e";
+  inputs.hyprspace.url = "github:hyprspace/hyprspace/a0d0788b5934999a929cdfbaa769036f035bf118";
   inputs.hyprspace.inputs.flake-parts.follows = "flake-parts";
-  inputs.hyprspace.inputs.nixpkgs.follows = "nixpkgs";
-  inputs.tincr.url = "github:mic92/tincr/b234dc798101a595adb121bab1c7cfe8cb2626a0";
-  inputs.tincr.inputs.nixpkgs.follows = "nixpkgs";
+  # Built entirely by its own flake, so it needs a nixpkgs with Go >= 1.26.
+  inputs.hyprspace.inputs.nixpkgs.follows = "toolchain-nixpkgs";
+  inputs.tincr.url = "github:mic92/tincr/09804a637976137793e8638670422ce8aebcec19";
+  # Its crane input requires nixpkgs >= 26.05.
+  inputs.tincr.inputs.nixpkgs.follows = "toolchain-nixpkgs";
   inputs.easytier = {
-    url = "github:EasyTier/EasyTier/7aba65ea32d36588b64bbf19cb02142b1c72a859";
+    url = "github:EasyTier/EasyTier/24e0303fc55e4e645a11818954dd5b712fb94510";
     flake = false;
   };
   inputs.nebula = {
-    url = "github:slackhq/nebula/770147264da18f94e582a0b99ad08ed19c0ae9fb";
+    url = "github:slackhq/nebula/fb4ef139cbb4af67d142c72083fb735f56460e50";
     flake = false;
   };
   inputs.vpncloud = {
@@ -27,15 +32,16 @@
     flake = false;
   };
   inputs.zerotierone = {
-    url = "github:zerotier/ZeroTierOne/1.16.0";
+    # refs/tags/: upstream also has a branch named 1.16.2, which a bare ref resolves to.
+    url = "github:zerotier/ZeroTierOne/refs/tags/1.16.2";
     flake = false;
   };
   inputs.headscale = {
-    url = "github:juanfont/headscale/v0.27.0";
+    url = "github:juanfont/headscale/v0.29.7";
     flake = false;
   };
   inputs.tailscale = {
-    url = "github:tailscale/tailscale/v1.88.4";
+    url = "github:tailscale/tailscale/v1.104.4";
     flake = false;
   };
   inputs.tinc = {
@@ -43,15 +49,15 @@
     flake = false;
   };
   inputs.wireguard-tools = {
-    url = "git+https://git.zx2c4.com/wireguard-tools?ref=refs/tags/v1.0.20250521&exportIgnore=1";
+    url = "git+https://git.zx2c4.com/wireguard-tools?ref=refs/tags/v1.0.20260223&exportIgnore=1";
     flake = false;
   };
   inputs.yggdrasil = {
-    url = "github:yggdrasil-network/yggdrasil-go/v0.5.12";
+    url = "github:yggdrasil-network/yggdrasil-go/v0.5.15";
     flake = false;
   };
   inputs.mycelium = {
-    url = "github:threefoldtech/mycelium/v0.6.1";
+    url = "github:threefoldtech/mycelium/v0.7.10";
     flake = false;
   };
 

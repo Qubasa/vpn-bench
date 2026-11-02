@@ -14,7 +14,7 @@
 
 stdenv.mkDerivation {
   pname = "wireguard-tools";
-  version = "1.0.20250521";
+  version = "1.0.20260223";
 
   src = wireguard-tools-src;
 

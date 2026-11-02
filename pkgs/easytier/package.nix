@@ -3,6 +3,7 @@
   stdenv,
   rustPlatform,
   protobuf,
+  mold,
   nixosTests,
   nix-update-script,
   withQuic ? false, # with QUIC protocol support
@@ -12,16 +13,18 @@
 
 rustPlatform.buildRustPackage rec {
   pname = "easytier";
-  version = "2.4.5";
+  version = "2.7.0-unstable-2026-10-31";
 
   src = easytier-src;
   useFetchCargoVendor = true;
 
-  cargoHash = "sha256-u3QppbzL67vvvMKPDdfM/PTdBwuRboqVoFE7cnmZuMU=";
+  cargoHash = "sha256-TTIw6mPt2ah/5p/emzVfyKFP5nUysrciafRPGb09kms=";
 
   nativeBuildInputs = [
     protobuf
     rustPlatform.bindgenHook
+    # upstream's .cargo/config.toml links x86_64/aarch64 Linux with -fuse-ld=mold
+    mold
   ];
 
   buildNoDefaultFeatures = stdenv.hostPlatform.isMips;

@@ -20,7 +20,7 @@
 
 let
   pname = "zerotierone";
-  version = "1.16.0";
+  version = "1.16.2";
 
   src = zerotierone-src;
 
@@ -31,7 +31,7 @@ stdenv.mkDerivation {
   cargoDeps = rustPlatform.fetchCargoVendor {
     inherit src;
     sourceRoot = "source/rustybits";
-    hash = "sha256-u3gqETbn4I+mtUeSkSym4s+qhA3eDb4Qaq7bl58M+AY=";
+    hash = "sha256-cenDnt20Mmz77SRPKS72h83rK+Ybk4cdYLbbqDGkHlE=";
   };
 
   patches = [

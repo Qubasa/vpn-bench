@@ -7,11 +7,11 @@
 
 buildGoModule rec {
   pname = "nebula";
-  version = "1.9.4-unstable-2025-10-21";
+  version = "1.12.0";
 
   src = nebula-src;
 
-  vendorHash = "sha256-nFAWkxl2xdQrrOUadGgZ4B/l/zr8iokARGHd5E5B5jk=";
+  vendorHash = "sha256-tmNpGNjMY5PtJO/DU+eoZy2Miqu2VzBTiHKThVCDVZs=";
 
   subPackages = [
     "cmd/nebula"
