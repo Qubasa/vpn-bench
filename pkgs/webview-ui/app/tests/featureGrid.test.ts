@@ -1,6 +1,12 @@
 import featureMatrixMd from "@/analysis/feature_matrix.md?raw";
 import { describe, expect, it } from "vitest";
-import { parseFeatureMatrix, resolveGrid } from "@/src/components/FeatureGrid/matrix";
+import {
+  parseFeatureMatrix,
+  percent,
+  resolveGrid,
+  scoreMatrix,
+} from "@/src/components/FeatureGrid/matrix";
+import { splitDocument } from "@/src/components/FeatureMatrixPage/document";
 import { GRID } from "@/src/components/FeatureGrid/spec";
 
 const table = (header: string, ...rows: string[]): string =>
@@ -42,5 +48,37 @@ describe("feature grid", () => {
     expect(() =>
       resolveGrid(matrix, [{ title: "T", columns: [{ label: "Q", feature: "QUIC" }] }]),
     ).toThrow(/no row "QUIC"/);
+  });
+
+  it("scores per category, overall and on shared rows, leaving N/A and ? out", () => {
+    const markdown = [
+      "## Protocol",
+      table("A | B", "| UDP | ✓ | ◐ |", "| QUIC | N/A | ✓ |"),
+      "## Platform",
+      table("A | B", "| iOS | ✗ | ? |", "| Android | ✓ | ✓ |"),
+    ].join("\n");
+    const [a, b] = scoreMatrix(parseFeatureMatrix(markdown));
+    expect(a.categories).toEqual([
+      { points: 1, total: 1 },
+      { points: 1, total: 2 },
+    ]);
+    expect(a.overall).toEqual({ points: 2, total: 3 });
+    expect(b.overall).toEqual({ points: 2.5, total: 3 });
+    expect(a.shared).toEqual({ points: 2, total: 2 });
+    expect(b.shared).toEqual({ points: 1.5, total: 2 });
+  });
+
+  it("rounds percentages half up", () => {
+    expect(percent({ points: 57.5, total: 100 })).toBe(58);
+    expect(percent({ points: 46.5, total: 100 })).toBe(47);
+  });
+
+  it("shows every matrix row exactly once and one score heatmap", () => {
+    const matrix = parseFeatureMatrix(featureMatrixMd);
+    const layout = splitDocument(featureMatrixMd);
+    const blocks = [...layout.preamble, ...layout.sections.flatMap((section) => section.blocks)];
+    const shown = blocks.flatMap((block) => (block.kind === "features" ? block.features : []));
+    expect(shown).toEqual([...matrix.rows.keys()]);
+    expect(blocks.filter((block) => block.kind === "scores")).toHaveLength(1);
   });
 });
