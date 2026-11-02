@@ -70,14 +70,13 @@ def save_bench_report(
     if isinstance(data, dict):
         success_data = SucessDataClass(status="success", data=data)
         result = dataclass_to_dict(success_data)
-    elif isinstance(data, ClanCmdTimeoutError):
-        # Handle timeout errors specifically to include timeout value
-        error_data = ErrorDataClass(status="error", error=data.cmd, error_type="CmdOut")
-        result = dataclass_to_dict(error_data)
-        result["timeout"] = data.timeout
     elif isinstance(data, ClanCmdError):
         error_data = ErrorDataClass(status="error", error=data.cmd, error_type="CmdOut")
         result = dataclass_to_dict(error_data)
+        # Duplicates stdout as bytes, which JSON can't hold
+        result["error"].pop("stdout_raw", None)
+        if isinstance(data, ClanCmdTimeoutError):
+            result["timeout"] = data.timeout
     elif isinstance(data, ClanError):
         error_data = ErrorDataClass(
             status="error",

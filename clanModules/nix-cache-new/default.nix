@@ -19,10 +19,9 @@
             ];
 
             clan.core.vars.generators."harmonia" = {
-              files.ca-priv = {
-                secret = true;
-                owner = "harmonia";
-              };
+              # Root-owned: harmonia runs as a DynamicUser and gets the key via
+              # LoadCredential, so there is no harmonia user to own it.
+              files.ca-priv.secret = true;
               files.ca-pub = {
                 secret = false;
               };
@@ -39,7 +38,7 @@
 
             services.harmonia = {
               enable = true;
-              signKeyPaths = [ config.clan.core.vars.generators."harmonia".files.ca-priv.path ];
+              cache.signKeyPaths = [ config.clan.core.vars.generators."harmonia".files.ca-priv.path ];
             };
 
             environment.systemPackages = with pkgs; [
