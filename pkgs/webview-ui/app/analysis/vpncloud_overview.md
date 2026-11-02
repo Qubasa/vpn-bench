@@ -69,7 +69,7 @@ That is at least three syscalls per packet on each side. There is no batching (`
 
 ### Transport
 - [x] **UDP transport** - Primary and only transport protocol for peer-to-peer communication
-- [x] **TCP fallback** - Partial: no native TCP transport. A node can be configured to send all its traffic over a WebSocket/TCP connection to a ws-proxy, but this is manual and not an automatic fallback
+- [ ] **TCP fallback** - No native TCP transport. A node can be configured by hand to send all its traffic over a WebSocket/TCP connection to a ws-proxy, but that is a manual setup, not a fallback
 - [ ] **QUIC support** - Not implemented
 - [x] **WebSocket support** - WebSocket proxy mode for restrictive firewalls (UDP datagrams tunneled over plain `ws://`, not `wss://`)
 

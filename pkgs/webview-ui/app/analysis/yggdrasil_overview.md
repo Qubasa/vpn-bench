@@ -189,7 +189,7 @@ Yggdrasil's changelog documents one security-relevant dependency fix:
 - [x] **Memory-safe language** - Written in Go (memory-safe)
 - [x] **Privilege separation** - The documented `-user` flag calls setgid/setuid after TUN/socket setup, and the shipped systemd units limit capabilities to CAP_NET_ADMIN and CAP_NET_BIND_SERVICE (`cmd/yggdrasil/main.go:57,294`, `cmd/yggdrasil/chuser_unix.go:55`, `contrib/systemd/yggdrasil.service:13`)
 - [x] **Sandboxing** - Partial: OpenBSD pledge(); AppArmor profile shipped in contrib/. No seccomp
-- [ ] **Audit logging** - No security event logging (only connect/disconnect info logs)
+- [x] **Audit logging** - Partial: rejected peerings (AllowedPublicKeys, pinned key, wrong password, bad handshake) are logged only with `Debugf`, and the default level is `info` (`src/core/link.go:385,580,659,676`, `cmd/yggdrasil/main.go:56`)
 
 # NAT Traversal
 
@@ -220,9 +220,9 @@ Yggdrasil does NOT implement traditional NAT traversal techniques like STUN/TURN
 - [ ] **Rendezvous coordination** - No hole-punching coordination
 
 ### Fallback
-- [ ] **Relay fallback** - No dedicated relay fallback; all non-adjacent traffic is always forwarded hop-by-hop by mesh peers
-- [ ] **Multiple relay regions** - Not applicable
-- [ ] **Automatic relay selection** - Not applicable (next hops are chosen by latency-weighted greedy routing)
+- [x] **Relay fallback** - No separate "direct, else relay" step: every packet to a non-neighbour is forwarded hop-by-hop by mesh peers, which act as relays
+- [x] **Multiple relays** - Any peer forwards traffic for others, so every neighbour is a possible relay
+- [x] **Latency-based relay selection** - The next hop is chosen by measured link latency per tree distance (ironwood `network/router.go:221,716`)
 - [x] **TCP relay support** - Any node forwards traffic for others over its TCP-based links; publicly reachable peers act as relays implicitly
 
 # Local Routing

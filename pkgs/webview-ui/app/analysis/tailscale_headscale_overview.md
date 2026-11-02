@@ -386,7 +386,7 @@ These advisories come from the projects' GitHub/CVE records, not from the source
 - [x] **Memory-safe language** - Go for both Tailscale client and Headscale
 - [x] **Privilege separation** - Partial: tailscaled runs as root/SYSTEM; only helper children (Tailscale SSH incubator, Taildrive server) drop to the target user. Userspace-networking mode can run unprivileged
 - [x] **Sandboxing** - Partial: no seccomp/landlock, and the shipped tailscaled unit has no hardening directives, but the Headscale systemd unit uses `SystemCallFilter=`, `ProtectSystem=strict`, `NoNewPrivileges` and a reduced capability set (`headscale/packaging/systemd/headscale.service:18-48`)
-- [ ] **Audit logging** - Headscale: none (only normal logs). Tailscale SaaS: client audit events and network flow logs
+- [x] **Audit logging** - tailscaled logs packet-filter (ACL) drops between tailnet addresses at the default level, rate-limited to 10 per 5 s (`tailscale/net/tstun/wrap.go:285`, `tailscale/wgengine/filter/filter.go:323-333`); Headscale logs rejected API keys at `info` (`headscale/hscontrol/app.go:369-371`) but not failed node registrations. Tailscale SaaS adds client audit events and flow logs
 
 # NAT Traversal
 

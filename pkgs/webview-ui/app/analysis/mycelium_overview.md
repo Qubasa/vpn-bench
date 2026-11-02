@@ -188,7 +188,7 @@ No severe publicly disclosed security vulnerabilities (CVEs) were found in docum
 - [x] **Memory-safe language** - Written in Rust
 - [ ] **Privilege separation** - Runs as root (or with CAP_NET_ADMIN) for its whole lifetime; no privilege drop after TUN creation
 - [x] **Sandboxing** - Partial: only the shipped systemd unit (ProtectSystem, ProtectHome, CapabilityBoundingSet=CAP_NET_ADMIN); no in-process sandbox
-- [ ] **Audit logging** - No security event logging; basic metrics only
+- [x] **Audit logging** - Partial: the default level is INFO, but decryption failures, ACL drops, filter-denied route updates and failed private-network TLS handshakes are logged only at debug; only failed ICMP body decryption warns (`myceliumd/src/main.rs:486-497`, `mycelium/src/data.rs:344,441`, `mycelium/src/message.rs:400-401`)
 
 # NAT Traversal
 

@@ -27,7 +27,7 @@
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | UDP transport | ✓ | ✓ | ✗ | ✗ | ✓ | ✓ | ✓ | ✓ | ✓ | ✗ | ✓ |
 | Datagram encapsulation (no head-of-line blocking) | ◐ | ✓ | ✗ | ◐ | ✓ | ✓ | ✓ | ✓ | ✓ | ✗ | ✓ |
-| TCP fallback | ✓ | ✓ | ✓ | ✓ | ✗ | ✓ | ✓ | ✓ | ◐ | ✓ | ✓ |
+| TCP fallback | ✓ | ✓ | ✓ | ✓ | ✗ | ✓ | ✓ | ✓ | ✗ | ✓ | ✓ |
 | QUIC support | ✓ | ✗ | ✓ | ✓ | ✗ | ◐ | ✗ | ✗ | ✗ | ✓ | ✗ |
 | WebSocket support | ✓ | ◐ | ✗ | ✗ | ✗ | ✓ | ✗ | ✗ | ✓ | ✓ | ✗ |
 
@@ -168,7 +168,7 @@
 | Memory-safe language | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✗ | ✓ | ✓ | ✓ | ✗ |
 | Privilege separation | ✗ | ◐ | ✗ | ✗ | ✗ | ✗ | ✓ | ✓ | ✓ | ✓ | ◐ |
 | Sandboxing | ✗ | ◐ | ✗ | ◐ | ✗ | ✗ | ✓ | ✓ | ◐ | ◐ | ✗ |
-| Audit logging | ◐ | ✗ | ✗ | ✗ | ✓ | ✓ | ✗ | ✗ | ✓ | ✗ | ◐ |
+| Audit logging | ✓ | ✓ | ◐ | ◐ | ✓ | ✓ | ✓ | ✓ | ✓ | ◐ | ◐ |
 
 ---
 
@@ -203,9 +203,9 @@
 
 | Feature | EasyTier | Tailscale / Headscale | Hyprspace | Mycelium | Nebula | NetBird | Tinc | tincr | VpnCloud | Yggdrasil | ZeroTier |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| Relay fallback | ✓ | ✓ | ✓ | ✓ | ◐ | ✓ | ✓ | ✓ | ◐ | ✗ | ✓ |
-| Multiple relays | ◐ | ✓ | ◐ | ✓ | ◐ | ◐ | N/A | N/A | ✗ | N/A | ✓ |
-| Latency-based relay selection | ✓ | ✓ | ✗ | ✓ | ◐ | ◐ | ◐ | ◐ | ✗ | N/A | ✓ |
+| Relay fallback | ✓ | ✓ | ✓ | ✓ | ◐ | ✓ | ✓ | ✓ | ◐ | ✓ | ✓ |
+| Multiple relays | ✓ | ✓ | ◐ | ✓ | ◐ | ◐ | ✓ | ✓ | ✗ | ✓ | ✓ |
+| Latency-based relay selection | ✓ | ✓ | ✗ | ✓ | ◐ | ◐ | ◐ | ◐ | ✗ | ✓ | ✓ |
 | TCP relay support | ✓ | ✓ | ✓ | ✓ | ✗ | ✓ | ✓ | ✓ | ◐ | ✓ | ✓ |
 
 ---
@@ -267,7 +267,7 @@
 
 | Feature | EasyTier | Tailscale / Headscale | Hyprspace | Mycelium | Nebula | NetBird | Tinc | tincr | VpnCloud | Yggdrasil | ZeroTier |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| Pre-authentication keys | ✓ | ✓ | ✗ | ◐ | ✗ | ✓ | ✓ | ✓ | ✓ | ✗ | ◐ |
+| Pre-authentication keys | ✓ | ✓ | ✗ | ◐ | ✗ | ✓ | ✓ | ✓ | ✓ | ✗ | ✗ |
 | Certificate-based enrollment | ✗ | ✗ | ✗ | ✗ | ✓ | ✗ | ✗ | ✗ | ✗ | ✗ | ✗ |
 | OAuth/OIDC | ✗ | ✓ | ✗ | ✗ | ✗ | ✓ | ✗ | ✗ | ✗ | ✗ | ◐ |
 | Interactive login | ✗ | ✓ | ✗ | ✗ | ✗ | ✓ | ✗ | ✗ | ✗ | ✗ | ◐ |

@@ -94,8 +94,8 @@ EasyTier's encryption layer is based on the network secret and provides multiple
 ## Encryption Checklist
 
 ### Key Exchange
-- [ ] **Modern key exchange** - EasyTier's own protocol has no X25519/ECDH and uses a static pre-shared key. X25519 appears only at the hop layer: optional wg:// transport (WireGuard via boringtun) and TLS 1.3 of wss/quic transports
-- [ ] **Perfect Forward Secrecy** - No ephemeral session keys for the EasyTier layer; only per-hop forward secrecy when the hop uses wg://, wss:// or quic://
+- [x] **Modern key exchange** - Partial: EasyTier's own protocol has no X25519/ECDH and uses a static pre-shared key. X25519 appears only at the hop layer: optional wg:// transport (WireGuard via boringtun) and TLS 1.3 of wss/quic transports
+- [x] **Perfect Forward Secrecy** - Partial: no ephemeral session keys for the EasyTier layer; only per-hop forward secrecy when the hop uses wg://, wss:// or quic://
 - [ ] **Post-quantum readiness** - No hybrid or PQ key exchange
 - [ ] **Key rotation** - No automatic periodic key refresh
 
@@ -106,7 +106,7 @@ EasyTier's encryption layer is based on the network secret and provides multiple
 
 ### Protocol Security
 - [ ] **Replay protection** - Random per-packet nonces, no counter or sliding window
-- [ ] **Noise Protocol or equivalent** - Custom handshake; only the optional wg:// hop transport runs WireGuard's Noise IKpsk2
+- [x] **Noise Protocol or equivalent** - Partial: custom handshake; only the optional wg:// hop transport runs WireGuard's Noise IKpsk2
 - [ ] **No cleartext metadata** - Network name, peer ID and secret digest in the handshake, cleartext peer IDs in every data header
 - [x] **End-to-end encryption through relays** - Partial: all members derive the same AES key from the network secret, so member nodes that forward multi-hop traffic can decrypt it; only foreign shared nodes cannot (`easytier/src/common/global_ctx.rs:330-357`, `easytier/src/peers/peer_manager.rs:659-699`)
 
@@ -229,7 +229,7 @@ No CVE or security advisory is referenced in the repository.
 - [x] **Memory-safe language** - Written in Rust, memory-safe by design
 - [ ] **Privilege separation** - Runs with full privileges for TUN interface access
 - [ ] **Sandboxing** - No process isolation visible
-- [ ] **Audit logging** - ACL hit/drop logging and peer add/remove events via tracing, but no dedicated security audit log
+- [x] **Audit logging** - The built-in event printer writes rejected handshakes (e.g. "network identity not match" for a wrong secret, private-mode rejections) and peer/connection changes to stdout by default; ACL drops only at debug (`easytier/src/instance_manager.rs:332-339,435-441`, `easytier/src/peers/peer_manager.rs:352-355`)
 
 # NAT Traversal
 
@@ -274,7 +274,7 @@ EasyTier has comprehensive NAT traversal support handling various NAT scenarios.
 
 ### Fallback
 - [x] **Relay fallback** - Relay through peers or shared nodes when direct fails; foreign shared nodes cannot read the payload, but member nodes hold the shared network key
-- [x] **Multiple relay regions** - Partial: any number of shared nodes and peers can relay at the same time, but there is no region concept
+- [x] **Multiple relays** - Any number of shared nodes and peers can relay at the same time; every connected node is a relay edge in the routing graph
 - [x] **Automatic relay selection** - Routing algorithm selects best relay path
 - [x] **TCP relay support** - Relay over TCP when UDP blocked
 
