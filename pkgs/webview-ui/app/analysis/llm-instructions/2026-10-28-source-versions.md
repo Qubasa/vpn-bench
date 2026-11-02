@@ -10,7 +10,6 @@ All overviews and `feature_matrix.md` were checked against these checkouts in `~
 | Hyprspace | `hyprspace_overview.md` | `3a710c4` | 2025-12-12 | v0.12.0 |
 | Mycelium | `mycelium_overview.md` | `e8653f6` | 2025-12-09 | v0.7.0 (+1) |
 | Nebula | `nebula_overview.md` | `3ec527e` | 2025-12-10 | v1.10.0 (+5) |
-| NetBird | `netbird_overview.md` | `34167c8a` | 2026-04-27 | v0.70.0 |
 | Tinc | `tinc_overview.md` | `940d15c4` | 2025-11-09 | 1.1pre18 (`meson.build`) |
 | tincr | `tincr_overview.md` | `63f4e588` | 2026-10-28 | tincd crate 0.1.0 (no release tag) |
 | VpnCloud | `vpncloud_overview.md` | `bef9916` | 2024-03-21 | 2.4.0 (`Cargo.toml`) |
