@@ -240,6 +240,7 @@ Nebula implements sophisticated NAT traversal through UDP hole punching coordina
 ## NAT Traversal Checklist
 
 ### Discovery
+- [ ] **No own public node needed** - The user must run a lighthouse on a routable address and list it in `static_host_map`; nothing is built in (`README.md:85-89`, `lighthouse.go:350,369-377`)
 - [x] **STUN support** - Lighthouse learns public addresses from UDP source IPs (STUN-like behavior)
 - [x] **Multiple STUN servers** - Can configure multiple lighthouses for redundancy
 - [ ] **NAT type detection** - No explicit NAT type detection, relies on hole punching attempts

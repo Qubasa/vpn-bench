@@ -260,6 +260,7 @@ tincr inherits tinc 1.1's peer-assisted NAT traversal and adds built-in port map
 ## NAT Traversal Checklist
 
 ### Discovery
+- [ ] **No own public node needed** - Outgoing meta connections need an `Address` from the peer's host file, and `tinc invite` refuses to run without one (`crates/tincd/src/outgoing.rs:661-695`, `crates/tinc-tools/src/cmd/invite.rs:500-503`)
 - [ ] **STUN support** - No STUN; peers' reflexive addresses are reported by intermediate nodes (REQ_KEY/ANS_KEY, UDP_INFO)
 - [ ] **Multiple STUN servers** - N/A (no STUN)
 - [ ] **NAT type detection** - No NAT type classification

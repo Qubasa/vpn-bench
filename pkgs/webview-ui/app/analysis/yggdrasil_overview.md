@@ -203,6 +203,7 @@ Yggdrasil does NOT implement traditional NAT traversal techniques like STUN/TURN
 ## NAT Traversal Checklist
 
 ### Discovery
+- [x] **No own public node needed** - Partial: community public peers (github.com/yggdrasil-network/public-peers) connect NATed nodes, but the generated config has an empty `Peers` list (`src/config/config.go:79`)
 - [ ] **STUN support** - No STUN implementation
 - [ ] **Multiple STUN servers** - Not applicable
 - [ ] **NAT type detection** - No NAT detection

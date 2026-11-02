@@ -242,6 +242,7 @@ Supported via relay fallback. When direct connection or hole punching fails, cir
 ## NAT Traversal Checklist
 
 ### Discovery
+- [x] **No own public node needed** - Hardcoded bootstrap nodes (privatevoid.net, `bootstrap.libp2p.io`), public IPFS DHT and delegated routing find peers; AutoRelay on public peers plus DCUtR hole punching connect NATed nodes (`p2p/node.go:140-202,261-262`)
 - [x] **STUN support** - No STUN; server reflection via libp2p identify observed addresses plus AutoNAT v1 dial-back
 - [x] **Multiple STUN servers** - Observations from any connected peer (4 needed to activate an address); no dedicated servers
 - [x] **NAT type detection** - Partial: libp2p's observed-address manager classifies TCP/UDP NAT as cone or symmetric, but Hyprspace does not use the result

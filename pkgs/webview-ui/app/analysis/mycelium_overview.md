@@ -212,6 +212,7 @@ The architecture relies on having some publicly accessible nodes (10 hosted publ
 ## NAT Traversal Checklist
 
 ### Discovery
+- [x] **No own public node needed** - Partial: ThreeFold's hosted public nodes connect NATed nodes, but `--peers` is empty by default and the README asks the user to add them by hand (`myceliumd/src/main.rs:283-285`, `README.md:95-122`)
 - [ ] **STUN support** - No STUN client implementation
 - [ ] **Multiple STUN servers** - Not applicable
 - [ ] **NAT type detection** - No NAT behavior detection

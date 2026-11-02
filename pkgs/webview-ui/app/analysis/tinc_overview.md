@@ -185,6 +185,7 @@ Tinc has **limited NAT traversal capabilities** compared to modern mesh VPNs. It
 ## NAT Traversal Checklist
 
 ### Discovery
+- [ ] **No own public node needed** - Meta connections need a peer with an `Address` or one learned through the mesh; hole punching is coordinated by a node both peers are connected to (`src/address_cache.c:124-158`, `src/protocol_key.c:463`)
 - [ ] **STUN support** - No STUN; peers' reflexive UDP addresses are reported by intermediate nodes (ANS_KEY, UDP_INFO), not a node's own endpoint
 - [ ] **Multiple STUN servers** - N/A (no STUN)
 - [ ] **NAT type detection** - No formal NAT type detection
