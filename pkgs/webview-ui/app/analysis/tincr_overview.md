@@ -239,7 +239,7 @@ tincr has no published CVEs or security advisories. There is no private security
 - [x] **Memory-safe language** - Rust; `unsafe` limited to FFI (OpenSSL AEAD, minilzo) and syscall/ioctl wrappers
 - [x] **Privilege separation** - Opt-in `--user` (all uids/gids set and verified, `no_new_privs` always set, failure is fatal) and `--chroot`; the NixOS module runs tincd unprivileged with only `CAP_NET_BIND_SERVICE` on a pre-created TUN
 - [x] **Sandboxing** - `-R/--chroot` is a documented option, plus an opt-in Landlock filesystem allowlist on Linux (`Sandbox = normal|high`, kernel ≥ 5.13; `high` disables hook scripts); no seccomp in the daemon (`crates/tincd/src/bin/tincd/args.rs:214-215,260`, `crates/tincd/src/bin/tincd/procsetup.rs:85-97`)
-- [ ] **Audit logging** - Authentication and connection events go to the normal log; no dedicated security audit log
+- [x] **Audit logging** - At the default Info level, rejected IDs (unknown identity, wrong peer name), SPTPS decrypt and signature failures, unauthorized ADD_SUBNET and dropped unauthenticated connections are logged (`crates/tincd/src/daemon/metaconn.rs:235,243`, `crates/tincd/src/conn.rs:549-553`, `crates/tincd/src/daemon/gossip/subnets.rs:68,77`)
 
 # NAT Traversal
 
@@ -277,7 +277,7 @@ tincr inherits tinc 1.1's peer-assisted NAT traversal and adds built-in port map
 
 ### Fallback
 - [x] **Relay fallback** - Automatic forwarding through intermediate mesh nodes until a direct path works, or permanently
-- [ ] **Multiple relay regions** - N/A (no relay infrastructure; any node can relay)
+- [x] **Multiple relays** - Any node on the mesh can relay, and the next hop is recomputed from the graph when a node goes away
 - [x] **Automatic relay selection** - Partial: next hop by fewest hops, then lowest edge weight; tincr measures edge weights continuously from meta-connection RTT
 - [x] **TCP relay support** - Packets can be carried over the TCP meta connections of intermediate nodes; payloads stay end-to-end encrypted
 

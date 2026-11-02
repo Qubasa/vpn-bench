@@ -227,7 +227,7 @@ ZeroTier has a relatively good security track record with a few documented issue
 - [ ] **Memory-safe language** - C++ (not memory-safe, though uses modern practices)
 - [x] **Privilege separation** - Partial: on Linux the service switches to the `zerotier-one` user (if it exists) and keeps only CAP_NET_ADMIN/CAP_NET_RAW. macOS uses a separate setuid tap helper (MacEthernetTapAgent); Windows runs as a service
 - [ ] **Sandboxing** - No seccomp/pledge/chroot
-- [x] **Audit logging** - Partial: remote trace events (packet/credential rejections, etc.) are sent to a controller-configured trace target; no dedicated local audit log
+- [x] **Audit logging** - Partial: release builds log no rejected packets or credentials locally (local trace needs a `ZT_DEBUG` build); rejections go only as remote-trace packets to a controller-set target, which is empty by default (`node/Trace.cpp:30-43`, `make-linux.mk:76-79`, `node/NetworkConfig.cpp:389-390`)
 
 # NAT Traversal
 
@@ -415,7 +415,7 @@ Client-side OIDC (the Rust `zeroidc` crate in rustybits, enabled via ZT_SSO_SUPP
 ## Authentication Checklist
 
 ### Enrollment Methods
-- [x] **Pre-authentication keys** - Partial: there are no join keys in the stock client, but admins can pre-authorize node IDs via the controller API. The controller also has `authTokens` handling, which the client never uses (it never sends a token)
+- [ ] **Pre-authentication keys** - No join keys in the stock client. Admins can pre-authorize node IDs via the controller API, which is admin approval, not a key. The controller has `authTokens` handling that the client never uses (it never sends a token)
 - [ ] **Certificate-based enrollment** - No CA/certificate enrollment; COMs are only issued after authorization
 - [x] **OAuth/OIDC** - Partial: client support is built in by default; needs a PostgreSQL-backed controller (ZeroTier Central)
 - [x] **Interactive login** - Partial: browser-based SSO login, only on SSO-enabled networks

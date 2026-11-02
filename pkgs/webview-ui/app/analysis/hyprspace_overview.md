@@ -218,7 +218,7 @@ Hyprspace has not been formally audited and the project README explicitly warns 
 - [x] **Memory-safe language** - Written in Go with garbage collection
 - [ ] **Privilege separation** - Runs as root for TUN/netlink setup and never drops privileges (NixOS unit runs as root, `Group = "wheel"`)
 - [ ] **Sandboxing** - No process isolation; the NixOS unit sets no systemd hardening options
-- [ ] **Audit logging** - Limited observability: peer connect/disconnect and untrusted service attempts are logged; rejected VPN streams are reset silently
+- [x] **Audit logging** - Partial: at the default `info` level only a trusted peer asking for an unknown service is logged; untrusted service attempts are logged at debug, and rejected VPN/PeX streams are reset silently (`cli/up.go:37-38`, `svc/receiver.go:13,33`, `node/node.go:291-293`)
 
 # NAT Traversal
 

@@ -168,7 +168,7 @@ Tinc has had several security vulnerabilities discovered and patched over its hi
 - [ ] **Memory-safe language** - Written in C with manual memory management
 - [x] **Privilege separation** - Opt-in `--user` (setuid/setgid) and `--chroot` after setup; no separate privileged helper
 - [x] **Sandboxing** - `--chroot` is a documented tincd option on every non-Windows platform; OpenBSD adds pledge(2)/unveil(2) (`Sandbox = normal` by default there, `high` optional); no seccomp or Capsicum (`src/tincd.c:152,399-402`)
-- [ ] **Audit logging** - Authentication and connection events go to the normal syslog/logfile; no dedicated security audit log
+- [x] **Audit logging** - Unknown identities, "Possible intruder" challenge failures and mismatched Ed25519 keys are logged at DEBUG_ALWAYS, which shows at the default level (`src/protocol_auth.c:416,743,907`, `src/logger.h:28-29`); bad SPTPS signatures only at the traffic debug level
 
 # NAT Traversal
 
@@ -202,7 +202,7 @@ Tinc has **limited NAT traversal capabilities** compared to modern mesh VPNs. It
 
 ### Fallback
 - [x] **Relay fallback** - Automatic: until direct UDP is confirmed (or permanently, e.g. behind symmetric NAT or with `IndirectData`), packets go via the next hop on the mesh graph, over UDP or TCP
-- [ ] **Multiple relay regions** - N/A (no relay infrastructure; any node can relay)
+- [x] **Multiple relays** - Any node on the mesh can relay, and the next hop is recomputed from the graph when a node goes away
 - [x] **Automatic relay selection** - Partial: next hop chosen by fewest hops, then lowest edge weight (meta-connection RTT estimate in ms, overridable with `Weight`)
 - [x] **TCP relay support** - Packets can be carried over the TCP meta connections of intermediate nodes; SPTPS payloads stay end-to-end encrypted
 
