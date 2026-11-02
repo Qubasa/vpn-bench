@@ -381,6 +381,3 @@ Score = ✓ counts 1, ◐ counts 0.5, out of the rows that apply (N/A rows are e
 - **Rust**: EasyTier, Mycelium, tincr (OpenSSL in C for the AEAD), VpnCloud
 - **Go**: Tailscale, Hyprspace, Nebula, NetBird (Linux datapath is kernel WireGuard in C), Yggdrasil
 - **C/C++**: Tinc, ZeroTier (not memory-safe)
-
-### Not in This Matrix
-Kernel WireGuard (a point-to-point baseline with no mesh features) and gVisor (a userspace TCP/IP stack used as a library, not a VPN) have their own overview documents.
