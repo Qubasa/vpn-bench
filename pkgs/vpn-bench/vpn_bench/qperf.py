@@ -10,7 +10,7 @@ from clan_lib.cmd import Log, RunOpts
 from clan_lib.machines.machines import Machine
 
 from vpn_bench.errors import VpnBenchError
-from vpn_bench.remote import machine_connection, ssh_run
+from vpn_bench.remote import in_benchmark_slice, machine_connection, ssh_run
 
 # Define TypeVar for numeric types (int or float)
 T = TypeVar("T", int, float)
@@ -326,7 +326,11 @@ def _qperf_test(
         "-c",
         target_host,
     ]
-    res = ssh_run(machine_connection(machine), cmd, RunOpts(log=Log.BOTH, timeout=250))
+    res = ssh_run(
+        machine_connection(machine),
+        in_benchmark_slice(cmd),
+        RunOpts(log=Log.BOTH, timeout=250),
+    )
     return parse_qperf_output(res.stdout)
 
 

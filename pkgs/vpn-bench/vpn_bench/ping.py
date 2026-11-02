@@ -6,7 +6,7 @@ from typing import TypedDict
 from clan_lib.cmd import Log, RunOpts
 from clan_lib.machines.machines import Machine
 
-from vpn_bench.remote import machine_connection, ssh_run
+from vpn_bench.remote import in_benchmark_slice, machine_connection, ssh_run
 
 log = logging.getLogger(__name__)
 
@@ -286,7 +286,9 @@ def run_ping_test(
         try:
             # Timeout should be count * interval + some buffer
             timeout = int(count * 0.3) + 10
-            res = ssh_run(ssh, cmd, RunOpts(log=Log.BOTH, timeout=timeout))
+            res = ssh_run(
+                ssh, in_benchmark_slice(cmd), RunOpts(log=Log.BOTH, timeout=timeout)
+            )
             parsed = parse_ping_output(res.stdout, target_host, count)
             parsed_outputs.append(parsed)
         except Exception as e:

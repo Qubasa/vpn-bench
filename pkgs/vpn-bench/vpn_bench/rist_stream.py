@@ -10,7 +10,12 @@ from clan_lib.errors import ClanCmdError
 from clan_lib.machines.machines import Machine
 from clan_lib.ssh.remote import Remote
 
-from vpn_bench.remote import machine_connection, remote_connection, ssh_run
+from vpn_bench.remote import (
+    in_benchmark_slice,
+    machine_connection,
+    remote_connection,
+    ssh_run,
+)
 
 log = logging.getLogger(__name__)
 
@@ -499,7 +504,7 @@ def run_rist_test(
     try:
         res = ssh_run(
             machine_connection(machine),
-            cmd,
+            in_benchmark_slice(cmd),
             RunOpts(log=Log.BOTH, timeout=duration + 30),  # Add buffer to duration
         )
         stderr = res.stderr

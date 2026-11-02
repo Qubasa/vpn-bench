@@ -35,6 +35,8 @@
               '';
             };
 
+            systemd.services.harmonia.serviceConfig.Slice = "benchmark.slice";
+
             services.harmonia = {
               enable = true;
               signKeyPaths = [ config.clan.core.vars.generators."harmonia".files.ca-priv.path ];

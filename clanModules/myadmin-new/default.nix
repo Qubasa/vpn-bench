@@ -22,12 +22,6 @@
         nixosModule =
           { ... }:
           {
-            imports = [
-              ../benchmark-resources/default.nix
-            ];
-
-            services.benchmarkResources.enable = true;
-
             users.users.root.openssh.authorizedKeys.keys = builtins.attrValues settings.allowedKeys;
             nixpkgs.config.allowUnfree = true;
             nixpkgs.config.permittedInsecurePackages = [

@@ -40,6 +40,28 @@ SSH_RETRY_DELAY_SECONDS = 5.0
 # sshd's MaxSessions default. The ssh client would answer a refused session by
 # quietly opening a connection of its own.
 SESSIONS_PER_MASTER = 10
+# Defined by the benchmark-resources clan service. The VPN daemons and the test
+# servers run in it as system services.
+BENCHMARK_SLICE = "benchmark.slice"
+
+
+def in_benchmark_slice(cmd: list[str]) -> list[str]:
+    """Wrap a benchmark client command so it runs in a scope under BENCHMARK_SLICE.
+
+    A command started over ssh otherwise runs in user.slice, which gets a ninth of
+    the slice's CPU share when CPUs are contested, so the VPN would win against its
+    own load generator. systemd-run execs `cmd` in its own process, so output, exit
+    code and environment stay those of `cmd`.
+    """
+    return [
+        "systemd-run",
+        "--scope",
+        "--quiet",
+        "--collect",
+        f"--slice={BENCHMARK_SLICE}",
+        "--",
+        *cmd,
+    ]
 
 
 @dataclass(frozen=True)

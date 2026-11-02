@@ -10,7 +10,7 @@ from clan_lib.nix import nix_command
 from clan_lib.persist.inventory_store import InventoryStore
 
 from vpn_bench.data import VPN, BenchMachine, Config
-from vpn_bench.remote import machine_connection, ssh_run
+from vpn_bench.remote import in_benchmark_slice, machine_connection, ssh_run
 from vpn_bench.terraform import TrMachine
 
 log = logging.getLogger(__name__)
@@ -136,7 +136,9 @@ def run_nix_cache_test(
         urls,
     ]
 
-    ssh_run(ssh, cmd, RunOpts(log=Log.BOTH, timeout=700))  # 11 minutes
+    ssh_run(
+        ssh, in_benchmark_slice(cmd), RunOpts(log=Log.BOTH, timeout=700)
+    )  # 11 minutes
 
     res = ssh_run(ssh, ["cat", f"{vpn.value}_nix-cache.json"], RunOpts(log=Log.BOTH))
     return json.loads(res.stdout)

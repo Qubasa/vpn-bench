@@ -58,6 +58,7 @@
                   ];
                 };
 
+                systemd.services.nginx.serviceConfig.Slice = "benchmark.slice";
                 services.nginx = {
                   enable = true;
                   package = pkgs.nginxQuic;
@@ -123,6 +124,7 @@
                         } (builtins.readFile ./connection_check.py);
                       in
                       {
+                        Slice = "benchmark.slice";
                         Type = "oneshot";
                         WorkingDirectory = "/var/lib/connection-check";
                         ExecStart = lib.getExe pyscript;
