@@ -266,7 +266,7 @@ The control server is designed for multi-core scalability:
 
 ### Data Plane Compression
 - [ ] **Tunnel compression** - No data packet compression (WireGuard encrypted traffic is incompressible)
-- [ ] **Configurable compression level** - N/A (compression disabled for encrypted tunnels)
+- [ ] **Configurable compression level** - No data-plane compression, so there is nothing to configure
 
 **Performance Results:**
 
@@ -385,7 +385,7 @@ These advisories come from the projects' GitHub/CVE records, not from the source
 ### Implementation
 - [x] **Memory-safe language** - Go for both Tailscale client and Headscale
 - [x] **Privilege separation** - Partial: tailscaled runs as root/SYSTEM; only helper children (Tailscale SSH incubator, Taildrive server) drop to the target user. Userspace-networking mode can run unprivileged
-- [ ] **Sandboxing** - No seccomp/landlock; the shipped systemd unit has no hardening directives
+- [x] **Sandboxing** - Partial: no seccomp/landlock, and the shipped tailscaled unit has no hardening directives, but the Headscale systemd unit uses `SystemCallFilter=`, `ProtectSystem=strict`, `NoNewPrivileges` and a reduced capability set (`headscale/packaging/systemd/headscale.service:18-48`)
 - [ ] **Audit logging** - Headscale: none (only normal logs). Tailscale SaaS: client audit events and network flow logs
 
 # NAT Traversal

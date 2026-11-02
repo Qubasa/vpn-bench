@@ -127,7 +127,7 @@ Nebula is written in Go and uses a goroutine-based, run-to-completion concurrenc
 ## Performance Optimizations Checklist
 
 ### Threading
-- [x] **Multi-threaded processing** - Partial: by default one goroutine per direction (encrypt and decrypt on separate cores); full multi-core scaling only with `routines > 1` on Linux
+- [x] **Multi-threaded processing** - By default one goroutine per direction (encrypt and decrypt on separate cores); `routines` is a supported, documented option (promoted from experimental) that runs N reader pairs on Linux (`CHANGELOG.md:386`, `examples/config.yml:152-158`)
 - [ ] **Per-peer packet queues** - No per-peer queues; packets are processed run-to-completion by the reader goroutine. Per-core parallelism comes from multi-queue TUN + SO_REUSEPORT (Linux, `routines`)
 
 ### Packet I/O
@@ -138,6 +138,7 @@ Nebula is written in Go and uses a goroutine-based, run-to-completion concurrenc
 ### UDP Offload
 - [ ] **UDP GSO (Generic Segmentation Offload)** - Not implemented
 - [ ] **UDP GRO (Generic Receive Offload)** - Not implemented
+- [x] **Multi-queue TUN / per-core sockets** - With `routines > 1` the TUN is opened with IFF_MULTI_QUEUE and each routine gets its own SO_REUSEPORT UDP socket (Linux only) (`overlay/tun_linux.go:106-107`, `udp/udp_linux.go:52-54`)
 
 ### Buffer Management
 - [x] **Buffer pool reuse** - Fixed buffers pre-allocated per routine (recvmmsg ring of 64 × 9001 bytes, plaintext/ciphertext scratch buffers) and reused for every packet; no per-packet allocation
@@ -172,7 +173,7 @@ Nebula is written in Go and uses a goroutine-based, run-to-completion concurrenc
 
 ### Data Plane Compression
 - [ ] **Tunnel compression** - No data packet compression
-- [ ] **Configurable compression level** - Not applicable
+- [ ] **Configurable compression level** - No data-plane compression, so there is nothing to configure
 
 # Security
 
@@ -256,7 +257,7 @@ Nebula implements sophisticated NAT traversal through UDP hole punching coordina
 - [x] **Rendezvous coordination** - Lighthouse-assisted punch notification system
 
 ### Fallback
-- [x] **Relay fallback** - Encrypted relay tunnels when direct connection fails
+- [x] **Relay fallback** - Partial: encrypted relay tunnels when direct connection fails, but relays are opt-in (`am_relay` false and `relays` empty by default) and the config labels them EXPERIMENTAL (`examples/config.yml:204`, `relay_manager.go:40`)
 - [x] **Multiple relay regions** - Partial: any number of self-hosted relay nodes can be listed per host; there is no region/geo concept
 - [x] **Automatic relay selection** - Partial: the initiator requests relay tunnels through every relay the target advertised and uses the first established one; selection is not latency-based
 - [ ] **TCP relay support** - Relay uses UDP only (no TCP relay option)
@@ -330,14 +331,14 @@ Lighthouses are **NOT** a single point of failure for data plane operations. How
 
 ### Offline Operation
 - [x] **Existing connections survive** - Tunnels stay up without lighthouse
-- [x] **Local state caching** - Partial: lighthouse responses and learned endpoints are cached in memory (RemoteList); nothing is persisted across restarts
+- [ ] **Local state caching** - Lighthouse responses and learned endpoints are kept in memory only (RemoteList); nothing is persisted across restarts (`remote_list.go:546-613`)
 - [x] **Cached credentials** - Certificates are local files valid without control server contact; no ongoing connectivity required to maintain network identity
 - [x] **Graceful degradation** - Existing tunnels work, new discoveries fail
 
 ### Redundancy
 - [x] **Self-hosted controller** - Can run own lighthouse infrastructure
 - [x] **Controller redundancy** - Multiple lighthouses supported
-- [x] **Relay redundancy** - Multiple relay servers can be configured
+- [x] **Relay redundancy** - Partial: multiple relay nodes can be configured, but this rests on the same opt-in, experimental relay feature (`examples/config.yml:204-216`)
 - [ ] **No single root of trust** - Nebula uses a CA-based PKI model. Multiple CAs can be configured in the CA pool, but all certificates must be signed by a trusted CA. Lighthouses provide discovery redundancy, not trust decentralization.
 
 ### Efficiency

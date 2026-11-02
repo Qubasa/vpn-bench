@@ -76,7 +76,7 @@ EasyTier's encryption layer is based on the network secret and provides multiple
 **Default Algorithm:** AES-128-GCM (ring). Alternatives via `--encryption-algorithm`: `aes-256-gcm`, `chacha20` (ChaCha20-Poly1305, ring), `xor`, and the OpenSSL variants `openssl-aes128-gcm`/`openssl-aes256-gcm`/`openssl-chacha20` (only in builds with the non-default `openssl-crypto` feature). `--disable-encryption` sends plaintext.
 
 **Encryption Process:**
-- Encryption is end-to-end between source and destination node: the source encrypts data/KCP packets once, intermediate peers and shared nodes forward without decrypting
+- Encryption is end-to-end between source and destination node: the source encrypts data/KCP packets once and intermediate peers and shared nodes forward without decrypting. Every member derives the same AES key from the network secret, so a member node that forwards multi-hop traffic could decrypt it; foreign shared nodes cannot
 - AEAD with a random 96-bit nonce per packet and empty associated data; the trailer is 28 bytes (16-byte tag + 12-byte nonce). The PeerManagerHeader (peer IDs, flags) is not authenticated
 - The receiver decides whether to decrypt from the cleartext `ENCRYPTED` header flag; packets with the flag cleared are accepted as plaintext even when encryption is enabled
 - Control-plane RPC between members is encrypted with the same key; RPC with public shared nodes is not
@@ -108,6 +108,7 @@ EasyTier's encryption layer is based on the network secret and provides multiple
 - [ ] **Replay protection** - Random per-packet nonces, no counter or sliding window
 - [ ] **Noise Protocol or equivalent** - Custom handshake; only the optional wg:// hop transport runs WireGuard's Noise IKpsk2
 - [ ] **No cleartext metadata** - Network name, peer ID and secret digest in the handshake, cleartext peer IDs in every data header
+- [x] **End-to-end encryption through relays** - Partial: all members derive the same AES key from the network secret, so member nodes that forward multi-hop traffic can decrypt it; only foreign shared nodes cannot (`easytier/src/common/global_ctx.rs:330-357`, `easytier/src/peers/peer_manager.rs:659-699`)
 
 # Performance
 
@@ -222,7 +223,7 @@ No CVE or security advisory is referenced in the repository.
 ### Identity & Authentication
 - [ ] **Identity validation** - No proof-of-work, simple digest comparison only
 - [ ] **Signed configuration updates** - No cryptographic verification of config updates
-- [ ] **Certificate pinning** - No PKI; TLS certificates of wss/quic transports are not verified at all
+- [ ] **Certificate pinning** - N/A: there is no controller to pin. (Separately, there is no PKI, and TLS certificates of wss/quic transports are not verified at all)
 
 ### Implementation
 - [x] **Memory-safe language** - Written in Rust, memory-safe by design
@@ -272,7 +273,7 @@ EasyTier has comprehensive NAT traversal support handling various NAT scenarios.
 - [x] **Rendezvous coordination** - RPC-based server-assisted hole punching coordination
 
 ### Fallback
-- [x] **Relay fallback** - Relay through peers or shared nodes when direct fails; payload stays end-to-end encrypted
+- [x] **Relay fallback** - Relay through peers or shared nodes when direct fails; foreign shared nodes cannot read the payload, but member nodes hold the shared network key
 - [x] **Multiple relay regions** - Partial: any number of shared nodes and peers can relay at the same time, but there is no region concept
 - [x] **Automatic relay selection** - Routing algorithm selects best relay path
 - [x] **TCP relay support** - Relay over TCP when UDP blocked
@@ -418,7 +419,7 @@ EasyTier uses a simple pre-shared key authentication model with no PKI infrastru
 
 ### Identity
 - [x] **Stable device identity** - Partial: peer ID is random on every start; only the instance UUID (if set in the config) and the machine ID used by the web console are persistent, and none is cryptographically bound
-- [ ] **Identity portability** - Not applicable: there is no per-node credential, only the shared network secret
+- [x] **Identity portability** - Partial: the node identity (`instance_id`) lives in the config file next to the network secret, so copying the config moves it; it is not cryptographically bound (`easytier/src/common/config.rs:390,628-635`)
 - [x] **Multi-user support** - One process can run several network instances, any node can host foreign networks, and the web console has user accounts
 
 # Platform Support

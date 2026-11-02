@@ -156,7 +156,7 @@ tincr keeps tinc's event-driven design but rebuilt the Linux data path around ke
 
 ### Packet I/O
 - [x] **Batch UDP receives** - `recvmmsg` with 64 messages per call on Linux and Android (main thread and every shard); `recvmsg_x` on macOS
-- [x] **Batch UDP sends** - Not via `sendmmsg`: runs of equal-sized datagrams to one destination go out as one `sendmsg` with `UDP_SEGMENT`; other packets are sent one `sendto` each. macOS uses `sendmsg_x`
+- [ ] **Batch UDP sends** - tincr never calls `sendmmsg` on Linux; runs of equal-sized datagrams to one destination go out as one `sendmsg` with `UDP_SEGMENT` (covered by the UDP GSO row), other packets are sent one `sendto` each. macOS uses `sendmsg_x` (`crates/tincd/src/egress/linux.rs:1-5`, `crates/tincd/src/egress.rs:3-4`)
 - [x] **Large batch sizes** - 64 datagrams per `recvmmsg`, up to 64 TUN reads per wakeup, and TCP super-frames of up to 64 KB (about 40 segments) per TUN read/write
 
 ### UDP Offload
@@ -238,7 +238,7 @@ tincr has no published CVEs or security advisories. There is no private security
 ### Implementation
 - [x] **Memory-safe language** - Rust; `unsafe` limited to FFI (OpenSSL AEAD, minilzo) and syscall/ioctl wrappers
 - [x] **Privilege separation** - Opt-in `--user` (all uids/gids set and verified, `no_new_privs` always set, failure is fatal) and `--chroot`; the NixOS module runs tincd unprivileged with only `CAP_NET_BIND_SERVICE` on a pre-created TUN
-- [x] **Sandboxing** - Partial: opt-in Landlock filesystem allowlist on Linux (`Sandbox = normal|high`, kernel ≥ 5.13; `high` disables hook scripts); no seccomp in the daemon
+- [x] **Sandboxing** - `-R/--chroot` is a documented option, plus an opt-in Landlock filesystem allowlist on Linux (`Sandbox = normal|high`, kernel ≥ 5.13; `high` disables hook scripts); no seccomp in the daemon (`crates/tincd/src/bin/tincd/args.rs:214-215,260`, `crates/tincd/src/bin/tincd/procsetup.rs:85-97`)
 - [ ] **Audit logging** - Authentication and connection events go to the normal log; no dedicated security audit log
 
 # NAT Traversal
@@ -262,7 +262,7 @@ tincr inherits tinc 1.1's peer-assisted NAT traversal and adds built-in port map
 ### Discovery
 - [ ] **No own public node needed** - Outgoing meta connections need an `Address` from the peer's host file, and `tinc invite` refuses to run without one (`crates/tincd/src/outgoing.rs:661-695`, `crates/tinc-tools/src/cmd/invite.rs:500-503`)
 - [ ] **STUN support** - No STUN; peers' reflexive addresses are reported by intermediate nodes (REQ_KEY/ANS_KEY, UDP_INFO)
-- [ ] **Multiple STUN servers** - N/A (no STUN)
+- [ ] **Multiple STUN servers** - No discovery servers; intermediate nodes only pass on observed addresses
 - [ ] **NAT type detection** - No NAT type classification
 
 ### Port Mapping

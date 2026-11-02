@@ -36,7 +36,7 @@ Hyprspace uses libp2p's transport layer with a custom application protocol for V
 ## Protocol Features Checklist
 
 ### Transport
-- [x] **UDP transport** - QUIC transport over UDP
+- [ ] **UDP transport** - No plain UDP transport; only the QUIC and TCP transports are enabled, and UDP is used only underneath QUIC (`p2p/node.go:142-143`)
 - [x] **TCP fallback** - libp2p TCP transport (TLS 1.3/Noise + yamux), direct or via circuit relay
 - [x] **QUIC support** - Preferred transport via libp2p (`quic-v1`)
 - [ ] **WebSocket support** - Not enabled; explicit transport list (QUIC + TCP only) replaces libp2p's default WS/WebTransport/WebRTC transports
@@ -70,7 +70,7 @@ Hyprspace relies entirely on libp2p's transport-layer encryption for security. I
 - Key exchange: ephemeral ECDHE, X25519 preferred
 - No post-quantum hybrid: the toolchain is Go 1.24, but `go.mod` declares `go 1.23.8`, which makes the `tlsmlkem=0` GODEBUG default apply and disables X25519MLKEM768
 
-**Noise Details (TCP fallback only):**
+**Noise Details (offered on TCP, never chosen between Hyprspace nodes):**
 - `Noise_XX_25519_ChaChaPoly_SHA256`: X25519, ChaCha20-Poly1305, SHA-256 (no BLAKE2s)
 - Pattern: XX (mutual authentication, both parties send static keys)
 
@@ -102,7 +102,7 @@ Hyprspace relies entirely on libp2p's transport-layer encryption for security. I
 
 ### Protocol Security
 - [x] **Replay protection** - QUIC packet numbers / TLS record sequence numbers (transport layer, not VPN-layer)
-- [x] **Noise Protocol or equivalent** - Partial: default handshake is TLS 1.3 (QUIC and TCP); Noise XX only as second-choice TCP security protocol
+- [ ] **Noise Protocol or equivalent** - Never negotiated between Hyprspace nodes: QUIC always uses TLS 1.3, and on TCP both sides offer `/tls/1.0.0` first, so Noise XX is never picked (`p2p/node.go:138`, go-libp2p v0.42.0 `defaults.go:30-32`)
 - [x] **No cleartext metadata** - TLS 1.3 encrypts the certificates that carry peer IDs; only libp2p protocol names (multistream `/tls/1.0.0`, ALPN `libp2p`) are visible. Peer IDs are, however, published to and looked up in the public IPFS DHT
 
 # Performance
@@ -137,7 +137,7 @@ Under the old sender-side Medium profile (2.5% reordering and 1% loss per direct
 - [ ] **Per-core packet queues** - Single TUN reader, one goroutine per packet, no per-peer or per-core queues
 
 ### Packet I/O
-- [x] **Batch UDP receives** - Partial: quic-go uses `recvmmsg` (batch 8, Linux) on the UDP socket; TUN reads are single-packet
+- [x] **Batch UDP receives** - QUIC is the default transport, and on Linux quic-go reads with `recvmmsg` (batches of 8) (`p2p/node.go:142`, quic-go v0.52.0 `sys_conn_helper_linux.go:24`); TUN reads are single-packet
 - [ ] **Batch UDP sends** - No `sendmmsg`; quic-go uses GSO instead
 - [ ] **Large batch sizes** - quic-go receive batch is 8; TUN batch is 1
 
@@ -178,7 +178,7 @@ Under the old sender-side Medium profile (2.5% reordering and 1% loss per direct
 
 ### Data Plane Compression
 - [ ] **Tunnel compression** - No packet compression
-- [ ] **Configurable compression level** - N/A
+- [ ] **Configurable compression level** - No data-plane compression, so there is nothing to configure
 
 # Security
 
@@ -212,7 +212,7 @@ Hyprspace has not been formally audited and the project README explicitly warns 
 ### Identity & Authentication
 - [x] **Identity validation** - Cryptographic verification via libp2p peer IDs
 - [ ] **Signed configuration updates** - No cryptographic config verification
-- [ ] **Certificate pinning** - No pinning for delegated routing
+- [ ] **Certificate pinning** - N/A: there is no controller; the delegated-routing endpoint is only a lookup service (`p2p/node.go:261-262`)
 
 ### Implementation
 - [x] **Memory-safe language** - Written in Go with garbage collection
