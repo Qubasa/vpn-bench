@@ -61,7 +61,6 @@
                 systemd.services.nginx.serviceConfig.Slice = "benchmark.slice";
                 services.nginx = {
                   enable = true;
-                  package = pkgs.nginxQuic;
                   virtualHosts."vpn.${hostName}" = {
                     quic = true;
                     root = "/var/www/example";

@@ -55,13 +55,6 @@
             if config.networking.nameservers == [ ] then cloudflare else config.networking.nameservers;
         in
         map escapeIPv6 resolvers;
-
-      sslDhparam = config.security.dhparams.params.nginx.path;
-    };
-
-    security.dhparams = {
-      enable = true;
-      params.nginx = { };
     };
   };
 
