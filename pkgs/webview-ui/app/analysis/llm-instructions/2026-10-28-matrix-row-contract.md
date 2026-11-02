@@ -175,4 +175,4 @@ Added rows: Datagram encapsulation (no head-of-line blocking), Multi-queue TUN /
 
 Renamed rows: STUN support -> Public endpoint discovery (STUN or reflection); Multiple STUN servers -> Multiple discovery servers; Multiple relay regions -> Multiple relays; Automatic relay selection -> Latency-based relay selection; Certificate pinning -> Control-server key pinning; Rate limiting -> Handshake rate limiting; Userspace TCP implementation -> Userspace TCP/IP stack.
 
-Scoring: ✓ = 1, ◐ = 0.5, ✗ = 0; N/A and ? are excluded from the denominator; all rows unweighted. The "Shared rows" column scores only the rows without N/A for any VPN, so every VPN has the same denominator.
+Scoring: ✓ = 1, ◐ = 0.5, ✗ = 0; N/A and ? are excluded from the denominator; all rows unweighted. The "Shared rows" column scores only the rows without N/A for any VPN, so every VPN has the same denominator. The web UI computes all scores from the cells (`<!-- feature-scores -->` in feature_matrix.md), so the matrix has no hand-written score table to keep in sync.

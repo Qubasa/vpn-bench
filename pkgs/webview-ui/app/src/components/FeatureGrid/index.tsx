@@ -1,10 +1,9 @@
-import featureMatrixMd from "@/analysis/feature_matrix.md?raw";
 import { For } from "solid-js";
-import { parseFeatureMatrix, resolveGrid } from "./matrix";
+import { type FeatureMatrix, resolveGrid } from "./matrix";
 import { CELL_STYLES, GRID } from "./spec";
 
-export const FeatureGrid = () => {
-  const matrix = parseFeatureMatrix(featureMatrixMd);
+export const FeatureGrid = (props: { matrix: FeatureMatrix }) => {
+  const matrix = props.matrix;
   const groups = resolveGrid(matrix, GRID);
   const columns = groups.flatMap((group) => group.columns);
 
