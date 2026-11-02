@@ -161,6 +161,7 @@ List rows that are ill-defined, non-discriminating, or misleading for this VPN, 
 - Extra row "Datagram encapsulation (no head-of-line blocking)": ✓ if on the default path each inner packet is an independent datagram, ✗ if carried in a reliable ordered stream (TCP, QUIC stream, TLS), ◐ if it depends on an opt-in transport.
 - Extra glance key "Default peer transport": what a fresh 2-node Linux setup uses for data, plus the fallback.
 - Controller rows (Controller redundancy, Cached credentials, Control-server key pinning) are N/A when the design has no controller.
+- Enrollment rows (Pre-authentication keys, Certificate-based enrollment, OAuth/OIDC, Interactive login, CLI authentication) are ✗, not N/A, when the design has no enrollment step, so a VPN without a way to admit nodes is scored like the other VPNs that lack it.
 - Performance rows are judged on Linux with the default build. Linux-only syscalls count as ✓ if used on Linux by default.
 - A VPN whose default Linux datapath is in the kernel (NetBird with kernel WireGuard) gets N/A on per-packet socket/TUN rows; its userspace fallback is described in the evidence column.
 - Extra row "No own public node needed" (Discovery): nodes that are all behind NAT form a mesh. ✓ if the default configuration does it through public nodes the project, vendor or community runs (bootstrap nodes, root servers, shared nodes, hosted control plane); ◐ if such public nodes exist but must be configured by hand, or only a hosted service works while the self-hosted setup needs a public server; ✗ if the user must run at least one node or server with a public address. Hole punching alone does not make it ✓, since the rendezvous still needs a reachable node.
@@ -174,4 +175,4 @@ Added rows: Datagram encapsulation (no head-of-line blocking), Multi-queue TUN /
 
 Renamed rows: STUN support -> Public endpoint discovery (STUN or reflection); Multiple STUN servers -> Multiple discovery servers; Multiple relay regions -> Multiple relays; Automatic relay selection -> Latency-based relay selection; Certificate pinning -> Control-server key pinning; Rate limiting -> Handshake rate limiting; Userspace TCP implementation -> Userspace TCP/IP stack.
 
-Scoring: ✓ = 1, ◐ = 0.5, ✗ = 0; N/A and ? are excluded from the denominator; all rows unweighted.
+Scoring: ✓ = 1, ◐ = 0.5, ✗ = 0; N/A and ? are excluded from the denominator; all rows unweighted. The "Shared rows" column scores only the rows without N/A for any VPN, so every VPN has the same denominator.

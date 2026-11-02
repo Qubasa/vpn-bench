@@ -267,11 +267,11 @@
 
 | Feature | EasyTier | Tailscale / Headscale | Hyprspace | Mycelium | Nebula | NetBird | Tinc | tincr | VpnCloud | Yggdrasil | ZeroTier |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| Pre-authentication keys | ✓ | ✓ | ✗ | ◐ | ✗ | ✓ | ✓ | ✓ | ✓ | N/A | ◐ |
-| Certificate-based enrollment | ✗ | ✗ | ✗ | ✗ | ✓ | ✗ | ✗ | ✗ | ✗ | N/A | ✗ |
-| OAuth/OIDC | ✗ | ✓ | ✗ | ✗ | ✗ | ✓ | ✗ | ✗ | ✗ | N/A | ◐ |
-| Interactive login | ✗ | ✓ | ✗ | ✗ | ✗ | ✓ | ✗ | ✗ | ✗ | N/A | ◐ |
-| CLI authentication | ✓ | ✓ | ✗ | ✗ | ✗ | ✓ | ✓ | ✓ | N/A | N/A | ✓ |
+| Pre-authentication keys | ✓ | ✓ | ✗ | ◐ | ✗ | ✓ | ✓ | ✓ | ✓ | ✗ | ◐ |
+| Certificate-based enrollment | ✗ | ✗ | ✗ | ✗ | ✓ | ✗ | ✗ | ✗ | ✗ | ✗ | ✗ |
+| OAuth/OIDC | ✗ | ✓ | ✗ | ✗ | ✗ | ✓ | ✗ | ✗ | ✗ | ✗ | ◐ |
+| Interactive login | ✗ | ✓ | ✗ | ✗ | ✗ | ✓ | ✗ | ✗ | ✗ | ✗ | ◐ |
+| CLI authentication | ✓ | ✓ | ✗ | ✗ | ✗ | ✓ | ✓ | ✓ | N/A | ✗ | ✓ |
 
 ### Authorization
 
@@ -322,19 +322,21 @@
 
 Score = ✓ counts 1, ◐ counts 0.5, out of the rows that apply (N/A rows are excluded). Rows are unweighted, so a missing post-quantum handshake counts the same as missing NAT-PMP. Use the scores to compare breadth, not quality. NetBird's performance score covers only 6 rows, because its kernel WireGuard datapath makes the socket and TUN rows N/A.
 
-| VPN | Protocol | Encryption | Performance | Security | NAT Traversal | Local Routing | Resilience | Authentication | Platform | **Total** |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| **EasyTier** | 11.5/14 | 5.5/11 | 5.5/16 | 4.5/11 | 10.5/14 | 7.5/11 | 4/5 | 2.5/10 | 6/8 | **57.5/100** (58%) |
-| **Tailscale / Headscale** | 7.5/14 | 9.5/11 | 12/15 | 5/11 | 12.5/14 | 7/11 | 4/7 | 9/11 | 7/8 | **73.5/102** (72%) |
-| **Hyprspace** | 7/14 | 9/11 | 5/15 | 3/11 | 10/14 | 5.5/11 | 4/5 | 2/11 | 1/8 | **46.5/100** (47%) |
-| **Mycelium** | 4.5/14 | 4.5/11 | 2.5/16 | 3/10 | 4.5/14 | 5/10 | 4/5 | 2.5/11 | 6/8 | **36.5/99** (37%) |
-| **Nebula** | 6/14 | 8/11 | 6.5/15 | 7/11 | 6.5/14 | 7/11 | 5.5/7 | 4/11 | 7/8 | **57.5/102** (56%) |
-| **NetBird** | 7/14 | 10.5/11 | 2/6 | 7/11 | 11/14 | 7/11 | 3.5/7 | 9/11 | 7.5/8 | **64.5/93** (69%) |
-| **Tinc** | 10/14 | 7/11 | 8.5/16 | 3.5/10 | 5/12 | 6.5/11 | 5/5 | 4/11 | 4.5/8 | **54/98** (55%) |
-| **tincr** | 10/14 | 8.5/11 | 14/16 | 4.5/10 | 6.5/12 | 7.5/11 | 5/5 | 4/11 | 3/8 | **63/98** (64%) |
-| **VpnCloud** | 10.5/14 | 8.5/11 | 2.5/16 | 4.5/10 | 4.5/14 | 3.5/11 | 3/5 | 3/10 | 1/8 | **41/99** (41%) |
-| **Yggdrasil** | 5.5/14 | 7.5/11 | 5/16 | 3/10 | 1.5/12 | 3.5/10 | 4/5 | 2/6 | 7/8 | **39/92** (42%) |
-| **ZeroTier** | 10/14 | 4.5/11 | 6.5/16 | 7/11 | 11/14 | 6/11 | 5/7 | 6/11 | 7/8 | **63/103** (61%) |
+Because N/A rows are excluded, each VPN's **Total** has a different denominator. **Shared rows** scores every VPN on the same 83 rows, the ones that apply to all eleven, so it compares like with like.
+
+| VPN | Protocol | Encryption | Performance | Security | NAT Traversal | Local Routing | Resilience | Authentication | Platform | **Total** | Shared rows |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| **EasyTier** | 11.5/14 | 5.5/11 | 5.5/16 | 4.5/11 | 10.5/14 | 7.5/11 | 4/5 | 2.5/10 | 6/8 | **57.5/100** (58%) | 50.5/83 (61%) |
+| **Tailscale / Headscale** | 7.5/14 | 9.5/11 | 12/15 | 5/11 | 12.5/14 | 7/11 | 4/7 | 9/11 | 7/8 | **73.5/102** (72%) | 58.5/83 (70%) |
+| **Hyprspace** | 7/14 | 9/11 | 5/15 | 3/11 | 10/14 | 5.5/11 | 4/5 | 2/11 | 1/8 | **46.5/100** (47%) | 40/83 (48%) |
+| **Mycelium** | 4.5/14 | 4.5/11 | 2.5/16 | 3/10 | 4.5/14 | 5/10 | 4/5 | 2.5/11 | 6/8 | **36.5/99** (37%) | 32/83 (39%) |
+| **Nebula** | 6/14 | 8/11 | 6.5/15 | 7/11 | 6.5/14 | 7/11 | 5.5/7 | 4/11 | 7/8 | **57.5/102** (56%) | 46/83 (55%) |
+| **NetBird** | 7/14 | 10.5/11 | 2/6 | 7/11 | 11/14 | 7/11 | 3.5/7 | 9/11 | 7.5/8 | **64.5/93** (69%) | 59/83 (71%) |
+| **Tinc** | 10/14 | 7/11 | 8.5/16 | 3.5/10 | 5/12 | 6.5/11 | 5/5 | 4/11 | 4.5/8 | **54/98** (55%) | 45/83 (54%) |
+| **tincr** | 10/14 | 8.5/11 | 14/16 | 4.5/10 | 6.5/12 | 7.5/11 | 5/5 | 4/11 | 3/8 | **63/98** (64%) | 49.5/83 (60%) |
+| **VpnCloud** | 10.5/14 | 8.5/11 | 2.5/16 | 4.5/10 | 4.5/14 | 3.5/11 | 3/5 | 3/10 | 1/8 | **41/99** (41%) | 38/83 (46%) |
+| **Yggdrasil** | 5.5/14 | 7.5/11 | 5/16 | 3/10 | 1.5/12 | 3.5/10 | 4/5 | 2/11 | 7/8 | **39/97** (40%) | 34.5/83 (42%) |
+| **ZeroTier** | 10/14 | 4.5/11 | 6.5/16 | 7/11 | 11/14 | 6/11 | 5/7 | 6/11 | 7/8 | **63/103** (61%) | 51/83 (61%) |
 
 ---
 

@@ -300,11 +300,11 @@ Yggdrasil uses cryptographic identity-based authentication with optional access 
 ## Authentication Checklist
 
 ### Enrollment Methods
-- [ ] **Pre-authentication keys** - Not applicable: there is no enrollment; nodes generate their own key pair and join by peering
+- [ ] **Pre-authentication keys** - No enrollment: nodes generate their own key pair and join by peering
 - [ ] **Certificate-based enrollment** - No certificates or CA
 - [ ] **OAuth/OIDC** - No SSO integration
 - [ ] **Interactive login** - No login process; purely cryptographic
-- [ ] **CLI authentication** - Not applicable (keys/config are generated locally with `yggdrasil -genconf` or `genkeys`, no authentication step)
+- [ ] **CLI authentication** - No authentication step: keys and config are generated locally with `yggdrasil -genconf` or `genkeys`
 
 ### Authorization
 - [ ] **Admin approval workflow** - No centralized approval mechanism
