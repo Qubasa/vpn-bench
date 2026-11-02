@@ -256,6 +256,7 @@ EasyTier has comprehensive NAT traversal support handling various NAT scenarios.
 ## NAT Traversal Checklist
 
 ### Discovery
+- [x] **No own public node needed** - The GUI/web default (`PublicServer` mode) and the installer's `default.conf` peer with the project's shared node `tcp://public.easytier.top:11010` (`easytier-web/frontend-lib/src/types/network.ts:87-89`, `script/install.sh:253-254`). A bare `easytier-core` has no built-in peer (`easytier/src/core.rs:186-198`)
 - [x] **STUN support** - Discovers public IP/port via STUN servers
 - [x] **Multiple STUN servers** - Built-in list, overridable via `--stun-servers`
 - [x] **NAT type detection** - Identifies Full Cone, Restricted Cone, Port Restricted, Symmetric and easy (predictable) Symmetric NAT

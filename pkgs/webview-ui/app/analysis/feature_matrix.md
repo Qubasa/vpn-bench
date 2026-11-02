@@ -178,6 +178,7 @@
 
 | Feature | EasyTier | Tailscale / Headscale | Hyprspace | Mycelium | Nebula | NetBird | Tinc | tincr | VpnCloud | Yggdrasil | ZeroTier |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| No own public node needed | ✓ | ✗ | ✓ | ◐ | ✗ | ◐ | ✗ | ✗ | ✗ | ◐ | ✓ |
 | Public endpoint discovery (STUN or reflection) | ✓ | ✓ | ✓ | ✗ | ✓ | ✓ | ✗ | ✗ | ◐ | ✗ | ✓ |
 | Multiple discovery servers | ✓ | ✓ | ✓ | ✗ | ✓ | ✓ | N/A | N/A | ✗ | ✗ | ✓ |
 | NAT type detection | ✓ | ✓ | ◐ | ✗ | ✗ | ✗ | ✗ | ✗ | ✗ | ✗ | ✗ |
@@ -323,17 +324,17 @@ Score = ✓ counts 1, ◐ counts 0.5, out of the rows that apply (N/A rows are e
 
 | VPN | Protocol | Encryption | Performance | Security | NAT Traversal | Local Routing | Resilience | Authentication | Platform | **Total** |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| **EasyTier** | 11.5/14 | 5.5/11 | 5.5/16 | 4.5/11 | 9.5/13 | 7.5/11 | 4/5 | 2.5/10 | 6/8 | **56.5/99** (57%) |
-| **Tailscale / Headscale** | 7.5/14 | 9.5/11 | 12/15 | 5/11 | 12.5/13 | 7/11 | 4/7 | 9/11 | 7/8 | **73.5/101** (73%) |
-| **Hyprspace** | 7/14 | 9/11 | 5/15 | 3/11 | 9/13 | 5.5/11 | 4/5 | 2/11 | 1/8 | **45.5/99** (46%) |
-| **Mycelium** | 4.5/14 | 4.5/11 | 2.5/16 | 3/10 | 4/13 | 5/10 | 4/5 | 2.5/11 | 6/8 | **36/98** (37%) |
-| **Nebula** | 6/14 | 8/11 | 6.5/15 | 7/11 | 6.5/13 | 7/11 | 5.5/7 | 4/11 | 7/8 | **57.5/101** (57%) |
-| **NetBird** | 7/14 | 10.5/11 | 2/6 | 7/11 | 10.5/13 | 7/11 | 3.5/7 | 9/11 | 7.5/8 | **64/92** (70%) |
-| **Tinc** | 10/14 | 7/11 | 8.5/16 | 3.5/10 | 5/11 | 6.5/11 | 5/5 | 4/11 | 4.5/8 | **54/97** (56%) |
-| **tincr** | 10/14 | 8.5/11 | 14/16 | 4.5/10 | 6.5/11 | 7.5/11 | 5/5 | 4/11 | 3/8 | **63/97** (65%) |
-| **VpnCloud** | 10.5/14 | 8.5/11 | 2.5/16 | 4.5/10 | 4.5/13 | 3.5/11 | 3/5 | 3/10 | 1/8 | **41/98** (42%) |
-| **Yggdrasil** | 5.5/14 | 7.5/11 | 5/16 | 3/10 | 1/11 | 3.5/10 | 4/5 | 2/6 | 7/8 | **38.5/91** (42%) |
-| **ZeroTier** | 10/14 | 4.5/11 | 6.5/16 | 7/11 | 10/13 | 6/11 | 5/7 | 6/11 | 7/8 | **62/102** (61%) |
+| **EasyTier** | 11.5/14 | 5.5/11 | 5.5/16 | 4.5/11 | 10.5/14 | 7.5/11 | 4/5 | 2.5/10 | 6/8 | **57.5/100** (58%) |
+| **Tailscale / Headscale** | 7.5/14 | 9.5/11 | 12/15 | 5/11 | 12.5/14 | 7/11 | 4/7 | 9/11 | 7/8 | **73.5/102** (72%) |
+| **Hyprspace** | 7/14 | 9/11 | 5/15 | 3/11 | 10/14 | 5.5/11 | 4/5 | 2/11 | 1/8 | **46.5/100** (47%) |
+| **Mycelium** | 4.5/14 | 4.5/11 | 2.5/16 | 3/10 | 4.5/14 | 5/10 | 4/5 | 2.5/11 | 6/8 | **36.5/99** (37%) |
+| **Nebula** | 6/14 | 8/11 | 6.5/15 | 7/11 | 6.5/14 | 7/11 | 5.5/7 | 4/11 | 7/8 | **57.5/102** (56%) |
+| **NetBird** | 7/14 | 10.5/11 | 2/6 | 7/11 | 11/14 | 7/11 | 3.5/7 | 9/11 | 7.5/8 | **64.5/93** (69%) |
+| **Tinc** | 10/14 | 7/11 | 8.5/16 | 3.5/10 | 5/12 | 6.5/11 | 5/5 | 4/11 | 4.5/8 | **54/98** (55%) |
+| **tincr** | 10/14 | 8.5/11 | 14/16 | 4.5/10 | 6.5/12 | 7.5/11 | 5/5 | 4/11 | 3/8 | **63/98** (64%) |
+| **VpnCloud** | 10.5/14 | 8.5/11 | 2.5/16 | 4.5/10 | 4.5/14 | 3.5/11 | 3/5 | 3/10 | 1/8 | **41/99** (41%) |
+| **Yggdrasil** | 5.5/14 | 7.5/11 | 5/16 | 3/10 | 1.5/12 | 3.5/10 | 4/5 | 2/6 | 7/8 | **39/92** (42%) |
+| **ZeroTier** | 10/14 | 4.5/11 | 6.5/16 | 7/11 | 11/14 | 6/11 | 5/7 | 6/11 | 7/8 | **63/103** (61%) |
 
 ---
 
@@ -365,7 +366,7 @@ Score = ✓ counts 1, ◐ counts 0.5, out of the rows that apply (N/A rows are e
 **Tailscale** and **NetBird** (WireGuard), **Tinc** and **tincr** (SPTPS) and **Yggdrasil** combine ephemeral key exchange, rekeying and replay protection. **VpnCloud** does too, but its replay check is only a time window. **NetBird** (Rosenpass) and **tincr** (ML-KEM-768 hybrid) are the only ones with an opt-in post-quantum option. **Nebula** has forward secrecy but never rekeys. **EasyTier** has no key exchange at all, and **Mycelium** and **ZeroTier** use static per-peer keys without forward secrecy or replay protection.
 
 ### Best for NAT Traversal
-**Tailscale** has the most complete NAT traversal: STUN, UPnP/NAT-PMP/PCP, hole punching and DERP relays. **NetBird** is close behind, with ICE, UPnP/NAT-PMP/PCP and its own relay. **EasyTier** is the only one with port prediction for symmetric NATs. **ZeroTier** combines UPnP/NAT-PMP with relaying through its root servers.
+**Tailscale** has the most complete NAT traversal: STUN, UPnP/NAT-PMP/PCP, hole punching and DERP relays. **NetBird** is close behind, with ICE, UPnP/NAT-PMP/PCP and its own relay. **EasyTier** is the only one with port prediction for symmetric NATs. **ZeroTier** combines UPnP/NAT-PMP with relaying through its root servers. Only **EasyTier**, **Hyprspace** and **ZeroTier** connect nodes that are all behind NAT with their default configuration, through public nodes their projects run. Self-hosted Headscale, Nebula, Tinc, tincr and VpnCloud need at least one node or server of your own with a public address.
 
 ### Best for Layer 2 / Bridging
 **ZeroTier**, **Tinc**, **tincr** and **VpnCloud** support Layer 2 (Ethernet) mode and bridging non-VPN devices onto the network.

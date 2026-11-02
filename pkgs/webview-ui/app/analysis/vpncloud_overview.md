@@ -299,6 +299,7 @@ VpnCloud does **not explicitly handle double NAT** (NAT behind NAT scenarios). I
 ## NAT Traversal Checklist
 
 ### Discovery
+- [ ] **No own public node needed** - `peers` is empty and beacons are off by default; beacons only publish addresses the node already knows, so two fully NATed nodes never learn each other's external endpoint (`src/config.rs:65-76`, `src/cloud.rs:223-236,484-495`)
 - [x] **STUN support** - Partial: no STUN protocol; the public endpoint is learned by reflection from peers (NODE_INFO) and from the UPnP gateway's external IP
 - [ ] **Multiple STUN servers** - Not applicable
 - [ ] **NAT type detection** - No explicit NAT type detection

@@ -18,7 +18,8 @@ export const GRID: readonly GridGroup[] = [
     columns: [
       { label: "Decentralized", feature: "No single root of trust" },
       { label: "Self-hostable", feature: "Fully self-hostable" },
-      { label: "No public IP", feature: "UDP hole punching" },
+      { label: "No public IP", feature: "No own public node needed" },
+      { label: "Hole punching", feature: "UDP hole punching" },
       { label: "Auto relay", feature: "Relay fallback" },
       { label: "Works if UDP blocked", feature: "TCP fallback" },
       { label: "WebSocket", feature: "WebSocket support" },

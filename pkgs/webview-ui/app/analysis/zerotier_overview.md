@@ -253,6 +253,7 @@ There is no port prediction or birthday-style probing. Hole punching only uses t
 ## NAT Traversal Checklist
 
 ### Discovery
+- [x] **No own public node needed** - The built-in default planet's roots relay traffic and introduce peers for hole punching; even a self-hosted controller is reached through them (`node/Topology.cpp:20-36,56-61`, `node/Switch.cpp:1083-1088`)
 - [x] **STUN support** - No STUN protocol; the external address is reflected by roots and peers in OK(HELLO) (server/peer reflection)
 - [x] **Multiple STUN servers** - Every root and peer reflects; the default planet has 4 roots
 - [ ] **NAT type detection** - External addresses are tracked, but the NAT type is not classified (no symmetric-NAT prediction)

@@ -236,6 +236,7 @@ NetBird uses standard ICE (a NetBird fork of pion/ice v4) for NAT traversal, com
 ## NAT Traversal Checklist
 
 ### Discovery
+- [x] **No own public node needed** - Partial: the client defaults to NetBird Cloud (`DefaultManagementURL = "https://api.netbird.io:443"`, `client/internal/profilemanager/config.go:34-39`); self-hosting management, signal, relay and STUN needs a public VM on TCP 80/443 and UDP 3478 (`README.md:88-95`)
 - [x] **STUN support** - Standard STUN servers from management; an embedded STUN server ships in the combined server and optionally in the relay
 - [x] **Multiple STUN servers** - Any number of STUN/TURN URLs can be pushed to clients
 - [ ] **NAT type detection** - No NAT classification

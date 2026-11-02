@@ -163,13 +163,14 @@ List rows that are ill-defined, non-discriminating, or misleading for this VPN, 
 - Controller rows (Controller redundancy, Cached credentials, Control-server key pinning) are N/A when the design has no controller.
 - Performance rows are judged on Linux with the default build. Linux-only syscalls count as ✓ if used on Linux by default.
 - A VPN whose default Linux datapath is in the kernel (NetBird with kernel WireGuard) gets N/A on per-packet socket/TUN rows; its userspace fallback is described in the evidence column.
+- Extra row "No own public node needed" (Discovery): nodes that are all behind NAT form a mesh. ✓ if the default configuration does it through public nodes the project, vendor or community runs (bootstrap nodes, root servers, shared nodes, hosted control plane); ◐ if such public nodes exist but must be configured by hand, or only a hosted service works while the self-hosted setup needs a public server; ✗ if the user must run at least one node or server with a public address. Hole punching alone does not make it ✓, since the rendezvous still needs a reachable node.
 - Overview checklist convention: `- [x] **Item** - ...` yes, `- [x] **Item** - Partial: ...` partial/opt-in, `- [ ] **Item** - ...` no; N/A is stated in the text.
 
 ## F. Final matrix layout (feature_matrix.md, 2026-10-28)
 
 Removed rows: Conservative MTU (numeric value moved to At a Glance), Per-peer packet queues, Efficient keepalive timers, Graceful degradation, Lazy peer removal, Zero-copy filtering, Same-subnet detection, Multi-user support, Userspace implementation, Self-hosted controller (replaced by Fully self-hostable), Large TCP RX/TX buffers, Tuned congestion control, Reordering tolerance.
 
-Added rows: Datagram encapsulation (no head-of-line blocking), Multi-queue TUN / per-core sockets, TUN offload (virtio-net hdr), Multi-hop routing via peers, End-to-end encryption through relays, Built-in DNS, Fully self-hostable.
+Added rows: Datagram encapsulation (no head-of-line blocking), Multi-queue TUN / per-core sockets, TUN offload (virtio-net hdr), Multi-hop routing via peers, End-to-end encryption through relays, Built-in DNS, Fully self-hostable, No own public node needed.
 
 Renamed rows: STUN support -> Public endpoint discovery (STUN or reflection); Multiple STUN servers -> Multiple discovery servers; Multiple relay regions -> Multiple relays; Automatic relay selection -> Latency-based relay selection; Certificate pinning -> Control-server key pinning; Rate limiting -> Handshake rate limiting; Userspace TCP implementation -> Userspace TCP/IP stack.
 

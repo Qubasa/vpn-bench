@@ -457,6 +457,7 @@ Headscale can operate embedded DERP servers or use external relays:
 ## NAT Traversal Checklist
 
 ### Discovery
+- [ ] **No own public node needed** - Every node must reach the self-hosted Headscale `server_url`, so it needs a public address (`headscale/config-example.yaml:8-19`); the example config uses Tailscale's public DERP map for relays only. Tailscale SaaS would be ✓ (`tailscale/ipn/prefs.go:40-41`)
 - [x] **STUN support** - Discovers public IP/port via STUN servers (uses DERP servers as STUN)
 - [x] **Multiple STUN servers** - netcheck probes STUN on every DERP region in the map (Headscale with only the embedded DERP has a single STUN server)
 - [x] **NAT type detection** - netcheck reports `MappingVariesByDestIP` (endpoint-dependent vs. independent mapping)
