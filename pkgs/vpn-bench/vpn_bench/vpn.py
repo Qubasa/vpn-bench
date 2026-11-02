@@ -5,7 +5,6 @@ import logging
 from typing import TYPE_CHECKING, Any
 
 from clan_cli.vars.get import get_machine_var
-from clan_cli.vars.list import stringify_all_vars
 from clan_lib.api import dataclass_to_dict
 from clan_lib.async_run import AsyncContext, AsyncOpts, AsyncRuntime, get_async_ctx
 from clan_lib.cmd import Log, RunOpts, run
@@ -16,6 +15,7 @@ from clan_lib.machines.update import run_machine_update
 from clan_lib.persist.inventory_store import InventoryStore, set_value_by_path_tuple
 from clan_lib.ssh.remote import Remote
 from clan_lib.vars.generate import run_generators
+from clan_lib.vars.list import stringify_all_vars
 
 from vpn_bench.connection_timings import (
     download_connection_timings,
@@ -634,7 +634,7 @@ def install_vpn(
         # we need to generate the zerotier network-id var
         # for the controller machine
         with timed_op("run_zerotier_generators"):
-            run_generators([machines[0]], "zerotier", no_sandbox=config.no_sandbox)
+            run_generators([machines[0]], ["zerotier"], no_sandbox=config.no_sandbox)
 
     # If --optimized flag is set include custom kernel profile
     if optimized:

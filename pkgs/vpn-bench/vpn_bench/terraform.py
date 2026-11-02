@@ -9,9 +9,9 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from clan_cli.vars.prompt import PromptType, ask
 from clan_lib.cmd import Log, RunOpts, run
 from clan_lib.templates.filesystem import copy_from_nixstore
+from clan_lib.vars.prompt import PromptType, ask
 
 from vpn_bench.assets import get_cloud_asset
 from vpn_bench.data import Config, Provider, TrMachine

@@ -177,8 +177,10 @@ def _apply_to_machine(machine: Machine, settings: TCSettings) -> MachineImpairme
         f"ip link set dev {IFB_DEVICE} up",
         f"tc qdisc add dev {IFB_DEVICE} root netem {args}",
         f"tc qdisc add dev {interface} handle {INGRESS_HANDLE} ingress",
-        f"tc filter add dev {interface} parent {INGRESS_HANDLE} matchall"
-        f" action mirred egress redirect dev {IFB_DEVICE}",
+        (
+            f"tc filter add dev {interface} parent {INGRESS_HANDLE} matchall"
+            f" action mirred egress redirect dev {IFB_DEVICE}"
+        ),
         f"ethtool -K {interface} gro {GRO_DURING_PROFILE}",
     ]
     for command in commands:

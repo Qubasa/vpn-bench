@@ -130,12 +130,6 @@ To change a VPN version, change the input's ref in `flake.nix`, run
 `pkgs/<name>/package.nix`. Finally add the new rev's `git describe --tags` to
 `vpn-versions.nix`; evaluation fails until you do.
 
-clan-core's nixpkgs can ship a Go or Rust compiler that is too old for a new VPN
-release. Such a VPN gets the compiler from the `toolchain-nixpkgs` input instead,
-in its `pkgs/<name>/flake-module.nix` (Go: `buildGoModule.override { go = ...; }`,
-Rust: `makeRustPlatform`). Hyprspace and tincr follow `toolchain-nixpkgs` as a
-whole. The machines themselves, kernel included, stay on clan-core's nixpkgs.
-
 `vpb bench` records the deployed version of each VPN in
 `<alias>/<VPN>/vpn_version.json`. The webview shows it next to the VPN name in the
 sidebar and links it to the source tree at that commit. A VPN built from several

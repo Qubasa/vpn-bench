@@ -6,17 +6,14 @@
   perSystem =
     {
       pkgs,
-      system,
       ...
     }:
 
     {
       packages.tailscale = pkgs.callPackage ./package.nix {
         tailscale-src = inputs.tailscale;
-        # go.mod requires Go >= 1.27.3, clan-core's nixpkgs ships 1.25
-        buildGoModule = pkgs.buildGoModule.override {
-          go = inputs.toolchain-nixpkgs.legacyPackages.${system}.go_1_27;
-        };
+        # go.mod requires Go >= 1.27.3, nixpkgs' default Go is 1.26
+        buildGoModule = pkgs.buildGo127Module;
       };
     };
 }

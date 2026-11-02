@@ -10,7 +10,6 @@ rustPlatform.buildRustPackage {
 
   src = vpncloud-src;
 
-  useFetchCargoVendor = true;
   cargoHash = "sha256-iOOPQziPkxFPiQXMSF3NhJ0mTj3pIV7JDUm+5PS+KLo=";
 
   meta = {

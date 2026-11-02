@@ -5,20 +5,15 @@
   #inputs.clan-core.url = "https://git.clan.lol/Qubasa/clan-core/archive/api_fixes.tar.gz";
   inputs.old-nixpkgs.url = "github:NixOS/nixpkgs/23.05";
   inputs.nixpkgs.follows = "clan-core/nixpkgs";
-  # Go and Rust toolchains for VPNs that need newer ones than clan-core's nixpkgs ships.
-  # Only the compiler comes from here; the machines (kernel included) stay on `nixpkgs`.
-  inputs.toolchain-nixpkgs.url = "github:NixOS/nixpkgs/nixos-26.05";
   inputs.flake-parts.url = "github:hercules-ci/flake-parts";
   inputs.flake-parts.inputs.nixpkgs-lib.follows = "nixpkgs";
   inputs.treefmt-nix.url = "github:numtide/treefmt-nix";
   inputs.treefmt-nix.inputs.nixpkgs.follows = "nixpkgs";
   inputs.hyprspace.url = "github:hyprspace/hyprspace/a0d0788b5934999a929cdfbaa769036f035bf118";
   inputs.hyprspace.inputs.flake-parts.follows = "flake-parts";
-  # Built entirely by its own flake, so it needs a nixpkgs with Go >= 1.26.
-  inputs.hyprspace.inputs.nixpkgs.follows = "toolchain-nixpkgs";
+  inputs.hyprspace.inputs.nixpkgs.follows = "nixpkgs";
   inputs.tincr.url = "github:mic92/tincr/09804a637976137793e8638670422ce8aebcec19";
-  # Its crane input requires nixpkgs >= 26.05.
-  inputs.tincr.inputs.nixpkgs.follows = "toolchain-nixpkgs";
+  inputs.tincr.inputs.nixpkgs.follows = "nixpkgs";
   inputs.easytier = {
     url = "github:EasyTier/EasyTier/24e0303fc55e4e645a11818954dd5b712fb94510";
     flake = false;
@@ -74,7 +69,6 @@
       systems = [
         "x86_64-linux"
         "aarch64-linux"
-        "x86_64-darwin"
         "aarch64-darwin"
       ];
       imports = [

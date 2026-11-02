@@ -13,11 +13,11 @@ from clan_cli.secrets.sops import KeyType, SopsKey, maybe_get_admin_public_keys
 from clan_cli.secrets.users import add_user
 from clan_lib.async_run import AsyncContext, AsyncOpts, AsyncRuntime
 from clan_lib.cmd import RunOpts, run
-from clan_lib.dirs import nixpkgs_flake
+from clan_lib.dirs import runtime_deps_flake
 from clan_lib.flake import Flake
 from clan_lib.git import commit_file
 from clan_lib.nix import nix_command
-from clan_lib.nix_models.clan import InventoryMachine, InventoryMachineDeploy
+from clan_lib.nix_models.typing import MachineDeployInput, MachineInput
 from clan_lib.persist.inventory_store import InventoryStore, set_value_by_path_tuple
 from clan_lib.ssh.remote import Remote
 
@@ -32,7 +32,7 @@ log = logging.getLogger(__name__)
 @dataclass
 class AgeOpts:
     username: str
-    pubkey: None | Path = None
+    pubkey: Path | None = None
 
 
 def clan_clean(config: Config) -> None:
@@ -247,8 +247,8 @@ def setup_machine(clan_dir: Path, tr_machine: TrMachine, machine_num: int) -> No
     assert host_ip is not None
     host = Remote(user="root", address=host_ip, command_prefix=tr_machine["name"])
 
-    inv_machine = InventoryMachine(
-        name=tr_machine["name"], deploy=InventoryMachineDeploy(targetHost=host.target)
+    inv_machine = MachineInput(
+        name=tr_machine["name"], deploy=MachineDeployInput(targetHost=host.target)
     )
 
     create_machine(
@@ -267,7 +267,7 @@ def reset_terminal() -> None:
             [
                 "shell",
                 "--inputs-from",
-                f"{nixpkgs_flake()!s}",
+                f"{runtime_deps_flake()!s}",
                 "nixpkgs#ncurses",
                 "-c",
                 "tput",
@@ -357,6 +357,7 @@ def clan_init(
             )
         ],
         False,
+        flake_dir=config.clan_dir,
     )
 
     # Update flake configuration

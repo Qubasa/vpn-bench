@@ -10,7 +10,7 @@ from clan_lib.cmd import Log, RunOpts
 from clan_lib.errors import ClanError
 from clan_lib.flake import Flake
 from clan_lib.machines.machines import Machine
-from clan_lib.nix_models.clan import InventoryInstance, Unknown
+from clan_lib.nix_models.typing import AnyJson, InstanceInput
 from clan_lib.persist.inventory_store import InventoryStore
 
 from vpn_bench.assets import get_script_asset
@@ -55,13 +55,13 @@ def install_connection_timings_conf(
         with inventory_store.inventory_file.open("r") as f:
             inventory = json.loads(f.read())
 
-            conf: InventoryInstance = {
+            conf: InstanceInput = {
                 "module": {"name": "my-nginx-new", "input": "cvpn-bench"},
                 "roles": {
                     "default": {
                         "machines": {bmachine.cmachine.name: {}},
                         "settings": cast(
-                            Unknown,
+                            AnyJson,
                             {
                                 "publicIPs": cpub,
                                 "vpnIPs": cvpn,

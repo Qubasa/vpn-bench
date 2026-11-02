@@ -16,7 +16,6 @@ rustPlatform.buildRustPackage rec {
   version = "2.7.0-unstable-2026-10-31";
 
   src = easytier-src;
-  useFetchCargoVendor = true;
 
   cargoHash = "sha256-TTIw6mPt2ah/5p/emzVfyKFP5nUysrciafRPGb09kms=";
 

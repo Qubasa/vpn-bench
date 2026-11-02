@@ -15,7 +15,7 @@
         projectRootFile = ".git/config";
 
         programs.mypy.enable = true;
-        programs.nixfmt.package = pkgs.nixfmt-rfc-style;
+        programs.nixfmt.package = pkgs.nixfmt;
         programs.nixfmt.enable = true;
         programs.deadnix.enable = true;
         programs.ruff.check = true;
