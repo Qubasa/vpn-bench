@@ -23,7 +23,6 @@ export const GRID: readonly GridGroup[] = [
       { label: "Auto relay", feature: "Relay fallback" },
       { label: "Works if UDP blocked", feature: "TCP fallback" },
       { label: "WebSocket", feature: "WebSocket support" },
-      { label: "Uses IP", feature: "Layer 3 (IP) mode" },
       { label: "Layer 2", feature: "Layer 2 (Ethernet) mode" },
       { label: "UDP inner", feature: "Datagram encapsulation (no head-of-line blocking)" },
       { label: "Android", feature: "Android" },

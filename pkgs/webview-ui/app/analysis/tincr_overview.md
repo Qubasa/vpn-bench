@@ -10,7 +10,7 @@
 >
 > `b234dc79` also has Mainline DHT discovery (`DhtDiscovery`, `tinc-dht-seed`), which this document does not describe.
 
-tincr is a Rust rewrite of tinc 1.1. It reads the same configuration files, speaks the same meta protocol (17.7) and the same SPTPS wire protocol, and provides the same `tinc` command line, so tincr nodes can join an existing tinc 1.1 mesh as drop-in replacements. Like tinc, it builds a decentralized mesh: every node keeps the full network graph, routes traffic to the owner of each subnet, and forwards packets for other nodes when no direct path exists. On top of that it adds a multi-threaded, batched Linux data path, built-in port mapping, in-mesh DNS, an optional AES-256-GCM cipher, an optional post-quantum hybrid key exchange, a Landlock sandbox, and an Android app.
+tincr is a Rust rewrite of tinc 1.1. It reads the same configuration files, speaks the same meta protocol (17.7) and the same SPTPS wire protocol, and provides the same `tinc` command line, so tincr nodes can join an existing tinc 1.1 mesh as drop-in replacements. Like tinc, it builds a decentralized mesh: every node keeps the full network graph, routes traffic to the owner of each subnet, and forwards packets for other nodes when no direct path exists. On top of that it adds a multi-threaded, batched Linux data path, built-in port mapping, in-mesh DNS, an optional AES-256-GCM cipher, an optional post-quantum hybrid key exchange, a Landlock sandbox, and an unreleased Android app.
 
 ## Key Architecture Components
 
@@ -392,7 +392,7 @@ Nodes authenticate with Ed25519 keys that are pinned in host files; there is no 
 
 # Platform Support
 
-tincr runs on Linux and macOS and ships an Android app. It covers fewer platforms than C tinc.
+tincr runs on Linux and macOS and has an unreleased Android app in the repository. It covers fewer platforms than C tinc.
 
 ## Supported Platforms
 
@@ -429,7 +429,7 @@ tincr runs on Linux and macOS and ships an Android app. It covers fewer platform
 
 ### Mobile
 - [ ] **iOS** - No iOS support
-- [x] **Android** - In-repo VpnService app (`android/`) running tincd with the tun fd passed over a Unix socket
+- [x] **Android** - Partial: in-repo VpnService app (`android/`, started 2026-08-23 as "android: app scaffold") running tincd with the tun fd passed over a Unix socket; no release, tag or README mention, and the benchmarked `b234dc79` has only the `DeviceType = fd` backend
 
 ### Implementation
 - [ ] **Kernel-mode datapath** - No in-kernel packet processing
