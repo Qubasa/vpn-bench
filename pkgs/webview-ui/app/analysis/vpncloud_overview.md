@@ -458,7 +458,7 @@ VpnCloud uses public key cryptography for node authentication with support for p
 - [x] **Pre-authentication keys** - Ed25519 public keys for headless/automated enrollment
 - [ ] **OAuth/OIDC** - No SSO integration
 - [ ] **Interactive login** - No browser-based authentication
-- [ ] **CLI authentication** - N/A: there is no login step. Keys are generated with `vpncloud genkey` and set via CLI/config (an interactive `vpncloud config` wizard also exists)
+- [ ] **CLI authentication** - No enrollment step; the CLI has only `genkey`, `ws-proxy`, `migrate-config`, `config` and `install`. Keys are set via CLI/config (`src/config.rs:538-585`)
 
 ### Authorization
 - [ ] **Admin approval workflow** - Automatic authorization based on trusted keys only

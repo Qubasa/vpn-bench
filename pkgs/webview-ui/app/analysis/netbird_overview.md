@@ -207,7 +207,7 @@ The repository history at this commit contains no CVE or GHSA references. Securi
 - [x] **Capability-based access** - Group-based policies, network resources and posture checks (NetBird version, OS version, geolocation, peer network range, running process)
 
 ### Identity & Authentication
-- [x] **Identity validation** - Peers are identified by their WireGuard public key; management proves possession through NaCl box; WireGuard only accepts keys listed in the management-pushed map
+- [ ] **Identity validation** - Peers are identified by their WireGuard public key and WireGuard only accepts keys in the management-pushed map, but management assigns each peer a random IP from the range; the address is not derived from the key and no CA certificate binds it (same model as Tailscale) (`management/server/peer.go:759`, `management/server/types/network.go:204`)
 - [ ] **Signed configuration updates** - The network map is only protected by TLS plus NaCl box with an unpinned server key; it is not signed by an offline authority
 - [ ] **Certificate pinning** - Management, signal and relay are authenticated by WebPKI TLS (system roots, embedded fallback) only
 
@@ -368,7 +368,7 @@ Peers join through the management server, with either a setup key or a user logi
 - [x] **CLI authentication** - `netbird up` with device flow or a printed login URL
 
 ### Authorization
-- [ ] **Admin approval workflow** - The setting exists, but the validator in the open-source build is a stub that accepts every peer
+- [x] **Admin approval workflow** - Partial: new accounts default to `UserApprovalRequired=true`, and users joining by domain match stay PendingApproval until an admin approves them. This gates users, not single devices; per-peer approval in the open-source build is a stub that accepts every peer (`management/server/account.go:1224-1226,1904`, `management/server/user.go:1423`)
 - [x] **Automated enrollment rules** - Setup-key auto groups, IdP group restrictions, and posture checks on policies
 - [x] **Ephemeral nodes** - Ephemeral setup keys; peers are deleted about 10 min after disconnecting
 - [x] **Node expiry** - SSO login expiration (default 24 h) and optional inactivity expiration

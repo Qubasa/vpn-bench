@@ -167,7 +167,7 @@ Tinc has had several security vulnerabilities discovered and patched over its hi
 ### Implementation
 - [ ] **Memory-safe language** - Written in C with manual memory management
 - [x] **Privilege separation** - Opt-in `--user` (setuid/setgid) and `--chroot` after setup; no separate privileged helper
-- [x] **Sandboxing** - Partial: pledge(2)/unveil(2) on OpenBSD only (`Sandbox = normal` by default there, `high` optional); `--chroot` elsewhere; no seccomp or Capsicum
+- [x] **Sandboxing** - `--chroot` is a documented tincd option on every non-Windows platform; OpenBSD adds pledge(2)/unveil(2) (`Sandbox = normal` by default there, `high` optional); no seccomp or Capsicum (`src/tincd.c:152,399-402`)
 - [ ] **Audit logging** - Authentication and connection events go to the normal syslog/logfile; no dedicated security audit log
 
 # NAT Traversal
@@ -187,7 +187,7 @@ Tinc has **limited NAT traversal capabilities** compared to modern mesh VPNs. It
 ### Discovery
 - [ ] **No own public node needed** - Meta connections need a peer with an `Address` or one learned through the mesh; hole punching is coordinated by a node both peers are connected to (`src/address_cache.c:124-158`, `src/protocol_key.c:463`)
 - [ ] **STUN support** - No STUN; peers' reflexive UDP addresses are reported by intermediate nodes (ANS_KEY, UDP_INFO), not a node's own endpoint
-- [ ] **Multiple STUN servers** - N/A (no STUN)
+- [ ] **Multiple STUN servers** - No discovery servers at all; intermediate nodes only pass on observed addresses
 - [ ] **NAT type detection** - No formal NAT type detection
 
 ### Port Mapping

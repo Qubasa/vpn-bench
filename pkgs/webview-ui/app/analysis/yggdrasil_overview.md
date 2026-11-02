@@ -49,7 +49,7 @@ Yggdrasil uses protocol version 0.5 and supports multiple stream-oriented transp
 - [ ] **Bridging support** - No L2 bridging (non-Yggdrasil hosts can only be routed at L3 via the node's 300::/64 subnet)
 
 ### Advanced
-- [x] **Multipath/bonding** - Partial: several simultaneous links to the same node (e.g. per interface or per transport) are kept up; per packet the lowest `priority` link, then the lowest-latency link, is used, with automatic failover. No aggregation/bonding
+- [x] **Multipath/bonding** - Active-backup: several simultaneous links to the same node key (e.g. per interface or per transport) stay up; traffic uses the lowest `priority` link, then the lowest-cost link, and fails over automatically when one dies. No aggregation (`src/core/link.go:54`, ironwood `network/peers.go:25`, `network/router.go:727`)
 - [ ] **QoS/traffic shaping** - No configurable QoS; per-peer send queues do built-in fair queuing per source/destination and drop the oldest packet of the largest flow once queueing delay exceeds 25 ms
 - [ ] **Multicast support** - No virtual multicast/broadcast for tunnel traffic (only unicast 200::/7 destinations)
 
@@ -110,11 +110,12 @@ Yggdrasil is written in Go and uses goroutines plus the phony actor library for 
 ### Packet I/O
 - [ ] **Batch UDP receives** - Not on TCP/TLS/WS links; only the optional QUIC transport (quic-go recvmmsg, batch of 8)
 - [ ] **Batch UDP sends** - No sendmmsg; peer writes are coalesced via bufio instead
-- [x] **Large batch sizes** - Partial: TUN reads/writes up to 128 packets per call on Linux (wireguard-go vnet-hdr mode); network layer not batched
+- [x] **Large batch sizes** - On Linux the TUN reader and writer use wireguard-go's IdealBatchSize (128 packets per call); network layer not batched (`src/tun/iface.go:12`, `src/tun/tun.go:152`)
 
 ### UDP Offload
 - [ ] **UDP GSO (Generic Segmentation Offload)** - Only inside quic-go when the QUIC transport is used
 - [ ] **UDP GRO (Generic Receive Offload)** - Not used
+- [x] **TUN offload (virtio-net header)** - On Linux wireguard-go's CreateTUN always opens the TUN with IFF_VNET_HDR and sets TUNSETOFFLOAD (CSUM/TSO4/TSO6, plus USO when available) (`src/tun/tun_linux.go:20`)
 
 ### Buffer Management
 - [x] **Buffer pool reuse** - Extensive sync.Pool usage (TUN: 65,615 bytes, core and Ironwood: variable)
@@ -186,7 +187,7 @@ Yggdrasil's changelog documents one security-relevant dependency fix:
 
 ### Implementation
 - [x] **Memory-safe language** - Written in Go (memory-safe)
-- [x] **Privilege separation** - Partial: optional `-user` privilege drop after TUN/socket setup; no separate privileged helper
+- [x] **Privilege separation** - The documented `-user` flag calls setgid/setuid after TUN/socket setup, and the shipped systemd units limit capabilities to CAP_NET_ADMIN and CAP_NET_BIND_SERVICE (`cmd/yggdrasil/main.go:57,294`, `cmd/yggdrasil/chuser_unix.go:55`, `contrib/systemd/yggdrasil.service:13`)
 - [x] **Sandboxing** - Partial: OpenBSD pledge(); AppArmor profile shipped in contrib/. No seccomp
 - [ ] **Audit logging** - No security event logging (only connect/disconnect info logs)
 

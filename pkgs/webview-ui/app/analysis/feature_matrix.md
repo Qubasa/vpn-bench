@@ -25,7 +25,7 @@
 
 | Feature | EasyTier | Tailscale / Headscale | Hyprspace | Mycelium | Nebula | NetBird | Tinc | tincr | VpnCloud | Yggdrasil | ZeroTier |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| UDP transport | ✓ | ✓ | ✓ | ✗ | ✓ | ✓ | ✓ | ✓ | ✓ | ✗ | ✓ |
+| UDP transport | ✓ | ✓ | ✗ | ✗ | ✓ | ✓ | ✓ | ✓ | ✓ | ✗ | ✓ |
 | Datagram encapsulation (no head-of-line blocking) | ◐ | ✓ | ✗ | ◐ | ✓ | ✓ | ✓ | ✓ | ✓ | ✗ | ✓ |
 | TCP fallback | ✓ | ✓ | ✓ | ✓ | ✗ | ✓ | ✓ | ✓ | ◐ | ✓ | ✓ |
 | QUIC support | ✓ | ✗ | ✓ | ✓ | ✗ | ◐ | ✗ | ✗ | ✗ | ✓ | ✗ |
@@ -51,7 +51,7 @@
 
 | Feature | EasyTier | Tailscale / Headscale | Hyprspace | Mycelium | Nebula | NetBird | Tinc | tincr | VpnCloud | Yggdrasil | ZeroTier |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| Multipath/bonding | ✓ | ✗ | ✗ | ✗ | ✗ | ◐ | ✗ | ✗ | ✗ | ◐ | ✓ |
+| Multipath/bonding | ✓ | ✗ | ✗ | ✗ | ✗ | ◐ | ✗ | ✗ | ✗ | ✓ | ✓ |
 | QoS/traffic shaping | ✓ | ✗ | ✗ | ✗ | ✗ | ✗ | ✗ | ✗ | ✗ | ✗ | ✗ |
 | Multicast support | ✓ | ✗ | ✗ | ✗ | ✗ | ✗ | ✓ | ✓ | ✓ | ✗ | ✓ |
 
@@ -81,9 +81,9 @@
 | Feature | EasyTier | Tailscale / Headscale | Hyprspace | Mycelium | Nebula | NetBird | Tinc | tincr | VpnCloud | Yggdrasil | ZeroTier |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | Replay protection | ✗ | ✓ | ✓ | ✗ | ✓ | ✓ | ✓ | ✓ | ◐ | ✓ | ✗ |
-| Noise Protocol | ◐ | ✓ | ◐ | ✗ | ✓ | ✓ | ✗ | ✗ | ✗ | ✗ | ✗ |
+| Noise Protocol | ◐ | ✓ | ✗ | ✗ | ✓ | ✓ | ✗ | ✗ | ✗ | ✗ | ✗ |
 | No cleartext metadata | ✗ | ◐ | ✓ | ✗ | ✗ | ✓ | ✗ | ✗ | ✓ | ✗ | ✗ |
-| End-to-end encryption through relays | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
+| End-to-end encryption through relays | ◐ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
 
 ---
 
@@ -93,16 +93,16 @@
 
 | Feature | EasyTier | Tailscale / Headscale | Hyprspace | Mycelium | Nebula | NetBird | Tinc | tincr | VpnCloud | Yggdrasil | ZeroTier |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| Multi-threaded processing | ◐ | ✓ | ◐ | ◐ | ◐ | ✓ | ✗ | ✓ | ✗ | ◐ | ◐ |
-| Multi-queue TUN / per-core sockets | ✗ | ✗ | ✗ | ✗ | ◐ | N/A | ✗ | ✓ | ✗ | ✗ | ✗ |
+| Multi-threaded processing | ◐ | ✓ | ◐ | ◐ | ✓ | ✓ | ✗ | ✓ | ✗ | ◐ | ◐ |
+| Multi-queue TUN / per-core sockets | ✗ | ✗ | ✗ | ✗ | ✓ | N/A | ✗ | ✓ | ✗ | ✗ | ✗ |
 
 ### Packet I/O
 
 | Feature | EasyTier | Tailscale / Headscale | Hyprspace | Mycelium | Nebula | NetBird | Tinc | tincr | VpnCloud | Yggdrasil | ZeroTier |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| Batch UDP receives (recvmmsg) | ◐ | ✓ | ◐ | ◐ | ✓ | N/A | ✓ | ✓ | ✗ | ◐ | ✓ |
-| Batch UDP sends (sendmmsg) | ✗ | ✓ | ✗ | ✗ | ✗ | N/A | ✗ | ✓ | ✗ | ✗ | ✗ |
-| Large batch sizes (64+) | ◐ | ✓ | ✗ | ✗ | ✓ | N/A | ✓ | ✓ | ✗ | ◐ | ✓ |
+| Batch UDP receives (recvmmsg) | ◐ | ✓ | ✓ | ◐ | ✓ | N/A | ✓ | ✓ | ✗ | ◐ | ✓ |
+| Batch UDP sends (sendmmsg) | ✗ | ✓ | ✗ | ✗ | ✗ | N/A | ✗ | ✗ | ✗ | ✗ | ✗ |
+| Large batch sizes (64+) | ◐ | ✓ | ✗ | ✗ | ✓ | N/A | ✓ | ✓ | ✗ | ✓ | ✓ |
 
 ### Offloads
 
@@ -110,7 +110,7 @@
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | UDP GSO | ◐ | ✓ | ✓ | ◐ | ✗ | N/A | ✗ | ✓ | ✗ | ◐ | ✗ |
 | UDP GRO | ✗ | ✓ | ✗ | ◐ | ✗ | N/A | ✗ | ✗ | ✗ | ✗ | ✗ |
-| TUN offload (virtio-net hdr) | ✗ | ✓ | ✗ | ✗ | ✗ | N/A | ✗ | ✓ | ✗ | ◐ | ✗ |
+| TUN offload (virtio-net hdr) | ✗ | ✓ | ✗ | ✗ | ✗ | N/A | ✗ | ✓ | ✗ | ✓ | ✗ |
 
 ### Buffers and Parsing
 
@@ -138,7 +138,7 @@
 | Feature | EasyTier | Tailscale / Headscale | Hyprspace | Mycelium | Nebula | NetBird | Tinc | tincr | VpnCloud | Yggdrasil | ZeroTier |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | Tunnel compression | ✓ | ✗ | ✗ | ✗ | ✗ | ✗ | ✓ | ✓ | ✗ | ✗ | ◐ |
-| Configurable compression | ✗ | N/A | N/A | ✗ | N/A | ✗ | ✓ | ✓ | ✗ | ✗ | ✗ |
+| Configurable compression | ✗ | ✗ | ✗ | ✗ | ✗ | ✗ | ✓ | ✓ | ✗ | ✗ | ✗ |
 
 ---
 
@@ -157,17 +157,17 @@
 
 | Feature | EasyTier | Tailscale / Headscale | Hyprspace | Mycelium | Nebula | NetBird | Tinc | tincr | VpnCloud | Yggdrasil | ZeroTier |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| Identity validation | ✗ | ✗ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
+| Identity validation | ✗ | ✗ | ✓ | ✓ | ✓ | ✗ | ✓ | ✓ | ✓ | ✓ | ✓ |
 | Signed config updates | ✗ | ✗ | ✗ | ✗ | ✗ | ✗ | ✗ | ✗ | ✗ | ✗ | ✓ |
-| Control-server key pinning | ✗ | ✗ | ✗ | N/A | ✓ | ✗ | N/A | N/A | N/A | N/A | ✓ |
+| Control-server key pinning | N/A | ✗ | N/A | N/A | ✓ | ✗ | N/A | N/A | N/A | N/A | ✓ |
 
 ### Implementation
 
 | Feature | EasyTier | Tailscale / Headscale | Hyprspace | Mycelium | Nebula | NetBird | Tinc | tincr | VpnCloud | Yggdrasil | ZeroTier |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | Memory-safe language | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✗ | ✓ | ✓ | ✓ | ✗ |
-| Privilege separation | ✗ | ◐ | ✗ | ✗ | ✗ | ✗ | ✓ | ✓ | ✓ | ◐ | ◐ |
-| Sandboxing | ✗ | ✗ | ✗ | ◐ | ✗ | ✗ | ◐ | ◐ | ◐ | ◐ | ✗ |
+| Privilege separation | ✗ | ◐ | ✗ | ✗ | ✗ | ✗ | ✓ | ✓ | ✓ | ✓ | ◐ |
+| Sandboxing | ✗ | ◐ | ✗ | ◐ | ✗ | ✗ | ✓ | ✓ | ◐ | ◐ | ✗ |
 | Audit logging | ◐ | ✗ | ✗ | ✗ | ✓ | ✓ | ✗ | ✗ | ✓ | ✗ | ◐ |
 
 ---
@@ -180,7 +180,7 @@
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | No own public node needed | ✓ | ✗ | ✓ | ◐ | ✗ | ◐ | ✗ | ✗ | ✗ | ◐ | ✓ |
 | Public endpoint discovery (STUN or reflection) | ✓ | ✓ | ✓ | ✗ | ✓ | ✓ | ✗ | ✗ | ◐ | ✗ | ✓ |
-| Multiple discovery servers | ✓ | ✓ | ✓ | ✗ | ✓ | ✓ | N/A | N/A | ✗ | ✗ | ✓ |
+| Multiple discovery servers | ✓ | ✓ | ✓ | ✗ | ✓ | ✓ | ✗ | ✗ | ✗ | ✗ | ✓ |
 | NAT type detection | ✓ | ✓ | ◐ | ✗ | ✗ | ✗ | ✗ | ✗ | ✗ | ✗ | ✗ |
 
 ### Port Mapping
@@ -203,7 +203,7 @@
 
 | Feature | EasyTier | Tailscale / Headscale | Hyprspace | Mycelium | Nebula | NetBird | Tinc | tincr | VpnCloud | Yggdrasil | ZeroTier |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| Relay fallback | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ◐ | ✗ | ✓ |
+| Relay fallback | ✓ | ✓ | ✓ | ✓ | ◐ | ✓ | ✓ | ✓ | ◐ | ✗ | ✓ |
 | Multiple relays | ◐ | ✓ | ◐ | ✓ | ◐ | ◐ | N/A | N/A | ✗ | N/A | ✓ |
 | Latency-based relay selection | ✓ | ✓ | ✗ | ✓ | ◐ | ◐ | ◐ | ◐ | ✗ | N/A | ✓ |
 | TCP relay support | ✓ | ✓ | ✓ | ✓ | ✗ | ✓ | ✓ | ✓ | ◐ | ✓ | ✓ |
@@ -247,7 +247,7 @@
 | Feature | EasyTier | Tailscale / Headscale | Hyprspace | Mycelium | Nebula | NetBird | Tinc | tincr | VpnCloud | Yggdrasil | ZeroTier |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | Existing connections survive | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
-| Local state caching | ✗ | ✗ | ◐ | ✗ | ◐ | ✗ | ✓ | ✓ | ✗ | ✗ | ✓ |
+| Local state caching | ✗ | ✗ | ◐ | ✗ | ✗ | ✗ | ✓ | ✓ | ✗ | ✗ | ✓ |
 | Cached credentials | N/A | ✓ | N/A | N/A | ✓ | ◐ | N/A | N/A | N/A | N/A | ◐ |
 
 ### Redundancy
@@ -256,7 +256,7 @@
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | Fully self-hostable | ✓ | ✓ | ◐ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
 | Controller redundancy | N/A | ✗ | N/A | N/A | ✓ | ✗ | N/A | N/A | N/A | N/A | ◐ |
-| Relay redundancy | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✗ | ✓ | ✓ |
+| Relay redundancy | ✓ | ✓ | ✓ | ✓ | ◐ | ✓ | ✓ | ✓ | ✗ | ✓ | ✓ |
 | No single root of trust | ✓ | ✗ | ✓ | ✓ | ✗ | ✗ | ✓ | ✓ | ✓ | ✓ | ✗ |
 
 ---
@@ -271,13 +271,13 @@
 | Certificate-based enrollment | ✗ | ✗ | ✗ | ✗ | ✓ | ✗ | ✗ | ✗ | ✗ | ✗ | ✗ |
 | OAuth/OIDC | ✗ | ✓ | ✗ | ✗ | ✗ | ✓ | ✗ | ✗ | ✗ | ✗ | ◐ |
 | Interactive login | ✗ | ✓ | ✗ | ✗ | ✗ | ✓ | ✗ | ✗ | ✗ | ✗ | ◐ |
-| CLI authentication | ✓ | ✓ | ✗ | ✗ | ✗ | ✓ | ✓ | ✓ | N/A | ✗ | ✓ |
+| CLI authentication | ✓ | ✓ | ✗ | ✗ | ✗ | ✓ | ✓ | ✓ | ✗ | ✗ | ✓ |
 
 ### Authorization
 
 | Feature | EasyTier | Tailscale / Headscale | Hyprspace | Mycelium | Nebula | NetBird | Tinc | tincr | VpnCloud | Yggdrasil | ZeroTier |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| Admin approval workflow | ✗ | ✓ | ✗ | ✗ | ✗ | ✗ | ✗ | ✗ | ✗ | ✗ | ✓ |
+| Admin approval workflow | ✗ | ✓ | ✗ | ✗ | ✗ | ◐ | ✗ | ✗ | ✗ | ✗ | ✓ |
 | Automated enrollment rules | ✗ | ✓ | ✗ | ✗ | ✗ | ✓ | ✗ | ✗ | ✗ | ✗ | ◐ |
 | Ephemeral nodes | ✗ | ✓ | ✗ | ✗ | ✗ | ✓ | ✗ | ✗ | ✗ | ✗ | ✗ |
 | Node expiry | ✗ | ✓ | ✗ | ✗ | ✓ | ✓ | ✗ | ✗ | ✗ | ✗ | ◐ |
@@ -287,7 +287,7 @@
 | Feature | EasyTier | Tailscale / Headscale | Hyprspace | Mycelium | Nebula | NetBird | Tinc | tincr | VpnCloud | Yggdrasil | ZeroTier |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | Stable device identity | ◐ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
-| Identity portability | N/A | ✗ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ◐ |
+| Identity portability | ◐ | ✗ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ◐ |
 
 ---
 
