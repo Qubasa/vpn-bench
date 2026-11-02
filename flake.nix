@@ -128,6 +128,7 @@
           "zerotier" = (
             lib.modules.importApply ./clanModules/zerotier {
               packages = self.packages;
+              clan-core = inputs.clan-core;
             }
           );
           "headscale" = (

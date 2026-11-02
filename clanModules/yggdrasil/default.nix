@@ -117,7 +117,8 @@
             systemd.services.yggdrasil.serviceConfig.Slice = "benchmark.slice";
 
             clan.core.vars.generators.yggdrasil = {
-              files.private-key = { };
+              # PEM, the format services.yggdrasil.settings.PrivateKeyPath reads
+              files.private-key-pem = { };
               files.public-key = {
                 secret = false;
               };
@@ -129,20 +130,15 @@
                 secret = false;
                 deploy = false;
               };
-              files.config = {
-                deploy = false;
-              };
 
               runtimeInputs = [
                 pkgs.coreutils
-                pkgs.jq
                 yggdrasil
               ];
 
               script = ''
                 CONF=$(yggdrasil -genconf -json)
-                echo "$CONF" > "$out"/config
-                echo "$CONF" | jq -r .PrivateKey | tr -d "\n" > "$out"/private-key
+                echo "$CONF" | yggdrasil -useconf -exportkey > "$out"/private-key-pem
                 echo "$CONF" | yggdrasil -useconf -subnet | tr -d "\n" > "$out"/network
                 echo "$CONF" | yggdrasil -useconf -publickey | tr -d "\n" > "$out"/public-key
                 echo "$CONF" | yggdrasil -useconf -address | tr -d "\n" > "$out"/ip
@@ -154,40 +150,22 @@
               allowedUDPPorts = [ settings.listenPort ];
             };
 
-            clan.core.vars.generators.yggdrasil-config = {
-              files.config = { };
-              dependencies = [
-                "yggdrasil"
-              ];
-              validation = {
-                listenPort = settings.listenPort;
-                allowedPubkeys = settings.allowedPubkeys;
-              }
-              // settings.peers;
-
-              runtimeInputs = [
-                pkgs.coreutils
-                pkgs.jq
-              ];
-
-              script = ''
-                ORIG_CONF=$(cat "$in"/yggdrasil/config)
-                MACHINE_PUB_KEYS='${builtins.toJSON (machinePubVals ++ (lib.attrValues settings.allowedPubkeys))}'
-                PEERS='${builtins.toJSON (peersToList settings.peers)}'
-                RES=$(echo "$ORIG_CONF" | jq --argjson pubkeys "$MACHINE_PUB_KEYS" \
-                  '.AllowedPublicKeys += $pubkeys')
-                RES=$(echo "$RES" | jq '.Listen += ["quic://[::]:${toString settings.listenPort}", "quic://0.0.0.0:${toString settings.listenPort}","tls://0.0.0.0:${toString settings.listenPort}", "tls://[::]:${toString settings.listenPort}"]')
-                RES=$(echo "$RES" | jq --argjson peers "$PEERS" \
-                  '.Peers += $peers')
-                echo "$RES" > "$out"/config
-              '';
-            };
-
+            # Keys left out of settings keep yggdrasil's -genconf defaults.
             services.yggdrasil = {
               enable = true;
               package = yggdrasil;
               openMulticastPort = settings.enableMulticast;
-              configFile = config.clan.core.vars.generators.yggdrasil-config.files.config.path;
+              settings = {
+                PrivateKeyPath = config.clan.core.vars.generators.yggdrasil.files.private-key-pem.path;
+                AllowedPublicKeys = machinePubVals ++ lib.attrValues settings.allowedPubkeys;
+                Listen = map (address: "${address}:${toString settings.listenPort}") [
+                  "quic://[::]"
+                  "quic://0.0.0.0"
+                  "tls://0.0.0.0"
+                  "tls://[::]"
+                ];
+                Peers = peersToList settings.peers;
+              };
             };
 
           };

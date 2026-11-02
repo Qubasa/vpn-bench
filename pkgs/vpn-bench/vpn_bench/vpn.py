@@ -369,7 +369,9 @@ def get_vpn_ips(
         vpn_ip: str | None = None
         match vpn:
             case VPN.Zerotier:
-                vpn_ip = get_machine_var(machine, "zerotier/zerotier-ip").value.decode()
+                vpn_ip = get_machine_var(
+                    machine, f"zerotier-ip-{machine.name}-zerotier/ip"
+                ).value.decode()
             case VPN.Mycelium:
                 vpn_ip = (
                     get_machine_var(machine, "mycelium/ip").value.decode().strip("\n")
@@ -628,13 +630,6 @@ def install_vpn(
 
     for machine in machines:
         machine.flake.invalidate_cache()
-
-    if vpn == VPN.Zerotier:
-        # Because of facts to vars migration code,
-        # we need to generate the zerotier network-id var
-        # for the controller machine
-        with timed_op("run_zerotier_generators"):
-            run_generators([machines[0]], ["zerotier"], no_sandbox=config.no_sandbox)
 
     # If --optimized flag is set include custom kernel profile
     if optimized:

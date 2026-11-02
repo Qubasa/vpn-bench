@@ -10,6 +10,10 @@
   manifest.name = "headscale";
   manifest.description = "Headscale - Self-hosted Tailscale control server for mesh VPN networking";
   manifest.categories = [ "Utility" ];
+  manifest.exports.out = [
+    "networking"
+    "peer"
+  ];
 
   exports = lib.mapAttrs' (instanceName: _: {
     name = clanLib.buildScopeKey {
@@ -60,7 +64,6 @@
         instanceName,
         settings,
         machine,
-        mkExports,
         ...
       }:
       let
@@ -68,14 +71,6 @@
         isPeer = true;
       in
       {
-        exports = mkExports {
-          controller.hosts = [
-            {
-              plain = settings.publicAddress;
-            }
-          ];
-        };
-
         nixosModule =
           {
             config,
