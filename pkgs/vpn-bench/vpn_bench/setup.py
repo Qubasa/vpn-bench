@@ -3,7 +3,6 @@ import os
 import shutil
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
 
 import clan_cli.clan.create
 from clan_cli.machines.create import CreateOptions as ClanCreateOptions
@@ -88,12 +87,6 @@ def update_flake_nix(clan_dir: Path, vpnbench_clan: Path) -> None:
 class InvSSHKeyEntry:
     username: str
     ssh_pubkey_txt: str
-
-
-@dataclass
-class InventoryWrapper:
-    instances: dict[str, Any]
-    services: dict[str, Any]
 
 
 def create_base_inventory(config: Config, tr_machines: list[TrMachine]) -> None:

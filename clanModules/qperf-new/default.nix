@@ -21,7 +21,7 @@
           let
             finalSettings = extendSettings {
               maxNumCores = lib.mkDefault (
-                builtins.foldl' (acc: cpu: acc + cpu.cores) 0 config.facter.report.hardware.cpu * 2
+                builtins.foldl' (acc: cpu: acc + cpu.cores) 0 config.hardware.facter.report.hardware.cpu * 2
               );
             };
           in
