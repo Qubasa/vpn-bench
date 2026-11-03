@@ -2,7 +2,8 @@
 
 Each machine redirects the traffic arriving on its primary interface to an ifb
 device whose root qdisc is netem. GRO is off while a profile is active, so
-netem delays and drops single wire packets instead of merged batches.
+netem delays and drops single wire packets instead of merged batches. A
+bottleneck or reordering is a child qdisc of netem, so it acts after the delay.
 """
 
 import logging
@@ -25,8 +26,12 @@ IMPAIRMENT_METHOD = "receiver-ifb"
 GRO_DURING_PROFILE = "off"
 IFB_DEVICE = "vpbifb0"
 INGRESS_HANDLE = "ffff:"
+NETEM_HANDLE = "1:"
+CHILD_PARENT = "1:1"
+CHILD_HANDLE = "10:"
 NETEM_QUEUE_LIMIT = 100_000
 FALLBACK_LINK_SPEED_MBIT = 1000
+MIN_BURST_BYTES = 2 * 1514
 
 
 @dataclass(frozen=True)
@@ -38,6 +43,7 @@ class MachineImpairment:
     rate_mbit: int
     gro_before: str
     netem_args: str
+    child_qdisc: str | None
 
 
 @dataclass(frozen=True)
@@ -61,13 +67,6 @@ def _format_number(value: float) -> str:
     return f"{value:g}"
 
 
-def netem_rate_mbit(settings: TCSettings, link_speed_mbit: int) -> int:
-    """Return the netem rate, the link speed capped by the profile's bandwidth."""
-    if settings.bandwidth_mbit is None:
-        return link_speed_mbit
-    return min(settings.bandwidth_mbit, link_speed_mbit)
-
-
 def netem_args(settings: TCSettings, rate_mbit: int) -> str:
     """Build the netem argument string for the ifb root qdisc.
 
@@ -86,6 +85,31 @@ def netem_args(settings: TCSettings, rate_mbit: int) -> str:
         args += ["loss", f"{_format_number(settings.packet_loss_percent)}%"]
     args += ["rate", f"{rate_mbit}mbit", "limit", str(NETEM_QUEUE_LIMIT)]
     return " ".join(args)
+
+
+def child_qdisc(settings: TCSettings) -> str | None:
+    """Build the qdisc that follows the root netem, None if the profile has none.
+
+    A bottleneck is tbf with a one-millisecond burst and a tail-drop queue of
+    queue_limit_bytes. Reordering is a second netem, so a reordered packet skips
+    only the displacement delay and overtakes at most that much traffic.
+    """
+    if settings.bandwidth_mbit is not None and settings.queue_limit_bytes is not None:
+        burst = max(settings.bandwidth_mbit * 125, MIN_BURST_BYTES)
+        return (
+            f"tbf rate {settings.bandwidth_mbit}mbit burst {burst}"
+            f" limit {settings.queue_limit_bytes}"
+        )
+    if (
+        settings.reorder_percent is not None
+        and settings.reorder_displacement_ms is not None
+    ):
+        return (
+            f"netem delay {_format_number(settings.reorder_displacement_ms)}ms"
+            f" reorder {_format_number(settings.reorder_percent)}%"
+            f" limit {NETEM_QUEUE_LIMIT}"
+        )
+    return None
 
 
 def _quiet() -> RunOpts:
@@ -155,15 +179,39 @@ def _clear_impairment(ssh: SharedConnection, interface: str) -> None:
         ssh_run(ssh, ["rm", "-f", state_file], RunOpts(log=Log.BOTH))
 
 
+def impairment_commands(interface: str, netem: str, child: str | None) -> list[str]:
+    """Return the commands that impair the traffic received on an interface."""
+    commands = [
+        "modprobe ifb numifbs=0",
+        f"ip link add {IFB_DEVICE} type ifb",
+        f"ip link set dev {IFB_DEVICE} up",
+        f"tc qdisc add dev {IFB_DEVICE} root handle {NETEM_HANDLE} netem {netem}",
+    ]
+    if child is not None:
+        commands.append(
+            f"tc qdisc add dev {IFB_DEVICE} parent {CHILD_PARENT}"
+            f" handle {CHILD_HANDLE} {child}"
+        )
+    return [
+        *commands,
+        f"tc qdisc add dev {interface} handle {INGRESS_HANDLE} ingress",
+        f"tc filter add dev {interface} parent {INGRESS_HANDLE} matchall"
+        f" action mirred egress redirect dev {IFB_DEVICE}",
+        f"ethtool -K {interface} gro {GRO_DURING_PROFILE}",
+    ]
+
+
 def _apply_to_machine(machine: Machine, settings: TCSettings) -> MachineImpairment:
     ssh = machine_connection(machine)
     interface = _primary_interface(ssh)
     _clear_impairment(ssh, interface)
     gro_before = _read_gro(ssh, interface)
-    rate_mbit = netem_rate_mbit(settings, _read_link_speed_mbit(ssh, interface))
-    args = netem_args(settings, rate_mbit)
+    rate_mbit = _read_link_speed_mbit(ssh, interface)
+    netem = netem_args(settings, rate_mbit)
+    child = child_qdisc(settings)
     log.info(
-        f"{machine.name}: netem on ingress of {interface} via {IFB_DEVICE}: {args}"
+        f"{machine.name}: netem on ingress of {interface} via {IFB_DEVICE}: {netem}"
+        f", then: {child}"
     )
     state_file = _gro_state_file(interface)
     ssh_run(
@@ -171,17 +219,7 @@ def _apply_to_machine(machine: Machine, settings: TCSettings) -> MachineImpairme
         ["sh", "-c", 'printf "%s\\n" "$1" > "$2"', "sh", gro_before, state_file],
         RunOpts(log=Log.BOTH),
     )
-    commands = [
-        "modprobe ifb numifbs=0",
-        f"ip link add {IFB_DEVICE} type ifb",
-        f"ip link set dev {IFB_DEVICE} up",
-        f"tc qdisc add dev {IFB_DEVICE} root netem {args}",
-        f"tc qdisc add dev {interface} handle {INGRESS_HANDLE} ingress",
-        f"tc filter add dev {interface} parent {INGRESS_HANDLE} matchall"
-        f" action mirred egress redirect dev {IFB_DEVICE}",
-        f"ethtool -K {interface} gro {GRO_DURING_PROFILE}",
-    ]
-    for command in commands:
+    for command in impairment_commands(interface, netem, child):
         ssh_run(ssh, command.split(), RunOpts(log=Log.BOTH))
     ssh_run(ssh, ["tc", "qdisc", "show", "dev", IFB_DEVICE], RunOpts(log=Log.BOTH))
     return MachineImpairment(
@@ -189,7 +227,8 @@ def _apply_to_machine(machine: Machine, settings: TCSettings) -> MachineImpairme
         ifb=IFB_DEVICE,
         rate_mbit=rate_mbit,
         gro_before=gro_before,
-        netem_args=args,
+        netem_args=netem,
+        child_qdisc=child,
     )
 
 

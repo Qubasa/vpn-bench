@@ -132,12 +132,19 @@ class TCSettings:
     """Per-direction network impairment, applied to the traffic each machine receives.
 
     A round trip crosses two impaired directions, so it gains twice the delay.
+    A bottleneck (bandwidth_mbit with queue_limit_bytes) drops only the packets
+    that overflow its queue. With reordering, every packet first gets latency_ms,
+    then all but reorder_percent of them wait reorder_displacement_ms more, so a
+    reordered packet arrives that much earlier than its neighbours.
     """
 
     latency_ms: float | None = None
     jitter_ms: float | None = None
     packet_loss_percent: float | None = None
+    reorder_percent: float | None = None
+    reorder_displacement_ms: float | None = None
     bandwidth_mbit: int | None = None
+    queue_limit_bytes: int | None = None
 
     def __post_init__(self) -> None:
         if self.jitter_ms is not None and (
@@ -147,24 +154,66 @@ class TCSettings:
                 f"Jitter ({self.jitter_ms} ms) exceeds the delay ({self.latency_ms} ms)"
             )
             raise ValueError(msg)
+        self._check_reorder()
+        self._check_bottleneck()
+        if self.reorder_percent is not None and self.bandwidth_mbit is not None:
+            msg = "A profile has either reordering or a bottleneck, not both"
+            raise ValueError(msg)
+
+    def _check_reorder(self) -> None:
+        if (self.reorder_percent is None) != (self.reorder_displacement_ms is None):
+            msg = "Reordering needs both reorder_percent and reorder_displacement_ms"
+            raise ValueError(msg)
+        if self.reorder_percent is not None and not 0 < self.reorder_percent <= 100:
+            msg = f"Reorder share ({self.reorder_percent} %) is not in (0, 100]"
+            raise ValueError(msg)
+        if (
+            self.reorder_displacement_ms is not None
+            and self.reorder_displacement_ms <= 0
+        ):
+            msg = (
+                f"Reorder displacement ({self.reorder_displacement_ms} ms)"
+                " is not positive"
+            )
+            raise ValueError(msg)
+
+    def _check_bottleneck(self) -> None:
+        if (self.bandwidth_mbit is None) != (self.queue_limit_bytes is None):
+            msg = "A bottleneck needs both bandwidth_mbit and queue_limit_bytes"
+            raise ValueError(msg)
+        if self.bandwidth_mbit is not None and self.bandwidth_mbit <= 0:
+            msg = f"Bottleneck rate ({self.bandwidth_mbit} Mbit/s) is not positive"
+            raise ValueError(msg)
+        if self.queue_limit_bytes is not None and self.queue_limit_bytes <= 0:
+            msg = f"Bottleneck queue ({self.queue_limit_bytes} B) is not positive"
+            raise ValueError(msg)
 
     def __str__(self) -> str:
         """Generate a human-readable description of TC settings."""
         parts = []
         if self.bandwidth_mbit is not None:
             parts.append(f"bw{self.bandwidth_mbit}mbit")
+        if self.queue_limit_bytes is not None:
+            parts.append(f"queue{self.queue_limit_bytes}b")
         if self.latency_ms is not None:
             parts.append(f"lat{self.latency_ms}ms")
         if self.jitter_ms is not None:
             parts.append(f"jit{self.jitter_ms}ms")
         if self.packet_loss_percent is not None:
             parts.append(f"loss{self.packet_loss_percent}pct")
+        if self.reorder_percent is not None:
+            parts.append(
+                f"reorder{self.reorder_percent}pct{self.reorder_displacement_ms}ms"
+            )
         return "_".join(parts) if parts else "baseline"
 
     @property
     def added_rtt_ms(self) -> float | None:
-        """Round-trip time added by the delay of both directions."""
-        return 2 * self.latency_ms if self.latency_ms is not None else None
+        """Round-trip time added to in-order packets by both directions."""
+        if self.latency_ms is None and self.reorder_displacement_ms is None:
+            return None
+        one_way = (self.latency_ms or 0) + (self.reorder_displacement_ms or 0)
+        return 2 * one_way
 
     def to_dict(self) -> dict[str, float | str | None]:
         """Convert the per-direction values to a dictionary for JSON serialization."""
@@ -175,8 +224,11 @@ class TCSettings:
             if self.jitter_ms is not None
             else None,
             "packet_loss_percent": self.packet_loss_percent,
+            "reorder_percent": self.reorder_percent,
+            "reorder_displacement_ms": self.reorder_displacement_ms,
             "added_rtt_ms": self.added_rtt_ms,
             "bandwidth_mbit": self.bandwidth_mbit,
+            "queue_limit_bytes": self.queue_limit_bytes,
         }
 
 
@@ -196,6 +248,8 @@ class TCProfile(Enum):
     LOW = "low"
     MEDIUM = "medium"
     HIGH = "high"
+    CONGESTION = "congestion"
+    REORDER = "reorder"
 
     @staticmethod
     def from_str(label: str) -> "TCProfile":
@@ -228,6 +282,20 @@ class TCProfile(Enum):
                     alias="high_impairment",
                     tc_settings=TCSettings(
                         latency_ms=20, jitter_ms=5, packet_loss_percent=0.05
+                    ),
+                )
+            case TCProfile.CONGESTION:
+                return BenchmarkRun(
+                    alias="congestion_impairment",
+                    tc_settings=TCSettings(
+                        latency_ms=10, bandwidth_mbit=100, queue_limit_bytes=250_000
+                    ),
+                )
+            case TCProfile.REORDER:
+                return BenchmarkRun(
+                    alias="reorder_impairment",
+                    tc_settings=TCSettings(
+                        latency_ms=10, reorder_percent=1, reorder_displacement_ms=1
                     ),
                 )
 

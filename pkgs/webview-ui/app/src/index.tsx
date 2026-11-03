@@ -59,6 +59,8 @@ export const TC_PROFILE_ORDER = [
   "low_impairment",
   "medium_impairment",
   "high_impairment",
+  "congestion_impairment",
+  "reorder_impairment",
 ];
 
 export function sortTcProfiles(profiles: string[]): string[] {

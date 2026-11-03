@@ -14,7 +14,9 @@ interface ImpairmentValues {
   lossPercent: number | null;
   reorderPercent: number | null;
   reorderCorrelation: number | null;
+  reorderDisplacementMs: number | null;
   bandwidthMbit: number | null;
+  queueBytes: number | null;
 }
 
 export interface ImpairmentTile {
@@ -33,8 +35,13 @@ const halve = (value: number | null): number | null =>
 
 const fmt = (value: number): string => String(Number(value.toFixed(3)));
 
+// latencyMs is the delay of in-order packets, reordered ones skip the displacement.
 function receiverIfbValues(settings: ReceiverIfbTCSettings): ImpairmentValues {
-  const latencyMs = settings.latency_ms;
+  const displacementMs = settings.reorder_displacement_ms ?? null;
+  const latencyMs =
+    displacementMs == null
+      ? settings.latency_ms
+      : (settings.latency_ms ?? 0) + displacementMs;
   return {
     methodLabel: `receiver-side netem, GRO ${settings.gro_during_profile}`,
     latencyMs,
@@ -43,9 +50,11 @@ function receiverIfbValues(settings: ReceiverIfbTCSettings): ImpairmentValues {
     jitterMs: settings.jitter_ms,
     jitterDistribution: settings.jitter_distribution,
     lossPercent: settings.packet_loss_percent,
-    reorderPercent: null,
+    reorderPercent: settings.reorder_percent ?? null,
     reorderCorrelation: null,
+    reorderDisplacementMs: displacementMs,
     bandwidthMbit: settings.bandwidth_mbit,
+    queueBytes: settings.queue_limit_bytes ?? null,
   };
 }
 
@@ -60,7 +69,9 @@ function senderRootValues(settings: SenderRootTCSettings): ImpairmentValues {
     lossPercent: halve(settings.packet_loss_percent),
     reorderPercent: halve(settings.reorder_percent),
     reorderCorrelation: settings.reorder_correlation,
+    reorderDisplacementMs: null,
     bandwidthMbit: settings.bandwidth_mbit,
+    queueBytes: null,
   };
 }
 
@@ -94,17 +105,25 @@ function tilesFor(v: ImpairmentValues): ImpairmentTile[] {
       v.reorderCorrelation == null
         ? ""
         : `, ${fmt(v.reorderCorrelation)} % correlation`;
+    const early =
+      v.reorderDisplacementMs == null
+        ? ""
+        : `, ${fmt(v.reorderDisplacementMs)} ms early`;
     tiles.push({
       label: "Reordering",
       value: `${fmt(v.reorderPercent)} %`,
-      detail: `per direction${correlation}`,
+      detail: `per direction${correlation}${early}`,
     });
   }
   if (v.bandwidthMbit != null) {
+    const queue =
+      v.queueBytes == null
+        ? ""
+        : `, ${fmt(v.queueBytes / 1000)} kB tail-drop queue`;
     tiles.push({
       label: "Bandwidth",
       value: `${fmt(v.bandwidthMbit)} Mbit/s`,
-      detail: "per direction",
+      detail: `per direction${queue}`,
     });
   }
   return tiles;
