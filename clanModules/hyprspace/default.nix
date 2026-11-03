@@ -38,6 +38,13 @@
               "192.168.0.0/16"
             ];
             systemd.services.hyprspace.serviceConfig.Slice = "benchmark.slice";
+            # Hyprspace >= 0.15 resolves its 0.0.0.0/:: listen addresses to the interface
+            # addresses present at start and never listens again. clan-core disables
+            # systemd-networkd-wait-online, so after a reboot it started before the DHCP
+            # lease and only listened on loopback and its own tunnel address.
+            systemd.services.hyprspace.serviceConfig.ExecStartPre = lib.mkBefore [
+              "${config.systemd.package}/lib/systemd/systemd-networkd-wait-online --any --ipv4 --operational-state=routable --timeout=120"
+            ];
             services.hyprspace = {
               enable = true;
 
