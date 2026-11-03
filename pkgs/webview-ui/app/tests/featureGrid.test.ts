@@ -1,4 +1,3 @@
-import featureMatrixMd from "@/analysis/feature_matrix.md?raw";
 import { describe, expect, it } from "vitest";
 import {
   parseFeatureMatrix,
@@ -12,20 +11,53 @@ import { GRID } from "@/src/components/FeatureGrid/spec";
 const table = (header: string, ...rows: string[]): string =>
   [`| Feature | ${header} |`, "| --- | --- | --- |", ...rows].join("\n");
 
-describe("feature grid", () => {
-  it("resolves every declared column against the shipped feature matrix", () => {
-    const matrix = parseFeatureMatrix(featureMatrixMd);
-    const groups = resolveGrid(matrix, GRID);
-    for (const column of groups.flatMap((group) => group.columns)) {
-      expect(column.cells).toHaveLength(matrix.vpns.length);
-    }
+const runMatrices = Object.entries(
+  import.meta.glob<string>("@/bench/*/General/feature_matrix.md", {
+    eager: true,
+    query: "?raw",
+    import: "default",
+  }),
+);
+
+describe("per-run feature matrices", () => {
+  it("exist for at least one run", () => {
+    expect(runMatrices.length).toBeGreaterThan(0);
   });
 
+  describe.each(runMatrices)("%s", (_path, featureMatrixMd) => {
+    it("resolves every declared column", () => {
+      const matrix = parseFeatureMatrix(featureMatrixMd);
+      const groups = resolveGrid(matrix, GRID);
+      for (const column of groups.flatMap((group) => group.columns)) {
+        expect(column.cells).toHaveLength(matrix.vpns.length);
+      }
+    });
+
+    it("shows every matrix row exactly once and one score heatmap", () => {
+      const matrix = parseFeatureMatrix(featureMatrixMd);
+      const layout = splitDocument(featureMatrixMd);
+      const blocks = [
+        ...layout.preamble,
+        ...layout.sections.flatMap((section) => section.blocks),
+      ];
+      const shown = blocks.flatMap((block) =>
+        block.kind === "features" ? block.features : [],
+      );
+      expect(shown).toEqual([...matrix.rows.keys()]);
+      expect(blocks.filter((block) => block.kind === "scores")).toHaveLength(1);
+    });
+  });
+});
+
+describe("feature grid", () => {
   it("reads all symbols across tables separated by prose", () => {
     const matrix = parseFeatureMatrix(
-      [table("A | B", "| UDP | ✓ | ◐ |"), "", "text", table("A | B", "| QUIC | N/A | ? |")].join(
-        "\n",
-      ),
+      [
+        table("A | B", "| UDP | ✓ | ◐ |"),
+        "",
+        "text",
+        table("A | B", "| QUIC | N/A | ? |"),
+      ].join("\n"),
     );
     expect(matrix.vpns).toEqual(["A", "B"]);
     expect(matrix.rows.get("UDP")).toEqual(["yes", "partial"]);
@@ -33,20 +65,28 @@ describe("feature grid", () => {
   });
 
   it("rejects an unknown symbol", () => {
-    expect(() => parseFeatureMatrix(table("A | B", "| UDP | ✓ | yes |"))).toThrow(
-      /unknown symbol "yes"/,
-    );
+    expect(() =>
+      parseFeatureMatrix(table("A | B", "| UDP | ✓ | yes |")),
+    ).toThrow(/unknown symbol "yes"/);
   });
 
   it("rejects tables whose VPN columns differ", () => {
-    const markdown = [table("A | B", "| UDP | ✓ | ✗ |"), "", table("B | A", "| QUIC | ✓ | ✗ |")];
-    expect(() => parseFeatureMatrix(markdown.join("\n"))).toThrow(/VPN header differs/);
+    const markdown = [
+      table("A | B", "| UDP | ✓ | ✗ |"),
+      "",
+      table("B | A", "| QUIC | ✓ | ✗ |"),
+    ];
+    expect(() => parseFeatureMatrix(markdown.join("\n"))).toThrow(
+      /VPN header differs/,
+    );
   });
 
   it("rejects a declared column that is missing from the matrix", () => {
     const matrix = parseFeatureMatrix(table("A | B", "| UDP | ✓ | ✗ |"));
     expect(() =>
-      resolveGrid(matrix, [{ title: "T", columns: [{ label: "Q", feature: "QUIC" }] }]),
+      resolveGrid(matrix, [
+        { title: "T", columns: [{ label: "Q", feature: "QUIC" }] },
+      ]),
     ).toThrow(/no row "QUIC"/);
   });
 
@@ -71,14 +111,5 @@ describe("feature grid", () => {
   it("rounds percentages half up", () => {
     expect(percent({ points: 57.5, total: 100 })).toBe(58);
     expect(percent({ points: 46.5, total: 100 })).toBe(47);
-  });
-
-  it("shows every matrix row exactly once and one score heatmap", () => {
-    const matrix = parseFeatureMatrix(featureMatrixMd);
-    const layout = splitDocument(featureMatrixMd);
-    const blocks = [...layout.preamble, ...layout.sections.flatMap((section) => section.blocks)];
-    const shown = blocks.flatMap((block) => (block.kind === "features" ? block.features : []));
-    expect(shown).toEqual([...matrix.rows.keys()]);
-    expect(blocks.filter((block) => block.kind === "scores")).toHaveLength(1);
   });
 });

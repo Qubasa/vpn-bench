@@ -46,7 +46,7 @@ import { PingData, PingReport } from "./components/PingCharts";
 import { RistData, RistReport } from "./components/RistStreamCharts";
 import { TCSettingsData } from "./benchData";
 import { impairmentPanel } from "./impairment";
-import { getVpnOverview } from "./vpnOverviews";
+import { getVpnAnalysis, getVpnOverview } from "./analysisData";
 import { FeatureMatrixPage } from "./components/FeatureMatrixPage";
 import { HardwarePage } from "./components/HardwarePage";
 
@@ -204,7 +204,7 @@ function processCategoryReportsMixed<TData>(
 
 // Wrapper component that handles TC profile selection
 function VpnDashboardWithProfiles(props: { vpnName: string }) {
-  const { benchData: aliasBenchData } = useAlias();
+  const { benchData: aliasBenchData, currentAlias } = useAlias();
 
   // Look up category reactively from the current alias's data
   const category = () => aliasBenchData().find((c) => c.name === props.vpnName);
@@ -301,7 +301,8 @@ function VpnDashboardWithProfiles(props: { vpnName: string }) {
       {/* Render VpnDashboard with reports from selected run */}
       <VpnDashboard
         vpnName={props.vpnName}
-        overviewMarkdown={getVpnOverview(props.vpnName) ?? undefined}
+        overviewMarkdown={getVpnOverview(currentAlias(), props.vpnName)}
+        overviewAnalysis={getVpnAnalysis(currentAlias(), props.vpnName)}
         tcpReports={reportsForCurrentRun().tcp}
         udpReports={reportsForCurrentRun().udp}
         parallelTcpReport={reportsForCurrentRun().parallelTcp}

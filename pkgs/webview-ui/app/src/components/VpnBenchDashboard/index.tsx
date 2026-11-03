@@ -19,6 +19,7 @@ import { ErrorDetailsPanel } from "@/src/components/ErrorDetailsPanel";
 import { For, Show, createSignal, createEffect } from "solid-js";
 import { MarkdownContent } from "@/src/components/MarkdownContent";
 import { OverviewDisclaimer } from "@/src/components/LlmDisclaimer";
+import type { VpnAnalysis } from "@/src/analysisData";
 import {
   Ok,
   MixedReport,
@@ -34,6 +35,8 @@ interface VpnDashboardProps {
   vpnName: string;
   // Optional markdown content for the overview tab
   overviewMarkdown?: string;
+  // Provenance of the overview, shown as a disclaimer above it
+  overviewAnalysis?: VpnAnalysis;
   // All reports use MixedReport to show per-machine metadata
   tcpReports: MixedReport<IperfTcpReportData>[] | null;
   udpReports: MixedReport<IperfUdpReportData>[] | null;
@@ -364,7 +367,9 @@ export const VpnDashboard = (props: VpnDashboardProps) => {
         <Show when={props.overviewMarkdown} fallback={<FallbackMessage />}>
           {(content) => (
             <>
-              <OverviewDisclaimer />
+              <Show when={props.overviewAnalysis} keyed>
+                {(analysis) => <OverviewDisclaimer analysis={analysis} />}
+              </Show>
               <MarkdownContent content={content()} />
             </>
           )}
