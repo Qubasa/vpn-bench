@@ -966,6 +966,9 @@ export function generateGeneralData(): GeneralData | undefined {
       return; // Skip malformed paths
     }
     const fileName = pathParts[pathParts.length - 1]; // Get the last part as filename
+    if (fileName === "analysis.json") {
+      return; // Source analysis provenance, loaded by analysisData.ts
+    }
     // Validate the imported module structure
     if (
       !rawModule ||

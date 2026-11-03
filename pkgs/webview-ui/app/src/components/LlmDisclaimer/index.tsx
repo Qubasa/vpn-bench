@@ -1,4 +1,5 @@
 import { onMount, JSX } from "solid-js";
+import type { MatrixAnalysis, VpnAnalysis } from "@/src/analysisData";
 
 interface LlmDisclaimerProps {
   id: string;
@@ -61,42 +62,45 @@ export const LlmDisclaimer = (props: LlmDisclaimerProps) => {
   );
 };
 
-export const FeatureMatrixDisclaimer = () => (
+const InaccuracyNote = () => (
+  <p>
+    <strong>Found an inaccuracy?</strong> PRs are welcome at the{" "}
+    <a
+      href="https://github.com/Qubasa/vpn-bench/tree/main/pkgs/webview-ui/app/bench"
+      style={{ color: "#d97706", "text-decoration": "underline" }}
+    >
+      vpn benchmark repository
+    </a>
+    .
+  </p>
+);
+
+const shortRev = (rev: string): string =>
+  /^[0-9a-f]{40}$/.test(rev) ? rev.slice(0, 7) : rev;
+
+export const FeatureMatrixDisclaimer = (props: {
+  analysis: MatrixAnalysis;
+}) => (
   <LlmDisclaimer id="feature-matrix">
     <p>
-      This feature matrix was generated on 2026-01-13 by Claude Opus 4.5, which
-      cloned the VPN source repositories and analyzed them. On 2026-10-28,
-      Claude Opus 5.5 checked every cell against the source code.
+      Generated on {props.analysis.date} by {props.analysis.model} from the
+      source of the {Object.keys(props.analysis.revs).length} VPNs at the
+      versions benchmarked in this run.
     </p>
-    <p>
-      <strong>Found an inaccuracy?</strong> PRs are welcome at the{" "}
-      <a
-        href="https://github.com/Qubasa/vpn-bench/tree/main/pkgs/webview-ui/app/analysis"
-        style={{ color: "#d97706", "text-decoration": "underline" }}
-      >
-        vpn benchmark repository
-      </a>
-      .
-    </p>
+    <InaccuracyNote />
   </LlmDisclaimer>
 );
 
-export const OverviewDisclaimer = () => (
+export const OverviewDisclaimer = (props: { analysis: VpnAnalysis }) => (
   <LlmDisclaimer id="overview">
     <p>
-      This overview was generated on 2026-01-13 by Claude Opus 4.5, which
-      cloned the VPN source repositories and analyzed them. On 2026-10-28,
-      Claude Opus 5.5 checked its claims against the source code.
+      Generated on {props.analysis.date} by {props.analysis.model} from the
+      source of{" "}
+      {Object.entries(props.analysis.revs)
+        .map(([input, rev]) => `${input} ${shortRev(rev)}`)
+        .join(", ")}
+      , the version benchmarked in this run.
     </p>
-    <p>
-      <strong>Found an inaccuracy?</strong> PRs are welcome at the{" "}
-      <a
-        href="https://github.com/Qubasa/vpn-bench/tree/main/pkgs/webview-ui/app/analysis"
-        style={{ color: "#d97706", "text-decoration": "underline" }}
-      >
-        vpn benchmark repository
-      </a>
-      .
-    </p>
+    <InaccuracyNote />
   </LlmDisclaimer>
 );
