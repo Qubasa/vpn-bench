@@ -28,3 +28,12 @@ def get_iperf_asset(asset_name: str) -> Path:
         msg = f"{asset} does not exist"
         raise ValueError(msg)
     return asset
+
+
+def get_analysis_asset(asset_name: str) -> Path:
+    curr = Path(__file__).parent
+    asset = curr / "analysis" / asset_name
+    if not asset.exists():
+        msg = f"{asset} does not exist"
+        raise ValueError(msg)
+    return asset

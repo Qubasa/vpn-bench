@@ -10,6 +10,7 @@ from pathlib import Path
 from clan_lib.custom_logger import setup_logging
 from clan_lib.dirs import user_cache_dir, user_data_dir
 
+from vpn_bench.analysis import analyze_run
 from vpn_bench.bench import benchmark_vpn
 from vpn_bench.comparison import generate_comparison_data
 from vpn_bench.connection_timings import analyse_connection_timings
@@ -184,6 +185,19 @@ def create_parser() -> argparse.ArgumentParser:
         "--no-symlink",
         action="store_true",
         help="Don't create a result symlink in the current directory",
+    )
+
+    analyze_parser = subparsers.add_parser(
+        "analyze",
+        help="Prepare or import the LLM source analysis of a benchmark run",
+    )
+    analyze_parser.add_argument(
+        "--debug", action="store_true", help="Enable debug mode"
+    )
+    analyze_parser.add_argument(
+        "--alias",
+        required=True,
+        help="Benchmark run to analyze (folder name under the bench dir)",
     )
 
     return parser
@@ -522,6 +536,9 @@ def run_cli() -> None:
                 analyse_connection_timings(alias_config)
         website_dir = build_ui(config.bench_dir, create_symlink=not args.no_symlink)
         print(website_dir)
+
+    elif args.subcommand == "analyze":
+        analyze_run(config, args.alias)
 
     elif args.subcommand == "ssh":
         machines = tr_metadata(config)

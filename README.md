@@ -123,7 +123,8 @@ pinned as an input in `flake.nix`:
   (for example `nix build .#tailscale`).
 
 WireGuard is the exception: its data plane is the Linux kernel module, which comes
-with the nixpkgs kernel. Only `wireguard-tools` is pinned here.
+with the nixpkgs kernel. Only `wireguard-tools` is pinned here, and the kernel
+version is recorded as the `linux` component of WireGuard.
 
 To change a VPN version, change the input's ref in `flake.nix`, run
 `nix flake update <name>`, then update `version` and the vendor/cargo hash in
@@ -135,3 +136,26 @@ To change a VPN version, change the input's ref in `flake.nix`, run
 sidebar and links it to the source tree at that commit. A VPN built from several
 projects lists the one carrying the traffic first: Headscale shows its Tailscale
 client, with the Headscale server version in the hover text.
+
+## Source analysis
+
+The webview shows an LLM-written overview of each VPN and a feature matrix next to
+the benchmark numbers. Both describe the source code the run deployed, so they live
+inside the run folder:
+
+- `<alias>/<VPN>/overview.md` and `<alias>/<VPN>/analysis.json` (date, model, analyzed revs)
+- `<alias>/General/feature_matrix.md` and `<alias>/General/analysis.json`
+
+```bash
+vpb analyze --alias 20.10.2026-netem-v2
+```
+
+For each VPN this checks that the checkout pins the same revs as the run's
+`vpn_version.json`, then either imports a finished analysis or prepares a workspace in
+`~/.local/share/vpn_bench/analysis/`. A workspace holds a `PROMPT.md` and a `sources`
+link to the `vpnSources.<VPN>` output of the flake: `src/<input>` is the source nix
+builds the VPN from, `deps/<input>/` the source of its vendored Go modules, Go standard
+library, vendored crates and C libraries. Run an agent in each pending workspace, then
+run `vpb analyze` again to import the results. Once every VPN is imported, the same
+happens for the feature matrix. Workspaces are keyed by revs, so runs that deployed
+the same versions reuse an analysis.
