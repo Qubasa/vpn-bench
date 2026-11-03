@@ -457,11 +457,13 @@ TC_PROFILE_ORDER = [
     "low_impairment",
     "medium_impairment",
     "high_impairment",
+    "congestion_impairment",
+    "reorder_impairment",
 ]
 
 
 def sort_tc_profiles(profiles: set[str]) -> list[str]:
-    """Sort TC profiles in logical severity order (baseline -> low -> medium -> high)."""
+    """Sort TC profiles: baseline, low, medium, high, congestion, reorder."""
 
     def sort_key(profile: str) -> tuple[int, str]:
         try:

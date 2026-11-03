@@ -129,10 +129,13 @@ def create_parser() -> argparse.ArgumentParser:
         help=(
             "Impairment profiles to run, default is baseline only. Each machine "
             "applies tc netem to the traffic it receives (ifb redirect, GRO off, "
-            "rate = link speed, normal jitter, no reordering). Per direction: "
+            "rate = link speed, normal jitter). Per direction: "
             "low 2.5 ms +/- 0.625 ms, 0.01%% loss; medium 10 ms +/- 2.5 ms, "
-            "0.01%% loss; high 20 ms +/- 5 ms, 0.05%% loss. The added RTT is "
-            "twice the delay."
+            "0.01%% loss; high 20 ms +/- 5 ms, 0.05%% loss; congestion 10 ms, "
+            "then a 100 Mbit/s bottleneck with a 250000-byte tail-drop queue; "
+            "reorder 10 ms, then 1 ms more for all but 1%% of packets, which "
+            "arrive 1 ms early. The added RTT is twice the delay of in-order "
+            "packets."
         ),
         action="append",
         choices=[t.value for t in TCProfile] + ["all"],
