@@ -71,3 +71,7 @@ Each profile's `tc_settings.json` records the impairment method (`receiver-ifb` 
 Added on 2026-10-30 from the `vpnVersions` output of the vpn-benchmark-suite flake. Its VPN
 pins equal those locked by the revisions above: easytier, hyprspace, nebula and tincr by rev in
 `flake.lock`, the nixpkgs VPNs by source NAR hash against nixpkgs `e1ebeec`.
+
+The `linux` component of `Wireguard/vpn_version.json` was added on 2026-11-03. WireGuard runs
+in the kernel, and every iperf3 result of this run reports `Linux <host> 6.12.57`, the default
+kernel of nixpkgs `e1ebeec`.
