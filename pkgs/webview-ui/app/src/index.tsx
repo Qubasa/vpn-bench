@@ -49,7 +49,6 @@ import { impairmentPanel } from "./impairment";
 import { getVpnOverview } from "./vpnOverviews";
 import { FeatureMatrixPage } from "./components/FeatureMatrixPage";
 import { HardwarePage } from "./components/HardwarePage";
-import { LlmInstructionsPage } from "./components/LlmInstructionsPage";
 
 export const client = new QueryClient();
 
@@ -434,17 +433,6 @@ function generateHardwareRoute(): AppRoute[] {
   ];
 }
 
-function generateLlmInstructionsRoute(): AppRoute[] {
-  return [
-    {
-      path: "/llm-instructions",
-      label: "LLM Instructions",
-      component: () => <LlmInstructionsPage />,
-      hidden: true, // Not shown in sidebar, accessed via disclaimer links
-    },
-  ];
-}
-
 // Generate routes from all bench data (union of VPNs across all aliases)
 export const routes: AppRoute[] =
   Object.keys(allBenchData).length > 0
@@ -465,7 +453,6 @@ export const routes: AppRoute[] =
         ...generateCrossProfileRoute(),
         ...generateFeatureMatrixRoute(),
         ...generateHardwareRoute(),
-        ...generateLlmInstructionsRoute(),
       ]
     : [];
 
