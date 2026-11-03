@@ -204,6 +204,8 @@ export interface ReceiverIfbMachineSettings {
   rate_mbit: number;
   gro_before: string;
   netem_args: string;
+  // Absent in runs recorded before child qdiscs existed.
+  child_qdisc?: string | null;
 }
 
 // Receiver-side netem on an ifb device, values per direction (per machine).
@@ -213,8 +215,12 @@ export interface ReceiverIfbTCSettings {
   jitter_ms: number | null;
   jitter_distribution: string | null;
   packet_loss_percent: number | null;
+  // The reorder and queue fields are absent in older runs.
+  reorder_percent?: number | null;
+  reorder_displacement_ms?: number | null;
   added_rtt_ms: number | null;
   bandwidth_mbit: number | null;
+  queue_limit_bytes?: number | null;
   gro_during_profile: string;
   machines: Record<string, ReceiverIfbMachineSettings>;
 }

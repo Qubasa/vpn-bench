@@ -1,6 +1,9 @@
 # VPN Benchmark Configuration
 # Usage: vpb bench --config /path/to/config.toml
 #
+# TC profiles: baseline, low, medium, high, congestion (100 Mbit/s bottleneck
+# with a finite queue) and reorder (1 % of packets arrive 1 ms early).
+#
 # Per-profile test overrides:
 # You can override tests and skip_con_times for specific profiles using
 # [[benchmark.profile]] sections. This allows running different tests
