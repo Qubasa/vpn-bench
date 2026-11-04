@@ -32,9 +32,12 @@ next to benchmark numbers measured with exactly these versions:
 
 ## Rules
 
-- A cell must agree with the overview of that VPN. If you find the overview wrong, follow the
-  source, and say so in your final message with the file and line.
-- Apply `matrix_row_contract.md` the same way to every VPN, so a cell means the same thing in
-  every column.
+- A cell must agree with the overview of that VPN. If an overview applied
+  `matrix_row_contract.md` differently from the other overviews, or the source shows it is
+  wrong, follow the contract and the source, and list each such cell in your final message
+  with the file and line.
+- Score with "How to score a row" in `matrix_row_contract.md`, step by step, the same way for
+  every VPN, so a cell means the same thing in every column. When torn between two values,
+  pick the higher one.
 - Plain, factual English. No marketing words, no em-dashes.
 - Do not write anything outside this folder.
