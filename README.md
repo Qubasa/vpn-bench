@@ -143,7 +143,9 @@ The webview shows an LLM-written overview of each VPN and a feature matrix next 
 the benchmark numbers. Both describe the source code the run deployed, so they live
 inside the run folder:
 
-- `<alias>/<VPN>/overview.md` and `<alias>/<VPN>/analysis.json` (date, model, analyzed revs)
+- `<alias>/<VPN>/overview.md`, `<alias>/<VPN>/analysis.json` (date, model, analyzed revs)
+  and `<alias>/<VPN>/citations.json` (the URL of every cited source line, and the
+  citations of each checklist item)
 - `<alias>/General/feature_matrix.md` and `<alias>/General/analysis.json`
 
 ```bash
@@ -159,3 +161,14 @@ library, vendored crates and C libraries. Run an agent in each pending workspace
 run `vpb analyze` again to import the results. Once every VPN is imported, the same
 happens for the feature matrix. Workspaces are keyed by revs, so runs that deployed
 the same versions reuse an analysis.
+
+Every claim in an overview cites a file and lines in `sources/`
+(`src/<input>/path/file.go:120-131`). Before importing, `vpb analyze` checks that each
+cited file and line exists, that every checklist item cites something, and that every
+matrix cell equals the overview item it comes from. It then links each citation to
+the file at the analyzed revision, using the `links.json` of the `sources` folder:
+GitHub or cgit for the VPN's own code and the Go standard library, the module's
+repository for Go modules, docs.rs for crates. Git crates, C libraries and Go modules
+on hosts it does not know link to the dependency at that version instead of the line.
+In the webview every citation is a link, and every matrix tile and At a Glance cell
+opens the first citation of its overview item.

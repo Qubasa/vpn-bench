@@ -1,8 +1,13 @@
 import { For } from "solid-js";
+import type { CellSourceLookup } from "@/src/analysisData";
+import { MatrixCell } from "./MatrixCell";
 import { type FeatureMatrix, resolveGrid } from "./matrix";
 import { CELL_STYLES, GRID } from "./spec";
 
-export const FeatureGrid = (props: { matrix: FeatureMatrix }) => {
+export const FeatureGrid = (props: {
+  matrix: FeatureMatrix;
+  cellSource: CellSourceLookup;
+}) => {
   const matrix = props.matrix;
   const groups = resolveGrid(matrix, GRID);
   const columns = groups.flatMap((group) => group.columns);
@@ -12,7 +17,8 @@ export const FeatureGrid = (props: { matrix: FeatureMatrix }) => {
       <h2 class="mb-1 text-xl font-semibold">Trade-offs at a glance</h2>
       <p class="mb-4 max-w-3xl text-sm text-gray-600">
         Every tile is read from the matching row of the feature matrix below.
-        Hover a header or tile for the full row name.
+        Hover a header or tile for the full row name, click a tile to open its
+        evidence in the source code of the benchmarked version.
       </p>
       <div
         class="inline-grid gap-1 text-xs"
@@ -34,8 +40,16 @@ export const FeatureGrid = (props: { matrix: FeatureMatrix }) => {
         <div />
         <For each={columns}>
           {(column) => (
-            <div class="flex items-end justify-center pb-1" title={column.feature}>
-              <span style={{ "writing-mode": "vertical-rl", transform: "rotate(180deg)" }}>
+            <div
+              class="flex items-end justify-center pb-1"
+              title={column.feature}
+            >
+              <span
+                style={{
+                  "writing-mode": "vertical-rl",
+                  transform: "rotate(180deg)",
+                }}
+              >
                 {column.label}
               </span>
             </div>
@@ -44,19 +58,17 @@ export const FeatureGrid = (props: { matrix: FeatureMatrix }) => {
         <For each={matrix.vpns}>
           {(vpn, row) => (
             <>
-              <div class="self-center pr-2 text-right text-sm font-semibold">{vpn}</div>
+              <div class="self-center pr-2 text-right text-sm font-semibold">
+                {vpn}
+              </div>
               <For each={columns}>
-                {(column) => {
-                  const style = CELL_STYLES[column.cells[row()]];
-                  return (
-                    <div
-                      class={`flex h-7 items-center justify-center rounded ${style.class}`}
-                      title={`${vpn} · ${column.feature}: ${style.label}`}
-                    >
-                      {style.symbol}
-                    </div>
-                  );
-                }}
+                {(column) => (
+                  <MatrixCell
+                    cell={column.cells[row()]}
+                    label={`${vpn} · ${column.feature}`}
+                    source={props.cellSource(column.feature, row())}
+                  />
+                )}
               </For>
             </>
           )}
@@ -66,7 +78,9 @@ export const FeatureGrid = (props: { matrix: FeatureMatrix }) => {
         <For each={Object.values(CELL_STYLES)}>
           {(style) => (
             <li class="flex items-center gap-1">
-              <span class={`flex size-4 items-center justify-center rounded ${style.class}`}>
+              <span
+                class={`flex size-4 items-center justify-center rounded ${style.class}`}
+              >
                 {style.symbol}
               </span>
               {style.label}

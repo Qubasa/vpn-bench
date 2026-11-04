@@ -1,5 +1,5 @@
 // LLM source analysis written per run by `vpb analyze`
-// Path format: @/bench/<ALIAS>/<VPN>/overview.md and analysis.json,
+// Path format: @/bench/<ALIAS>/<VPN>/overview.md, analysis.json and citations.json,
 // @/bench/<ALIAS>/General/feature_matrix.md and analysis.json
 
 export interface VpnAnalysis {
@@ -15,6 +15,24 @@ export interface MatrixAnalysis {
   // VPN dir name to its analyzed source revisions
   revs: Record<string, Record<string, string>>;
 }
+
+export interface VpnCitations {
+  // Citation as written in overview.md to its URL at the analyzed revision
+  links: Record<string, string>;
+  // Checklist item or At a Glance fact to its citations, the main evidence first
+  items: Record<string, string[]>;
+}
+
+export interface CellSource {
+  citation: string;
+  url: string;
+}
+
+/** Main evidence of a matrix row in a VPN column, if that cell is backed by a citation. */
+export type CellSourceLookup = (
+  feature: string,
+  column: number,
+) => CellSource | undefined;
 
 type ByAliasAndDir<T> = Record<string, Record<string, T>>;
 
@@ -53,6 +71,13 @@ const featureMatrices = groupByAliasAndDir<string>(
   }),
 );
 
+const citations = groupByAliasAndDir<VpnCitations>(
+  import.meta.glob("@/bench/*/*/citations.json", {
+    eager: true,
+    import: "default",
+  }),
+);
+
 export function getVpnOverview(
   alias: string,
   vpnName: string,
@@ -76,4 +101,30 @@ export function getFeatureMatrix(alias: string): string | undefined {
 
 export function getMatrixAnalysis(alias: string): MatrixAnalysis | undefined {
   return analyses[alias]?.General as MatrixAnalysis | undefined;
+}
+
+export function getVpnCitations(
+  alias: string,
+  vpnName: string,
+): VpnCitations | undefined {
+  return citations[alias]?.[vpnName];
+}
+
+/**
+ * Matrix columns follow the key order of the matrix analysis `revs`, which
+ * `vpb analyze` writes sorted by VPN directory, the order the matrix uses.
+ * Matrix row names are overview item names, At a Glance rows in bold.
+ */
+export function matrixCellSources(alias: string): CellSourceLookup {
+  const vpns = Object.keys(getMatrixAnalysis(alias)?.revs ?? {});
+  const columns = vpns.map((vpn) => getVpnCitations(alias, vpn));
+  return (feature, column) => {
+    const cited = columns[column];
+    const citation = cited?.items[feature.replaceAll("**", "")]?.[0];
+    if (cited === undefined || citation === undefined) {
+      return undefined;
+    }
+    const url = cited.links[citation];
+    return url === undefined ? undefined : { citation, url };
+  };
 }

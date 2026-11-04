@@ -1,34 +1,52 @@
 import { For, Show, createMemo } from "solid-js";
 import { useAlias } from "@/src/AliasContext";
-import { getFeatureMatrix, getMatrixAnalysis } from "@/src/analysisData";
+import {
+  type CellSourceLookup,
+  getFeatureMatrix,
+  getMatrixAnalysis,
+  matrixCellSources,
+} from "@/src/analysisData";
 import { FeatureGrid } from "../FeatureGrid";
 import { type FeatureMatrix, parseFeatureMatrix } from "../FeatureGrid/matrix";
 import { FeatureMatrixDisclaimer } from "../LlmDisclaimer";
 import { MarkdownContent } from "../MarkdownContent";
-import { type Block, splitDocument } from "./document";
+import { type Block, linkPropertyCells, splitDocument } from "./document";
 import { FeatureTiles } from "./FeatureTiles";
 import { ScoreHeatmap } from "./ScoreHeatmap";
 
-const renderBlock = (matrix: FeatureMatrix, block: Block) => {
+const renderBlock = (
+  matrix: FeatureMatrix,
+  cellSource: CellSourceLookup,
+  block: Block,
+) => {
   switch (block.kind) {
     case "markdown":
-      return <MarkdownContent content={block.text} />;
+      return (
+        <MarkdownContent content={linkPropertyCells(block.text, cellSource)} />
+      );
     case "features":
-      return <FeatureTiles matrix={matrix} features={block.features} />;
+      return (
+        <FeatureTiles
+          matrix={matrix}
+          features={block.features}
+          cellSource={cellSource}
+        />
+      );
     case "scores":
       return <ScoreHeatmap matrix={matrix} />;
   }
 };
 
-const MatrixDocument = (props: { markdown: string }) => {
+const MatrixDocument = (props: { markdown: string; alias: string }) => {
   const matrix = createMemo(() => parseFeatureMatrix(props.markdown));
   const layout = createMemo(() => splitDocument(props.markdown));
+  const cellSource = createMemo(() => matrixCellSources(props.alias));
   return (
     <>
       <For each={layout().preamble}>
-        {(block) => renderBlock(matrix(), block)}
+        {(block) => renderBlock(matrix(), cellSource(), block)}
       </For>
-      <FeatureGrid matrix={matrix()} />
+      <FeatureGrid matrix={matrix()} cellSource={cellSource()} />
       <For each={layout().sections}>
         {(section) => (
           <details
@@ -40,7 +58,7 @@ const MatrixDocument = (props: { markdown: string }) => {
             </summary>
             <div class="mt-3">
               <For each={section.blocks}>
-                {(block) => renderBlock(matrix(), block)}
+                {(block) => renderBlock(matrix(), cellSource(), block)}
               </For>
             </div>
           </details>
@@ -72,7 +90,9 @@ export const FeatureMatrixPage = () => {
           </div>
         }
       >
-        {(markdown) => <MatrixDocument markdown={markdown()} />}
+        {(markdown) => (
+          <MatrixDocument markdown={markdown()} alias={currentAlias()} />
+        )}
       </Show>
     </div>
   );

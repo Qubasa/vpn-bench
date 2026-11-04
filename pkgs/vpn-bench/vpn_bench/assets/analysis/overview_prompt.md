@@ -31,8 +31,10 @@ that dependency in `sources/deps/` at the version given there.
 
 ## Rules
 
-- Every claim cites a file and line in `sources/` (`src/<input>/path/file.go:123`) or names
-  the function. Mark anything inferred and not read in code as `(inferred)`.
+- Every claim cites a file and lines in `sources/` in the citation format of
+  `matrix_row_contract.md` (`src/<input>/path/file.go:123-130`, full path, in backticks).
+  Every checklist item and every At a Glance fact has at least one citation, the main
+  evidence first. Mark anything inferred and not read in code as `(inferred)`.
 - Describe the default build and default configuration on Linux, then options.
 - Score every checklist item with "How to score a row" in `matrix_row_contract.md`: go
   through its steps in order, then apply the row's own definition. Be generous about how a

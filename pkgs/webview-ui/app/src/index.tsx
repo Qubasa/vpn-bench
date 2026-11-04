@@ -46,7 +46,11 @@ import { PingData, PingReport } from "./components/PingCharts";
 import { RistData, RistReport } from "./components/RistStreamCharts";
 import { TCSettingsData } from "./benchData";
 import { impairmentPanel } from "./impairment";
-import { getVpnAnalysis, getVpnOverview } from "./analysisData";
+import {
+  getVpnAnalysis,
+  getVpnCitations,
+  getVpnOverview,
+} from "./analysisData";
 import { FeatureMatrixPage } from "./components/FeatureMatrixPage";
 import { HardwarePage } from "./components/HardwarePage";
 
@@ -305,6 +309,7 @@ function VpnDashboardWithProfiles(props: { vpnName: string }) {
         vpnName={props.vpnName}
         overviewMarkdown={getVpnOverview(currentAlias(), props.vpnName)}
         overviewAnalysis={getVpnAnalysis(currentAlias(), props.vpnName)}
+        overviewLinks={getVpnCitations(currentAlias(), props.vpnName)?.links}
         tcpReports={reportsForCurrentRun().tcp}
         udpReports={reportsForCurrentRun().udp}
         parallelTcpReport={reportsForCurrentRun().parallelTcp}
