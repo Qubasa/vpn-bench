@@ -267,6 +267,13 @@ Further rules:
 - **Cached credentials**: node credentials stay valid without the controller.
 
 ### Redundancy
+- **Decentralized control plane**: ✓ no node or server has a special role: membership,
+  routes and peer addresses come from local config or are exchanged between ordinary peers,
+  and any node can introduce new ones. ◐ dedicated discovery nodes (lighthouses, bootstrap
+  nodes, roots, a DHT entry point) that nodes need to find each other, but that do not
+  decide membership, keys or config. ✗ a central server or controller decides membership,
+  keys or config. Matches the "Control-plane model" glance key: fully distributed ✓,
+  lighthouse/bootstrap nodes ◐, central server ✗.
 - **Fully self-hostable**: every component (control, discovery, relay) can run on own infrastructure.
 - **Controller redundancy**: several controllers at once.
 - **Relay redundancy**: several relays at once.

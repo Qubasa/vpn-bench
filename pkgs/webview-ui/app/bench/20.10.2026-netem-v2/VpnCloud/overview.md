@@ -301,6 +301,7 @@ VpnCloud has no controller. The only special nodes are the addresses in a node's
 
 ### Redundancy
 
+- [x] **Decentralized control plane** - Nodes start from a local `peers` list and gossip lists of up to 20 peers with their addresses to each other (`src/vpncloud/src/main.rs:195-202`, `src/vpncloud/src/cloud.rs:304-321,720-745`).
 - [x] **Fully self-hostable** - All components (nodes, optional `ws-proxy`, beacon storage) run on the user's own machines, and the project has no hosted service (`src/vpncloud/src/main.rs:233-339`).
 - [ ] **Controller redundancy** - N/A: the design has no controller, and peers gossip state directly (`src/vpncloud/src/cloud.rs:720-745`).
 - [ ] **Relay redundancy** - A node can use only one `ws://` proxy, and mesh nodes do not relay (`src/vpncloud/src/wsproxy.rs:135-144`).

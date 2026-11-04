@@ -311,6 +311,7 @@ Configure several public nodes or own nodes as static peers. The README recommen
 
 ### Redundancy
 
+- [x] **Decentralized control plane** - Every node runs the same router and announces routes to its peers with Babel-style updates, with no controller; public nodes are ordinary peers (`src/mycelium/mycelium/src/router.rs:1806,1879`, `src/mycelium/mycelium/src/peer_manager.rs:164-175`).
 - [x] **Fully self-hostable** - Every node runs the same daemon; public nodes are ordinary `mycelium` instances that anyone can run (`peer_manager.rs:687-907`).
 - [ ] **Controller redundancy** - N/A: there is no controller (`peer_manager.rs:164-175`).
 - [x] **Relay redundancy** - Any number of peers can forward at once, and route selection fails over among them (`router.rs:409-457`, `router.rs:1209-1234`).

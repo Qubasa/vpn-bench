@@ -305,6 +305,7 @@ Configure several peers, ideally including nearby ones, so the tree has redundan
 
 ### Redundancy
 
+- [x] **Decentralized control plane** - Peers come from the local `Peers` config or multicast discovery, and the config states there are no bootstrap nodes (`src/yggdrasil/src/config/config.go:46`).
 - [x] **Fully self-hostable** - Every node runs the same binary, with no external service (`src/yggdrasil/cmd/yggdrasil/main.go:206-297`).
 - [ ] **Controller redundancy** - N/A: there is no controller (`src/yggdrasil/src/config/config.go:46`).
 - [x] **Relay redundancy** - Any number of peers can forward at once, and `_lookup` chooses among all closer peers (`deps/yggdrasil/go-modules/github.com/Arceliar/ironwood/network/router.go:697-750`).

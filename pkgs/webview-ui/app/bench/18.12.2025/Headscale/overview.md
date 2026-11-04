@@ -299,6 +299,7 @@ If Headscale goes down, clients keep their last network map and WireGuard config
 
 ### Redundancy
 
+- [ ] **Decentralized control plane** - One Headscale coordination server decides membership, node keys and config, and each client points at a single control URL (`src/tailscale/ipn/prefs.go:37-40`, `src/headscale/hscontrol/state/node_store.go:90-95`).
 - [x] **Fully self-hostable** - Yes: Headscale for control, plus its embedded DERP and STUN server or `derper` for relay and discovery (`src/headscale/hscontrol/app.go:470-473`, `src/headscale/config-example.yaml:75-101`).
 - [ ] **Controller redundancy** - The client takes one control URL (`src/tailscale/ipn/prefs.go:37-40`). Headscale holds live node state in a per-process `NodeStore` (`src/headscale/hscontrol/state/node_store.go:90-95`), so several Headscale instances cannot share one tailnet.
 - [x] **Relay redundancy** - Yes: the DERP map has many regions, and each client can fall back to other regions (`src/headscale/hscontrol/derp/derp.go:94-122`, `src/tailscale/net/netcheck/netcheck.go:1388-1430`).

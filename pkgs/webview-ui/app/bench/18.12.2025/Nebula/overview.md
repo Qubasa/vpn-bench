@@ -300,6 +300,7 @@ The CA is not online at all. Certificates are verified locally against `pki.ca`,
 
 ### Redundancy
 
+- [x] **Decentralized control plane** - Partial: nodes need operator-run lighthouses listed in `lighthouse.hosts` to find each other (`src/nebula/lighthouse.go:349-379`), while membership comes from certificates signed by the offline CA, not from the lighthouses.
 - [x] **Fully self-hostable** - Yes: lighthouses, relays and the CA (`nebula-cert`) are all run by the operator (`src/nebula/cmd/nebula-cert/ca.go`, `src/nebula/lighthouse.go:84`).
 - [ ] **Controller redundancy** - N/A: Nebula has no controller; lighthouses are discovery nodes only (`src/nebula/lighthouse.go:349-379`). Several lighthouses can still run at once through the `lighthouse.hosts` list.
 - [x] **Relay redundancy** - Yes: several relays can be listed, and Nebula requests relays through all of them (`src/nebula/handshake_manager.go:270-330`).

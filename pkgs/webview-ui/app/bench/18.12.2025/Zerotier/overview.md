@@ -299,6 +299,7 @@ Path choice prefers LAN paths. `Path::quality` multiplies latency by `(MAX_SCOPE
 
 ### Redundancy
 
+- [ ] **Decentralized control plane** - Each network ID embeds its controller's address, and that controller signs the network config and membership certificates (`src/zerotierone/node/Network.hpp:83-86`, `src/zerotierone/node/Network.cpp:1134-1138`).
 - [x] **Fully self-hostable** - The controller (source-available `nonfree/`), moons or a custom planet, and relaying all run on own hosts; only the default TCP fallback relay code is not in the tree (`src/zerotierone/nonfree/controller/EmbeddedNetworkController.cpp`, `src/zerotierone/one.cpp:1566-1595`).
 - [ ] **Controller redundancy** - Each network is bound to one controller address inside its network ID, and no active-active controller code exists for the file-based controller (`src/zerotierone/node/Network.hpp:83-86`).
 - [x] **Relay redundancy** - Four roots plus any moons, chosen by latency (`src/zerotierone/node/Topology.cpp:21,143-179`).

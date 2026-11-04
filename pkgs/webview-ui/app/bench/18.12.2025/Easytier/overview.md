@@ -325,6 +325,7 @@ The optional web console (`easytier-web`) only pushes configs. Running instances
 
 ### Redundancy
 
+- [x] **Decentralized control plane** - Every node runs the same peer and exchanges link-state route info with ordinary peers over the `sync_route_info` RPC, with no controller (`src/easytier/easytier/src/peers/peer_ospf_route.rs:2180-2203,2336-2340`).
 - [x] **Fully self-hostable** - Daemon, public server role (`foreign_network_manager.rs`) and web console (`easytier-web/`) are all in this repository.
 - [ ] **Controller redundancy** - N/A: the mesh has no controller (`src/easytier/easytier/src/peers/peer_ospf_route.rs:2338`).
 - [x] **Relay redundancy** - Any number of nodes relay at once, and routes are recomputed across them (`src/easytier/easytier/src/peers/peer_ospf_route.rs:973-1010`).
