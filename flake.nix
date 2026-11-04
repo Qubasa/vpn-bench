@@ -54,6 +54,40 @@
     url = "github:threefoldtech/mycelium/v0.6.1";
     flake = false;
   };
+  # Official apps that live outside the VPN's repository, pinned to their last commit before
+  # the benchmarked VPN commit. Only the source analysis reads them.
+  inputs.wireguard-apple = {
+    url = "github:WireGuard/wireguard-apple/2fec12a6e1f6e3460b6ee483aa00ad29cddadab1";
+    flake = false;
+  };
+  inputs.wireguard-android = {
+    url = "github:WireGuard/wireguard-android/c417bb8d7c40432b9d5d3d70e91e2986965245f1";
+    flake = false;
+  };
+  inputs.wireguard-windows = {
+    url = "github:WireGuard/wireguard-windows/8e6558eba6665b51de35779bffa46803dbc4c10d";
+    flake = false;
+  };
+  inputs.tailscale-android = {
+    url = "github:tailscale/tailscale-android/d62efaa36578ea3c5a0798dc566ecc8c865f68ff";
+    flake = false;
+  };
+  inputs.mobile-nebula = {
+    url = "github:DefinedNet/mobile_nebula/de2b3dccb7b9e512fe2a5868f683b427674da895";
+    flake = false;
+  };
+  inputs.yggdrasil-android = {
+    url = "github:yggdrasil-network/yggdrasil-android/94db1facd7d901103e8f56a968176a17eff59c0e";
+    flake = false;
+  };
+  inputs.yggdrasil-ios = {
+    url = "github:yggdrasil-network/yggdrasil-ios/838e37b92834e7dd9535b1c3559464baef4ad623";
+    flake = false;
+  };
+  inputs.myceliumflut = {
+    url = "github:threefoldtech/myceliumflut/7c8688ef26d375d8d861bf380b95ff73294ed35c";
+    flake = false;
+  };
 
   outputs =
     inputs@{
