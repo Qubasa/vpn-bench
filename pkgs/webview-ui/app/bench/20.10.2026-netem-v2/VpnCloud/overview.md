@@ -1,6 +1,6 @@
 # Overview
 
-VpnCloud is a peer-to-peer mesh VPN written in Rust by Dennis Schwerdel (`src/vpncloud/Cargo.toml:4`, `src/vpncloud/LICENSE.md:3-4`). The benchmarked tree is tag v2.3.0 plus 11 commits; its `Cargo.toml` already says version 2.4.0 and the changelog lists those changes as "UNRELEASED" (`src/vpncloud/Cargo.toml:3`, `src/vpncloud/CHANGELOG.md:5-9`). Each node is one process. It opens a TUN device (default) or a TAP device and one UDP socket on port 3210 (`src/vpncloud/src/config.rs:12`, `src/vpncloud/src/config.rs:55-64`). Nodes find each other through a list of configured peer addresses and then through gossip of peer lists, and every pair of nodes builds its own direct encrypted UDP session. No server or coordinator exists. Authentication uses Ed25519 key pairs. Each node has either an explicit key pair with a list of trusted public keys, or a shared password from which every node derives the same key pair (`src/vpncloud/src/crypto/common.rs:89-110`). Session keys come from ephemeral X25519 and are rotated every 120 seconds. Payloads are encrypted with an AEAD from the `ring` crate.
+VpnCloud is a peer-to-peer mesh VPN written in Rust by Dennis Schwerdel (`src/vpncloud/Cargo.toml:4`, `src/vpncloud/LICENSE.md:3-4`). The benchmarked tree is tag v2.3.0 plus 11 commits; its `src/vpncloud/Cargo.toml` already says version 2.4.0 and the changelog lists those changes as "UNRELEASED" (`src/vpncloud/Cargo.toml:3`, `src/vpncloud/CHANGELOG.md:5-9`). Each node is one process. It opens a TUN device (default) or a TAP device and one UDP socket on port 3210 (`src/vpncloud/src/config.rs:12`, `src/vpncloud/src/config.rs:55-64`). Nodes find each other through a list of configured peer addresses and then through gossip of peer lists, and every pair of nodes builds its own direct encrypted UDP session. No server or coordinator exists. Authentication uses Ed25519 key pairs. Each node has either an explicit key pair with a list of trusted public keys, or a shared password from which every node derives the same key pair (`src/vpncloud/src/crypto/common.rs:89-110`). Session keys come from ephemeral X25519 and are rotated every 120 seconds. Payloads are encrypted with an AEAD from the `ring` crate.
 
 At a glance:
 
@@ -10,7 +10,7 @@ At a glance:
 - **Data cipher (default):** The cipher is negotiated per peer pair. By default each node offers AES-128-GCM, AES-256-GCM and ChaCha20-Poly1305 (`src/vpncloud/src/crypto/common.rs:30`), benchmarks them at startup (`src/vpncloud/src/crypto/common.rs:116-122`), and the pair picks the algorithm with the highest minimum speed (`src/vpncloud/src/crypto/init.rs:540-565`). On x86-64 with AES-NI this is usually AES-128-GCM (inferred). An opt-in `plain` setting turns encryption off (`src/vpncloud/src/crypto/common.rs:75-77`).
 - **Handshake:** A custom 3-message "ping/pong/peng" exchange. Each message is signed with Ed25519, and the two sides do an ephemeral X25519 key agreement. The first bytes of the raw X25519 output become the AEAD key, with no KDF (`src/vpncloud/src/crypto/init.rs:5-55`, `src/vpncloud/src/crypto/init.rs:461-466`).
 - **Default tunnel MTU:** The MTU of the default-route interface minus 73 bytes for TUN (1427 on a 1500-byte underlay) or minus 87 bytes for TAP. It is computed in `TunTapDevice::get_overhead`/`set_mtu` (`src/vpncloud/src/device.rs:223-244`) and applied at startup (`src/vpncloud/src/main.rs:151`).
-- **Control-plane model:** Fully distributed. Peers gossip peer lists and claimed subnets, and no central or lighthouse role exists.
+- **Control-plane model:** Fully distributed. Peers gossip peer lists and claimed subnets, and no central or lighthouse role exists (`src/vpncloud/src/cloud.rs:304-321`, `src/vpncloud/src/cloud.rs:720-743`, `src/vpncloud/src/messages.rs:33-39`).
 - **Data-plane threading:** Single-threaded. One epoll loop handles one packet per wakeup (`src/vpncloud/src/cloud.rs:934-969`, `src/vpncloud/src/poll/epoll.rs:54`).
 
 ## Key Architecture Components
@@ -52,7 +52,7 @@ On the receive side, `recv_from` writes into the same buffer. The peer is found 
 - [x] **UDP transport** - Peer traffic uses a `std::net::UdpSocket` bound to port 3210 by default (`src/vpncloud/src/net.rs:52-67`, `src/vpncloud/src/config.rs:64`).
 - [x] **Datagram encapsulation (no head-of-line blocking)** - Each TUN read becomes one encrypted `sendto` datagram on the default path (`src/vpncloud/src/cloud.rs:611-621`, `src/vpncloud/src/cloud.rs:199-209`).
 - [ ] **TCP fallback** - No automatic switch exists; the only TCP path is the WebSocket proxy, which must be set by hand with `listen: ws://...` (`src/vpncloud/src/main.rs:325-333`).
-- [ ] **QUIC support** - No QUIC code or crate is in the source or in `deps/vpncloud/cargo-vendor`.
+- [ ] **QUIC support** - No QUIC code or crate is in the source or in the vendored dependencies (`src/vpncloud/Cargo.toml:17-37`, `src/vpncloud/Cargo.lock`).
 - [x] **WebSocket support** - The default `websocket` feature adds a `ws-proxy` relay server and a `ws://` client transport, plain WS only, since tungstenite is built without TLS and `as_raw_fd` handles only `MaybeTlsStream::Plain` (`src/vpncloud/Cargo.toml:46-48`, `src/vpncloud/src/wsproxy.rs:94-169`).
 
 ### IP Support
@@ -344,7 +344,7 @@ During the handshake each side checks that the other's messages are signed by a 
 
 ## Supported Platforms
 
-Only Linux is supported in this tree. The event loop exists only for `target_os = "linux"` and `"android"` (`src/vpncloud/src/poll/mod.rs:5-9`), and the device code opens `/dev/net/tun` and uses Linux ioctls (`src/vpncloud/src/device.rs:144-172`). `device.rs` has BSD and macOS branches for the 4-byte TUN header (`src/vpncloud/src/device.rs:178-221`). Without a `WaitImpl` for those targets, the crate cannot build there (inferred). The README asks for help porting to Windows and macOS (`src/vpncloud/README.md:65-67`). The packaging scripts build Linux `.deb`/`.rpm` and static musl binaries for x86-64, i686, arm64, armhf and armel (`src/vpncloud/maskfile.md:32-124`). The packages include systemd units (`src/vpncloud/Cargo.toml:83-90`).
+Only Linux is supported in this tree. The event loop exists only for `target_os = "linux"` and `"android"` (`src/vpncloud/src/poll/mod.rs:5-9`), and the device code opens `/dev/net/tun` and uses Linux ioctls (`src/vpncloud/src/device.rs:144-172`). `src/vpncloud/src/device.rs` has BSD and macOS branches for the 4-byte TUN header (`src/vpncloud/src/device.rs:178-221`). Without a `WaitImpl` for those targets, the crate cannot build there (inferred). The README asks for help porting to Windows and macOS (`src/vpncloud/README.md:65-67`). The packaging scripts build Linux `.deb`/`.rpm` and static musl binaries for x86-64, i686, arm64, armhf and armel (`src/vpncloud/maskfile.md:32-124`). The packages include systemd units (`src/vpncloud/Cargo.toml:83-90`).
 
 ## Implementation Details
 

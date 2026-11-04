@@ -1,6 +1,6 @@
 # Overview
 
-ZeroTier One 1.16.0 is a virtual Ethernet switch built by ZeroTier, Inc. (`src/zerotierone/version.h`, copyright headers in `src/zerotierone/node/*.cpp`). Each node has a long-term Curve25519/Ed25519 identity. The node's 40-bit ZeroTier address is a memory-hard hash of the public key (`src/zerotierone/node/Identity.cpp:104-118`). A node joins a virtual network by its 64-bit network ID. The first 40 bits of that ID are the address of the network controller (`src/zerotierone/node/Network.hpp:83-86`). The controller signs the network configuration and the membership certificates (`src/zerotierone/node/Network.cpp:1134-1138`). Four ZeroTier-run root servers in a built-in "planet" file give address lookup (WHOIS), NAT rendezvous and relaying (`src/zerotierone/node/Topology.cpp:21`). Ethernet frames read from a Linux TAP device are wrapped in ZeroTier packets, encrypted with a static per-peer key, and sent over UDP. Peers send directly when they can and through a root when they cannot.
+ZeroTier One 1.16.0 is a virtual Ethernet switch built by ZeroTier, Inc. (`src/zerotierone/version.h`, copyright headers in `src/zerotierone/node/Node.cpp:5`). Each node has a long-term Curve25519/Ed25519 identity. The node's 40-bit ZeroTier address is a memory-hard hash of the public key (`src/zerotierone/node/Identity.cpp:104-118`). A node joins a virtual network by its 64-bit network ID. The first 40 bits of that ID are the address of the network controller (`src/zerotierone/node/Network.hpp:83-86`). The controller signs the network configuration and the membership certificates (`src/zerotierone/node/Network.cpp:1134-1138`). Four ZeroTier-run root servers in a built-in "planet" file give address lookup (WHOIS), NAT rendezvous and relaying (`src/zerotierone/node/Topology.cpp:21`). Ethernet frames read from a Linux TAP device are wrapped in ZeroTier packets, encrypted with a static per-peer key, and sent over UDP. Peers send directly when they can and through a root when they cannot.
 
 At a glance:
 
@@ -10,7 +10,7 @@ At a glance:
 - **Data cipher (default):** AES-256-GMAC-SIV for peers with protocol version 12 or newer (`src/zerotierone/node/Packet.cpp:1089-1110`, `src/zerotierone/node/Peer.hpp:657-660`). Alternatives: Salsa20/12 with Poly1305 for older peers, Poly1305-only authentication for HELLO, and no crypto at all on configured trusted paths (`src/zerotierone/node/Packet.hpp:90-117`).
 - **Handshake:** No session handshake. Each pair of nodes runs custom static-static Curve25519 ECDH. The shared secret is hashed with SHA-512 into a 48-byte key (`src/zerotierone/node/ECC.cpp:2450-2464`). Two AES keys are derived from it with KBKDF-HMAC-SHA384 (`src/zerotierone/node/Peer.cpp:60-69`). HELLO carries the full public identity.
 - **Default tunnel MTU:** 2800 bytes (`ZT_DEFAULT_MTU`, `src/zerotierone/node/Constants.hpp:290`). The controller sets it in the network config (`src/zerotierone/nonfree/controller/EmbeddedNetworkController.cpp:1846`, `src/zerotierone/node/NetworkConfig.cpp:394`) and the node applies it to the TAP with `SIOCSIFMTU` (`src/zerotierone/osdep/LinuxEthernetTap.cpp:295-296`). Packets larger than the 1432-byte physical MTU are split into ZeroTier fragments (`src/zerotierone/include/ZeroTierOne.h:98`, `src/zerotierone/node/Switch.cpp:1101-1145`).
-- **Control-plane model:** central server (one network controller per network), plus lighthouse/bootstrap-style root nodes for discovery and relay.
+- **Control-plane model:** central server (one network controller per network), plus lighthouse/bootstrap-style root nodes for discovery and relay (`src/zerotierone/node/Network.hpp:83-86`, `src/zerotierone/node/Topology.cpp:21-58`).
 - **Data-plane threading:** multi-threaded, one thread per direction: a TAP reader thread encrypts and sends, and the main poll thread receives and decrypts. Opt-in `multicoreEnabled` adds more TAP reader threads and post-decrypt TAP writer threads (`src/zerotierone/service/OneService.cpp:2893-2915`).
 
 ## Key Architecture Components
@@ -46,7 +46,7 @@ Relays forward packets without decrypting them. They increment the hop counter, 
 - [x] **UDP transport** - All peer traffic goes over UDP sockets bound by `Binder` and sent with `Phy::udpSend` (`src/zerotierone/osdep/Binder.hpp:452`, `src/zerotierone/osdep/Phy.hpp:480-494`).
 - [x] **Datagram encapsulation (no head-of-line blocking)** - Each Ethernet frame is its own ZeroTier packet, sent as one UDP datagram or as a few independent fragments; no reliable stream is involved (`src/zerotierone/node/Switch.cpp:1101-1145`).
 - [x] **TCP fallback** - When no UDP has arrived from a global address for 60 s, the node opens a TCP tunnel to the ZeroTier relay `204.80.128.1/443` by itself; `allowTcpFallbackRelay` defaults to true (`src/zerotierone/service/OneService.cpp:151,158,2876,3954-4005`).
-- [ ] **QUIC support** - No QUIC code exists in `node/`, `osdep/` or `service/`; the only transports are UDP and the fallback TCP tunnel.
+- [ ] **QUIC support** - No QUIC code exists in `src/zerotierone/node`, `src/zerotierone/osdep` or `src/zerotierone/service`; the only transports are UDP and the fallback TCP tunnel (`src/zerotierone/service/OneService.cpp:3952-4032`).
 - [ ] **WebSocket support** - The TCP fallback uses fake TLS record headers over raw TCP, not WebSocket (`src/zerotierone/service/OneService.cpp:3973-3982`).
 
 ### IP Support
@@ -81,7 +81,7 @@ Relays forward packets without decrypting them. They increment the hop counter, 
 
 **Rekeying.** None. The per-peer key is computed once in the `Peer` constructor and only changes if an identity changes.
 
-**Implementations.** All data-path crypto is in-tree, not from OpenSSL. `AES.cpp`/`AES_aesni.cpp` use AES-NI and PCLMULQDQ for GMAC (`src/zerotierone/node/AES_aesni.cpp:31-34,251-256`), and VAES-256/512 for CTR when the CPU has it (`src/zerotierone/node/AES_aesni.cpp:424-438`). The choice is made at runtime through CPUID (`src/zerotierone/node/AES.cpp:115,169,220`, `src/zerotierone/node/Utils.cpp:151-165`). ARMv8 Crypto Extensions are used on arm64 (`src/zerotierone/node/AES_armcrypto.cpp`, `src/zerotierone/node/AES.cpp:227`). The fallback is table-based software AES (`src/zerotierone/node/AES.cpp:261-326`). x86_64 builds also link SSE assembly for Salsa20/12 and Ed25519 (`src/zerotierone/make-linux.mk:127-131,379-386`). OpenSSL 3.6.0 (`deps/zerotierone/openssl`) is linked only for the Rust `zeroidc` HTTPS/OIDC client (`src/zerotierone/make-linux.mk:316`).
+**Implementations.** All data-path crypto is in-tree, not from OpenSSL. `src/zerotierone/node/AES.cpp`/`src/zerotierone/node/AES_aesni.cpp` use AES-NI and PCLMULQDQ for GMAC (`src/zerotierone/node/AES_aesni.cpp:31-34,251-256`), and VAES-256/512 for CTR when the CPU has it (`src/zerotierone/node/AES_aesni.cpp:424-438`). The choice is made at runtime through CPUID (`src/zerotierone/node/AES.cpp:115,169,220`, `src/zerotierone/node/Utils.cpp:151-165`). ARMv8 Crypto Extensions are used on arm64 (`src/zerotierone/node/AES_armcrypto.cpp`, `src/zerotierone/node/AES.cpp:227`). The fallback is table-based software AES (`src/zerotierone/node/AES.cpp:261-326`). x86_64 builds also link SSE assembly for Salsa20/12 and Ed25519 (`src/zerotierone/make-linux.mk:127-131,379-386`). OpenSSL 3.6.0 (`deps/zerotierone/openssl`) is linked only for the Rust `zeroidc` HTTPS/OIDC client (`src/zerotierone/make-linux.mk:316`).
 
 ## Encryption Checklist
 
@@ -162,7 +162,7 @@ The default Linux build with default `local.conf` (`multicoreEnabled=false`, `co
 
 ## Known Security Issues
 
-No advisory or CVE that affects 1.16.0 is listed in the shipped `RELEASE-NOTES.md` or `SECURITY.md` (`src/zerotierone/RELEASE-NOTES.md:4-60`, `src/zerotierone/SECURITY.md`). Per the analysis rules, no web database was checked, so this means "none found in the source tree". `SECURITY.md` lists 1.16.x and 1.14.x as supported. The 1.16.0 release notes only mention dependency bumps in the Rust helper, for example `openssl` 0.10.72, `tokio` 1.43.1 and `ring` 0.17.13 (`src/zerotierone/RELEASE-NOTES.md:43-58`). The vendored crates are newer: `openssl-0.10.73`, `tokio-1.47.1`, `ring-0.17.14` (`deps/zerotierone/cargo-vendor/`).
+No advisory or CVE that affects 1.16.0 is listed in the shipped `RELEASE-NOTES.md` or `SECURITY.md` (`src/zerotierone/RELEASE-NOTES.md:4-60`, `src/zerotierone/SECURITY.md`). Per the analysis rules, no web database was checked, so this means "none found in the source tree". `SECURITY.md` lists 1.16.x and 1.14.x as supported. The 1.16.0 release notes only mention dependency bumps in the Rust helper, for example `openssl` 0.10.72, `tokio` 1.43.1 and `ring` 0.17.13 (`src/zerotierone/RELEASE-NOTES.md:43-58`). The vendored crates are newer: `openssl-0.10.73`, `tokio-1.47.1`, `ring-0.17.14` (`src/zerotierone/rustybits/Cargo.lock:1814-1815,2418-2419,3281-3282`).
 
 ## Potential Security Concerns
 
@@ -195,9 +195,9 @@ No advisory or CVE that affects 1.16.0 is listed in the shipped `RELEASE-NOTES.m
 
 ### Implementation
 
-- [ ] **Memory-safe language** - The data path is C++ (`src/zerotierone/node/*.cpp`); only the optional OIDC helper is Rust.
+- [ ] **Memory-safe language** - The data path is C++ (`src/zerotierone/node/Switch.cpp`, `src/zerotierone/node/Packet.cpp`, `src/zerotierone/make-linux.mk:87-88`); only the optional OIDC helper is Rust (`src/zerotierone/rustybits/zeroidc/Cargo.toml`).
 - [x] **Privilege separation** - On Linux the daemon switches to the `zerotier-one` user and keeps only `CAP_NET_ADMIN`, `CAP_NET_RAW` and `CAP_NET_BIND_SERVICE`, but only if that user exists and the kernel supports ambient capabilities (`src/zerotierone/one.cpp:1764-1830,2377-2381`).
-- [ ] **Sandboxing** - No seccomp, chroot or namespace code exists in `one.cpp`, `service/` or `osdep/`.
+- [ ] **Sandboxing** - No seccomp, chroot or namespace code exists in `src/zerotierone/one.cpp`, `src/zerotierone/service` or `src/zerotierone/osdep`.
 - [x] **Audit logging** - Partial: authentication failures, dropped HELLOs, filter drops and credential rejections go only to a controller-configured remote trace target; local printing is compiled out unless `ZT_TRACE` is set (`src/zerotierone/node/Trace.cpp:9,30-42,319-339`).
 
 # NAT Traversal
@@ -227,7 +227,7 @@ No advisory or CVE that affects 1.16.0 is listed in the shipped `RELEASE-NOTES.m
 
 - [x] **UPnP port mapping** - `PortMapper` uses the bundled miniupnpc for `UPNP_AddPortMapping`; `portMappingEnabled` defaults to true (`src/zerotierone/osdep/PortMapper.cpp:206-284`, `src/zerotierone/service/OneService.cpp:2890`).
 - [x] **NAT-PMP support** - `PortMapper` tries NAT-PMP first with libnatpmp (`src/zerotierone/osdep/PortMapper.cpp:81-179`).
-- [ ] **PCP support** - Only the NAT-PMP and UPnP-IGD code paths exist in `PortMapper.cpp`.
+- [ ] **PCP support** - Only the NAT-PMP and UPnP-IGD code paths exist in `src/zerotierone/osdep/PortMapper.cpp:81-284`.
 
 ### Hole Punching
 
@@ -322,7 +322,7 @@ The 1.16.0 client never sends that token: `Network::requestConfiguration` adds n
 ### Enrollment Methods
 
 - [ ] **Pre-authentication keys** - The controller checks `authTokens`, but no client in this tree sends the auth metadata key, so the feature is unreachable from ZeroTier One (`src/zerotierone/nonfree/controller/EmbeddedNetworkController.cpp:1691-1707`, `src/zerotierone/node/Network.cpp:1422-1434`).
-- [ ] **Certificate-based enrollment** - The COM is issued after authorization; no CA-signed certificate admits a node.
+- [ ] **Certificate-based enrollment** - The COM is issued after authorization; no CA-signed certificate admits a node (`src/zerotierone/nonfree/controller/EmbeddedNetworkController.cpp:1679-1688,1803-1812,2258-2260`).
 - [x] **OAuth/OIDC** - Partial: the client links `zeroidc` (openidconnect 3.5) on x86_64/arm64, but only the PostgreSQL controllers (hosted service or central build) give SSO data, not the self-hosted file controller (`src/zerotierone/make-linux.mk:310-317`, `src/zerotierone/nonfree/controller/DB.hpp:128-131`).
 - [x] **Interactive login** - Partial: the same SSO browser flow through `zeroidc_get_auth_url`, only with an SSO-capable controller (`src/zerotierone/service/OneService.cpp:414-431`).
 - [x] **CLI authentication** - `zerotier-cli join <nwid>` starts enrollment (`src/zerotierone/one.cpp:838-846`).
@@ -351,11 +351,11 @@ The tree has build files and TAP drivers for these platforms (`src/zerotierone/m
 - FreeBSD and OpenBSD: `make-bsd.mk`, `BSDEthernetTap`;
 - NetBSD: `make-netbsd.mk`, `NetBSDEthernetTap`.
 
-Android is supported through the JNI SDK in `java/`. `Constants.hpp` has iOS platform names for the core library (`src/zerotierone/node/Constants.hpp:208,223-227`). The official mobile apps live outside this repository (inferred). The repository also ships Docker release files (`src/zerotierone/Dockerfile.release`, `src/zerotierone/entrypoint.sh.release`, `src/zerotierone/README.docker.md`).
+Android is supported through the JNI SDK in `src/zerotierone/java`. `src/zerotierone/node/Constants.hpp` has iOS platform names for the core library (`src/zerotierone/node/Constants.hpp:208,223-227`). The official mobile apps live outside this repository (inferred). The repository also ships Docker release files (`src/zerotierone/Dockerfile.release`, `src/zerotierone/entrypoint.sh.release`, `src/zerotierone/README.docker.md`).
 
 ## Implementation Details
 
-The core (`node/`) is a portable C++ library behind the C API in `include/ZeroTierOne.h`. `service/OneService.cpp` adds the OS glue: sockets, TAP, routes, the HTTP API and port mapping. On Linux, the TAP and routes go through `LinuxEthernetTap` and `LinuxNetLink` unless `ZT_EXTOSDEP=1` (`src/zerotierone/make-linux.mk:29-35`). The benchmark binary is the default x86_64 Linux build. It uses `-O3`, x64 Salsa20/12 and Ed25519 assembly, the SSO helper linked against OpenSSL, and the bundled miniupnpc and libnatpmp (`src/zerotierone/make-linux.mk:42-58,85-90,127-133,310-317,379-386`). The `lzo` and `zlib` sources under `deps/` are build inputs of the package, but the Makefiles do not link them (`src/zerotierone/make-linux.mk`, inferred from absence).
+The core (`src/zerotierone/node`) is a portable C++ library behind the C API in `src/zerotierone/include/ZeroTierOne.h`. `src/zerotierone/service/OneService.cpp` adds the OS glue: sockets, TAP, routes, the HTTP API and port mapping. On Linux, the TAP and routes go through `LinuxEthernetTap` and `LinuxNetLink` unless `ZT_EXTOSDEP=1` (`src/zerotierone/make-linux.mk:29-35`). The benchmark binary is the default x86_64 Linux build. It uses `-O3`, x64 Salsa20/12 and Ed25519 assembly, the SSO helper linked against OpenSSL, and the bundled miniupnpc and libnatpmp (`src/zerotierone/make-linux.mk:42-58,85-90,127-133,310-317,379-386`). The `lzo` and `zlib` sources under `deps/` are build inputs of the package, but the Makefiles do not link them (`src/zerotierone/make-linux.mk`, inferred from absence).
 
 ## Platform Checklist
 
@@ -369,7 +369,7 @@ The core (`node/`) is a portable C++ library behind the C API in `include/ZeroTi
 ### Mobile
 
 - [x] **iOS** - The core has iOS platform targets (`src/zerotierone/node/Constants.hpp:223-227`); the official iOS app lives in a separate ZeroTier repository (inferred).
-- [x] **Android** - The JNI SDK binding is in `java/jni/com_zerotierone_sdk_Node.cpp`, and the official Android app is separate (inferred).
+- [x] **Android** - The JNI SDK binding is in `src/zerotierone/java/jni/com_zerotierone_sdk_Node.cpp`, and the official Android app is separate (inferred).
 
 ### Implementation
 
