@@ -37,6 +37,8 @@ interface VpnDashboardProps {
   overviewMarkdown?: string;
   // Provenance of the overview, shown as a disclaimer above it
   overviewAnalysis?: VpnAnalysis;
+  // Citations of the overview to their source URLs at the analyzed revision
+  overviewLinks?: Readonly<Record<string, string>>;
   // All reports use MixedReport to show per-machine metadata
   tcpReports: MixedReport<IperfTcpReportData>[] | null;
   udpReports: MixedReport<IperfUdpReportData>[] | null;
@@ -370,7 +372,10 @@ export const VpnDashboard = (props: VpnDashboardProps) => {
               <Show when={props.overviewAnalysis} keyed>
                 {(analysis) => <OverviewDisclaimer analysis={analysis} />}
               </Show>
-              <MarkdownContent content={content()} />
+              <MarkdownContent
+                content={content()}
+                links={props.overviewLinks}
+              />
             </>
           )}
         </Show>

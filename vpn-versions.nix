@@ -36,10 +36,28 @@ let
     else
       throw "vpn-versions.nix: no source URL for input type ${locked.type}";
 
+  lockedInput = input: lock.nodes.${lock.nodes.root.inputs.${input}}.locked;
+
+  # Where a file of a linked tree can be read online: `{path}` is the file inside the tree,
+  # `lines` the line-anchor style of the site.
+  fileLink = url: lines: {
+    kind = "file";
+    inherit url lines;
+  };
+
+  inputFileLink =
+    locked:
+    if locked.type == "github" then
+      fileLink "https://github.com/${locked.owner}/${locked.repo}/blob/${locked.rev}/{path}" "github"
+    else if locked.type == "git" then
+      fileLink "${locked.url}/tree/{path}?id=${locked.rev}" "cgit"
+    else
+      throw "vpn-versions.nix: no file URL for input type ${locked.type}";
+
   inputVersion =
     input:
     let
-      locked = lock.nodes.${lock.nodes.root.inputs.${input}}.locked;
+      locked = lockedInput input;
     in
     {
       inherit input;
@@ -56,6 +74,8 @@ let
     inherit (kernel) version;
     url = "https://git.kernel.org/pub/scm/linux/kernel/git/stable/linux.git/tree/drivers/net/wireguard?h=v${kernel.version}";
   };
+
+  linuxFileLink = fileLink "https://git.kernel.org/pub/scm/linux/kernel/git/stable/linux.git/tree/{path}?h=v${kernel.version}" "cgit";
 
   # The WireGuard module and the kernel crypto it calls, without the rest of the kernel tree.
   wireguardKernelSrc = pkgs.runCommand "linux-${kernel.version}-wireguard-src" { } ''
@@ -133,30 +153,51 @@ let
   linkTo = name: path: pkgs.runCommand name { } "ln -s ${path} $out";
 
   # Vendored Go modules and Go standard library, vendored crates, and the unpacked
-  # and patched source of every C library the package links.
+  # and patched source of every C library the package links, each with its online link.
   dependencies =
     pkg:
     lib.optionalAttrs (pkg ? goModules) {
-      go-modules = pkg.goModules;
-      go-stdlib = linkTo "go-${pkg.go.version}-stdlib-src" "${pkg.go}/share/go/src";
+      go-modules = {
+        path = pkg.goModules;
+        link.kind = "go-modules";
+      };
+      go-stdlib = {
+        path = linkTo "go-${pkg.go.version}-stdlib-src" "${pkg.go}/share/go/src";
+        link = fileLink "https://github.com/golang/go/blob/go${pkg.go.version}/src/{path}" "github";
+      };
     }
-    // lib.optionalAttrs (pkg ? cargoDeps) { cargo-vendor = pkg.cargoDeps; }
-    // lib.optionalAttrs (pkg ? cargoVendorDir) { cargo-vendor = pkg.cargoVendorDir; }
+    // lib.optionalAttrs (pkg ? cargoDeps) { cargo-vendor = cargoVendor pkg.cargoDeps; }
+    // lib.optionalAttrs (pkg ? cargoVendorDir) { cargo-vendor = cargoVendor pkg.cargoVendorDir; }
     // lib.listToAttrs (
-      map (dep: lib.nameValuePair (lib.getName dep) (pkgs.srcOnly dep.out)) (
-        builtins.filter (dep: dep ? src) (pkg.buildInputs or [ ])
-      )
+      map (
+        dep:
+        lib.nameValuePair (lib.getName dep) {
+          path = pkgs.srcOnly dep.out;
+          link = {
+            kind = "archive";
+            url = dep.src.url or (throw "vpn-versions.nix: no source URL for ${dep.name}");
+          };
+        }
+      ) (builtins.filter (dep: dep ? src) (pkg.buildInputs or [ ]))
     );
 
-  componentLinks =
+  cargoVendor = path: {
+    inherit path;
+    link.kind = "cargo-vendor";
+  };
+
+  componentEntries =
     input:
     let
       c = component.${input};
     in
     {
-      "src/${input}" = c.src;
+      "src/${input}" = {
+        path = c.src;
+        link = if input == "linux" then linuxFileLink else inputFileLink (lockedInput input);
+      };
     }
-    // lib.mapAttrs' (name: path: lib.nameValuePair "deps/${input}/${name}" path) (
+    // lib.mapAttrs' (name: entry: lib.nameValuePair "deps/${input}/${name}" entry) (
       if c.pkg == null then { } else dependencies c.pkg
     );
 
@@ -187,8 +228,20 @@ in
   ) components;
 
   # One folder per VPN: `src/<input>` links to the source nix builds the VPN from,
-  # `deps/<input>/<name>` to the source of each dependency.
+  # `deps/<input>/<name>` to the source of each dependency, and `links.json` maps each
+  # of them to where its files can be read online.
   sources = builtins.mapAttrs (
-    vpn: inputNames: pkgs.linkFarm "${vpn}-sources" (lib.mergeAttrsList (map componentLinks inputNames))
+    vpn: inputNames:
+    let
+      entries = lib.mergeAttrsList (map componentEntries inputNames);
+    in
+    pkgs.linkFarm "${vpn}-sources" (
+      lib.mapAttrs (_: entry: entry.path) entries
+      // {
+        "links.json" = pkgs.writeText "${vpn}-links.json" (
+          builtins.toJSON (lib.mapAttrs (_: entry: entry.link) entries)
+        );
+      }
+    )
   ) components;
 }

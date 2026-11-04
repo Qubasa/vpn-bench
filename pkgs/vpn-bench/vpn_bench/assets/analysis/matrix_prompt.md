@@ -32,10 +32,11 @@ next to benchmark numbers measured with exactly these versions:
 
 ## Rules
 
-- A cell must agree with the overview of that VPN. If an overview applied
-  `matrix_row_contract.md` differently from the other overviews, or the source shows it is
-  wrong, follow the contract and the source, and list each such cell in your final message
-  with the file and line.
+- A cell must equal the value of the overview item of that VPN: the web UI links the cell
+  to that item's evidence, and `vpb analyze` rejects a matrix whose cells differ from the
+  overviews. If an overview applied `matrix_row_contract.md` differently from the other
+  overviews, or the source shows it is wrong, still write the overview's value and list
+  each such cell in your final message with the file and line, so the overview gets fixed.
 - Score with "How to score a row" in `matrix_row_contract.md`, step by step, the same way for
   every VPN, so a cell means the same thing in every column. When torn between two values,
   pick the higher one.

@@ -15,6 +15,7 @@ from clan_lib.errors import ClanError
 from clan_lib.nix import nix_command, nix_eval
 
 from vpn_bench.assets import get_analysis_asset
+from vpn_bench.citations import CITATIONS_JSON, citation_report
 from vpn_bench.data import Config, flake_ref
 from vpn_bench.errors import VpnBenchError
 
@@ -37,6 +38,9 @@ SCORES_MARKER = "<!-- feature-scores -->"
 MATRIX_SYMBOLS = frozenset({"✓", "◐", "✗", "N/A", "?"})
 SEPARATOR_CELL = re.compile(r":?-{3,}:?")
 ISO_DATE = re.compile(r"\d{4}-\d{2}-\d{2}")
+CHECKLIST_VALUE = re.compile(
+    r"\s*- \[(?P<box>[ x])\] \*\*(?P<name>.+?)\*\*\s*-\s*(?P<rest>.*)"
+)
 
 
 @dataclass(frozen=True)
@@ -318,6 +322,55 @@ def _row_problems(rows: list[tuple[str, ...]], columns: int) -> list[str]:
     return problems
 
 
+def _checklist_symbol(box: str, rest: str) -> str:
+    if box == "x":
+        return "◐" if rest.startswith("Partial:") else "✓"
+    for prefix, symbol in (("N/A:", "N/A"), ("Unknown:", "?")):
+        if rest.startswith(prefix):
+            return symbol
+    return "✗"
+
+
+def checklist_values(text: str) -> dict[str, str]:
+    """Read the matrix symbol each checklist item of an overview stands for.
+
+    Args:
+        text: Content of overview.md.
+
+    Returns:
+        Item name to one of the matrix symbols.
+    """
+    values = {}
+    for line in text.splitlines():
+        match = CHECKLIST_VALUE.match(line)
+        if match:
+            values[match["name"]] = _checklist_symbol(match["box"], match["rest"])
+    return values
+
+
+def matrix_overview_problems(matrix: str, overviews: dict[str, str]) -> list[str]:
+    """Check that every matrix cell equals the overview item it links to.
+
+    Args:
+        matrix: Content of feature_matrix.md.
+        overviews: VPN directory name to its overview.md, in matrix column order.
+
+    Returns:
+        One problem per cell that differs from its overview.
+    """
+    columns = [(vpn, checklist_values(text)) for vpn, text in overviews.items()]
+    problems = []
+    for table in feature_tables(matrix):
+        for name, *cells in table.rows:
+            for (vpn, values), cell in zip(columns, cells, strict=False):
+                value = values.get(name, "no item")
+                if value != cell:
+                    problems.append(
+                        f"`{name}` of {vpn}: matrix {cell}, overview {value}"
+                    )
+    return problems
+
+
 def _render_asset(asset: str, dest: Path, values: dict[str, str]) -> None:
     text = get_analysis_asset(asset).read_text()
     for placeholder, value in values.items():
@@ -442,8 +495,15 @@ def _vpn_step(
     ws = data_dir / "analysis" / "vpn" / vpn / vpn_key(components)
     problems = _vpn_workspace_problems(ws, component_revs(components))
     if not problems:
+        # Citations are checked against sources and links of the current checkout.
+        _build_sources(flake, vpn, ws / "sources")
+        citations, problems = citation_report(
+            (ws / OVERVIEW_MD).read_text(), ws / "sources"
+        )
+    if not problems:
         for name in (OVERVIEW_MD, ANALYSIS_JSON):
             shutil.copyfile(ws / name, vpn_dir / name)
+        (vpn_dir / CITATIONS_JSON).write_text(json.dumps(citations, indent=2) + "\n")
         return StepResult(vpn, StepStatus.IMPORTED, str(ws))
     _warn_problems(ws, OVERVIEW_MD, problems)
     prepare_vpn_workspace(flake, ws, vpn, components)
@@ -451,14 +511,17 @@ def _vpn_step(
 
 
 def _matrix_workspace_problems(
-    ws: Path, revs: dict[str, dict[str, str]], skeleton: str
+    ws: Path, run_dir: Path, revs: dict[str, dict[str, str]], skeleton: str
 ) -> list[str]:
     matrix = ws / FEATURE_MATRIX_MD
     meta = ws / ANALYSIS_JSON
     if not matrix.is_file() or not meta.is_file():
         return [f"{FEATURE_MATRIX_MD} not written yet"]
+    text = matrix.read_text()
+    overviews = {vpn: (run_dir / vpn / OVERVIEW_MD).read_text() for vpn in revs}
     return [
-        *feature_matrix_problems(matrix.read_text(), skeleton, len(revs)),
+        *feature_matrix_problems(text, skeleton, len(revs)),
+        *matrix_overview_problems(text, overviews),
         *analysis_json_problems(meta.read_text(), revs),
     ]
 
@@ -469,7 +532,7 @@ def _matrix_step(
     revs = matrix_revs(components)
     ws = data_dir / "analysis" / "matrix" / matrix_key(revs)
     skeleton = get_analysis_asset(MATRIX_SKELETON).read_text()
-    problems = _matrix_workspace_problems(ws, revs, skeleton)
+    problems = _matrix_workspace_problems(ws, run_dir, revs, skeleton)
     if not problems:
         general = run_dir / GENERAL_DIR
         general.mkdir(parents=True, exist_ok=True)

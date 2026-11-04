@@ -13,8 +13,23 @@ scored the same way by every reader.
 | `N/A` | `- [ ] **Row** - N/A: ...` | Only for the controller rows of a design without a controller. |
 | `?` | `- [ ] **Row** - Unknown: ...` | Last resort, after searching the source. Say what you searched. |
 
-Every value needs evidence: a path and line in `sources/` (`src/<input>/path/file.go:123`, or
-`deps/<input>/<dep>/...` for dependency code), or a symbol name.
+Every value needs evidence: at least one citation, the first one being the main evidence
+(the web UI links the matrix cell to it). A citation is an inline code span holding a full
+path in `sources/` and optionally lines, nothing else:
+
+- `src/<input>/path/file.go:123`, `src/<input>/path/file.go:120-131` or
+  `src/<input>/path/file.go:120-131,140` for the VPN's own code;
+- `deps/<input>/<dep>/path/file.rs:45` for dependency code, e.g.
+  `deps/hyprspace/go-modules/github.com/quic-go/quic-go/conn.go:12` or
+  `deps/easytier/cargo-vendor/ring-0.17.8/src/aead/aes.rs:87-120`;
+- a file or directory without lines when the whole file is the evidence.
+
+No `sources/` prefix, no shortened paths (`crypto.rs:97`, `.../noise/handshake.go`), no
+globs, and no files that only exist in the vendoring step (`go-modules/modules.txt`,
+`cargo-vendor/Cargo.lock`, cite the project's own `go.mod` or `Cargo.lock` instead). For a
+feature the code lacks, cite where it would have to be: the transport enum, the config
+struct, the cipher list, the CLI flags. `vpb analyze` rejects an overview with a citation
+whose file or lines do not exist.
 
 ## How to score a row
 
