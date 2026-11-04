@@ -223,6 +223,7 @@
 
 ### Redundancy
 
+- [ ] **Decentralized control plane** - 
 - [ ] **Fully self-hostable** - 
 - [ ] **Controller redundancy** - 
 - [ ] **Relay redundancy** - 

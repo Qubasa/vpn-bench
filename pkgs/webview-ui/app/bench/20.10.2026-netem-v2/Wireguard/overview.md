@@ -300,6 +300,7 @@ There is nothing to mitigate at the protocol level. Operational options are:
 
 ### Redundancy
 
+- [x] **Decentralized control plane** - All peers, keys and allowed IPs are set locally by the administrator over generic netlink, with no server of any kind (`src/linux/drivers/net/wireguard/netlink.c:610-622`).
 - [x] **Fully self-hostable** - No external component exists; kernel module and `wg` tool are all there is (`src/linux/drivers/net/wireguard/main.c:20-61`).
 - [ ] **Controller redundancy** - N/A: there is no controller (`src/linux/drivers/net/wireguard/netlink.c:610-622`).
 - [ ] **Relay redundancy** - No relays exist (`src/linux/drivers/net/wireguard/messages.h:56-62`).

@@ -288,6 +288,7 @@ Give several nodes public `Address` entries and list them in `ConnectTo`. `AutoC
 
 ### Redundancy
 
+- [x] **Decentralized control plane** - Every tincd node forwards ADD_EDGE/ADD_SUBNET requests to its peers and computes the graph itself (`src/tinc/src/protocol_edge.c:211,298`, `src/tinc/src/graph.c:122-127`).
 - [x] **Fully self-hostable** - Every role (bootstrap, reflection, relay) is an ordinary tincd node, and there are no external services (`net_setup.c`, `autoconnect.c`).
 - [ ] **Controller redundancy** - N/A: the design has no controller (`graph.c:126`).
 - [x] **Relay redundancy** - Any reachable node can relay, and the graph picks among all of them (`graph.c:186-196`).

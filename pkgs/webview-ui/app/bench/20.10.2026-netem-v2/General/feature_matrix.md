@@ -254,6 +254,7 @@
 
 | Feature | EasyTier | Tailscale / Headscale | Hyprspace | Mycelium | Nebula | Tinc | VpnCloud | WireGuard | Yggdrasil | ZeroTier |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Decentralized control plane | ✓ | ✗ | ◐ | ✓ | ◐ | ✓ | ✓ | ✓ | ✓ | ✗ |
 | Fully self-hostable | ✓ | ✓ | ◐ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
 | Controller redundancy | N/A | ✗ | N/A | N/A | N/A | N/A | N/A | N/A | N/A | ✗ |
 | Relay redundancy | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✗ | ✗ | ✓ | ✓ |

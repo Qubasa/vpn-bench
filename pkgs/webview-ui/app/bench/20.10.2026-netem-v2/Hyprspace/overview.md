@@ -292,6 +292,7 @@ Use many peers: PeX lets any connected VPN member supply addresses for the other
 
 ### Redundancy
 
+- [x] **Decentralized control plane** - Partial: membership is the local `peers` list in each node's config (`src/hyprspace/config/config.go:33-38`), but nodes find each other through the libp2p DHT entered via hardcoded bootstrap nodes (`src/hyprspace/p2p/node.go:178-199`).
 - [x] **Fully self-hostable** - Partial: relays are ordinary Hyprspace nodes and extra discovery can come from an own IPFS node via `HYPRSPACE_IPFS_API` (`src/hyprspace/p2p/node.go:207-246`), but the hardcoded bootstrap list and the `p2p.privatevoid.net` router are always used and cannot be replaced by config (`src/hyprspace/p2p/node.go:178-199,257-262`).
 - [ ] **Controller redundancy** - N/A: Hyprspace has no controller; discovery already uses 20 bootstrap multiaddrs (`src/hyprspace/p2p/node.go:178-199`).
 - [x] **Relay redundancy** - AutoRelay holds two reservations at once (`src/hyprspace/p2p/node.go:167`), and any Hyprspace node can relay.
