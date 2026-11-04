@@ -10,7 +10,7 @@ At a glance:
 - **Data cipher (default):** ChaCha20-Poly1305 with a 64-bit counter nonce (`chacha20poly1305_encrypt_sg_inplace`, `src/linux/drivers/net/wireguard/send.c:216`). There are no alternatives. Cookie replies use XChaCha20-Poly1305 (`src/linux/drivers/net/wireguard/cookie.c:193`).
 - **Handshake:** Noise_IKpsk2_25519_ChaChaPoly_BLAKE2s, with an optional per-peer preshared key (`src/linux/drivers/net/wireguard/noise.c:28`).
 - **Default tunnel MTU:** 1420. `wg_setup` sets `dev->mtu = ETH_DATA_LEN - overhead`, where overhead is 32 bytes of WireGuard header and tag, 8 bytes UDP and 40 bytes IPv6 (`src/linux/drivers/net/wireguard/device.c:280-296`). wg-quick would instead set the route MTU minus 80 (`src/wireguard-tools/src/wg-quick/linux.bash:125-141`).
-- **Control-plane model:** fully distributed. Peers are configured statically, with no server of any kind.
+- **Control-plane model:** fully distributed. Peers are configured statically, with no server of any kind (`src/wireguard-tools/src/config.c:446-495`, `src/linux/drivers/net/wireguard/netlink.c:583-595`).
 - **Data-plane threading:** multi-threaded in the kernel. Per-CPU encrypt and decrypt workers are fed round-robin (`src/linux/drivers/net/wireguard/queueing.h:173-176`). Per-peer serial TX work and a threaded per-peer NAPI context restore packet order.
 
 ## Key Architecture Components
@@ -199,7 +199,7 @@ None found. The sources contain no advisory files, and no web lookup was allowed
 
 ### Implementation
 
-- [ ] **Memory-safe language** - The data path is C in the Linux kernel (`src/linux/drivers/net/wireguard/*.c`).
+- [ ] **Memory-safe language** - The data path is C in the Linux kernel (`src/linux/drivers/net/wireguard`).
 - [ ] **Privilege separation** - The data path runs in the kernel and configuration needs `CAP_NET_ADMIN` (`src/linux/drivers/net/wireguard/netlink.c:616,620`); the only isolation aid is that the UDP socket stays in the creating namespace while the device can move to another (`src/linux/drivers/net/wireguard/socket.c:376-381`).
 - [ ] **Sandboxing** - No seccomp, pledge or similar in the driver or in the `wg` tool (`src/wireguard-tools/src/wg.c`).
 - [x] **Audit logging** - Partial: invalid MACs, failed handshakes, AllowedIPs violations and handshake give-ups are logged only through `net_dbg_ratelimited` and `pr_debug` (`src/linux/drivers/net/wireguard/receive.c:129-131,415-418`, `src/linux/drivers/net/wireguard/timers.c:47-49`), which need dynamic debug or `CONFIG_WIREGUARD_DEBUG` (`src/linux/drivers/net/wireguard/Makefile:2`).
@@ -365,7 +365,7 @@ The Linux driver is about 6,000 lines of C (`src/linux/drivers/net/wireguard/`).
 
 ### Mobile
 
-- [x] **iOS** - No iOS code is in the analysed sources; an official WireGuard iOS app exists in a separate project repository (inferred).
+- [x] **iOS** - No iOS code is in the analysed sources (`src/wireguard-tools/README.md:7-8`, `src/wireguard-tools/src/wg-quick`); an official WireGuard iOS app exists in a separate project repository (inferred).
 - [x] **Android** - wireguard-tools ships an Android wg-quick (`src/wireguard-tools/src/wg-quick/android.c:1-6`) and lists Android as supported (`src/wireguard-tools/README.md:7-8`).
 
 ### Implementation

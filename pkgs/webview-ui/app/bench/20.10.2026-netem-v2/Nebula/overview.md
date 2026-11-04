@@ -12,7 +12,7 @@ At a glance:
 - **Data cipher (default):** AES-256-GCM (`cipher: aes`, `src/nebula/pki.go:158`, `src/nebula/connection_state.go:49-50`). The only alternative is ChaCha20-Poly1305 (`cipher: chachapoly`, `src/nebula/connection_state.go:46-47`).
 - **Handshake:** Noise IX with X25519 by default, or P-256 for P256 certificates. The pattern name is `Noise_IX_25519_AESGCM_SHA256` because no PSK is set (`src/nebula/connection_state.go:31-67`, `deps/nebula/go-modules/github.com/flynn/noise/state.go:336-356`). Certificates travel as the handshake payload.
 - **Default tunnel MTU:** 1300 (`DefaultMTU`, `src/nebula/overlay/tun.go:13`, applied from `tun.mtu` in `src/nebula/overlay/tun_linux.go:169`).
-- **Control-plane model:** lighthouse/bootstrap nodes run by the operator.
+- **Control-plane model:** lighthouse/bootstrap nodes run by the operator (`src/nebula/lighthouse.go:83-87`, `src/nebula/examples/config.yml:44-62`).
 - **Data-plane threading:** multi-threaded. Each routine runs one TUN-reader and one UDP-reader goroutine, each locked to an OS thread. `routines` defaults to 1. With `routines` > 1, Nebula opens one IFF_MULTI_QUEUE TUN queue and one SO_REUSEPORT socket per routine (`src/nebula/interface.go:227-303`, `src/nebula/main.go:87-109`).
 
 ## Key Architecture Components
@@ -340,7 +340,7 @@ At runtime, peers exchange certificates in the Noise IX handshake. Each side ver
 
 ## Supported Platforms
 
-The repository has TUN backends for Linux, Android, macOS (utun), iOS, FreeBSD, OpenBSD, NetBSD and Windows (Wintun) (`src/nebula/overlay/tun_*.go`). The README lists Linux, Windows, macOS and FreeBSD packages, an official Docker image, and official iOS and Android apps (`src/nebula/README.md:17-63`).
+The repository has TUN backends for Linux, Android, macOS (utun), iOS, FreeBSD, OpenBSD, NetBSD and Windows (Wintun) (`src/nebula/overlay/tun_linux.go`, `src/nebula/overlay/tun_android.go`, `src/nebula/overlay/tun_darwin.go`, `src/nebula/overlay/tun_ios.go`, `src/nebula/overlay/tun_freebsd.go`, `src/nebula/overlay/tun_openbsd.go`, `src/nebula/overlay/tun_netbsd.go`, `src/nebula/overlay/tun_windows.go`). The README lists Linux, Windows, macOS and FreeBSD packages, an official Docker image, and official iOS and Android apps (`src/nebula/README.md:17-63`).
 
 ## Implementation Details
 

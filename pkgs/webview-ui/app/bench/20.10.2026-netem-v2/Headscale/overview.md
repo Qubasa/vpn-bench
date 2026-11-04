@@ -10,7 +10,7 @@ At a glance:
 - **Data cipher (default):** ChaCha20-Poly1305 (`deps/tailscale/go-modules/github.com/tailscale/wireguard-go/device/send.go:473`). There are no alternatives. Disco control packets use NaCl box (XSalsa20-Poly1305) (`src/tailscale/types/key/disco.go:13,215`).
 - **Handshake:** WireGuard `Noise_IKpsk2_25519_ChaChaPoly_BLAKE2s` with an all-zero PSK (`deps/tailscale/go-modules/github.com/tailscale/wireguard-go/device/noise-protocol.go:51`, `src/tailscale/wgengine/wgcfg/parser.go:176`). The client-to-Headscale channel is `Noise_IK_25519_ChaChaPoly_BLAKE2s` (`src/tailscale/control/controlbase/handshake.go:31`).
 - **Default tunnel MTU:** 1280. `safeTUNMTU` is set in `src/tailscale/net/tstun/mtu.go:79` and applied when the TUN is created in `src/tailscale/net/tstun/tun.go:61`.
-- **Control-plane model:** central server (one Headscale process with SQLite or PostgreSQL).
+- **Control-plane model:** central server (one Headscale process with SQLite or PostgreSQL) (`src/headscale/hscontrol/db/db.go:990-991,1033`, `src/headscale/hscontrol/app.go:444-480`).
 - **Data-plane threading:** multi-threaded. There is one encryption and one decryption worker per CPU, per-peer sequential sender and receiver goroutines, and one UDP socket per IP family (`deps/tailscale/go-modules/github.com/tailscale/wireguard-go/device/device.go:311-323`).
 
 ## Key Architecture Components
@@ -47,7 +47,7 @@ Peer relays (UDP relay servers with Geneve) exist in this client, but a peer mus
 - [x] **Datagram encapsulation (no head-of-line blocking)** - Yes: each inner packet becomes its own WireGuard UDP datagram on the direct path (`deps/tailscale/go-modules/github.com/tailscale/wireguard-go/device/send.go:446-484`). Only the DERP fallback uses a TCP stream.
 - [x] **TCP fallback** - Yes: when no direct UDP path is trusted, magicsock sends through the peer's DERP region over TLS on TCP 443 without user action (`src/tailscale/wgengine/magicsock/endpoint.go:582-584`, `src/tailscale/derp/derphttp/derphttp_client.go:667`).
 - [ ] **QUIC support** - No QUIC transport exists in magicsock or DERP. The bind exposes only UDP and DERP receive functions (`src/tailscale/wgengine/magicsock/magicsock.go:3263`).
-- [x] **WebSocket support** - Partial: Headscale's embedded DERP server accepts DERP over WebSocket (`src/headscale/hscontrol/derp/server/derp_server.go:151-209`). The Linux client uses WebSocket only in js/wasm or `ts_debug_websockets` builds (`src/tailscale/derp/derphttp/websocket.go:4`, `derphttp_client.go:317-327`).
+- [x] **WebSocket support** - Partial: Headscale's embedded DERP server accepts DERP over WebSocket (`src/headscale/hscontrol/derp/server/derp_server.go:151-209`). The Linux client uses WebSocket only in js/wasm or `ts_debug_websockets` builds (`src/tailscale/derp/derphttp/websocket.go:4`, `src/tailscale/derp/derphttp/derphttp_client.go:317-327`).
 
 ### IP Support
 
@@ -75,11 +75,11 @@ Peer relays (UDP relay servers with Geneve) exist in this client, but a peer mus
 
 **Key derivation.** HKDF uses BLAKE2s-HMAC (`KDF1`/`KDF2`/`KDF3` in `deps/tailscale/go-modules/github.com/tailscale/wireguard-go/device/noise-helpers.go:24-60`). BLAKE2s has SSE4.1 assembly (`deps/tailscale/go-modules/golang.org/x/crypto/blake2s/blake2s_amd64.go:12`).
 
-**Data cipher.** ChaCha20-Poly1305 with a 96-bit nonce built from the 64-bit counter (`deps/tailscale/go-modules/github.com/tailscale/wireguard-go/device/send.go:472-478`, `receive.go:252-260`). The amd64 build selects an AVX2+BMI2 code path when the CPU supports it (`deps/tailscale/go-modules/golang.org/x/crypto/chacha20poly1305/chacha20poly1305_amd64.go:23`, `chacha20poly1305_amd64.s:204-206`). There is no alternative cipher.
+**Data cipher.** ChaCha20-Poly1305 with a 96-bit nonce built from the 64-bit counter (`deps/tailscale/go-modules/github.com/tailscale/wireguard-go/device/send.go:472-478`, `deps/tailscale/go-modules/github.com/tailscale/wireguard-go/device/receive.go:252-260`). The amd64 build selects an AVX2+BMI2 code path when the CPU supports it (`deps/tailscale/go-modules/golang.org/x/crypto/chacha20poly1305/chacha20poly1305_amd64.go:23`, `deps/tailscale/go-modules/golang.org/x/crypto/chacha20poly1305/chacha20poly1305_amd64.s:204-206`). There is no alternative cipher.
 
 **Nonce and replay.** Each keypair has an atomic send counter. The receiver checks a sliding window bitmap of 127×64 = 8128 counters (`deps/tailscale/go-modules/github.com/tailscale/wireguard-go/replay/replay.go:12-15`) in `RoutineSequentialReceiver`, after decryption (`deps/tailscale/go-modules/github.com/tailscale/wireguard-go/device/receive.go:453`).
 
-**Rekeying.** The initiator starts a new handshake after 120 s or 2^60 messages, and keys are rejected after 180 s (`deps/tailscale/go-modules/github.com/tailscale/wireguard-go/device/constants.go:15-22`, `send.go:202-211`). Node keys can also be rotated through re-registration with Headscale (`OldPrivateNodeKey` in `src/tailscale/types/persist/persist.go:25`).
+**Rekeying.** The initiator starts a new handshake after 120 s or 2^60 messages, and keys are rejected after 180 s (`deps/tailscale/go-modules/github.com/tailscale/wireguard-go/device/constants.go:15-22`, `deps/tailscale/go-modules/github.com/tailscale/wireguard-go/device/send.go:202-211`). Node keys can also be rotated through re-registration with Headscale (`OldPrivateNodeKey` in `src/tailscale/types/persist/persist.go:25`).
 
 **Other channels.** The control channel is Noise IK with X25519, ChaCha20-Poly1305 and BLAKE2s (`src/tailscale/control/controlbase/handshake.go:31,371`). Disco messages are sealed with NaCl box between per-start disco keys (`src/tailscale/types/key/disco.go:72,215`). The 32-byte sender disco public key travels in clear in every disco header (`src/tailscale/disco/disco.go:5-16`).
 
@@ -100,7 +100,7 @@ Peer relays (UDP relay servers with Geneve) exist in this client, but a peer mus
 
 ### Protocol Security
 
-- [x] **Replay protection** - Yes: an 8128-entry sliding-window counter check runs per keypair (`deps/tailscale/go-modules/github.com/tailscale/wireguard-go/replay/replay.go:12-15`, `receive.go:453`).
+- [x] **Replay protection** - Yes: an 8128-entry sliding-window counter check runs per keypair (`deps/tailscale/go-modules/github.com/tailscale/wireguard-go/replay/replay.go:12-15`, `deps/tailscale/go-modules/github.com/tailscale/wireguard-go/device/receive.go:453`).
 - [x] **Noise Protocol** - Yes: `Noise_IKpsk2_25519_ChaChaPoly_BLAKE2s` for peers and `Noise_IK_25519_ChaChaPoly_BLAKE2s` for control (`deps/tailscale/go-modules/github.com/tailscale/wireguard-go/device/noise-protocol.go:51`, `src/tailscale/control/controlbase/handshake.go:31`).
 - [x] **No cleartext metadata** - Partial: WireGuard encrypts the static key in the handshake, but every disco packet carries the sender's disco public key in clear (`src/tailscale/disco/disco.go:5-16`, `src/tailscale/wgengine/magicsock/magicsock.go:1982-1983`). That key stays the same until the process restarts.
 - [x] **End-to-end encryption through relays** - Yes: DERP forwards already-encrypted WireGuard packets addressed only by destination public key (`src/tailscale/derp/derp.go:75`), so the relay cannot decrypt payloads.
@@ -109,19 +109,19 @@ Peer relays (UDP relay servers with Geneve) exist in this client, but a peer mus
 
 ## Threading Model
 
-The default Linux build uses the kernel TUN `tailscale0` with `IFF_TUN|IFF_NO_PI|IFF_VNET_HDR` (`deps/tailscale/go-modules/github.com/tailscale/wireguard-go/tun/tun_linux.go:560`). `initFromFlags` enables `TUN_F_CSUM|TSO4|TSO6`, adds `USO4|USO6` when the kernel supports them, and sets the TUN batch size to 128 (`tun_linux.go:503-542`). `tstun.Wrapper.SetLinkFeaturesPostUp` probes TCP GRO and keeps it on unless the probe fails (`src/tailscale/net/tstun/wrap_linux.go:23-38`).
+The default Linux build uses the kernel TUN `tailscale0` with `IFF_TUN|IFF_NO_PI|IFF_VNET_HDR` (`deps/tailscale/go-modules/github.com/tailscale/wireguard-go/tun/tun_linux.go:560`). `initFromFlags` enables `TUN_F_CSUM|TSO4|TSO6`, adds `USO4|USO6` when the kernel supports them, and sets the TUN batch size to 128 (`deps/tailscale/go-modules/github.com/tailscale/wireguard-go/tun/tun_linux.go:503-542`). `tstun.Wrapper.SetLinkFeaturesPostUp` probes TCP GRO and keeps it on unless the probe fails (`src/tailscale/net/tstun/wrap_linux.go:23-38`).
 
 **TX path.**
 1. The `tstun.Wrapper.pollVector` goroutine calls `NativeTun.Read`. That reads one virtio super-packet of up to 64 KiB into a staging buffer and splits it with `GSOSplit` into up to 128 vector buffers (`src/tailscale/net/tstun/wrap.go:437-478`, `deps/tailscale/go-modules/github.com/tailscale/wireguard-go/tun/tun_linux.go:427-452`).
-2. wireguard-go's single `RoutineReadFromTUN` calls `Wrapper.Read`. That runs the packet filter and copies each packet into a pooled wireguard-go message buffer (`src/tailscale/net/tstun/wrap.go:924-995`, copy at `:971`). It then groups packets by peer through an allowed-IPs lookup (`deps/tailscale/go-modules/github.com/tailscale/wireguard-go/device/send.go:213-304`).
-3. `SendStagedPackets` assigns nonces and queues the batch to the shared encryption channel. `runtime.NumCPU()` `RoutineEncryption` workers encrypt in place (`device.go:311-317`, `send.go:446-484`).
-4. The per-peer `RoutineSequentialSender` hands the batch to `magicsock.Conn.Send` → `endpoint.send` → `sendUDPBatch` (`send.go:487-552`, `src/tailscale/wgengine/magicsock/endpoint.go:1033-1074`).
+2. wireguard-go's single `RoutineReadFromTUN` calls `Wrapper.Read`. That runs the packet filter and copies each packet into a pooled wireguard-go message buffer (`src/tailscale/net/tstun/wrap.go:924-995`, copy at `src/tailscale/net/tstun/wrap.go:971`). It then groups packets by peer through an allowed-IPs lookup (`deps/tailscale/go-modules/github.com/tailscale/wireguard-go/device/send.go:213-304`).
+3. `SendStagedPackets` assigns nonces and queues the batch to the shared encryption channel. `runtime.NumCPU()` `RoutineEncryption` workers encrypt in place (`deps/tailscale/go-modules/github.com/tailscale/wireguard-go/device/device.go:311-317`, `deps/tailscale/go-modules/github.com/tailscale/wireguard-go/device/send.go:446-484`).
+4. The per-peer `RoutineSequentialSender` hands the batch to `magicsock.Conn.Send` → `endpoint.send` → `sendUDPBatch` (`deps/tailscale/go-modules/github.com/tailscale/wireguard-go/device/send.go:487-552`, `src/tailscale/wgengine/magicsock/endpoint.go:1033-1074`).
 5. `linuxBatchingConn.WriteBatchTo` coalesces same-size datagrams into `UDP_SEGMENT` GSO messages of at most 64 segments and sends them with `sendmmsg` (`src/tailscale/net/batching/conn_linux.go:92,107-161,181-251`).
 
 **RX path.**
 1. Three `RoutineReceiveIncoming` goroutines run, one each for IPv4 UDP, IPv6 UDP and DERP. Each reads up to 128 messages per `recvmmsg` call with `UDP_GRO` enabled, and splits coalesced reads back into datagrams (`deps/tailscale/go-modules/github.com/tailscale/wireguard-go/device/receive.go:72-110`, `src/tailscale/wgengine/magicsock/magicsock.go:1710-1774`, `src/tailscale/net/batching/conn_linux.go:253-308`).
-2. Per-CPU `RoutineDecryption` workers decrypt in place (`receive.go:238-267`).
-3. The per-peer `RoutineSequentialReceiver` checks replay and source allowed-IPs, then writes the batch to `tstun.Wrapper.Write`. That runs the inbound filter and calls `NativeTun.Write`, which coalesces TCP and UDP flows with `handleGRO` before writing virtio-hdr super-packets (`receive.go:429-537`, `src/tailscale/net/tstun/wrap.go:1213`, `deps/tailscale/go-modules/github.com/tailscale/wireguard-go/tun/tun_linux.go:352-365`, `offload_linux.go:880`).
+2. Per-CPU `RoutineDecryption` workers decrypt in place (`deps/tailscale/go-modules/github.com/tailscale/wireguard-go/device/receive.go:238-267`).
+3. The per-peer `RoutineSequentialReceiver` checks replay and source allowed-IPs, then writes the batch to `tstun.Wrapper.Write`. That runs the inbound filter and calls `NativeTun.Write`, which coalesces TCP and UDP flows with `handleGRO` before writing virtio-hdr super-packets (`deps/tailscale/go-modules/github.com/tailscale/wireguard-go/device/receive.go:429-539`, `src/tailscale/net/tstun/wrap.go:1213`, `deps/tailscale/go-modules/github.com/tailscale/wireguard-go/tun/tun_linux.go:352-365`, `deps/tailscale/go-modules/github.com/tailscale/wireguard-go/tun/offload_linux.go:880`).
 
 UDP socket buffers are force-set to 7 MiB with `SO_RCVBUFFORCE`/`SO_SNDBUFFORCE` (`src/tailscale/wgengine/magicsock/magicsock.go:85,3870-3880`, `src/tailscale/net/sockopts/sockopts_linux.go:23`). There is one socket per address family. No `SO_REUSEPORT` fan-out and no multi-queue TUN are used. The 1280-byte default MTU means more packets per byte than a 1420-byte WireGuard MTU would. TSO and GRO on the TUN reduce the per-syscall cost for TCP (inferred).
 
@@ -142,7 +142,7 @@ UDP socket buffers are force-set to 7 MiB with `SO_RCVBUFFORCE`/`SO_SNDBUFFORCE`
 
 - [x] **UDP GSO** - Yes: `UDP_SEGMENT` is probed and used for coalesced sends of up to 64 segments (`src/tailscale/net/batching/conn_linux.go:92,331-332,369-384`).
 - [x] **UDP GRO** - Yes: `setsockopt(UDP_GRO, 1)` is set on each socket, and coalesced reads are split (`src/tailscale/net/batching/conn_linux.go:333,347-365`).
-- [x] **TUN offload (virtio-net hdr)** - Yes: `IFF_VNET_HDR` plus `TUNSETOFFLOAD` with TSO4/6 and USO4/6, and GRO coalescing on write (`deps/tailscale/go-modules/github.com/tailscale/wireguard-go/tun/tun_linux.go:521-534`, `offload_linux.go:880`).
+- [x] **TUN offload (virtio-net hdr)** - Yes: `IFF_VNET_HDR` plus `TUNSETOFFLOAD` with TSO4/6 and USO4/6, and GRO coalescing on write (`deps/tailscale/go-modules/github.com/tailscale/wireguard-go/tun/tun_linux.go:521-534`, `deps/tailscale/go-modules/github.com/tailscale/wireguard-go/tun/offload_linux.go:880`).
 
 ### Buffers and Parsing
 
@@ -152,8 +152,8 @@ UDP socket buffers are force-set to 7 MiB with `SO_RCVBUFFORCE`/`SO_SNDBUFFORCE`
 
 ### MTU and Peers
 
-- [x] **Path MTU discovery** - Partial: disco pings can probe the sizes in `WireMTUsToProbe` (`src/tailscale/net/tstun/mtu.go:85-92`), but only when `TS_DEBUG_ENABLE_PMTUD` or the `PeerMTUEnable` control knob is set (`src/tailscale/wgengine/magicsock/peermtu.go:38-53`). Headscale does not set that knob, and the TUN MTU stays 1280 (`mtu.go:133-149`).
-- [x] **Endpoint caching** - Yes: each endpoint keeps a `bestAddr` that is trusted for 6.5 s and refreshed by traffic and pings. Receive functions keep an `epAddrEndpointCache` for hot flows (`src/tailscale/wgengine/magicsock/endpoint.go:87,568-573`, `magicsock.go:1711-1712,3793`).
+- [x] **Path MTU discovery** - Partial: disco pings can probe the sizes in `WireMTUsToProbe` (`src/tailscale/net/tstun/mtu.go:85-92`), but only when `TS_DEBUG_ENABLE_PMTUD` or the `PeerMTUEnable` control knob is set (`src/tailscale/wgengine/magicsock/peermtu.go:38-53`). Headscale does not set that knob, and the TUN MTU stays 1280 (`src/tailscale/net/tstun/mtu.go:133-149`).
+- [x] **Endpoint caching** - Yes: each endpoint keeps a `bestAddr` that is trusted for 6.5 s and refreshed by traffic and pings. Receive functions keep an `epAddrEndpointCache` for hot flows (`src/tailscale/wgengine/magicsock/endpoint.go:87,568-573`, `src/tailscale/wgengine/magicsock/magicsock.go:1711-1712,3793`).
 
 ### Userspace TCP Stack
 
@@ -185,7 +185,7 @@ None found for these versions. The Headscale `CHANGELOG.md` mentions only fixes 
 
 ### Network Security
 
-- [x] **Handshake rate limiting** - Yes: under load, wireguard-go requires MAC2 cookies and applies a per-IP limit of 20 handshakes/s with a burst of 5 (`deps/tailscale/go-modules/github.com/tailscale/wireguard-go/device/receive.go:318-338`, `ratelimiter/ratelimiter.go:15-16`).
+- [x] **Handshake rate limiting** - Yes: under load, wireguard-go requires MAC2 cookies and applies a per-IP limit of 20 handshakes/s with a burst of 5 (`deps/tailscale/go-modules/github.com/tailscale/wireguard-go/device/receive.go:318-338`, `deps/tailscale/go-modules/github.com/tailscale/wireguard-go/ratelimiter/ratelimiter.go:15-16`).
 - [x] **Stateful packet filter** - Partial: UDP and SCTP replies are tracked in a 512-entry LRU, but TCP is allowed for any non-SYN packet, and ICMP replies are always allowed (`src/tailscale/wgengine/filter/filter.go:74-78,466-506,579-588`).
 - [x] **Fine-grained ACLs** - Yes: ACL rules have protocol, sources and destinations with port ranges (`src/headscale/hscontrol/policy/v2/types.go:1523-1528,625-628`).
 - [x] **Capability-based access** - Yes: rules can use groups, tags (with tagOwners) and autogroups such as `autogroup:member`, `autogroup:tagged` and `autogroup:self` (`src/headscale/hscontrol/policy/v2/types.go:486-490,1582-1587`).
@@ -207,12 +207,12 @@ None found for these versions. The Headscale `CHANGELOG.md` mentions only fixes 
 
 ## How NAT Traversal Works
 
-1. **Discovery.** `netcheck` sends STUN binding requests to the STUN nodes of several DERP regions, at least the three fastest in steady state (`src/tailscale/net/netcheck/netcheck.go:416-419,433`). It records the global IPv4/IPv6 endpoint and whether the mapping changes with the destination, which signals endpoint-dependent NAT (`netcheck.go:98-120`). It also measures per-region latency to choose a home DERP (`addReportHistoryAndSetPreferredDERP`, `netcheck.go:1388-1430`).
-2. **Port mapping.** In parallel, the portmapper tries UPnP IGD, NAT-PMP and PCP on the gateway (`src/tailscale/net/portmapper/upnp.go:431`, `portmapper.go:803`, `pcp.go:84`).
+1. **Discovery.** `netcheck` sends STUN binding requests to the STUN nodes of several DERP regions, at least the three fastest in steady state (`src/tailscale/net/netcheck/netcheck.go:416-419,433`). It records the global IPv4/IPv6 endpoint and whether the mapping changes with the destination, which signals endpoint-dependent NAT (`src/tailscale/net/netcheck/netcheck.go:98-121`). It also measures per-region latency to choose a home DERP (`addReportHistoryAndSetPreferredDERP`, `src/tailscale/net/netcheck/netcheck.go:1388-1456`).
+2. **Port mapping.** In parallel, the portmapper tries UPnP IGD, NAT-PMP and PCP on the gateway (`src/tailscale/net/portmapper/upnp.go:431`, `src/tailscale/net/portmapper/portmapper.go:803`, `src/tailscale/net/portmapper/pcp.go:84`).
 3. **Advertisement.** The resulting local, STUN and port-mapped endpoints go to Headscale in the `MapRequest`. Headscale distributes them in peers' network maps (`src/tailscale/control/controlclient/direct.go:909-910`).
-4. **Hole punching.** When a peer is first used, `endpoint.send` triggers `sendDiscoPingsLocked`. That pings all known endpoints and also sends a CallMeMaybe through DERP, so the remote side pings back and both NATs open (`src/tailscale/wgengine/magicsock/endpoint.go:1047-1048,1352`, `handleCallMeMaybe` at `:1926`).
-5. **Path choice.** `betterAddr` picks among working paths by latency. It favors loopback, link-local and private addresses and IPv6, and needs at least 1% improvement before switching (`endpoint.go:1835-1920`). Heartbeats every 3 s and re-probes every minute keep the path fresh (`src/tailscale/wgengine/magicsock/magicsock.go:3777,3789`).
-6. **Fallback.** Until a UDP path is confirmed, packets go both direct and through DERP (`endpoint.go:582-584`). DERP runs over TLS on TCP 443 (`src/tailscale/derp/derphttp/derphttp_client.go:502,667`).
+4. **Hole punching.** When a peer is first used, `endpoint.send` triggers `sendDiscoPingsLocked`. That pings all known endpoints and also sends a CallMeMaybe through DERP, so the remote side pings back and both NATs open (`src/tailscale/wgengine/magicsock/endpoint.go:1047-1048,1352`, `handleCallMeMaybe` at `src/tailscale/wgengine/magicsock/endpoint.go:1926`).
+5. **Path choice.** `betterAddr` picks among working paths by latency. It favors loopback, link-local and private addresses and IPv6, and needs at least 1% improvement before switching (`src/tailscale/wgengine/magicsock/endpoint.go:1835-1920`). Heartbeats every 3 s and re-probes every minute keep the path fresh (`src/tailscale/wgengine/magicsock/magicsock.go:3777,3789`).
+6. **Fallback.** Until a UDP path is confirmed, packets go both direct and through DERP (`src/tailscale/wgengine/magicsock/endpoint.go:582-584`). DERP runs over TLS on TCP 443 (`src/tailscale/derp/derphttp/derphttp_client.go:502,667`).
 
 There is no port prediction or birthday-style probing for endpoint-dependent NATs. Such peers stay on DERP unless port mapping succeeds. UDP peer relays could help here, but they are unusable under Headscale (see Data Plane).
 
@@ -227,7 +227,7 @@ There is no port prediction or birthday-style probing for endpoint-dependent NAT
 
 ### Port Mapping
 
-- [x] **UPnP port mapping** - Yes: SSDP discovery plus IGD `AddPortMapping` (`src/tailscale/net/portmapper/upnp.go:431`, `portmapper.go:1218-1232`).
+- [x] **UPnP port mapping** - Yes: SSDP discovery plus IGD `AddPortMapping` (`src/tailscale/net/portmapper/upnp.go:431`, `src/tailscale/net/portmapper/portmapper.go:1218-1235`).
 - [x] **NAT-PMP support** - Yes: `buildPMPRequestMappingPacket` to port 5351 (`src/tailscale/net/portmapper/portmapper.go:786,803`).
 - [x] **PCP support** - Yes: `buildPCPRequestMappingPacket` (`src/tailscale/net/portmapper/pcp.go:27,84`).
 
@@ -342,11 +342,11 @@ Every later map request must use the same machine key that registered the node k
 
 ## Supported Platforms
 
-Headscale is a Go server for Linux and other Unix systems. It ships as a container image built with ko (`src/headscale/.goreleaser.yml:119-153`). Headscale's own client table lists Linux, OpenBSD, FreeBSD, Windows, Android, macOS, iOS and tvOS, all using official Tailscale clients (`src/headscale/docs/about/clients.md`). Headscale serves setup pages for Apple and Windows clients (`src/headscale/hscontrol/platform_config.go:16-35`). The Tailscale tree contains router and DNS backends for Linux, macOS, Windows, FreeBSD, OpenBSD, Android and Plan 9 (`src/tailscale/wgengine/router/router_*.go`). wireguard-go has TUN drivers for Linux, Darwin, Windows, FreeBSD and OpenBSD (`deps/tailscale/go-modules/github.com/tailscale/wireguard-go/tun/`). The iOS and Android GUI apps are official Tailscale apps that live outside this repository. In this repository they appear through `GOOS == "ios"` paths and Android-specific code (`src/tailscale/ipn/ipnlocal/peerapi.go`, `src/tailscale/wgengine/router/router_android.go`, `deps/tailscale/go-modules/github.com/tailscale/wireguard-go/device/queueconstants_ios.go`).
+Headscale is a Go server for Linux and other Unix systems. It ships as a container image built with ko (`src/headscale/.goreleaser.yml:119-153`). Headscale's own client table lists Linux, OpenBSD, FreeBSD, Windows, Android, macOS, iOS and tvOS, all using official Tailscale clients (`src/headscale/docs/about/clients.md`). Headscale serves setup pages for Apple and Windows clients (`src/headscale/hscontrol/platform_config.go:16-35`). The Tailscale tree contains router and DNS backends for Linux, macOS, Windows, FreeBSD, OpenBSD, Android and Plan 9 (`src/tailscale/wgengine/router/router_linux.go`, `src/tailscale/wgengine/router/router_darwin.go`, `src/tailscale/wgengine/router/router_windows.go`, `src/tailscale/wgengine/router/router_freebsd.go`, `src/tailscale/wgengine/router/router_openbsd.go`, `src/tailscale/wgengine/router/router_android.go`, `src/tailscale/wgengine/router/router_plan9.go`, `src/tailscale/net/dns/`). wireguard-go has TUN drivers for Linux, Darwin, Windows, FreeBSD and OpenBSD (`deps/tailscale/go-modules/github.com/tailscale/wireguard-go/tun/`). The iOS and Android GUI apps are official Tailscale apps that live outside this repository. In this repository they appear through `GOOS == "ios"` paths and Android-specific code (`src/tailscale/ipn/ipnlocal/peerapi.go`, `src/tailscale/wgengine/router/router_android.go`, `deps/tailscale/go-modules/github.com/tailscale/wireguard-go/device/queueconstants_ios.go`).
 
 ## Implementation Details
 
-On Linux, `tailscaled` uses the kernel TUN with virtio offloads and policy routing through netlink or iptables/nftables (`src/tailscale/wgengine/router/router_linux.go`). WireGuard runs entirely in userspace. Kernel WireGuard is never used. `--tun=userspace-networking` swaps the TUN for gVisor netstack (`src/tailscale/cmd/tailscaled/tailscaled.go:196,757-768`). Synology defaults to trying TUN, then userspace networking (`tailscaled.go:92-97`). Containers and Kubernetes are supported through `cmd/containerboot`, `cmd/k8s-operator` and the `Dockerfile` (`src/tailscale/cmd/`, `src/tailscale/Dockerfile`).
+On Linux, `tailscaled` uses the kernel TUN with virtio offloads and policy routing through netlink or iptables/nftables (`src/tailscale/wgengine/router/router_linux.go`). WireGuard runs entirely in userspace. Kernel WireGuard is never used. `--tun=userspace-networking` swaps the TUN for gVisor netstack (`src/tailscale/cmd/tailscaled/tailscaled.go:196,757-768`). Synology defaults to trying TUN, then userspace networking (`src/tailscale/cmd/tailscaled/tailscaled.go:92-97`). Containers and Kubernetes are supported through `cmd/containerboot`, `cmd/k8s-operator` and the `Dockerfile` (`src/tailscale/cmd/`, `src/tailscale/Dockerfile`).
 
 ## Platform Checklist
 
@@ -355,7 +355,7 @@ On Linux, `tailscaled` uses the kernel TUN with virtio offloads and policy routi
 - [x] **Linux** - Yes: the default `tailscale0` TUN backend (`src/tailscale/cmd/tailscaled/tailscaled.go:91-100`).
 - [x] **macOS** - Yes: the `utun` backend and router/DNS code for Darwin (`src/tailscale/cmd/tailscaled/tailscaled.go:83-86`, `src/tailscale/wgengine/router/router_darwin.go`).
 - [x] **Windows** - Yes: the Wintun backend and the `/windows` setup page in Headscale (`src/tailscale/cmd/tailscaled/tailscaled.go:81-82`, `src/headscale/hscontrol/platform_config.go:16`).
-- [x] **FreeBSD/OpenBSD** - Yes: TUN drivers and routers for both (`deps/tailscale/go-modules/github.com/tailscale/wireguard-go/tun/tun_freebsd.go`, `tun_openbsd.go`, `src/tailscale/wgengine/router/router_openbsd.go`).
+- [x] **FreeBSD/OpenBSD** - Yes: TUN drivers and routers for both (`deps/tailscale/go-modules/github.com/tailscale/wireguard-go/tun/tun_freebsd.go`, `deps/tailscale/go-modules/github.com/tailscale/wireguard-go/tun/tun_openbsd.go`, `src/tailscale/wgengine/router/router_openbsd.go`).
 
 ### Mobile
 
