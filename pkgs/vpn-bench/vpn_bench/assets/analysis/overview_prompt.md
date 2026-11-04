@@ -34,9 +34,13 @@ that dependency in `sources/deps/` at the version given there.
 - Every claim cites a file and line in `sources/` (`src/<input>/path/file.go:123`) or names
   the function. Mark anything inferred and not read in code as `(inferred)`.
 - Describe the default build and default configuration on Linux, then options.
-- Use the row definitions in `matrix_row_contract.md` for every checklist item, and its
-  "At a Glance" keys for the facts the `# Overview` section must state (language, license,
-  default peer transport, data cipher, handshake, default tunnel MTU, control-plane model,
-  data-plane threading).
+- Score every checklist item with "How to score a row" in `matrix_row_contract.md`: go
+  through its steps in order, then apply the row's own definition. Be generous about how a
+  feature is turned on (a flag, config option or shipped unit counts) and strict about how
+  much of the traffic it covers. When torn between two values, pick the higher one and name
+  the limitation in the evidence sentence.
+- Use the "At a Glance" keys of `matrix_row_contract.md` for the facts the `# Overview`
+  section must state (language, license, default peer transport, data cipher, handshake,
+  default tunnel MTU, control-plane model, data-plane threading).
 - Plain, factual English. Short sentences. No marketing words, no em-dashes.
 - Do not write anything outside this folder.
