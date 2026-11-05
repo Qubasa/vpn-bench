@@ -141,7 +141,29 @@ def run_nix_cache_test(
     )  # 11 minutes
 
     res = ssh_run(ssh, ["cat", f"{vpn.value}_nix-cache.json"], RunOpts(log=Log.BOTH))
-    return json.loads(res.stdout)
+    return add_hyperfine1_fields(json.loads(res.stdout))
+
+
+def add_hyperfine1_fields(data: dict[str, Any]) -> dict[str, Any]:
+    """Add hyperfine 1's per-result fields to hyperfine 2 output, in place.
+
+    hyperfine 2 (JSON schema_version 2) moved the timings into `summary` and
+    `measurements`. The comparison and the webview read the 1.x fields `mean`,
+    `stddev`, `median`, `min`, `max`, `user`, `system`, `times` and `exit_codes`.
+    The 2.x fields stay. 1.x output is returned unchanged.
+    """
+    if data.get("schema_version") != 2:
+        return data
+    for result in data["results"]:
+        wall = result["summary"]["time_wall_clock"]
+        result |= {key: wall[key] for key in ("mean", "stddev", "median", "min", "max")}
+        result["user"] = result["summary"]["time_user"]["mean"]
+        result["system"] = result["summary"]["time_system"]["mean"]
+        result["times"] = [
+            m["time_wall_clock"]["value"] for m in result["measurements"]
+        ]
+        result["exit_codes"] = [m["exit_code"] for m in result["measurements"]]
+    return data
 
 
 def save_nix_cache_results(result_dir: Path, json_data: dict[str, Any]) -> None:

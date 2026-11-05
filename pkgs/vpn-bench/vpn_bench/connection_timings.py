@@ -84,12 +84,24 @@ def download_connection_timings(
     benchmark_run_alias: str = "default",
 ) -> None:
     def download_save(machine: Machine, dest: Path) -> None:
-        res = ssh_run(
-            machine_connection(machine),
-            ["cat", "/var/lib/connection-check/connection_timings.json"],
-            RunOpts(log=Log.BOTH),
+        # Twice (luna, after the reboot) the ssh master closed right as this read
+        # started, and ssh returned 0 with no output although the file was there.
+        # A retry runs on a fresh master.
+        def read() -> AnyJson:
+            res = ssh_run(
+                machine_connection(machine),
+                ["cat", "/var/lib/connection-check/connection_timings.json"],
+                RunOpts(log=Log.BOTH),
+            )
+            return json.loads(res.stdout)
+
+        res = retry_operation(
+            read,
+            max_retries=2,
+            initial_delay=2.0,
+            exceptions=(json.JSONDecodeError,),
+            operation_name=f"read connection timings of {machine.name}",
         )
-        res = json.loads(res.stdout)
 
         with dest.open("w") as f:
             json.dump(res, f, indent=4)
