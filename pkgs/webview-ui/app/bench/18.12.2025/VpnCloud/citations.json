@@ -275,10 +275,7 @@
       "src/vpncloud/Cargo.toml:11-14",
       "deps/vpncloud/cargo-vendor/ring-0.17.8"
     ],
-    "License": [
-      "src/vpncloud/LICENSE.md:1-12",
-      "src/vpncloud/Cargo.toml:5"
-    ],
+    "License": ["src/vpncloud/LICENSE.md:1-12", "src/vpncloud/Cargo.toml:5"],
     "Default peer transport": [
       "src/vpncloud/src/net.rs:38-56",
       "src/vpncloud/src/main.rs:325-333",
@@ -315,9 +312,7 @@
       "src/vpncloud/src/cloud.rs:611-621",
       "src/vpncloud/src/cloud.rs:199-209"
     ],
-    "TCP fallback": [
-      "src/vpncloud/src/main.rs:325-333"
-    ],
+    "TCP fallback": ["src/vpncloud/src/main.rs:325-333"],
     "QUIC support": [
       "src/vpncloud/Cargo.toml:17-37",
       "src/vpncloud/Cargo.lock"
@@ -354,9 +349,7 @@
       "src/vpncloud/src/cloud.rs:75",
       "src/vpncloud/src/cloud.rs:616-621"
     ],
-    "QoS/traffic shaping": [
-      "src/vpncloud/src/cloud.rs:943-957"
-    ],
+    "QoS/traffic shaping": ["src/vpncloud/src/cloud.rs:943-957"],
     "Multicast support": [
       "src/vpncloud/src/cloud.rs:105-113",
       "src/vpncloud/src/cloud.rs:631-640"
@@ -369,16 +362,12 @@
       "src/vpncloud/src/crypto/init.rs:426-435",
       "src/vpncloud/src/crypto/rotate.rs:174-210"
     ],
-    "Post-quantum readiness": [
-      "src/vpncloud/src/crypto/init.rs:65"
-    ],
+    "Post-quantum readiness": ["src/vpncloud/src/crypto/init.rs:65"],
     "Key rotation": [
       "src/vpncloud/src/crypto/common.rs:37",
       "src/vpncloud/src/crypto/common.rs:410-424"
     ],
-    "Authenticated encryption": [
-      "src/vpncloud/src/crypto/core.rs:158-192"
-    ],
+    "Authenticated encryption": ["src/vpncloud/src/crypto/core.rs:158-192"],
     "Hardware-accelerated crypto": [
       "deps/vpncloud/cargo-vendor/ring-0.17.8/src/aead/aes.rs:384-405",
       "deps/vpncloud/cargo-vendor/ring-0.17.8/src/aead/aes_gcm.rs:89-117"
@@ -391,9 +380,7 @@
       "src/vpncloud/src/crypto/core.rs:124-128",
       "src/vpncloud/src/crypto/core.rs:178-192"
     ],
-    "Noise Protocol": [
-      "src/vpncloud/src/crypto/init.rs:5-55"
-    ],
+    "Noise Protocol": ["src/vpncloud/src/crypto/init.rs:5-55"],
     "No cleartext metadata": [
       "src/vpncloud/src/crypto/init.rs:20-26",
       "src/vpncloud/src/crypto/init.rs:132-160"
@@ -401,28 +388,16 @@
     "End-to-end encryption through relays": [
       "src/vpncloud/src/wsproxy.rs:66-84"
     ],
-    "Multi-threaded processing": [
-      "src/vpncloud/src/cloud.rs:934-969"
-    ],
+    "Multi-threaded processing": ["src/vpncloud/src/cloud.rs:934-969"],
     "Multi-queue TUN / per-core sockets": [
       "src/vpncloud/src/device.rs:147-150",
       "src/vpncloud/src/main.rs:334"
     ],
-    "Batch UDP receives (recvmmsg)": [
-      "src/vpncloud/src/net.rs:58-63"
-    ],
-    "Batch UDP sends (sendmmsg)": [
-      "src/vpncloud/src/net.rs:65-67"
-    ],
-    "Large batch sizes (64+)": [
-      "src/vpncloud/src/poll/epoll.rs:54"
-    ],
-    "UDP GSO": [
-      "src/vpncloud/src/net.rs:52-56"
-    ],
-    "UDP GRO": [
-      "src/vpncloud/src/net.rs:58-63"
-    ],
+    "Batch UDP receives (recvmmsg)": ["src/vpncloud/src/net.rs:58-63"],
+    "Batch UDP sends (sendmmsg)": ["src/vpncloud/src/net.rs:65-67"],
+    "Large batch sizes (64+)": ["src/vpncloud/src/poll/epoll.rs:54"],
+    "UDP GSO": ["src/vpncloud/src/net.rs:52-56"],
+    "UDP GRO": ["src/vpncloud/src/net.rs:58-63"],
     "TUN offload (virtio-net hdr)": [
       "src/vpncloud/src/device.rs:20",
       "src/vpncloud/src/device.rs:147-153"
@@ -431,59 +406,35 @@
       "src/vpncloud/src/cloud.rs:940",
       "src/vpncloud/src/util.rs:24-35"
     ],
-    "Large UDP socket buffers (MB)": [
-      "src/vpncloud/src/net.rs:52-56"
-    ],
+    "Large UDP socket buffers (MB)": ["src/vpncloud/src/net.rs:52-56"],
     "Zero-allocation parsing": [
       "src/vpncloud/src/payload.rs:25-52",
       "src/vpncloud/src/crypto/common.rs:361-386",
       "src/vpncloud/src/traffic.rs:95-104"
     ],
-    "Path MTU discovery": [
-      "src/vpncloud/src/device.rs:234-244"
-    ],
+    "Path MTU discovery": ["src/vpncloud/src/device.rs:234-244"],
     "Endpoint caching": [
       "src/vpncloud/src/cloud.rs:657-669",
       "src/vpncloud/src/table.rs:94-116"
     ],
-    "Userspace TCP/IP stack": [
-      "src/vpncloud/src/cloud.rs:747-762"
-    ],
-    "Tunnel compression": [
-      "src/vpncloud/src/crypto/common.rs:388-393"
-    ],
-    "Configurable compression": [
-      "src/vpncloud/src/config.rs:14-50"
-    ],
-    "Handshake rate limiting": [
-      "src/vpncloud/src/cloud.rs:829-853"
-    ],
-    "Stateful packet filter": [
-      "src/vpncloud/src/cloud.rs:747-762"
-    ],
-    "Fine-grained ACLs": [
-      "src/vpncloud/src/table.rs:94-116"
-    ],
-    "Capability-based access": [
-      "src/vpncloud/src/crypto/common.rs:52-58"
-    ],
+    "Userspace TCP/IP stack": ["src/vpncloud/src/cloud.rs:747-762"],
+    "Tunnel compression": ["src/vpncloud/src/crypto/common.rs:388-393"],
+    "Configurable compression": ["src/vpncloud/src/config.rs:14-50"],
+    "Handshake rate limiting": ["src/vpncloud/src/cloud.rs:829-853"],
+    "Stateful packet filter": ["src/vpncloud/src/cloud.rs:747-762"],
+    "Fine-grained ACLs": ["src/vpncloud/src/table.rs:94-116"],
+    "Capability-based access": ["src/vpncloud/src/crypto/common.rs:52-58"],
     "Identity validation": [
       "src/vpncloud/src/crypto/init.rs:150-160",
       "src/vpncloud/src/crypto/init.rs:236-240"
     ],
-    "Signed config updates": [
-      "src/vpncloud/src/cloud.rs:720-745"
-    ],
-    "Control-server key pinning": [
-      "src/vpncloud/src/crypto/init.rs:142-160"
-    ],
+    "Signed config updates": ["src/vpncloud/src/cloud.rs:720-745"],
+    "Control-server key pinning": ["src/vpncloud/src/crypto/init.rs:142-160"],
     "Memory-safe language": [
       "src/vpncloud/src/device.rs:153",
       "src/vpncloud/src/poll/epoll.rs:28-54"
     ],
-    "Privilege separation": [
-      "src/vpncloud/src/main.rs:203-226"
-    ],
+    "Privilege separation": ["src/vpncloud/src/main.rs:203-226"],
     "Sandboxing": [
       "src/vpncloud/assets/vpncloud@.service:17-23",
       "src/vpncloud/src/main.rs:175-231"
@@ -506,28 +457,20 @@
       "src/vpncloud/src/config.rs:29",
       "src/vpncloud/src/main.rs:195-202"
     ],
-    "NAT type detection": [
-      "src/vpncloud/src/cloud.rs:223-240"
-    ],
+    "NAT type detection": ["src/vpncloud/src/cloud.rs:223-240"],
     "UPnP port mapping": [
       "src/vpncloud/Cargo.toml:46-47",
       "src/vpncloud/src/port_forwarding.rs:25-151",
       "src/vpncloud/src/config.rs:76"
     ],
-    "NAT-PMP support": [
-      "src/vpncloud/src/port_forwarding.rs:10"
-    ],
-    "PCP support": [
-      "src/vpncloud/src/port_forwarding.rs:10"
-    ],
+    "NAT-PMP support": ["src/vpncloud/src/port_forwarding.rs:10"],
+    "PCP support": ["src/vpncloud/src/port_forwarding.rs:10"],
     "UDP hole punching": [
       "src/vpncloud/src/cloud.rs:692-718",
       "src/vpncloud/src/crypto/init.rs:441-459",
       "src/vpncloud/src/crypto/init.rs:578-589"
     ],
-    "Symmetric NAT handling": [
-      "src/vpncloud/src/cloud.rs:279-302"
-    ],
+    "Symmetric NAT handling": ["src/vpncloud/src/cloud.rs:279-302"],
     "Rendezvous coordination": [
       "src/vpncloud/src/cloud.rs:446-455",
       "src/vpncloud/src/cloud.rs:720-745"
@@ -536,26 +479,18 @@
       "src/vpncloud/src/cloud.rs:747-762",
       "src/vpncloud/src/main.rs:325-333"
     ],
-    "Multiple relays": [
-      "src/vpncloud/src/wsproxy.rs:135-144"
-    ],
-    "Latency-based relay selection": [
-      "src/vpncloud/src/main.rs:325-333"
-    ],
+    "Multiple relays": ["src/vpncloud/src/wsproxy.rs:135-144"],
+    "Latency-based relay selection": ["src/vpncloud/src/main.rs:325-333"],
     "TCP relay support": [
       "src/vpncloud/src/wsproxy.rs:50-108",
       "src/vpncloud/src/main.rs:281-284"
     ],
-    "Broadcast/multicast discovery": [
-      "src/vpncloud/src/cloud.rs:195-202"
-    ],
+    "Broadcast/multicast discovery": ["src/vpncloud/src/cloud.rs:195-202"],
     "Direct path advertisement": [
       "src/vpncloud/src/cloud.rs:223-240",
       "src/vpncloud/src/cloud.rs:314-320"
     ],
-    "Automatic LAN preference": [
-      "src/vpncloud/src/cloud.rs:296-301"
-    ],
+    "Automatic LAN preference": ["src/vpncloud/src/cloud.rs:296-301"],
     "Trusted path mode": [
       "src/vpncloud/src/crypto/common.rs:75-77",
       "src/vpncloud/src/crypto/init.rs:541-543"
@@ -572,79 +507,43 @@
       "src/vpncloud/src/types.rs:167-178",
       "src/vpncloud/src/main.rs:159-161"
     ],
-    "Split tunneling": [
-      "src/vpncloud/src/main.rs:154-158"
-    ],
-    "Route priorities": [
-      "src/vpncloud/src/table.rs:94-122"
-    ],
-    "Multi-hop routing via peers": [
-      "src/vpncloud/src/cloud.rs:747-762"
-    ],
-    "Built-in DNS": [
-      "src/vpncloud/src/main.rs:17-38"
-    ],
-    "Existing connections survive": [
-      "src/vpncloud/src/cloud.rs:423-439"
-    ],
-    "Local state caching": [
-      "src/vpncloud/src/cloud.rs:483-499"
-    ],
-    "Cached credentials": [
-      "src/vpncloud/src/crypto/common.rs:52-58"
-    ],
+    "Split tunneling": ["src/vpncloud/src/main.rs:154-158"],
+    "Route priorities": ["src/vpncloud/src/table.rs:94-122"],
+    "Multi-hop routing via peers": ["src/vpncloud/src/cloud.rs:747-762"],
+    "Built-in DNS": ["src/vpncloud/src/main.rs:17-38"],
+    "Existing connections survive": ["src/vpncloud/src/cloud.rs:423-439"],
+    "Local state caching": ["src/vpncloud/src/cloud.rs:483-499"],
+    "Cached credentials": ["src/vpncloud/src/crypto/common.rs:52-58"],
     "Decentralized control plane": [
       "src/vpncloud/src/main.rs:195-202",
       "src/vpncloud/src/cloud.rs:304-321,720-745"
     ],
-    "Fully self-hostable": [
-      "src/vpncloud/src/main.rs:233-339"
-    ],
-    "Controller redundancy": [
-      "src/vpncloud/src/cloud.rs:720-745"
-    ],
-    "Relay redundancy": [
-      "src/vpncloud/src/wsproxy.rs:135-144"
-    ],
+    "Fully self-hostable": ["src/vpncloud/src/main.rs:233-339"],
+    "Controller redundancy": ["src/vpncloud/src/cloud.rs:720-745"],
+    "Relay redundancy": ["src/vpncloud/src/wsproxy.rs:135-144"],
     "No single root of trust": [
       "src/vpncloud/src/crypto/common.rs:89-110",
       "src/vpncloud/src/wizard.rs:69"
     ],
-    "Pre-authentication keys": [
-      "src/vpncloud/src/crypto/common.rs:96-110"
-    ],
+    "Pre-authentication keys": ["src/vpncloud/src/crypto/common.rs:96-110"],
     "Certificate-based enrollment": [
       "src/vpncloud/src/crypto/common.rs:101-104"
     ],
-    "OAuth/OIDC": [
-      "src/vpncloud/src/config.rs:375-420"
-    ],
-    "Interactive login": [
-      "src/vpncloud/src/wizard.rs:64-120"
-    ],
+    "OAuth/OIDC": ["src/vpncloud/src/config.rs:375-420"],
+    "Interactive login": ["src/vpncloud/src/wizard.rs:64-120"],
     "CLI authentication": [
       "src/vpncloud/src/config.rs:397-415",
       "src/vpncloud/src/main.rs:251-257"
     ],
-    "Admin approval workflow": [
-      "src/vpncloud/src/crypto/common.rs:101-104"
-    ],
-    "Automated enrollment rules": [
-      "src/vpncloud/src/crypto/init.rs:150-160"
-    ],
-    "Ephemeral nodes": [
-      "src/vpncloud/src/cloud.rs:427-437"
-    ],
-    "Node expiry": [
-      "src/vpncloud/src/crypto/common.rs:89-135"
-    ],
+    "Admin approval workflow": ["src/vpncloud/src/crypto/common.rs:101-104"],
+    "Automated enrollment rules": ["src/vpncloud/src/crypto/init.rs:150-160"],
+    "Ephemeral nodes": ["src/vpncloud/src/cloud.rs:427-437"],
+    "Node expiry": ["src/vpncloud/src/crypto/common.rs:89-135"],
     "Stable device identity": [
       "src/vpncloud/src/crypto/common.rs:89-100",
       "src/vpncloud/src/cloud.rs:133"
     ],
-    "Identity portability": [
-      "src/vpncloud/src/crypto/common.rs:166-179"
-    ],
+    "Identity portability": ["src/vpncloud/src/crypto/common.rs:166-179"],
     "Linux": [
       "src/vpncloud/src/poll/mod.rs:5-9",
       "src/vpncloud/src/device.rs:144-172",
@@ -662,16 +561,12 @@
       "src/vpncloud/src/device.rs:178-221",
       "src/vpncloud/src/poll/mod.rs:5-9"
     ],
-    "iOS": [
-      "src/vpncloud/src/device.rs:178-186"
-    ],
+    "iOS": ["src/vpncloud/src/device.rs:178-186"],
     "Android": [
       "src/vpncloud/src/poll/mod.rs:5-9",
       "src/vpncloud/maskfile.md:73-124"
     ],
-    "Kernel-mode datapath": [
-      "src/vpncloud/src/cloud.rs:934-969"
-    ],
+    "Kernel-mode datapath": ["src/vpncloud/src/cloud.rs:934-969"],
     "Container support": [
       "src/vpncloud/contrib/asciinema-recorder/Dockerfile:1-12"
     ]

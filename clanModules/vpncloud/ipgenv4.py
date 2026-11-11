@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 
+import argparse
 import hashlib
 import ipaddress
-import os
 import math
-import argparse
-import sys
+import os
 import random  # Needed for network generation
+import sys
 
 # --- Base62 Implementation (Same as before) ---
 BASE62_ALPHABET = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"

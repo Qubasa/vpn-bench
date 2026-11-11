@@ -1,37 +1,31 @@
 {
-    "status": "success",
-    "data": {
-        "results": [
-            {
-                "command": "nix copy --from http://cache.vpn.yuki --to file:///tmp/cache?compression=none /nix/store/8y3bzk5rmdl9dqxnvii0cnx5rigi8vym-firefox-144.0.2",
-                "mean": 7.6419334464999995,
-                "stddev": 0.0769610884068764,
-                "median": 7.6419334464999995,
-                "user": 10.670617,
-                "system": 2.2421200599999995,
-                "min": 7.587513739,
-                "max": 7.696353154,
-                "times": [
-                    7.696353154,
-                    7.587513739
-                ],
-                "exit_codes": [
-                    0,
-                    0
-                ],
-                "parameters": {
-                    "url": "http://cache.vpn.yuki"
-                }
-            }
-        ]
-    },
-    "meta": {
-        "duration_seconds": 41.234190225601196,
-        "test_attempts": 1,
-        "vpn_restart_attempts": 0,
-        "vpn_restart_duration_seconds": 0.0,
-        "connectivity_wait_duration_seconds": 0.0,
-        "source": "luna",
-        "target": "yuki"
-    }
+  "status": "success",
+  "data": {
+    "results": [
+      {
+        "command": "nix copy --from http://cache.vpn.yuki --to file:///tmp/cache?compression=none /nix/store/8y3bzk5rmdl9dqxnvii0cnx5rigi8vym-firefox-144.0.2",
+        "mean": 7.6419334464999995,
+        "stddev": 0.0769610884068764,
+        "median": 7.6419334464999995,
+        "user": 10.670617,
+        "system": 2.2421200599999995,
+        "min": 7.587513739,
+        "max": 7.696353154,
+        "times": [7.696353154, 7.587513739],
+        "exit_codes": [0, 0],
+        "parameters": {
+          "url": "http://cache.vpn.yuki"
+        }
+      }
+    ]
+  },
+  "meta": {
+    "duration_seconds": 41.234190225601196,
+    "test_attempts": 1,
+    "vpn_restart_attempts": 0,
+    "vpn_restart_duration_seconds": 0.0,
+    "connectivity_wait_duration_seconds": 0.0,
+    "source": "luna",
+    "target": "yuki"
+  }
 }

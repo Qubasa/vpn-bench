@@ -1,38 +1,38 @@
 {
-    "status": "success",
-    "data": {
-        "Mycelium": {
-            "status": "error",
-            "error_type": "CmdOut",
-            "error": {
-                "stdout": "",
-                "stderr": "Warning: Permanently added '138.201.33.111' (ED25519) to the list of known hosts.\r\n",
-                "cwd": "/home/lhebendanz/Projects/vpn-benchmark-suite/pkgs/vpn-bench",
-                "command_list": [
-                    "ssh",
-                    "root@138.201.33.111",
-                    "-A",
-                    "-o",
-                    "StrictHostKeyChecking=no",
-                    "-o",
-                    "UserKnownHostsFile=/dev/null",
-                    "-o",
-                    "ControlMaster=auto",
-                    "-o",
-                    "ControlPersist=1m",
-                    "-o",
-                    "ControlPath=/tmp/clan-sshn_iyrkp9/socket",
-                    "--",
-                    "bash",
-                    "-c",
-                    "'export IPERF3_PASSWORD=mambaBudo; exec \"$@\"'",
-                    "--",
-                    "iperf --bidir --connect-timeout 600 --time 30 --json -Z -c vpn.yuki --username mario --rsa-public-key-path /tmp/iperf3.public -u --udp-counters-64bit -b 0"
-                ],
-                "returncode": -1,
-                "msg": "Command timed out after 120 seconds"
-            },
-            "machine": "0_lom"
-        }
+  "status": "success",
+  "data": {
+    "Mycelium": {
+      "status": "error",
+      "error_type": "CmdOut",
+      "error": {
+        "stdout": "",
+        "stderr": "Warning: Permanently added '138.201.33.111' (ED25519) to the list of known hosts.\r\n",
+        "cwd": "/home/lhebendanz/Projects/vpn-benchmark-suite/pkgs/vpn-bench",
+        "command_list": [
+          "ssh",
+          "root@138.201.33.111",
+          "-A",
+          "-o",
+          "StrictHostKeyChecking=no",
+          "-o",
+          "UserKnownHostsFile=/dev/null",
+          "-o",
+          "ControlMaster=auto",
+          "-o",
+          "ControlPersist=1m",
+          "-o",
+          "ControlPath=/tmp/clan-sshn_iyrkp9/socket",
+          "--",
+          "bash",
+          "-c",
+          "'export IPERF3_PASSWORD=mambaBudo; exec \"$@\"'",
+          "--",
+          "iperf --bidir --connect-timeout 600 --time 30 --json -Z -c vpn.yuki --username mario --rsa-public-key-path /tmp/iperf3.public -u --udp-counters-64bit -b 0"
+        ],
+        "returncode": -1,
+        "msg": "Command timed out after 120 seconds"
+      },
+      "machine": "0_lom"
     }
+  }
 }

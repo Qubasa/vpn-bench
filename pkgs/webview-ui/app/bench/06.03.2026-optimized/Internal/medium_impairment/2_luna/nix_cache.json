@@ -1,37 +1,31 @@
 {
-    "status": "success",
-    "data": {
-        "results": [
-            {
-                "command": "nix copy --from http://cache.vpn.lom --to file:///tmp/cache?compression=none /nix/store/8y3bzk5rmdl9dqxnvii0cnx5rigi8vym-firefox-144.0.2",
-                "mean": 29.212585638700002,
-                "stddev": 0.5053879003965062,
-                "median": 29.212585638700002,
-                "user": 18.43193762,
-                "system": 3.17862264,
-                "min": 28.8552224272,
-                "max": 29.569948850200003,
-                "times": [
-                    29.569948850200003,
-                    28.8552224272
-                ],
-                "exit_codes": [
-                    0,
-                    0
-                ],
-                "parameters": {
-                    "url": "http://cache.vpn.lom"
-                }
-            }
-        ]
-    },
-    "meta": {
-        "duration_seconds": 93.04032397270203,
-        "test_attempts": 1,
-        "vpn_restart_attempts": 0,
-        "vpn_restart_duration_seconds": 0.0,
-        "connectivity_wait_duration_seconds": 0.0,
-        "source": "luna",
-        "target": "lom"
-    }
+  "status": "success",
+  "data": {
+    "results": [
+      {
+        "command": "nix copy --from http://cache.vpn.lom --to file:///tmp/cache?compression=none /nix/store/8y3bzk5rmdl9dqxnvii0cnx5rigi8vym-firefox-144.0.2",
+        "mean": 29.212585638700002,
+        "stddev": 0.5053879003965062,
+        "median": 29.212585638700002,
+        "user": 18.43193762,
+        "system": 3.17862264,
+        "min": 28.8552224272,
+        "max": 29.569948850200003,
+        "times": [29.569948850200003, 28.8552224272],
+        "exit_codes": [0, 0],
+        "parameters": {
+          "url": "http://cache.vpn.lom"
+        }
+      }
+    ]
+  },
+  "meta": {
+    "duration_seconds": 93.04032397270203,
+    "test_attempts": 1,
+    "vpn_restart_attempts": 0,
+    "vpn_restart_duration_seconds": 0.0,
+    "connectivity_wait_duration_seconds": 0.0,
+    "source": "luna",
+    "target": "lom"
+  }
 }

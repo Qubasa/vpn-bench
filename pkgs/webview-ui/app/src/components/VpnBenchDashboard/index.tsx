@@ -293,26 +293,10 @@ export const VpnDashboard = (props: VpnDashboardProps) => {
   });
 
   // Default values remain mostly the same
-  const tcpHeight =
-    props.tcpHeight ||
-    {
-      /* ... defaults ... */
-    };
-  const udpHeight =
-    props.udpHeight ||
-    {
-      /* ... defaults ... */
-    };
-  const pingHeight =
-    props.pingHeight ||
-    {
-      /* ... defaults ... */
-    };
-  const ristStreamHeight =
-    props.ristStreamHeight ||
-    {
-      /* ... defaults ... */
-    };
+  const tcpHeight = props.tcpHeight || {/* ... defaults ... */};
+  const udpHeight = props.udpHeight || {/* ... defaults ... */};
+  const pingHeight = props.pingHeight || {/* ... defaults ... */};
+  const ristStreamHeight = props.ristStreamHeight || {/* ... defaults ... */};
   const tabLabels = {
     info: props.tabLabels?.info || "Overview",
     tcp: props.tabLabels?.tcp || "TCP Performance",

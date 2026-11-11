@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 
+import argparse
 import ipaddress
 import os
-import argparse
 import sys
 
 

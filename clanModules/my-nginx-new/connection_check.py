@@ -1,17 +1,16 @@
 #!/usr/bin/env python3
 
-import os
-import json
-import time
-import datetime
-import urllib.request
 import concurrent.futures
-import urllib.error
+import datetime
 import ipaddress
-from typing import Any, Dict, Optional
-from pathlib import Path
-
+import json
 import logging
+import os
+import time
+import urllib.error
+import urllib.request
+from pathlib import Path
+from typing import Any
 
 log = logging.getLogger(__name__)
 
@@ -27,11 +26,11 @@ def check_ip(
     ip: str,
     started: datetime.datetime,
     ip_type: str,
-    expected_response: Optional[str] = None,
+    expected_response: str | None = None,
     timeout: int = 1,
     max_retries: int = 300,
     retry_delay: float = 1.0,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     Check if an IP address is reachable and returns the expected response.
 

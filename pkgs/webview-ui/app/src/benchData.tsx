@@ -548,8 +548,7 @@ export interface VpnComparisonError {
 }
 
 export type VpnComparisonEntry<T> =
-  | VpnComparisonSuccess<T>
-  | VpnComparisonError;
+  VpnComparisonSuccess<T> | VpnComparisonError;
 
 // Maps VPN name to its comparison entry (can be success or error)
 export type VpnComparisonResultMap<T> = Record<string, VpnComparisonEntry<T>>;

@@ -14,8 +14,9 @@ export interface UseFloatingOptions<
     reference: R,
     floating: F,
     update: () => void,
-  ) => // eslint-disable-next-line @typescript-eslint/no-invalid-void-type
-  void | (() => void);
+  ) =>
+    // eslint-disable-next-line @typescript-eslint/no-invalid-void-type
+    void | (() => void);
 }
 
 interface UseFloatingState extends Omit<ComputePositionReturn, "x" | "y"> {

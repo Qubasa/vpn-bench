@@ -1,37 +1,31 @@
 {
-    "status": "success",
-    "data": {
-        "results": [
-            {
-                "command": "nix copy --from http://cache.vpn.lom --to file:///tmp/cache?compression=none /nix/store/8y3bzk5rmdl9dqxnvii0cnx5rigi8vym-firefox-144.0.2",
-                "mean": 34.83018008604,
-                "stddev": 6.418771874714344,
-                "median": 34.83018008604,
-                "user": 18.683919139999997,
-                "system": 3.70096386,
-                "min": 30.291422966539997,
-                "max": 39.36893720554,
-                "times": [
-                    30.291422966539997,
-                    39.36893720554
-                ],
-                "exit_codes": [
-                    0,
-                    0
-                ],
-                "parameters": {
-                    "url": "http://cache.vpn.lom"
-                }
-            }
-        ]
-    },
-    "meta": {
-        "duration_seconds": 122.81069803237915,
-        "test_attempts": 1,
-        "vpn_restart_attempts": 0,
-        "vpn_restart_duration_seconds": 0.0,
-        "connectivity_wait_duration_seconds": 0.0,
-        "source": "yuki",
-        "target": "lom"
-    }
+  "status": "success",
+  "data": {
+    "results": [
+      {
+        "command": "nix copy --from http://cache.vpn.lom --to file:///tmp/cache?compression=none /nix/store/8y3bzk5rmdl9dqxnvii0cnx5rigi8vym-firefox-144.0.2",
+        "mean": 34.83018008604,
+        "stddev": 6.418771874714344,
+        "median": 34.83018008604,
+        "user": 18.683919139999997,
+        "system": 3.70096386,
+        "min": 30.291422966539997,
+        "max": 39.36893720554,
+        "times": [30.291422966539997, 39.36893720554],
+        "exit_codes": [0, 0],
+        "parameters": {
+          "url": "http://cache.vpn.lom"
+        }
+      }
+    ]
+  },
+  "meta": {
+    "duration_seconds": 122.81069803237915,
+    "test_attempts": 1,
+    "vpn_restart_attempts": 0,
+    "vpn_restart_duration_seconds": 0.0,
+    "connectivity_wait_duration_seconds": 0.0,
+    "source": "yuki",
+    "target": "lom"
+  }
 }

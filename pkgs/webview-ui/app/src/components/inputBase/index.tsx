@@ -97,8 +97,7 @@ export const InputBase = (props: InputBaseProps) => {
   );
 };
 
-export interface InputLabelProps
-  extends JSX.LabelHTMLAttributes<HTMLLabelElement> {
+export interface InputLabelProps extends JSX.LabelHTMLAttributes<HTMLLabelElement> {
   description?: string;
   required?: boolean;
   error?: boolean;

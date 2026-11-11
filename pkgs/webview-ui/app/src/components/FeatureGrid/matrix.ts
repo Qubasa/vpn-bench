@@ -64,7 +64,9 @@ export const parseFeatureMatrix = (markdown: string): FeatureMatrix => {
     const cells = rest.map((symbol) => {
       const cell = SYMBOLS[symbol];
       if (!cell) {
-        throw new Error(`feature_matrix.md: unknown symbol "${symbol}" in "${first}"`);
+        throw new Error(
+          `feature_matrix.md: unknown symbol "${symbol}" in "${first}"`,
+        );
       }
       return cell;
     });
@@ -91,7 +93,11 @@ export interface VpnScores {
   shared: Score;
 }
 
-const POINTS: Readonly<Partial<Record<Cell, number>>> = { yes: 1, partial: 0.5, no: 0 };
+const POINTS: Readonly<Partial<Record<Cell, number>>> = {
+  yes: 1,
+  partial: 0.5,
+  no: 0,
+};
 
 /** Rounded half up; points are multiples of 0.5, so `points * 100` is exact. */
 export const percent = (score: Score): number =>
@@ -102,7 +108,10 @@ export const scoreMatrix = (matrix: FeatureMatrix): VpnScores[] => {
   const sharedRows = [...matrix.rows.values()].filter((cells) =>
     cells.every((cell) => POINTS[cell] !== undefined),
   );
-  const tally = (rowCells: Iterable<readonly Cell[]>, column: number): Score => {
+  const tally = (
+    rowCells: Iterable<readonly Cell[]>,
+    column: number,
+  ): Score => {
     const score = { points: 0, total: 0 };
     for (const cells of rowCells) {
       const points = POINTS[cells[column]];
@@ -115,7 +124,9 @@ export const scoreMatrix = (matrix: FeatureMatrix): VpnScores[] => {
   };
   return matrix.vpns.map((vpn, column) => ({
     vpn,
-    categories: [...matrix.categories.values()].map((rowCells) => tally(rowCells, column)),
+    categories: [...matrix.categories.values()].map((rowCells) =>
+      tally(rowCells, column),
+    ),
     overall: tally(matrix.rows.values(), column),
     shared: tally(sharedRows, column),
   }));
@@ -142,7 +153,9 @@ export const resolveGrid = (
     columns: group.columns.map((column) => {
       const cells = matrix.rows.get(column.feature);
       if (!cells) {
-        throw new Error(`feature grid: no row "${column.feature}" in feature_matrix.md`);
+        throw new Error(
+          `feature grid: no row "${column.feature}" in feature_matrix.md`,
+        );
       }
       return { ...column, cells };
     }),

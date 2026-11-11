@@ -1,5 +1,10 @@
 import { For } from "solid-js";
-import { type FeatureMatrix, percent, type Score, scoreMatrix } from "../FeatureGrid/matrix";
+import {
+  type FeatureMatrix,
+  percent,
+  type Score,
+  scoreMatrix,
+} from "../FeatureGrid/matrix";
 
 interface ScoreCellProps {
   vpn: string;
@@ -29,7 +34,9 @@ const ScoreCell = (props: ScoreCellProps) => {
 export const ScoreHeatmap = (props: { matrix: FeatureMatrix }) => {
   const categories = [...props.matrix.categories.keys()];
   const scores = scoreMatrix(props.matrix).sort(
-    (a, b) => percent(b.shared) - percent(a.shared) || percent(b.overall) - percent(a.overall),
+    (a, b) =>
+      percent(b.shared) - percent(a.shared) ||
+      percent(b.overall) - percent(a.overall),
   );
   return (
     <div class="mb-6 max-w-full overflow-x-auto">
@@ -42,7 +49,9 @@ export const ScoreHeatmap = (props: { matrix: FeatureMatrix }) => {
         <div />
         <For each={categories}>
           {(category) => (
-            <div class="self-end pb-1 text-center font-semibold leading-tight">{category}</div>
+            <div class="self-end pb-1 text-center font-semibold leading-tight">
+              {category}
+            </div>
           )}
         </For>
         <div />
@@ -51,15 +60,26 @@ export const ScoreHeatmap = (props: { matrix: FeatureMatrix }) => {
         <For each={scores}>
           {(row) => (
             <>
-              <div class="self-center pr-2 text-right text-sm font-semibold">{row.vpn}</div>
+              <div class="self-center pr-2 text-right text-sm font-semibold">
+                {row.vpn}
+              </div>
               <For each={row.categories}>
                 {(score, index) => (
-                  <ScoreCell vpn={row.vpn} label={categories[index()]} score={score} />
+                  <ScoreCell
+                    vpn={row.vpn}
+                    label={categories[index()]}
+                    score={score}
+                  />
                 )}
               </For>
               <div />
               <ScoreCell vpn={row.vpn} label="Total" score={row.overall} bold />
-              <ScoreCell vpn={row.vpn} label="Shared rows" score={row.shared} bold />
+              <ScoreCell
+                vpn={row.vpn}
+                label="Shared rows"
+                score={row.shared}
+                bold
+              />
             </>
           )}
         </For>

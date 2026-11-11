@@ -1,37 +1,31 @@
 {
-    "status": "success",
-    "data": {
-        "results": [
-            {
-                "command": "nix copy --from http://cache.vpn.yuki --to file:///tmp/cache?compression=none /nix/store/8y3bzk5rmdl9dqxnvii0cnx5rigi8vym-firefox-144.0.2",
-                "mean": 11.8421555758,
-                "stddev": 0.01995572857655469,
-                "median": 11.8421555758,
-                "user": 11.501119719999998,
-                "system": 2.23539464,
-                "min": 11.8280447448,
-                "max": 11.8562664068,
-                "times": [
-                    11.8280447448,
-                    11.8562664068
-                ],
-                "exit_codes": [
-                    0,
-                    0
-                ],
-                "parameters": {
-                    "url": "http://cache.vpn.yuki"
-                }
-            }
-        ]
-    },
-    "meta": {
-        "duration_seconds": 62.29729962348938,
-        "test_attempts": 1,
-        "vpn_restart_attempts": 0,
-        "vpn_restart_duration_seconds": 0.0,
-        "connectivity_wait_duration_seconds": 0.0,
-        "source": "lom",
-        "target": "yuki"
-    }
+  "status": "success",
+  "data": {
+    "results": [
+      {
+        "command": "nix copy --from http://cache.vpn.yuki --to file:///tmp/cache?compression=none /nix/store/8y3bzk5rmdl9dqxnvii0cnx5rigi8vym-firefox-144.0.2",
+        "mean": 11.8421555758,
+        "stddev": 0.01995572857655469,
+        "median": 11.8421555758,
+        "user": 11.501119719999998,
+        "system": 2.23539464,
+        "min": 11.8280447448,
+        "max": 11.8562664068,
+        "times": [11.8280447448, 11.8562664068],
+        "exit_codes": [0, 0],
+        "parameters": {
+          "url": "http://cache.vpn.yuki"
+        }
+      }
+    ]
+  },
+  "meta": {
+    "duration_seconds": 62.29729962348938,
+    "test_attempts": 1,
+    "vpn_restart_attempts": 0,
+    "vpn_restart_duration_seconds": 0.0,
+    "connectivity_wait_duration_seconds": 0.0,
+    "source": "lom",
+    "target": "yuki"
+  }
 }

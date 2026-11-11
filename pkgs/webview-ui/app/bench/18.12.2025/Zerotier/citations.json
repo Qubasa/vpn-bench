@@ -344,15 +344,9 @@
       "src/zerotierone/service",
       "src/zerotierone/service/OneService.cpp:3952-4032"
     ],
-    "WebSocket support": [
-      "src/zerotierone/service/OneService.cpp:3973-3982"
-    ],
-    "IPv4 support": [
-      "src/zerotierone/node/Switch.cpp:295-320,355-366"
-    ],
-    "IPv6 support": [
-      "src/zerotierone/node/Switch.cpp:322-349,374-498"
-    ],
+    "WebSocket support": ["src/zerotierone/service/OneService.cpp:3973-3982"],
+    "IPv4 support": ["src/zerotierone/node/Switch.cpp:295-320,355-366"],
+    "IPv6 support": ["src/zerotierone/node/Switch.cpp:322-349,374-498"],
     "Dual-stack": [
       "src/zerotierone/osdep/LinuxEthernetTap.cpp:424-441,456-487"
     ],
@@ -364,9 +358,7 @@
       "src/zerotierone/osdep/LinuxEthernetTap.cpp:209",
       "src/zerotierone/node/Switch.cpp:553-560"
     ],
-    "Bridging support": [
-      "src/zerotierone/node/Switch.cpp:272-279,563-627"
-    ],
+    "Bridging support": ["src/zerotierone/node/Switch.cpp:272-279,563-627"],
     "Multipath/bonding": [
       "src/zerotierone/node/Bond.hpp:35-62",
       "src/zerotierone/service/OneService.cpp:2750-2805"
@@ -387,12 +379,8 @@
       "src/zerotierone/node/Peer.cpp:60-69",
       "src/zerotierone/node/Packet.cpp:1150-1163"
     ],
-    "Post-quantum readiness": [
-      "src/zerotierone/node/ECC.hpp:22-62"
-    ],
-    "Key rotation": [
-      "src/zerotierone/node/Peer.cpp:59-70"
-    ],
+    "Post-quantum readiness": ["src/zerotierone/node/ECC.hpp:22-62"],
+    "Key rotation": ["src/zerotierone/node/Peer.cpp:59-70"],
     "Authenticated encryption": [
       "src/zerotierone/node/Packet.cpp:1089-1110,1196-1259"
     ],
@@ -409,9 +397,7 @@
       "src/zerotierone/node/Packet.hpp:1073",
       "src/zerotierone/node/IncomingPacket.cpp:63-71"
     ],
-    "Noise Protocol": [
-      "src/zerotierone/node/Peer.cpp:60-69"
-    ],
+    "Noise Protocol": ["src/zerotierone/node/Peer.cpp:60-69"],
     "No cleartext metadata": [
       "src/zerotierone/node/Packet.hpp:170-171",
       "src/zerotierone/service/OneService.cpp:2891",
@@ -431,18 +417,10 @@
     "Batch UDP receives (recvmmsg)": [
       "src/zerotierone/osdep/Phy.hpp:1047-1068"
     ],
-    "Batch UDP sends (sendmmsg)": [
-      "src/zerotierone/osdep/Phy.hpp:480-494"
-    ],
-    "Large batch sizes (64+)": [
-      "src/zerotierone/osdep/Phy.hpp:1048"
-    ],
-    "UDP GSO": [
-      "src/zerotierone/osdep/Phy.hpp:334-411"
-    ],
-    "UDP GRO": [
-      "src/zerotierone/osdep/Phy.hpp:1049"
-    ],
+    "Batch UDP sends (sendmmsg)": ["src/zerotierone/osdep/Phy.hpp:480-494"],
+    "Large batch sizes (64+)": ["src/zerotierone/osdep/Phy.hpp:1048"],
+    "UDP GSO": ["src/zerotierone/osdep/Phy.hpp:334-411"],
+    "UDP GRO": ["src/zerotierone/osdep/Phy.hpp:1049"],
     "TUN offload (virtio-net hdr)": [
       "src/zerotierone/osdep/LinuxEthernetTap.cpp:209-213"
     ],
@@ -478,9 +456,7 @@
       "src/zerotierone/node/Packet.cpp:1276-1294",
       "src/zerotierone/node/Switch.cpp:546-550"
     ],
-    "Configurable compression": [
-      "src/zerotierone/node/Packet.cpp:1283"
-    ],
+    "Configurable compression": ["src/zerotierone/node/Packet.cpp:1283"],
     "Handshake rate limiting": [
       "src/zerotierone/node/Node.hpp:243-251",
       "src/zerotierone/node/IncomingPacket.cpp:443-446",
@@ -517,20 +493,14 @@
       "src/zerotierone/make-linux.mk:87-88",
       "src/zerotierone/rustybits/zeroidc/Cargo.toml"
     ],
-    "Privilege separation": [
-      "src/zerotierone/one.cpp:1764-1830,2377-2381"
-    ],
+    "Privilege separation": ["src/zerotierone/one.cpp:1764-1830,2377-2381"],
     "Sandboxing": [
       "src/zerotierone/one.cpp",
       "src/zerotierone/service",
       "src/zerotierone/osdep"
     ],
-    "Audit logging": [
-      "src/zerotierone/node/Trace.cpp:9,30-42,319-339"
-    ],
-    "No own public node needed": [
-      "src/zerotierone/node/Topology.cpp:21-58"
-    ],
+    "Audit logging": ["src/zerotierone/node/Trace.cpp:9,30-42,319-339"],
+    "No own public node needed": ["src/zerotierone/node/Topology.cpp:21-58"],
     "Public endpoint discovery (STUN or reflection)": [
       "src/zerotierone/node/IncomingPacket.cpp:468-475,516",
       "src/zerotierone/node/SelfAwareness.cpp:53-96"
@@ -539,19 +509,13 @@
       "src/zerotierone/node/Topology.cpp:21",
       "src/zerotierone/service/OneService.cpp:1283-1290"
     ],
-    "NAT type detection": [
-      "src/zerotierone/node/SelfAwareness.cpp:98-111"
-    ],
+    "NAT type detection": ["src/zerotierone/node/SelfAwareness.cpp:98-111"],
     "UPnP port mapping": [
       "src/zerotierone/osdep/PortMapper.cpp:206-284",
       "src/zerotierone/service/OneService.cpp:2890"
     ],
-    "NAT-PMP support": [
-      "src/zerotierone/osdep/PortMapper.cpp:81-179"
-    ],
-    "PCP support": [
-      "src/zerotierone/osdep/PortMapper.cpp:81-284"
-    ],
+    "NAT-PMP support": ["src/zerotierone/osdep/PortMapper.cpp:81-179"],
+    "PCP support": ["src/zerotierone/osdep/PortMapper.cpp:81-284"],
     "UDP hole punching": [
       "src/zerotierone/node/Peer.cpp:383-423",
       "src/zerotierone/node/IncomingPacket.cpp:718-724"
@@ -563,9 +527,7 @@
       "src/zerotierone/node/Switch.cpp:176-190",
       "src/zerotierone/node/Peer.cpp:294"
     ],
-    "Relay fallback": [
-      "src/zerotierone/node/Switch.cpp:1081-1090"
-    ],
+    "Relay fallback": ["src/zerotierone/node/Switch.cpp:1081-1090"],
     "Multiple relays": [
       "src/zerotierone/node/Topology.cpp:160-176",
       "src/zerotierone/node/Switch.cpp:163-195"
@@ -577,15 +539,9 @@
     "TCP relay support": [
       "src/zerotierone/service/OneService.cpp:151,2881,3954-3958"
     ],
-    "Broadcast/multicast discovery": [
-      "src/zerotierone/node/Packet.hpp:62"
-    ],
-    "Direct path advertisement": [
-      "src/zerotierone/node/Peer.cpp:208-257"
-    ],
-    "Automatic LAN preference": [
-      "src/zerotierone/node/Path.hpp:293-298"
-    ],
+    "Broadcast/multicast discovery": ["src/zerotierone/node/Packet.hpp:62"],
+    "Direct path advertisement": ["src/zerotierone/node/Peer.cpp:208-257"],
+    "Automatic LAN preference": ["src/zerotierone/node/Path.hpp:293-298"],
     "Trusted path mode": [
       "src/zerotierone/service/OneService.cpp:1569-1581",
       "src/zerotierone/node/IncomingPacket.cpp:45-57"
@@ -598,28 +554,16 @@
       "src/zerotierone/include/ZeroTierOne.h:941-956",
       "src/zerotierone/service/OneService.cpp:3021"
     ],
-    "Full tunnel mode": [
-      "src/zerotierone/service/OneService.cpp:310,376-381"
-    ],
-    "Split tunneling": [
-      "src/zerotierone/service/OneService.cpp:308-311"
-    ],
-    "Route priorities": [
-      "src/zerotierone/include/ZeroTierOne.h:954-956"
-    ],
-    "Multi-hop routing via peers": [
-      "src/zerotierone/node/Switch.cpp:163-195"
-    ],
-    "Built-in DNS": [
-      "src/zerotierone/osdep/LinuxEthernetTap.hpp:55-57"
-    ],
+    "Full tunnel mode": ["src/zerotierone/service/OneService.cpp:310,376-381"],
+    "Split tunneling": ["src/zerotierone/service/OneService.cpp:308-311"],
+    "Route priorities": ["src/zerotierone/include/ZeroTierOne.h:954-956"],
+    "Multi-hop routing via peers": ["src/zerotierone/node/Switch.cpp:163-195"],
+    "Built-in DNS": ["src/zerotierone/osdep/LinuxEthernetTap.hpp:55-57"],
     "Existing connections survive": [
       "src/zerotierone/node/Network.cpp:682-707",
       "src/zerotierone/node/Peer.cpp:261-292"
     ],
-    "Local state caching": [
-      "src/zerotierone/service/OneService.cpp:3755-3780"
-    ],
+    "Local state caching": ["src/zerotierone/service/OneService.cpp:3755-3780"],
     "Cached credentials": [
       "src/zerotierone/node/Network.cpp:685-693",
       "src/zerotierone/node/CertificateOfMembership.cpp:46-72"
@@ -632,12 +576,8 @@
       "src/zerotierone/nonfree/controller/EmbeddedNetworkController.cpp",
       "src/zerotierone/one.cpp:1566-1595"
     ],
-    "Controller redundancy": [
-      "src/zerotierone/node/Network.hpp:83-86"
-    ],
-    "Relay redundancy": [
-      "src/zerotierone/node/Topology.cpp:21,143-179"
-    ],
+    "Controller redundancy": ["src/zerotierone/node/Network.hpp:83-86"],
+    "Relay redundancy": ["src/zerotierone/node/Topology.cpp:21,143-179"],
     "No single root of trust": [
       "src/zerotierone/node/Network.cpp:1134-1138",
       "src/zerotierone/node/World.hpp:167-176"
@@ -653,12 +593,8 @@
       "src/zerotierone/make-linux.mk:310-317",
       "src/zerotierone/nonfree/controller/DB.hpp:128-131"
     ],
-    "Interactive login": [
-      "src/zerotierone/service/OneService.cpp:414-431"
-    ],
-    "CLI authentication": [
-      "src/zerotierone/one.cpp:838-846"
-    ],
+    "Interactive login": ["src/zerotierone/service/OneService.cpp:414-431"],
+    "CLI authentication": ["src/zerotierone/one.cpp:838-846"],
     "Admin approval workflow": [
       "src/zerotierone/nonfree/controller/DB.cpp:26-27",
       "src/zerotierone/nonfree/controller/EmbeddedNetworkController.cpp:1680-1685"
@@ -666,9 +602,7 @@
     "Automated enrollment rules": [
       "src/zerotierone/nonfree/controller/EmbeddedNetworkController.cpp:1685-1707"
     ],
-    "Ephemeral nodes": [
-      "src/zerotierone/service/OneService.cpp:1427-1430"
-    ],
+    "Ephemeral nodes": ["src/zerotierone/service/OneService.cpp:1427-1430"],
     "Node expiry": [
       "src/zerotierone/nonfree/controller/EmbeddedNetworkController.cpp:1731-1762"
     ],
@@ -679,25 +613,15 @@
       "src/zerotierone/service/OneService.cpp:3757-3761",
       "src/zerotierone/node/Identity.hpp:209-213"
     ],
-    "Linux": [
-      "src/zerotierone/make-linux.mk:33-34"
-    ],
-    "macOS": [
-      "src/zerotierone/osdep/MacEthernetTap.cpp"
-    ],
-    "Windows": [
-      "src/zerotierone/osdep/WindowsEthernetTap.cpp"
-    ],
+    "Linux": ["src/zerotierone/make-linux.mk:33-34"],
+    "macOS": ["src/zerotierone/osdep/MacEthernetTap.cpp"],
+    "Windows": ["src/zerotierone/osdep/WindowsEthernetTap.cpp"],
     "FreeBSD/OpenBSD": [
       "src/zerotierone/make-bsd.mk:19",
       "src/zerotierone/osdep/BSDEthernetTap.cpp:153,375-390"
     ],
-    "iOS": [
-      "src/zerotierone/node/Constants.hpp:223-227"
-    ],
-    "Android": [
-      "src/zerotierone/java/jni/com_zerotierone_sdk_Node.cpp"
-    ],
+    "iOS": ["src/zerotierone/node/Constants.hpp:223-227"],
+    "Android": ["src/zerotierone/java/jni/com_zerotierone_sdk_Node.cpp"],
     "Kernel-mode datapath": [
       "src/zerotierone/osdep/LinuxEthernetTap.cpp:140-213"
     ],

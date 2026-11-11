@@ -336,8 +336,10 @@ export function OptionSchema(props: OptionSchemaProps) {
   );
 }
 
-interface ValueDisplayProps<T extends FieldValues, R extends ResponseData>
-  extends SchemaFieldsProps<T, R> {
+interface ValueDisplayProps<
+  T extends FieldValues,
+  R extends ResponseData,
+> extends SchemaFieldsProps<T, R> {
   children: JSX.Element;
   listFieldName: string;
   idx: number;

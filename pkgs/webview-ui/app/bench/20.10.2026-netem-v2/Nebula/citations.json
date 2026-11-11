@@ -260,12 +260,8 @@
     "src/nebula/README.md:55-58": "https://github.com/slackhq/nebula/blob/770147264da18f94e582a0b99ad08ed19c0ae9fb/README.md?plain=1#L55-L58"
   },
   "items": {
-    "Language": [
-      "src/nebula/go.mod:10,25"
-    ],
-    "License": [
-      "src/nebula/LICENSE:1"
-    ],
+    "Language": ["src/nebula/go.mod:10,25"],
+    "License": ["src/nebula/LICENSE:1"],
     "Default peer transport": [
       "src/nebula/udp/udp_linux.go:35-73",
       "src/nebula/handshake_manager.go:267"
@@ -291,41 +287,22 @@
       "src/nebula/interface.go:227-303",
       "src/nebula/main.go:87-109"
     ],
-    "UDP transport": [
-      "src/nebula/udp/udp_linux.go:35-73"
-    ],
+    "UDP transport": ["src/nebula/udp/udp_linux.go:35-73"],
     "Datagram encapsulation (no head-of-line blocking)": [
       "src/nebula/inside.go:355-393"
     ],
-    "TCP fallback": [
-      "src/nebula/udp/conn.go:16-23"
-    ],
-    "QUIC support": [
-      "src/nebula/go.mod",
-      "src/nebula/udp/"
-    ],
-    "WebSocket support": [
-      "src/nebula/go.mod:5-37"
-    ],
-    "IPv4 support": [
-      "src/nebula/outside.go:396-450"
-    ],
+    "TCP fallback": ["src/nebula/udp/conn.go:16-23"],
+    "QUIC support": ["src/nebula/go.mod", "src/nebula/udp/"],
+    "WebSocket support": ["src/nebula/go.mod:5-37"],
+    "IPv4 support": ["src/nebula/outside.go:396-450"],
     "IPv6 support": [
       "src/nebula/outside.go:299-394",
       "src/nebula/handshake_ix.go:26-34"
     ],
-    "Dual-stack": [
-      "src/nebula/overlay/tun_linux.go:282-321"
-    ],
-    "Layer 3 (IP) mode": [
-      "src/nebula/overlay/tun_linux.go:105"
-    ],
-    "Layer 2 (Ethernet) mode": [
-      "src/nebula/outside.go:284-297"
-    ],
-    "Bridging support": [
-      "src/nebula/overlay/route.go:146-305"
-    ],
+    "Dual-stack": ["src/nebula/overlay/tun_linux.go:282-321"],
+    "Layer 3 (IP) mode": ["src/nebula/overlay/tun_linux.go:105"],
+    "Layer 2 (Ethernet) mode": ["src/nebula/outside.go:284-297"],
+    "Bridging support": ["src/nebula/overlay/route.go:146-305"],
     "Multipath/bonding": [
       "src/nebula/hostmap.go:685-691",
       "src/nebula/routing/balance.go:27-39"
@@ -334,9 +311,7 @@
       "src/nebula/inside.go:14-82",
       "src/nebula/outside.go:468-509"
     ],
-    "Multicast support": [
-      "src/nebula/inside.go:46-63"
-    ],
+    "Multicast support": ["src/nebula/inside.go:46-63"],
     "Modern key exchange (Curve25519)": [
       "src/nebula/connection_state.go:33-34",
       "src/nebula/cmd/nebula-cert/ca.go:62"
@@ -344,12 +319,8 @@
     "Perfect Forward Secrecy": [
       "deps/nebula/go-modules/github.com/flynn/noise/patterns.go:113-114"
     ],
-    "Post-quantum readiness": [
-      "src/nebula/connection_state.go:31-42"
-    ],
-    "Key rotation": [
-      "src/nebula/connection_manager.go:530-544"
-    ],
+    "Post-quantum readiness": ["src/nebula/connection_state.go:31-42"],
+    "Key rotation": ["src/nebula/connection_manager.go:530-544"],
     "Authenticated encryption": [
       "src/nebula/noise.go:49,64",
       "src/nebula/outside.go:471"
@@ -365,9 +336,7 @@
       "src/nebula/bits.go:29-80",
       "src/nebula/outside.go:267,484"
     ],
-    "Noise Protocol": [
-      "src/nebula/handshake_ix.go:53,108"
-    ],
+    "Noise Protocol": ["src/nebula/handshake_ix.go:53,108"],
     "No cleartext metadata": [
       "deps/nebula/go-modules/github.com/flynn/noise/state.go:171-175",
       "src/nebula/handshake_ix.go:63-82"
@@ -386,35 +355,21 @@
     "Batch UDP receives (recvmmsg)": [
       "src/nebula/udp/udp_linux.go:125-127,170-188"
     ],
-    "Batch UDP sends (sendmmsg)": [
-      "src/nebula/udp/udp_linux.go:197-249"
-    ],
-    "Large batch sizes (64+)": [
-      "src/nebula/main.go:167"
-    ],
-    "UDP GSO": [
-      "src/nebula/udp/udp_linux.go:35-73"
-    ],
-    "UDP GRO": [
-      "src/nebula/udp/udp_linux_64.go:36-56"
-    ],
-    "TUN offload (virtio-net hdr)": [
-      "src/nebula/overlay/tun_linux.go:105-108"
-    ],
+    "Batch UDP sends (sendmmsg)": ["src/nebula/udp/udp_linux.go:197-249"],
+    "Large batch sizes (64+)": ["src/nebula/main.go:167"],
+    "UDP GSO": ["src/nebula/udp/udp_linux.go:35-73"],
+    "UDP GRO": ["src/nebula/udp/udp_linux_64.go:36-56"],
+    "TUN offload (virtio-net hdr)": ["src/nebula/overlay/tun_linux.go:105-108"],
     "Buffer pool reuse": [
       "src/nebula/interface.go:269-272,282-285",
       "src/nebula/udp/udp_linux_64.go:36-56"
     ],
-    "Large UDP socket buffers (MB)": [
-      "src/nebula/udp/udp_linux.go:251-280"
-    ],
+    "Large UDP socket buffers (MB)": ["src/nebula/udp/udp_linux.go:251-280"],
     "Zero-allocation parsing": [
       "src/nebula/header/header.go:143-156",
       "src/nebula/outside.go:284-450"
     ],
-    "Path MTU discovery": [
-      "src/nebula/overlay/tun_linux.go:167-182"
-    ],
+    "Path MTU discovery": ["src/nebula/overlay/tun_linux.go:167-182"],
     "Endpoint caching": [
       "src/nebula/hostmap.go:685-691",
       "src/nebula/remote_list.go:277-285"
@@ -423,27 +378,13 @@
       "src/nebula/service/service.go:62-64",
       "src/nebula/cmd/nebula/main.go:55"
     ],
-    "Tunnel compression": [
-      "src/nebula/inside.go:374"
-    ],
-    "Configurable compression": [
-      "src/nebula/inside.go:334-411"
-    ],
-    "Handshake rate limiting": [
-      "src/nebula/handshake_manager.go:138-161"
-    ],
-    "Stateful packet filter": [
-      "src/nebula/firewall.go:203-207,426-467"
-    ],
-    "Fine-grained ACLs": [
-      "src/nebula/firewall.go:250"
-    ],
-    "Capability-based access": [
-      "src/nebula/firewall.go:105-119,250"
-    ],
-    "Identity validation": [
-      "src/nebula/cert/ca_pool.go:165-201"
-    ],
+    "Tunnel compression": ["src/nebula/inside.go:374"],
+    "Configurable compression": ["src/nebula/inside.go:334-411"],
+    "Handshake rate limiting": ["src/nebula/handshake_manager.go:138-161"],
+    "Stateful packet filter": ["src/nebula/firewall.go:203-207,426-467"],
+    "Fine-grained ACLs": ["src/nebula/firewall.go:250"],
+    "Capability-based access": ["src/nebula/firewall.go:105-119,250"],
+    "Identity validation": ["src/nebula/cert/ca_pool.go:165-201"],
     "Signed config updates": [
       "src/nebula/interface.go:305-363",
       "src/nebula/lighthouse.go:1206-1235"
@@ -453,15 +394,9 @@
       "src/nebula/handshake_ix.go:144",
       "src/nebula/lighthouse.go:1207-1209"
     ],
-    "Memory-safe language": [
-      "src/nebula/udp/udp_linux_64.go:36-56"
-    ],
-    "Privilege separation": [
-      "src/nebula/overlay/tun_linux.go:81-124"
-    ],
-    "Sandboxing": [
-      "src/nebula/examples/service_scripts/nebula.service"
-    ],
+    "Memory-safe language": ["src/nebula/udp/udp_linux_64.go:36-56"],
+    "Privilege separation": ["src/nebula/overlay/tun_linux.go:81-124"],
+    "Sandboxing": ["src/nebula/examples/service_scripts/nebula.service"],
     "Audit logging": [
       "src/nebula/handshake_ix.go:160,220",
       "src/nebula/logger.go:14",
@@ -476,30 +411,14 @@
       "src/nebula/remote_list.go:277-285",
       "src/nebula/lighthouse.go:1165-1182"
     ],
-    "Multiple discovery servers": [
-      "src/nebula/lighthouse.go:770-799,888-964"
-    ],
-    "NAT type detection": [
-      "src/nebula/lighthouse.go:854-967"
-    ],
-    "UPnP port mapping": [
-      "src/nebula/go.mod:5-37"
-    ],
-    "NAT-PMP support": [
-      "src/nebula/go.mod:5-37"
-    ],
-    "PCP support": [
-      "src/nebula/go.mod:5-37"
-    ],
-    "UDP hole punching": [
-      "src/nebula/lighthouse.go:1113-1163,1308-1346"
-    ],
-    "Symmetric NAT handling": [
-      "src/nebula/lighthouse.go:1351-1361"
-    ],
-    "Rendezvous coordination": [
-      "src/nebula/lighthouse.go:1109"
-    ],
+    "Multiple discovery servers": ["src/nebula/lighthouse.go:770-799,888-964"],
+    "NAT type detection": ["src/nebula/lighthouse.go:854-967"],
+    "UPnP port mapping": ["src/nebula/go.mod:5-37"],
+    "NAT-PMP support": ["src/nebula/go.mod:5-37"],
+    "PCP support": ["src/nebula/go.mod:5-37"],
+    "UDP hole punching": ["src/nebula/lighthouse.go:1113-1163,1308-1346"],
+    "Symmetric NAT handling": ["src/nebula/lighthouse.go:1351-1361"],
+    "Rendezvous coordination": ["src/nebula/lighthouse.go:1109"],
     "Relay fallback": [
       "src/nebula/main.go:201",
       "src/nebula/inside.go:398-409"
@@ -508,28 +427,16 @@
       "src/nebula/lighthouse.go:333-342",
       "src/nebula/handshake_manager.go:270-330"
     ],
-    "Latency-based relay selection": [
-      "src/nebula/inside.go:400-408"
-    ],
-    "TCP relay support": [
-      "src/nebula/inside.go:327"
-    ],
-    "Broadcast/multicast discovery": [
-      "src/nebula/lighthouse.go:349-377"
-    ],
-    "Direct path advertisement": [
-      "src/nebula/lighthouse.go:866-878"
-    ],
+    "Latency-based relay selection": ["src/nebula/inside.go:400-408"],
+    "TCP relay support": ["src/nebula/inside.go:327"],
+    "Broadcast/multicast discovery": ["src/nebula/lighthouse.go:349-377"],
+    "Direct path advertisement": ["src/nebula/lighthouse.go:866-878"],
     "Automatic LAN preference": [
       "src/nebula/remote_list.go:625-668",
       "src/nebula/hostmap.go:640-664"
     ],
-    "Trusted path mode": [
-      "src/nebula/inside.go:374"
-    ],
-    "LAN-only mode": [
-      "src/nebula/lighthouse.go:408-455"
-    ],
+    "Trusted path mode": ["src/nebula/inside.go:374"],
+    "LAN-only mode": ["src/nebula/lighthouse.go:408-455"],
     "Subnet routes": [
       "src/nebula/overlay/route.go:146-305",
       "src/nebula/hostmap.go:733-748"
@@ -538,16 +445,12 @@
       "src/nebula/overlay/route.go:287-301",
       "src/nebula/examples/config.yml:147-151"
     ],
-    "Split tunneling": [
-      "src/nebula/overlay/tun_linux.go:378-388,446-485"
-    ],
+    "Split tunneling": ["src/nebula/overlay/tun_linux.go:378-388,446-485"],
     "Route priorities": [
       "src/nebula/overlay/route.go:185-260",
       "src/nebula/inside.go:159-207"
     ],
-    "Multi-hop routing via peers": [
-      "src/nebula/outside.go:101-123"
-    ],
+    "Multi-hop routing via peers": ["src/nebula/outside.go:101-123"],
     "Built-in DNS": [
       "src/nebula/main.go:215-222",
       "src/nebula/dns_server.go:166-187"
@@ -555,70 +458,35 @@
     "Existing connections survive": [
       "src/nebula/connection_manager.go:321-432"
     ],
-    "Local state caching": [
-      "src/nebula/outside.go:220-226"
-    ],
-    "Cached credentials": [
-      "src/nebula/pki.go:256-341"
-    ],
-    "Decentralized control plane": [
-      "src/nebula/lighthouse.go:349-379"
-    ],
+    "Local state caching": ["src/nebula/outside.go:220-226"],
+    "Cached credentials": ["src/nebula/pki.go:256-341"],
+    "Decentralized control plane": ["src/nebula/lighthouse.go:349-379"],
     "Fully self-hostable": [
       "src/nebula/cmd/nebula-cert/ca.go",
       "src/nebula/lighthouse.go:84"
     ],
-    "Controller redundancy": [
-      "src/nebula/lighthouse.go:349-379"
-    ],
-    "Relay redundancy": [
-      "src/nebula/handshake_manager.go:270-330"
-    ],
-    "No single root of trust": [
-      "src/nebula/cert/ca_pool.go:165-201"
-    ],
-    "Pre-authentication keys": [
-      "src/nebula/connection_state.go:63-67"
-    ],
-    "Certificate-based enrollment": [
-      "src/nebula/cert/ca_pool.go:130-201"
-    ],
-    "OAuth/OIDC": [
-      "src/nebula/go.mod:5-37"
-    ],
-    "Interactive login": [
-      "src/nebula/pki.go:256-285"
-    ],
+    "Controller redundancy": ["src/nebula/lighthouse.go:349-379"],
+    "Relay redundancy": ["src/nebula/handshake_manager.go:270-330"],
+    "No single root of trust": ["src/nebula/cert/ca_pool.go:165-201"],
+    "Pre-authentication keys": ["src/nebula/connection_state.go:63-67"],
+    "Certificate-based enrollment": ["src/nebula/cert/ca_pool.go:130-201"],
+    "OAuth/OIDC": ["src/nebula/go.mod:5-37"],
+    "Interactive login": ["src/nebula/pki.go:256-285"],
     "CLI authentication": [
       "src/nebula/cmd/nebula-cert/main.go",
       "src/nebula/cmd/nebula-cert/sign.go:46-61"
     ],
-    "Admin approval workflow": [
-      "src/nebula/cmd/nebula-cert/sign.go"
-    ],
-    "Automated enrollment rules": [
-      "src/nebula/cert/ca_pool.go:233-240"
-    ],
-    "Ephemeral nodes": [
-      "src/nebula/connection_manager.go:94-96,434-448"
-    ],
+    "Admin approval workflow": ["src/nebula/cmd/nebula-cert/sign.go"],
+    "Automated enrollment rules": ["src/nebula/cert/ca_pool.go:233-240"],
+    "Ephemeral nodes": ["src/nebula/connection_manager.go:94-96,434-448"],
     "Node expiry": [
       "src/nebula/cert/ca_pool.go:175-181",
       "src/nebula/connection_manager.go:481-503"
     ],
-    "Stable device identity": [
-      "src/nebula/pki.go:256-341"
-    ],
-    "Identity portability": [
-      "src/nebula/pki.go:259-285"
-    ],
-    "Linux": [
-      "src/nebula/overlay/tun_linux.go",
-      "src/nebula/udp/udp_linux.go"
-    ],
-    "macOS": [
-      "src/nebula/overlay/tun_darwin.go:82-127"
-    ],
+    "Stable device identity": ["src/nebula/pki.go:256-341"],
+    "Identity portability": ["src/nebula/pki.go:259-285"],
+    "Linux": ["src/nebula/overlay/tun_linux.go", "src/nebula/udp/udp_linux.go"],
+    "macOS": ["src/nebula/overlay/tun_darwin.go:82-127"],
     "Windows": [
       "src/nebula/overlay/tun_windows.go:45-48",
       "src/nebula/udp/udp_rio_windows.go"
@@ -627,17 +495,12 @@
       "src/nebula/overlay/tun_freebsd.go",
       "src/nebula/overlay/tun_openbsd.go"
     ],
-    "iOS": [
-      "src/nebula/overlay/tun_ios.go:35",
-      "src/nebula/README.md:62"
-    ],
+    "iOS": ["src/nebula/overlay/tun_ios.go:35", "src/nebula/README.md:62"],
     "Android": [
       "src/nebula/overlay/tun_android.go:29",
       "src/nebula/README.md:63"
     ],
-    "Kernel-mode datapath": [
-      "src/nebula/interface.go:245-303"
-    ],
+    "Kernel-mode datapath": ["src/nebula/interface.go:245-303"],
     "Container support": [
       "src/nebula/docker/Dockerfile:1-11",
       "src/nebula/README.md:55-58"

@@ -242,10 +242,7 @@
     "src/tailscale/cmd/k8s-operator": "https://github.com/tailscale/tailscale/blob/85f4267ee3bcf6a4e6b6d4384b66ee4cb33f1434/cmd/k8s-operator"
   },
   "items": {
-    "Language": [
-      "src/tailscale/go.mod",
-      "src/headscale/go.mod"
-    ],
+    "Language": ["src/tailscale/go.mod", "src/headscale/go.mod"],
     "License": [
       "src/tailscale/LICENSE",
       "src/headscale/LICENSE",
@@ -286,24 +283,18 @@
       "src/tailscale/wgengine/magicsock/endpoint.go:582-584",
       "src/tailscale/derp/derphttp/derphttp_client.go:667"
     ],
-    "QUIC support": [
-      "src/tailscale/wgengine/magicsock/magicsock.go:3263"
-    ],
+    "QUIC support": ["src/tailscale/wgengine/magicsock/magicsock.go:3263"],
     "WebSocket support": [
       "src/headscale/hscontrol/derp/server/derp_server.go:151-209",
       "src/tailscale/derp/derphttp/websocket.go:4",
       "src/tailscale/derp/derphttp/derphttp_client.go:317-327"
     ],
-    "IPv4 support": [
-      "src/headscale/config-example.yaml:59"
-    ],
+    "IPv4 support": ["src/headscale/config-example.yaml:59"],
     "IPv6 support": [
       "src/headscale/config-example.yaml:60",
       "deps/tailscale/go-modules/github.com/tailscale/wireguard-go/device/send.go:268-273"
     ],
-    "Dual-stack": [
-      "src/headscale/config-example.yaml:58-60"
-    ],
+    "Dual-stack": ["src/headscale/config-example.yaml:58-60"],
     "Layer 3 (IP) mode": [
       "deps/tailscale/go-modules/github.com/tailscale/wireguard-go/device/send.go:258-281"
     ],
@@ -319,18 +310,14 @@
     "QoS/traffic shaping": [
       "deps/tailscale/go-modules/github.com/tailscale/wireguard-go/device/send.go:487-552"
     ],
-    "Multicast support": [
-      "src/tailscale/wgengine/filter/filter.go:629-631"
-    ],
+    "Multicast support": ["src/tailscale/wgengine/filter/filter.go:629-631"],
     "Modern key exchange (Curve25519)": [
       "deps/tailscale/go-modules/github.com/tailscale/wireguard-go/device/noise-helpers.go:94-103"
     ],
     "Perfect Forward Secrecy": [
       "deps/tailscale/go-modules/github.com/tailscale/wireguard-go/device/noise-protocol.go:51"
     ],
-    "Post-quantum readiness": [
-      "src/tailscale/wgengine/wgcfg/parser.go:176"
-    ],
+    "Post-quantum readiness": ["src/tailscale/wgengine/wgcfg/parser.go:176"],
     "Key rotation": [
       "deps/tailscale/go-modules/github.com/tailscale/wireguard-go/device/constants.go:15-22"
     ],
@@ -355,9 +342,7 @@
       "src/tailscale/disco/disco.go:5-16",
       "src/tailscale/wgengine/magicsock/magicsock.go:1982-1983"
     ],
-    "End-to-end encryption through relays": [
-      "src/tailscale/derp/derp.go:75"
-    ],
+    "End-to-end encryption through relays": ["src/tailscale/derp/derp.go:75"],
     "Multi-threaded processing": [
       "deps/tailscale/go-modules/github.com/tailscale/wireguard-go/device/device.go:311-317"
     ],
@@ -377,12 +362,8 @@
       "deps/tailscale/go-modules/github.com/tailscale/wireguard-go/conn/conn.go:19",
       "src/tailscale/wgengine/magicsock/magicsock.go:3241-3249"
     ],
-    "UDP GSO": [
-      "src/tailscale/net/batching/conn_linux.go:92,331-332,369-384"
-    ],
-    "UDP GRO": [
-      "src/tailscale/net/batching/conn_linux.go:333,347-365"
-    ],
+    "UDP GSO": ["src/tailscale/net/batching/conn_linux.go:92,331-332,369-384"],
+    "UDP GRO": ["src/tailscale/net/batching/conn_linux.go:333,347-365"],
     "TUN offload (virtio-net hdr)": [
       "deps/tailscale/go-modules/github.com/tailscale/wireguard-go/tun/tun_linux.go:521-534",
       "deps/tailscale/go-modules/github.com/tailscale/wireguard-go/tun/offload_linux.go:880"
@@ -444,12 +425,8 @@
     "Memory-safe language": [
       "deps/tailscale/go-modules/golang.org/x/crypto/chacha20poly1305/chacha20poly1305_amd64.s"
     ],
-    "Privilege separation": [
-      "src/tailscale/cmd/tailscaled/tailscaled.service"
-    ],
-    "Sandboxing": [
-      "src/tailscale/cmd/tailscaled/tailscaled.service"
-    ],
+    "Privilege separation": ["src/tailscale/cmd/tailscaled/tailscaled.service"],
+    "Sandboxing": ["src/tailscale/cmd/tailscaled/tailscaled.service"],
     "Audit logging": [
       "src/tailscale/net/tstun/wrap.go:282",
       "src/tailscale/wgengine/filter/filter.go:311-335",
@@ -465,19 +442,13 @@
     "Multiple discovery servers": [
       "src/tailscale/net/netcheck/netcheck.go:416-470"
     ],
-    "NAT type detection": [
-      "src/tailscale/net/netcheck/netcheck.go:98-110"
-    ],
+    "NAT type detection": ["src/tailscale/net/netcheck/netcheck.go:98-110"],
     "UPnP port mapping": [
       "src/tailscale/net/portmapper/upnp.go:431",
       "src/tailscale/net/portmapper/portmapper.go:1218-1235"
     ],
-    "NAT-PMP support": [
-      "src/tailscale/net/portmapper/portmapper.go:786,803"
-    ],
-    "PCP support": [
-      "src/tailscale/net/portmapper/pcp.go:27,84"
-    ],
+    "NAT-PMP support": ["src/tailscale/net/portmapper/portmapper.go:786,803"],
+    "PCP support": ["src/tailscale/net/portmapper/pcp.go:27,84"],
     "UDP hole punching": [
       "src/tailscale/wgengine/magicsock/endpoint.go:1352,1926"
     ],
@@ -490,9 +461,7 @@
     "Relay fallback": [
       "src/tailscale/wgengine/magicsock/endpoint.go:568-585,1061-1071"
     ],
-    "Multiple relays": [
-      "src/headscale/hscontrol/derp/derp.go:94-122"
-    ],
+    "Multiple relays": ["src/headscale/hscontrol/derp/derp.go:94-122"],
     "Latency-based relay selection": [
       "src/tailscale/net/netcheck/netcheck.go:1388-1430"
     ],
@@ -519,15 +488,9 @@
       "src/headscale/hscontrol/auth.go:359",
       "src/headscale/hscontrol/types/node.go:268-273"
     ],
-    "Full tunnel mode": [
-      "src/headscale/hscontrol/types/node.go:268-273"
-    ],
-    "Split tunneling": [
-      "src/headscale/hscontrol/types/node.go:268-273"
-    ],
-    "Route priorities": [
-      "src/headscale/hscontrol/routes/primary.go:39-48"
-    ],
+    "Full tunnel mode": ["src/headscale/hscontrol/types/node.go:268-273"],
+    "Split tunneling": ["src/headscale/hscontrol/types/node.go:268-273"],
+    "Route priorities": ["src/headscale/hscontrol/routes/primary.go:39-48"],
     "Multi-hop routing via peers": [
       "src/tailscale/wgengine/magicsock/magicsock.go:2442,2910"
     ],
@@ -538,9 +501,7 @@
     "Existing connections survive": [
       "src/tailscale/control/controlclient/auto.go:480-484"
     ],
-    "Local state caching": [
-      "src/tailscale/types/persist/persist.go:24-28"
-    ],
+    "Local state caching": ["src/tailscale/types/persist/persist.go:24-28"],
     "Cached credentials": [
       "src/tailscale/types/persist/persist.go:24-25",
       "src/headscale/hscontrol/state/state.go:766"
@@ -561,23 +522,17 @@
       "src/headscale/hscontrol/derp/derp.go:94-122",
       "src/tailscale/net/netcheck/netcheck.go:1388-1430"
     ],
-    "No single root of trust": [
-      "src/headscale/hscontrol/noise.go:100-106"
-    ],
+    "No single root of trust": ["src/headscale/hscontrol/noise.go:100-106"],
     "Pre-authentication keys": [
       "src/headscale/hscontrol/types/preauth_key.go:16-31",
       "src/headscale/hscontrol/auth.go:320-393"
     ],
-    "Certificate-based enrollment": [
-      "src/headscale/hscontrol/auth.go:28-130"
-    ],
+    "Certificate-based enrollment": ["src/headscale/hscontrol/auth.go:28-130"],
     "OAuth/OIDC": [
       "src/headscale/hscontrol/oidc.go:286-296",
       "src/headscale/hscontrol/types/config.go:324-329"
     ],
-    "Interactive login": [
-      "src/headscale/hscontrol/app.go:451-455"
-    ],
+    "Interactive login": ["src/headscale/hscontrol/app.go:451-455"],
     "CLI authentication": [
       "src/headscale/hscontrol/templates/register_web.go:31"
     ],
@@ -589,9 +544,7 @@
       "src/headscale/hscontrol/oidc.go:286-296",
       "src/headscale/hscontrol/auth.go:359"
     ],
-    "Ephemeral nodes": [
-      "src/headscale/hscontrol/db/node.go:516-612"
-    ],
+    "Ephemeral nodes": ["src/headscale/hscontrol/db/node.go:516-612"],
     "Node expiry": [
       "src/headscale/hscontrol/state/state.go:603,766",
       "src/headscale/hscontrol/types/config.go:326"
@@ -603,9 +556,7 @@
     "Identity portability": [
       "src/tailscale/cmd/tailscaled/tailscaled.go:199,1007-1016"
     ],
-    "Linux": [
-      "src/tailscale/cmd/tailscaled/tailscaled.go:91-100"
-    ],
+    "Linux": ["src/tailscale/cmd/tailscaled/tailscaled.go:91-100"],
     "macOS": [
       "src/tailscale/cmd/tailscaled/tailscaled.go:83-86",
       "src/tailscale/wgengine/router/router_darwin.go"

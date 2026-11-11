@@ -1,37 +1,31 @@
 {
-    "status": "success",
-    "data": {
-        "results": [
-            {
-                "command": "nix copy --from http://cache.vpn.lom --to file:///tmp/cache?compression=none /nix/store/8y3bzk5rmdl9dqxnvii0cnx5rigi8vym-firefox-144.0.2",
-                "mean": 12.2898533684,
-                "stddev": 0.08468631979390012,
-                "median": 12.2898533684,
-                "user": 13.128982019999999,
-                "system": 2.7308255,
-                "min": 12.2299710974,
-                "max": 12.349735639399999,
-                "times": [
-                    12.349735639399999,
-                    12.2299710974
-                ],
-                "exit_codes": [
-                    0,
-                    0
-                ],
-                "parameters": {
-                    "url": "http://cache.vpn.lom"
-                }
-            }
-        ]
-    },
-    "meta": {
-        "duration_seconds": 42.36106014251709,
-        "test_attempts": 1,
-        "vpn_restart_attempts": 0,
-        "vpn_restart_duration_seconds": 5.364516258239746,
-        "connectivity_wait_duration_seconds": 4.044587135314941,
-        "source": "luna",
-        "target": "lom"
-    }
+  "status": "success",
+  "data": {
+    "results": [
+      {
+        "command": "nix copy --from http://cache.vpn.lom --to file:///tmp/cache?compression=none /nix/store/8y3bzk5rmdl9dqxnvii0cnx5rigi8vym-firefox-144.0.2",
+        "mean": 12.2898533684,
+        "stddev": 0.08468631979390012,
+        "median": 12.2898533684,
+        "user": 13.128982019999999,
+        "system": 2.7308255,
+        "min": 12.2299710974,
+        "max": 12.349735639399999,
+        "times": [12.349735639399999, 12.2299710974],
+        "exit_codes": [0, 0],
+        "parameters": {
+          "url": "http://cache.vpn.lom"
+        }
+      }
+    ]
+  },
+  "meta": {
+    "duration_seconds": 42.36106014251709,
+    "test_attempts": 1,
+    "vpn_restart_attempts": 0,
+    "vpn_restart_duration_seconds": 5.364516258239746,
+    "connectivity_wait_duration_seconds": 4.044587135314941,
+    "source": "luna",
+    "target": "lom"
+  }
 }

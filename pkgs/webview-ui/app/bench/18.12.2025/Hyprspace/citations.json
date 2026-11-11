@@ -240,13 +240,8 @@
     "src/hyprspace/tun/": "https://github.com/hyprspace/hyprspace/blob/a5957e485ff0c2e9133e7da5408ec1273681688e/tun"
   },
   "items": {
-    "Language": [
-      "src/hyprspace/go.mod:1-5",
-      "src/hyprspace/package.nix:23"
-    ],
-    "License": [
-      "src/hyprspace/LICENSE"
-    ],
+    "Language": ["src/hyprspace/go.mod:1-5", "src/hyprspace/package.nix:23"],
+    "License": ["src/hyprspace/LICENSE"],
     "Default peer transport": [
       "src/hyprspace/cli/init.go:45-50",
       "src/hyprspace/p2p/node.go:139-140",
@@ -260,12 +255,8 @@
       "deps/hyprspace/go-modules/github.com/libp2p/go-libp2p/p2p/security/tls/crypto.go:90-101,243",
       "deps/hyprspace/go-modules/github.com/libp2p/go-libp2p/p2p/security/noise/handshake.go:27,46"
     ],
-    "Default tunnel MTU": [
-      "src/hyprspace/cli/up.go:88"
-    ],
-    "Control-plane model": [
-      "src/hyprspace/p2p/node.go:178-199,257-262"
-    ],
+    "Default tunnel MTU": ["src/hyprspace/cli/up.go:88"],
+    "Control-plane model": ["src/hyprspace/p2p/node.go:178-199,257-262"],
     "Data-plane threading": [
       "src/hyprspace/cli/up.go:216-266",
       "deps/hyprspace/go-modules/github.com/quic-go/quic-go/connection.go:495-508"
@@ -281,9 +272,7 @@
       "src/hyprspace/p2p/node.go:140",
       "deps/hyprspace/go-modules/github.com/libp2p/go-libp2p/p2p/net/swarm/dial_ranker.go:16-21,62-64"
     ],
-    "QUIC support": [
-      "src/hyprspace/p2p/node.go:139"
-    ],
+    "QUIC support": ["src/hyprspace/p2p/node.go:139"],
     "WebSocket support": [
       "src/hyprspace/p2p/node.go:139-140",
       "deps/hyprspace/go-modules/github.com/libp2p/go-libp2p/defaults.go:155-161"
@@ -296,29 +285,19 @@
       "src/hyprspace/cli/up.go:87,238-241",
       "src/hyprspace/config/idhash.go:17-25"
     ],
-    "Dual-stack": [
-      "src/hyprspace/cli/up.go:84-89"
-    ],
+    "Dual-stack": ["src/hyprspace/cli/up.go:84-89"],
     "Layer 3 (IP) mode": [
       "src/hyprspace/tun/tun_linux.go:17-18",
       "src/hyprspace/cli/up.go:231-257"
     ],
-    "Layer 2 (Ethernet) mode": [
-      "src/hyprspace/tun/tun_linux.go:17-18"
-    ],
-    "Bridging support": [
-      "src/hyprspace/tun/tun_linux.go"
-    ],
+    "Layer 2 (Ethernet) mode": ["src/hyprspace/tun/tun_linux.go:17-18"],
+    "Bridging support": ["src/hyprspace/tun/tun_linux.go"],
     "Multipath/bonding": [
       "src/hyprspace/cli/up.go:47,272",
       "deps/hyprspace/go-modules/github.com/libp2p/go-libp2p/p2p/net/swarm/swarm.go:594-645"
     ],
-    "QoS/traffic shaping": [
-      "src/hyprspace/cli/up.go:270-332"
-    ],
-    "Multicast support": [
-      "src/hyprspace/cli/up.go:261-266"
-    ],
+    "QoS/traffic shaping": ["src/hyprspace/cli/up.go:270-332"],
+    "Multicast support": ["src/hyprspace/cli/up.go:261-266"],
     "Modern key exchange (Curve25519)": [
       "deps/hyprspace/go-stdlib/crypto/tls/defaults.go:21-23",
       "deps/hyprspace/go-modules/github.com/libp2p/go-libp2p/p2p/security/noise/handshake.go:27"
@@ -415,53 +394,33 @@
       "src/hyprspace/svc/network.go:84-124",
       "src/hyprspace/cli/up.go:242-253"
     ],
-    "Tunnel compression": [
-      "src/hyprspace/cli/up.go:279-283"
-    ],
-    "Configurable compression": [
-      "src/hyprspace/nixos/settings.nix:49-93"
-    ],
+    "Tunnel compression": ["src/hyprspace/cli/up.go:279-283"],
+    "Configurable compression": ["src/hyprspace/nixos/settings.nix:49-93"],
     "Handshake rate limiting": [
       "deps/hyprspace/go-modules/github.com/libp2p/go-libp2p/p2p/host/resource-manager/conn_limiter.go:30-45",
       "deps/hyprspace/go-modules/github.com/libp2p/go-libp2p/p2p/transport/quicreuse/"
     ],
-    "Stateful packet filter": [
-      "src/hyprspace/cli/up.go:428"
-    ],
-    "Fine-grained ACLs": [
-      "src/hyprspace/cli/up.go:395-398"
-    ],
-    "Capability-based access": [
-      "src/hyprspace/config/config.go:33-38"
-    ],
+    "Stateful packet filter": ["src/hyprspace/cli/up.go:428"],
+    "Fine-grained ACLs": ["src/hyprspace/cli/up.go:395-398"],
+    "Capability-based access": ["src/hyprspace/config/config.go:33-38"],
     "Identity validation": [
       "deps/hyprspace/go-modules/github.com/libp2p/go-libp2p/p2p/security/tls/crypto.go:111-213",
       "src/hyprspace/config/idhash.go:9-25"
     ],
-    "Signed config updates": [
-      "src/hyprspace/config/config.go:57-67"
-    ],
+    "Signed config updates": ["src/hyprspace/config/config.go:57-67"],
     "Control-server key pinning": [
       "src/hyprspace/p2p/node.go:178-199",
       "src/hyprspace/p2p/node.go:248-262"
     ],
-    "Memory-safe language": [
-      "src/hyprspace/package.nix:23"
-    ],
-    "Privilege separation": [
-      "src/hyprspace/nixos/default.nix:90-99"
-    ],
-    "Sandboxing": [
-      "src/hyprspace/nixos/default.nix:90-99"
-    ],
+    "Memory-safe language": ["src/hyprspace/package.nix:23"],
+    "Privilege separation": ["src/hyprspace/nixos/default.nix:90-99"],
+    "Sandboxing": ["src/hyprspace/nixos/default.nix:90-99"],
     "Audit logging": [
       "src/hyprspace/cli/up.go:303,368-391",
       "src/hyprspace/svc/receiver.go:31",
       "src/hyprspace/cli/up.go:395-398"
     ],
-    "No own public node needed": [
-      "src/hyprspace/p2p/node.go:178-199,257-262"
-    ],
+    "No own public node needed": ["src/hyprspace/p2p/node.go:178-199,257-262"],
     "Public endpoint discovery (STUN or reflection)": [
       "deps/hyprspace/go-modules/github.com/libp2p/go-libp2p/p2p/protocol/identify/id.go:215-223"
     ],
@@ -479,9 +438,7 @@
     "NAT-PMP support": [
       "deps/hyprspace/go-modules/github.com/libp2p/go-nat/natpmp.go"
     ],
-    "PCP support": [
-      "deps/hyprspace/go-modules/github.com/libp2p/go-nat/"
-    ],
+    "PCP support": ["deps/hyprspace/go-modules/github.com/libp2p/go-nat/"],
     "UDP hole punching": [
       "deps/hyprspace/go-modules/github.com/libp2p/go-libp2p/p2p/protocol/holepunch/holepuncher.go:133-170",
       "src/hyprspace/p2p/node.go:141"
@@ -496,9 +453,7 @@
       "src/hyprspace/p2p/node.go:142-169",
       "src/hyprspace/rpc/server.go:75-97"
     ],
-    "Multiple relays": [
-      "src/hyprspace/p2p/node.go:167"
-    ],
+    "Multiple relays": ["src/hyprspace/p2p/node.go:167"],
     "Latency-based relay selection": [
       "deps/hyprspace/go-modules/github.com/libp2p/go-libp2p/p2p/host/autorelay/relay_finder.go:702-706"
     ],
@@ -506,19 +461,13 @@
       "src/hyprspace/cli/init.go:45-50",
       "src/hyprspace/p2p/node.go:140"
     ],
-    "Broadcast/multicast discovery": [
-      "src/hyprspace/p2p/node.go:130-277"
-    ],
-    "Direct path advertisement": [
-      "src/hyprspace/p2p/pex.go:56-66"
-    ],
+    "Broadcast/multicast discovery": ["src/hyprspace/p2p/node.go:130-277"],
+    "Direct path advertisement": ["src/hyprspace/p2p/pex.go:56-66"],
     "Automatic LAN preference": [
       "deps/hyprspace/go-modules/github.com/libp2p/go-libp2p/p2p/net/swarm/dial_ranker.go:16-28",
       "deps/hyprspace/go-modules/github.com/libp2p/go-libp2p/p2p/net/swarm/swarm.go:594-624"
     ],
-    "Trusted path mode": [
-      "src/hyprspace/p2p/node.go:135"
-    ],
+    "Trusted path mode": ["src/hyprspace/p2p/node.go:135"],
     "LAN-only mode": [
       "src/hyprspace/config/config.go:33-38",
       "src/hyprspace/p2p/node.go:207-220"
@@ -527,30 +476,16 @@
       "src/hyprspace/config/config.go:113-124",
       "src/hyprspace/tun/tun_linux.go:68-77"
     ],
-    "Full tunnel mode": [
-      "src/hyprspace/tun/tun_linux.go:76"
-    ],
-    "Split tunneling": [
-      "src/hyprspace/cli/up.go:93-108"
-    ],
-    "Route priorities": [
-      "src/hyprspace/config/config.go:217-224"
-    ],
-    "Multi-hop routing via peers": [
-      "src/hyprspace/config/config.go:47-50"
-    ],
-    "Built-in DNS": [
-      "src/hyprspace/dns/server.go:111-232"
-    ],
-    "Existing connections survive": [
-      "src/hyprspace/cli/up.go:129-131"
-    ],
+    "Full tunnel mode": ["src/hyprspace/tun/tun_linux.go:76"],
+    "Split tunneling": ["src/hyprspace/cli/up.go:93-108"],
+    "Route priorities": ["src/hyprspace/config/config.go:217-224"],
+    "Multi-hop routing via peers": ["src/hyprspace/config/config.go:47-50"],
+    "Built-in DNS": ["src/hyprspace/dns/server.go:111-232"],
+    "Existing connections survive": ["src/hyprspace/cli/up.go:129-131"],
     "Local state caching": [
       "deps/hyprspace/go-modules/github.com/libp2p/go-libp2p/defaults.go:62-69"
     ],
-    "Cached credentials": [
-      "src/hyprspace/config/config.go:57-83"
-    ],
+    "Cached credentials": ["src/hyprspace/config/config.go:57-83"],
     "Decentralized control plane": [
       "src/hyprspace/config/config.go:33-38",
       "src/hyprspace/p2p/node.go:178-199"
@@ -559,46 +494,26 @@
       "src/hyprspace/p2p/node.go:207-246",
       "src/hyprspace/p2p/node.go:178-199,257-262"
     ],
-    "Controller redundancy": [
-      "src/hyprspace/p2p/node.go:178-199"
-    ],
-    "Relay redundancy": [
-      "src/hyprspace/p2p/node.go:167"
-    ],
+    "Controller redundancy": ["src/hyprspace/p2p/node.go:178-199"],
+    "Relay redundancy": ["src/hyprspace/p2p/node.go:167"],
     "No single root of trust": [
       "src/hyprspace/config/config.go:104-144",
       "src/hyprspace/cli/up.go:395-398"
     ],
-    "Pre-authentication keys": [
-      "src/hyprspace/p2p/node.go:113-125"
-    ],
+    "Pre-authentication keys": ["src/hyprspace/p2p/node.go:113-125"],
     "Certificate-based enrollment": [
       "deps/hyprspace/go-modules/github.com/libp2p/go-libp2p/p2p/security/tls/crypto.go:243"
     ],
-    "OAuth/OIDC": [
-      "src/hyprspace/"
-    ],
-    "Interactive login": [
-      "src/hyprspace/cli/root.go:23-38"
-    ],
-    "CLI authentication": [
-      "src/hyprspace/cli/init.go:36-53"
-    ],
-    "Admin approval workflow": [
-      "src/hyprspace/config/config.go:104-144"
-    ],
-    "Automated enrollment rules": [
-      "src/hyprspace/cli/up.go:395-398"
-    ],
-    "Ephemeral nodes": [
-      "src/hyprspace/config/config.go:102-144"
-    ],
+    "OAuth/OIDC": ["src/hyprspace/"],
+    "Interactive login": ["src/hyprspace/cli/root.go:23-38"],
+    "CLI authentication": ["src/hyprspace/cli/init.go:36-53"],
+    "Admin approval workflow": ["src/hyprspace/config/config.go:104-144"],
+    "Automated enrollment rules": ["src/hyprspace/cli/up.go:395-398"],
+    "Ephemeral nodes": ["src/hyprspace/config/config.go:102-144"],
     "Node expiry": [
       "deps/hyprspace/go-modules/github.com/libp2p/go-libp2p/p2p/security/tls/crypto.go:70-101"
     ],
-    "Stable device identity": [
-      "src/hyprspace/config/config.go:71-89"
-    ],
+    "Stable device identity": ["src/hyprspace/config/config.go:71-89"],
     "Identity portability": [
       "src/hyprspace/config/config.go:71-81",
       "src/hyprspace/nixos/default.nix:63-67"
@@ -624,15 +539,9 @@
       "src/hyprspace/tun/tun_darwin.go",
       "src/hyprspace/tun/tun_windows.go"
     ],
-    "iOS": [
-      "src/hyprspace/"
-    ],
-    "Android": [
-      "src/hyprspace/"
-    ],
-    "Kernel-mode datapath": [
-      "src/hyprspace/cli/up.go:216-266"
-    ],
+    "iOS": ["src/hyprspace/"],
+    "Android": ["src/hyprspace/"],
+    "Kernel-mode datapath": ["src/hyprspace/cli/up.go:216-266"],
     "Container support": [
       "src/hyprspace/package.nix",
       "src/hyprspace/nixos/default.nix"
