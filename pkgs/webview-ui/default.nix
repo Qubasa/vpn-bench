@@ -15,6 +15,9 @@ buildNpmPackage {
 
   npmDeps = importNpmLock { npmRoot = ./app; };
   npmConfigHook = importNpmLock.npmConfigHook;
+  # benchData.tsx bundles every bench JSON eagerly. `vpb build-ui` copies the whole local
+  # bench dir (195 MB in 51 runs on 2026-11-12), which exceeds node's default ~4 GB heap.
+  env.NODE_OPTIONS = "--max-old-space-size=12288";
 
   preBuild = ''
     cp -r ${fonts} ".fonts"

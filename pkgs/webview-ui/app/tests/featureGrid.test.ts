@@ -19,33 +19,29 @@ const runMatrices = Object.entries(
   }),
 );
 
-describe("per-run feature matrices", () => {
-  it("exist for at least one run", () => {
-    expect(runMatrices.length).toBeGreaterThan(0);
+// Top level, so a bench dir without `vpb analyze` output (e.g. `vpb build-ui` with local
+// results) yields no suite instead of an empty one, which vitest rejects.
+describe.each(runMatrices)("feature matrix %s", (_path, featureMatrixMd) => {
+  it("resolves every declared column", () => {
+    const matrix = parseFeatureMatrix(featureMatrixMd);
+    const groups = resolveGrid(matrix, GRID);
+    for (const column of groups.flatMap((group) => group.columns)) {
+      expect(column.cells).toHaveLength(matrix.vpns.length);
+    }
   });
 
-  describe.each(runMatrices)("%s", (_path, featureMatrixMd) => {
-    it("resolves every declared column", () => {
-      const matrix = parseFeatureMatrix(featureMatrixMd);
-      const groups = resolveGrid(matrix, GRID);
-      for (const column of groups.flatMap((group) => group.columns)) {
-        expect(column.cells).toHaveLength(matrix.vpns.length);
-      }
-    });
-
-    it("shows every matrix row exactly once and one score heatmap", () => {
-      const matrix = parseFeatureMatrix(featureMatrixMd);
-      const layout = splitDocument(featureMatrixMd);
-      const blocks = [
-        ...layout.preamble,
-        ...layout.sections.flatMap((section) => section.blocks),
-      ];
-      const shown = blocks.flatMap((block) =>
-        block.kind === "features" ? block.features : [],
-      );
-      expect(shown).toEqual([...matrix.rows.keys()]);
-      expect(blocks.filter((block) => block.kind === "scores")).toHaveLength(1);
-    });
+  it("shows every matrix row exactly once and one score heatmap", () => {
+    const matrix = parseFeatureMatrix(featureMatrixMd);
+    const layout = splitDocument(featureMatrixMd);
+    const blocks = [
+      ...layout.preamble,
+      ...layout.sections.flatMap((section) => section.blocks),
+    ];
+    const shown = blocks.flatMap((block) =>
+      block.kind === "features" ? block.features : [],
+    );
+    expect(shown).toEqual([...matrix.rows.keys()]);
+    expect(blocks.filter((block) => block.kind === "scores")).toHaveLength(1);
   });
 });
 
