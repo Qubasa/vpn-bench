@@ -328,7 +328,7 @@ const createEncodingBoxplotOption = (
       nameGap: 40,
       nameTextStyle: { fontWeight: "bold", fontSize: 13 },
       min: 0,
-      max: (value: { max: number }) => value.max + value.max * 0.1,
+      boundaryGap: [0, "10%"],
       splitArea: { show: false },
       splitLine: { lineStyle: { type: "dashed", color: "#eee" } },
       axisLabel: {
@@ -627,7 +627,7 @@ const createNetworkBoxplotOption = (
       nameGap: 40,
       nameTextStyle: { fontWeight: "bold", fontSize: 13 },
       min: 0,
-      max: (value: { max: number }) => value.max + value.max * 0.1,
+      boundaryGap: [0, "10%"],
       splitArea: { show: false },
       splitLine: { lineStyle: { type: "dashed", color: "#eee" } },
       axisLabel: {

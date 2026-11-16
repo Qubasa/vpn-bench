@@ -252,10 +252,7 @@ const createRttOption = (reports: IperfTcpReport[]) => {
       type: "value",
       name: "RTT (ms)",
       axisLabel: { formatter: formatAxisValue },
-      max: (value: { max: number }) => {
-        const errorMax = Math.max(...rttData.map((d) => d.max), 0);
-        return Math.max(value.max, errorMax) * 1.1 || undefined;
-      },
+      boundaryGap: [0, "10%"],
     },
     series: [
       {
@@ -551,14 +548,7 @@ const createThroughputOption = (reports: IperfTcpReport[]) => {
     yAxis: {
       type: "value",
       name: "Mbps",
-      max: (value: { max: number }) => {
-        const errorMax = Math.max(
-          ...throughputStats.map((s) =>
-            Math.max(s.stats.maxSentMbps, s.stats.maxRecvMbps),
-          ),
-        );
-        return Math.ceil(Math.max(value.max, errorMax) * 1.1);
-      },
+      boundaryGap: [0, "10%"],
       axisLabel: {
         formatter: formatAxisValue,
       },

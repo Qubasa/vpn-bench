@@ -54,6 +54,7 @@ export function createErrorBarSeries(
     type: "custom" as const,
     name: `_errorBar_${barIndex}`,
     data: seriesData,
+    encode: { x: 0, y: [1, 2] },
     z: 10,
     silent: true,
     renderItem: (

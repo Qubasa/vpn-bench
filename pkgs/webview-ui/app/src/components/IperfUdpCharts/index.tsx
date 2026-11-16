@@ -476,14 +476,7 @@ const createUdpThroughputOption = (
     yAxis: {
       type: "value",
       name: "Mbps",
-      max: (value: { max: number }) => {
-        const errorMax = Math.max(
-          ...throughputStats.map((s) =>
-            Math.max(s.stats.maxSentMbps, s.stats.maxRecvMbps),
-          ),
-        );
-        return Math.ceil(Math.max(value.max, errorMax) * 1.1);
-      },
+      boundaryGap: [0, "10%"],
       axisLabel: { formatter: formatAxisValue },
       nameTextStyle: {
         align: "left",

@@ -334,8 +334,7 @@ const createQperfBoxplotOption = (
       nameGap: 40, // Adjust gap based on label length
       nameTextStyle: { fontWeight: "bold", fontSize: 13 },
       min: 0,
-      // Dynamically adjust max based on data, ensuring some headroom
-      max: (value: { max: number }) => value.max + value.max * 0.1,
+      boundaryGap: [0, "10%"],
       splitArea: { show: false }, // Cleaner background
       splitLine: { lineStyle: { type: "dashed", color: "#eee" } }, // Subtle split lines
       axisLabel: {

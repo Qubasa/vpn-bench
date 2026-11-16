@@ -172,13 +172,7 @@ const createBarChartOption = (
       axisLabel: {
         formatter: formatAxisValue,
       },
-      max: (value: { max: number }) => {
-        const errorMax = Math.max(
-          ...sortedData.filter((d) => !d.isIncomplete).map((d) => d.max),
-          0,
-        );
-        return Math.max(value.max, errorMax) * 1.1 || undefined;
-      },
+      boundaryGap: [0, "10%"],
     },
     series: [
       {
@@ -589,15 +583,7 @@ const createDualBarChartOption = (
       axisLabel: {
         formatter: formatAxisValue,
       },
-      max: (value: { max: number }) => {
-        const errorMax = Math.max(
-          ...sortedData
-            .filter((d) => !d.isIncomplete)
-            .flatMap((d) => [d.senderMax, d.receiverMax]),
-          0,
-        );
-        return Math.max(value.max, errorMax) * 1.1 || undefined;
-      },
+      boundaryGap: [0, "10%"],
     },
     series: [
       {

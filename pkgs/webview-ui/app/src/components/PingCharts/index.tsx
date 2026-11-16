@@ -102,10 +102,7 @@ const createRttBarOption = (reports: PingReport[]) => {
       type: "value",
       name: "RTT (ms)",
       axisLabel: { formatter: formatAxisValue },
-      max: (value: { max: number }) => {
-        const errorMax = Math.max(...rttData.map((d) => d.max), 0);
-        return Math.max(value.max, errorMax) * 1.1 || undefined;
-      },
+      boundaryGap: [0, "10%"],
     },
     series: [
       {
