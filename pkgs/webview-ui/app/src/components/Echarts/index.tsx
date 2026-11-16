@@ -13,6 +13,71 @@ export interface EChartsProps {
   theme?: string | object;
 }
 
+const EXPORT_WIDTH = 800;
+const EXPORT_PIXEL_RATIO = 3;
+const DOWNLOAD_ICON =
+  "path://M4.7,22.9L29.3,45.5L54.7,23.4M4.6,43.6L4.6,58L53.8,58L53.8,43.6M29.2,45.1L29.2,0";
+
+interface Toolbox {
+  feature?: Record<string, unknown>;
+}
+
+const downloadAtExportSize = (
+  chart: echarts.ECharts,
+  theme: EChartsProps["theme"],
+) => {
+  const option = chart.getOption();
+  const exporter = echarts.init(document.createElement("div"), theme, {
+    width: EXPORT_WIDTH,
+    height: chart.getHeight(),
+  });
+  const legend = (option.legend as object[] | undefined)?.map((entry) => ({
+    ...entry,
+    type: "plain",
+  }));
+  exporter.setOption({ ...option, legend, animation: false });
+  const url = exporter.getDataURL({
+    type: "png",
+    pixelRatio: EXPORT_PIXEL_RATIO,
+    backgroundColor: "#fff",
+    excludeComponents: ["toolbox"],
+  });
+  exporter.dispose();
+  const titles = option.title as { text?: string }[] | undefined;
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = `${titles?.[0]?.text || "chart"}.png`;
+  link.click();
+};
+
+// Swaps the canvas snapshot for a render at EXPORT_WIDTH so every download
+// has the same size whatever the window width
+const withFixedSizeDownload = (
+  option: EChartsCoreOption,
+  download: () => void,
+): EChartsCoreOption => {
+  const toolbox = option.toolbox as Toolbox | undefined;
+  if (!toolbox?.feature?.saveAsImage) {
+    return option;
+  }
+  const { title } = toolbox.feature.saveAsImage as { title?: string };
+  const feature = Object.fromEntries(
+    Object.entries(toolbox.feature).map(([name, config]) =>
+      name === "saveAsImage"
+        ? [
+            "myFixedSizeImage",
+            {
+              title: title ?? "Save as Image",
+              icon: DOWNLOAD_ICON,
+              onclick: download,
+            },
+          ]
+        : [name, config],
+    ),
+  );
+  return { ...option, toolbox: { ...toolbox, feature } };
+};
+
 export const Echart = (props: EChartsProps) => {
   let chartRef: HTMLDivElement | undefined;
   let chartInstance: echarts.ECharts | null = null;
@@ -34,10 +99,17 @@ export const Echart = (props: EChartsProps) => {
 
         // Update chart with new option (runs on first and subsequent updates)
         if (chartInstance) {
-          chartInstance.setOption(option, {
-            notMerge: true,
-            lazyUpdate: false,
-          });
+          chartInstance.setOption(
+            withFixedSizeDownload(option, () => {
+              if (chartInstance) {
+                downloadAtExportSize(chartInstance, props.theme);
+              }
+            }),
+            {
+              notMerge: true,
+              lazyUpdate: false,
+            },
+          );
         }
       },
       // Don't defer - we want this to run on mount
