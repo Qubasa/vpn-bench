@@ -1,6 +1,7 @@
 import { EChartsCoreOption } from "echarts";
 import { createMemo, Show } from "solid-js";
 import { Echart } from "../Echarts";
+import { profileAxisLabel } from "@/src/crossProfileLayout";
 import {
   CrossProfileVideoStreamingData,
   VideoStreamingHeatmapData,
@@ -112,9 +113,7 @@ const createQualityHeatmapOption = (
       splitArea: {
         show: true,
       },
-      axisLabel: {
-        rotate: 30,
-      },
+      axisLabel: profileAxisLabel,
     },
     yAxis: {
       type: "category",
@@ -281,9 +280,7 @@ const createRttHeatmapOption = (
       splitArea: {
         show: true,
       },
-      axisLabel: {
-        rotate: 30,
-      },
+      axisLabel: profileAxisLabel,
     },
     yAxis: {
       type: "category",

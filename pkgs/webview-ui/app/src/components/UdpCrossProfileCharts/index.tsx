@@ -2,6 +2,10 @@ import { EChartsCoreOption } from "echarts";
 import { createMemo, Show } from "solid-js";
 import { Echart } from "../Echarts";
 import {
+  profileAxisLabel,
+  smallMultiplesLayout,
+} from "@/src/crossProfileLayout";
+import {
   CrossProfileUdpData,
   UdpHeatmapData,
   UdpScatterData,
@@ -128,9 +132,7 @@ const createThroughputHeatmapOption = (
       splitArea: {
         show: true,
       },
-      axisLabel: {
-        rotate: 30,
-      },
+      axisLabel: profileAxisLabel,
     },
     yAxis: {
       type: "category",
@@ -301,9 +303,7 @@ const createCpuHeatmapOption = (data: UdpHeatmapData): EChartsCoreOption => {
       splitArea: {
         show: true,
       },
-      axisLabel: {
-        rotate: 30,
-      },
+      axisLabel: profileAxisLabel,
     },
     yAxis: {
       type: "category",
@@ -400,18 +400,7 @@ const createSmallMultiplesScatterOption = (
     return 10 + normalized * 30;
   };
 
-  // Create grid layout - 4 plots horizontally
-  const gridWidth = 20;
-  const gridGap = 3;
-  const gridStart = 8;
-
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const grids: any[] = data.tc_profiles.map((_, i) => ({
-    left: `${gridStart + i * (gridWidth + gridGap)}%`,
-    width: `${gridWidth}%`,
-    top: 120,
-    bottom: 60,
-  }));
+  const layout = smallMultiplesLayout(data.tc_profiles.length);
 
   // Create titles for each subplot
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -424,8 +413,7 @@ const createSmallMultiplesScatterOption = (
     },
     ...data.tc_profiles.map((profile, i) => ({
       text: formatProfileName(profile),
-      left: `${gridStart + i * (gridWidth + gridGap) + gridWidth / 2}%`,
-      top: 95,
+      ...layout.titles[i],
       textAlign: "center",
       textStyle: {
         fontSize: 14,
@@ -452,7 +440,7 @@ const createSmallMultiplesScatterOption = (
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const yAxes: any[] = data.tc_profiles.map((_, i) => ({
     type: "value",
-    name: i === 0 ? "Throughput (Mbps)" : "",
+    name: layout.rowStarts[i] ? "Throughput (Mbps)" : "",
     nameLocation: "middle",
     nameGap: 45,
     gridIndex: i,
@@ -529,7 +517,7 @@ const createSmallMultiplesScatterOption = (
       type: "scroll",
       selectedMode: "multiple",
     },
-    grid: grids,
+    grid: layout.grids,
     xAxis: xAxes,
     yAxis: yAxes,
     series: series,
@@ -569,7 +557,13 @@ export const UdpCrossProfileCharts = (props: UdpCrossProfileChartsProps) => {
             <Echart option={cpuHeatmapOption()} height={500} />
           </div>
           <div class="rounded-lg bg-white p-4 shadow-md">
-            <Echart option={scatterOption()} height={480} />
+            <Echart
+              option={scatterOption()}
+              height={
+                smallMultiplesLayout(props.data.scatter.tc_profiles.length)
+                  .height
+              }
+            />
           </div>
         </div>
       </div>

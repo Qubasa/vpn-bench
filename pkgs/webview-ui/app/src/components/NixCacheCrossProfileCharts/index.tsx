@@ -1,6 +1,7 @@
 import { EChartsCoreOption } from "echarts";
 import { createMemo, Show } from "solid-js";
 import { Echart } from "../Echarts";
+import { profileAxisLabel } from "@/src/crossProfileLayout";
 import { CrossProfileNixCacheData, NixCacheHeatmapData } from "../../benchData";
 
 // Format TC profile names for display
@@ -109,9 +110,7 @@ const createDownloadTimeHeatmapOption = (
       splitArea: {
         show: true,
       },
-      axisLabel: {
-        rotate: 30,
-      },
+      axisLabel: profileAxisLabel,
     },
     yAxis: {
       type: "category",

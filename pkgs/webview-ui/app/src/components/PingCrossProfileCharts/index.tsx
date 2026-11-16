@@ -1,6 +1,7 @@
 import { EChartsCoreOption } from "echarts";
 import { createMemo, Show } from "solid-js";
 import { Echart } from "../Echarts";
+import { profileAxisLabel } from "@/src/crossProfileLayout";
 import { CrossProfilePingData, PingHeatmapData } from "../../benchData";
 
 // Format TC profile names for display
@@ -105,9 +106,7 @@ const createRttHeatmapOption = (data: PingHeatmapData): EChartsCoreOption => {
       splitArea: {
         show: true,
       },
-      axisLabel: {
-        rotate: 30,
-      },
+      axisLabel: profileAxisLabel,
     },
     yAxis: {
       type: "category",
@@ -281,9 +280,7 @@ const createPacketLossHeatmapOption = (
       splitArea: {
         show: true,
       },
-      axisLabel: {
-        rotate: 30,
-      },
+      axisLabel: profileAxisLabel,
     },
     yAxis: {
       type: "category",

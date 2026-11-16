@@ -1,6 +1,7 @@
 import { EChartsCoreOption } from "echarts";
 import { createMemo, Show } from "solid-js";
 import { Echart } from "../Echarts";
+import { profileAxisLabel } from "@/src/crossProfileLayout";
 import { CrossProfileQperfData, QperfHeatmapData } from "../../benchData";
 
 // Format TC profile names for display
@@ -109,9 +110,7 @@ const createBandwidthHeatmapOption = (
       splitArea: {
         show: true,
       },
-      axisLabel: {
-        rotate: 30,
-      },
+      axisLabel: profileAxisLabel,
     },
     yAxis: {
       type: "category",
@@ -274,9 +273,7 @@ const createCpuHeatmapOption = (data: QperfHeatmapData): EChartsCoreOption => {
       splitArea: {
         show: true,
       },
-      axisLabel: {
-        rotate: 30,
-      },
+      axisLabel: profileAxisLabel,
     },
     yAxis: {
       type: "category",

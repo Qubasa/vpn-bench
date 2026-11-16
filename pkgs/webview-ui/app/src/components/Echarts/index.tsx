@@ -45,6 +45,14 @@ export const Echart = (props: EChartsProps) => {
     ),
   );
 
+  createEffect(
+    on(
+      () => props.height,
+      (height) => chartInstance?.resize({ height }),
+      { defer: true },
+    ),
+  );
+
   // Cleanup on unmount
   onCleanup(() => {
     if (chartInstance) {
