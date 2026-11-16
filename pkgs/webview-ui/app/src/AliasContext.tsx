@@ -6,7 +6,7 @@ import {
   Accessor,
   createEffect,
 } from "solid-js";
-import { useSearchParams } from "@solidjs/router";
+import { useIsRouting, useSearchParams } from "@solidjs/router";
 import {
   getAvailableAliases,
   getBenchDataForAlias,
@@ -28,6 +28,7 @@ const AliasContext = createContext<AliasContextType>();
 export const AliasProvider: ParentComponent = (props) => {
   const availableAliases = getAvailableAliases();
   const [searchParams, setSearchParams] = useSearchParams();
+  const isRouting = useIsRouting();
 
   // Initialize from URL or fallback to first available alias
   const getInitialAlias = () => {
@@ -47,15 +48,18 @@ export const AliasProvider: ParentComponent = (props) => {
     setSearchParams({ alias });
   };
 
-  // Sync URL changes back to state (e.g., browser back/forward)
+  // Keeps the run in the URL so a copied link opens the same run
   createEffect(() => {
+    if (isRouting()) {
+      return;
+    }
     const urlAlias = searchParams.alias;
-    if (
-      urlAlias &&
-      availableAliases.includes(urlAlias) &&
-      urlAlias !== currentAlias()
-    ) {
-      setCurrentAliasInternal(urlAlias);
+    if (urlAlias && availableAliases.includes(urlAlias)) {
+      if (urlAlias !== currentAlias()) {
+        setCurrentAliasInternal(urlAlias);
+      }
+    } else if (currentAlias()) {
+      setSearchParams({ alias: currentAlias() }, { replace: true });
     }
   });
 
