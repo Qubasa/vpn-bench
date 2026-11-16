@@ -1,0 +1,37 @@
+{
+    "status": "success",
+    "data": {
+        "results": [
+            {
+                "command": "nix copy --from http://cache.vpn.yuki --to file:///tmp/cache?compression=none /nix/store/8y3bzk5rmdl9dqxnvii0cnx5rigi8vym-firefox-144.0.2",
+                "mean": 147.3943905117,
+                "stddev": 5.686440809905358,
+                "median": 147.3943905117,
+                "user": 42.839263939999995,
+                "system": 9.114748760000001,
+                "min": 143.3734696542,
+                "max": 151.4153113692,
+                "times": [
+                    151.4153113692,
+                    143.3734696542
+                ],
+                "exit_codes": [
+                    0,
+                    0
+                ],
+                "parameters": {
+                    "url": "http://cache.vpn.yuki"
+                }
+            }
+        ]
+    },
+    "meta": {
+        "duration_seconds": 488.86306142807007,
+        "test_attempts": 1,
+        "vpn_restart_attempts": 0,
+        "vpn_restart_duration_seconds": 2.713601589202881,
+        "connectivity_wait_duration_seconds": 83.4983971118927,
+        "source": "luna",
+        "target": "yuki"
+    }
+}

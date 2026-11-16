@@ -1,0 +1,121 @@
+{
+  "vpn_name": "zerotier",
+  "total_duration_seconds": 5878.979267756455,
+  "start_timestamp": 1793845250.7287796,
+  "end_timestamp": 1793851129.7080476,
+  "phases": [
+    {
+      "phase": "vpn_installation",
+      "duration_seconds": 8.49265563301742,
+      "start_timestamp": 1793845250.7287877,
+      "operations": [
+        {
+          "name": "nix_flake_update",
+          "duration_seconds": 0.09511714149266481,
+          "start_timestamp": 1793845250.7288005,
+          "success": true
+        },
+        {
+          "name": "create_base_inventory",
+          "duration_seconds": 1.0812499821186066,
+          "start_timestamp": 1793845250.9293182,
+          "success": true
+        },
+        {
+          "name": "install_zerotier_config",
+          "duration_seconds": 0.3366192914545536,
+          "start_timestamp": 1793845252.1374817,
+          "success": true
+        },
+        {
+          "name": "get_vpn_ips",
+          "duration_seconds": 0.5747764026746154,
+          "start_timestamp": 1793845252.7661977,
+          "success": true
+        },
+        {
+          "name": "install_nix_cache",
+          "duration_seconds": 0.07251887116581202,
+          "start_timestamp": 1793845253.3409822,
+          "success": true
+        },
+        {
+          "name": "install_connection_timings_service",
+          "duration_seconds": 0.24517428316175938,
+          "start_timestamp": 1793845253.4135108,
+          "success": true
+        },
+        {
+          "name": "run_generators",
+          "duration_seconds": 0.15228573232889175,
+          "start_timestamp": 1793845254.1073546,
+          "success": true
+        },
+        {
+          "name": "deploy_vpn_machines",
+          "duration_seconds": 4.961482590064406,
+          "start_timestamp": 1793845254.2596486,
+          "success": true
+        }
+      ],
+      "metadata": {
+        "cvpn_bench_lock": {
+          "rev": "b34644545e08752d49ffed7f6bf43a5916159abe",
+          "narHash": "sha256-YhkkghbQ7AZQngknGDYzi09F67TLkc8V9bISsOkjvV0=",
+          "lastModified": 1793746654,
+          "type": "git"
+        }
+      }
+    },
+    {
+      "phase": "benchmarking",
+      "duration_seconds": 2486.456495165825,
+      "start_timestamp": 1793845259.221588,
+      "operations": [
+        {
+          "name": "tc_stabilization",
+          "duration_seconds": 30.000409997068346,
+          "start_timestamp": 1793845261.6002722,
+          "success": true
+        },
+        {
+          "name": "run_tests",
+          "duration_seconds": 2452.1790219089016,
+          "start_timestamp": 1793845291.6007762,
+          "success": true,
+          "metadata": {
+            "profile": "medium_impairment"
+          }
+        }
+      ],
+      "metadata": {
+        "profile": "medium_impairment"
+      }
+    },
+    {
+      "phase": "benchmarking",
+      "duration_seconds": 3384.028108629398,
+      "start_timestamp": 1793847745.6799273,
+      "operations": [
+        {
+          "name": "tc_stabilization",
+          "duration_seconds": 30.000505411997437,
+          "start_timestamp": 1793847747.5430477,
+          "success": true
+        },
+        {
+          "name": "run_tests",
+          "duration_seconds": 3350.0443166168407,
+          "start_timestamp": 1793847777.5436158,
+          "success": true,
+          "metadata": {
+            "profile": "high_impairment"
+          }
+        }
+      ],
+      "metadata": {
+        "profile": "high_impairment"
+      }
+    }
+  ]
+}

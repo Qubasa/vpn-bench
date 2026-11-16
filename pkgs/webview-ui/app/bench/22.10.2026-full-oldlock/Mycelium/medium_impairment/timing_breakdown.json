@@ -1,0 +1,146 @@
+{
+  "vpn_name": "mycelium",
+  "total_duration_seconds": 2431.7411518851295,
+  "start_timestamp": 1792819790.1549828,
+  "end_timestamp": 1792822221.8961353,
+  "phases": [
+    {
+      "phase": "vpn_installation",
+      "duration_seconds": 106.33894984051585,
+      "start_timestamp": 1792819790.1549902,
+      "operations": [
+        {
+          "name": "nix_flake_update",
+          "duration_seconds": 0.09682037122547626,
+          "start_timestamp": 1792819790.154999,
+          "success": true
+        },
+        {
+          "name": "create_base_inventory",
+          "duration_seconds": 42.36970411427319,
+          "start_timestamp": 1792819790.2518318,
+          "success": true
+        },
+        {
+          "name": "install_mycelium_config",
+          "duration_seconds": 21.78116858098656,
+          "start_timestamp": 1792819832.7521832,
+          "success": true
+        },
+        {
+          "name": "get_vpn_ips",
+          "duration_seconds": 4.973299602046609,
+          "start_timestamp": 1792819855.1235032,
+          "success": true
+        },
+        {
+          "name": "install_nix_cache",
+          "duration_seconds": 0.06413550209254026,
+          "start_timestamp": 1792819860.096811,
+          "success": true
+        },
+        {
+          "name": "install_connection_timings_service",
+          "duration_seconds": 0.5221648849546909,
+          "start_timestamp": 1792819860.1609557,
+          "success": true
+        },
+        {
+          "name": "run_generators",
+          "duration_seconds": 4.4857382364571095,
+          "start_timestamp": 1792819861.3101015,
+          "success": true
+        },
+        {
+          "name": "deploy_vpn_machines",
+          "duration_seconds": 30.697827632538974,
+          "start_timestamp": 1792819865.7958488,
+          "success": true
+        }
+      ],
+      "metadata": {
+        "cvpn_bench_lock": {
+          "rev": "82acad98274dd23faa99c6601d5c633039e4d3b3",
+          "narHash": "sha256-sYJ3GvuhnMiVZ6JsPpy+lJcexVsOohI0E8jNLGyz588=",
+          "lastModified": 1792566461,
+          "type": "git"
+        }
+      }
+    },
+    {
+      "phase": "benchmarking",
+      "duration_seconds": 789.2492302283645,
+      "start_timestamp": 1792819896.4940534,
+      "operations": [
+        {
+          "name": "tc_stabilization",
+          "duration_seconds": 30.0004797372967,
+          "start_timestamp": 1792819897.3864553,
+          "success": true
+        },
+        {
+          "name": "run_tests",
+          "duration_seconds": 757.3244107477367,
+          "start_timestamp": 1792819927.3870025,
+          "success": true,
+          "metadata": {
+            "profile": "baseline"
+          }
+        }
+      ],
+      "metadata": {
+        "profile": "baseline"
+      }
+    },
+    {
+      "phase": "benchmarking",
+      "duration_seconds": 787.3621577452868,
+      "start_timestamp": 1792820685.7451377,
+      "operations": [
+        {
+          "name": "tc_stabilization",
+          "duration_seconds": 30.000509455800056,
+          "start_timestamp": 1792820687.2425437,
+          "success": true
+        },
+        {
+          "name": "run_tests",
+          "duration_seconds": 754.3822416141629,
+          "start_timestamp": 1792820717.2431152,
+          "success": true,
+          "metadata": {
+            "profile": "low_impairment"
+          }
+        }
+      ],
+      "metadata": {
+        "profile": "low_impairment"
+      }
+    },
+    {
+      "phase": "benchmarking",
+      "duration_seconds": 748.7868793010712,
+      "start_timestamp": 1792821473.1092484,
+      "operations": [
+        {
+          "name": "tc_stabilization",
+          "duration_seconds": 30.000307014212012,
+          "start_timestamp": 1792821474.6462126,
+          "success": true
+        },
+        {
+          "name": "run_tests",
+          "duration_seconds": 715.6688878396526,
+          "start_timestamp": 1792821504.646607,
+          "success": true,
+          "metadata": {
+            "profile": "medium_impairment"
+          }
+        }
+      ],
+      "metadata": {
+        "profile": "medium_impairment"
+      }
+    }
+  ]
+}

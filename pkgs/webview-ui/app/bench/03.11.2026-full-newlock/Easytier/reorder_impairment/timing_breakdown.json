@@ -1,0 +1,121 @@
+{
+  "vpn_name": "easytier",
+  "total_duration_seconds": 5001.075788867995,
+  "start_timestamp": 1794408340.9833894,
+  "end_timestamp": 1794413342.0591784,
+  "phases": [
+    {
+      "phase": "vpn_installation",
+      "duration_seconds": 57.791982243004895,
+      "start_timestamp": 1794408340.983407,
+      "operations": [
+        {
+          "name": "nix_flake_update",
+          "duration_seconds": 0.7418275000018184,
+          "start_timestamp": 1794408340.9834292,
+          "success": true
+        },
+        {
+          "name": "create_base_inventory",
+          "duration_seconds": 3.5744873990042834,
+          "start_timestamp": 1794408343.791384,
+          "success": true
+        },
+        {
+          "name": "install_easytier_config",
+          "duration_seconds": 0.8966763880016515,
+          "start_timestamp": 1794408347.5635054,
+          "success": true
+        },
+        {
+          "name": "get_vpn_ips",
+          "duration_seconds": 26.228379434003728,
+          "start_timestamp": 1794408349.9725804,
+          "success": true
+        },
+        {
+          "name": "install_nix_cache",
+          "duration_seconds": 0.12509885500185192,
+          "start_timestamp": 1794408376.200972,
+          "success": true
+        },
+        {
+          "name": "install_connection_timings_service",
+          "duration_seconds": 1.0035603729993454,
+          "start_timestamp": 1794408376.3260882,
+          "success": true
+        },
+        {
+          "name": "run_generators",
+          "duration_seconds": 4.065238555995165,
+          "start_timestamp": 1794408378.4522078,
+          "success": true
+        },
+        {
+          "name": "deploy_vpn_machines",
+          "duration_seconds": 16.25737260599999,
+          "start_timestamp": 1794408382.5174627,
+          "success": true
+        }
+      ],
+      "metadata": {
+        "cvpn_bench_lock": {
+          "rev": "3d648d295a8cf573b98fb7567bcef82a6f0ea25d",
+          "narHash": "sha256-bib6Ylwmm7slZs0B6wBCsSb+FsXiH3Y2GNLYXcnq2jA=",
+          "lastModified": 1794404751,
+          "type": "git"
+        }
+      }
+    },
+    {
+      "phase": "benchmarking",
+      "duration_seconds": 2694.101202154001,
+      "start_timestamp": 1794408398.7756124,
+      "operations": [
+        {
+          "name": "tc_stabilization",
+          "duration_seconds": 30.000213284001802,
+          "start_timestamp": 1794408401.136888,
+          "success": true
+        },
+        {
+          "name": "run_tests",
+          "duration_seconds": 2659.9687559910017,
+          "start_timestamp": 1794408431.1371353,
+          "success": true,
+          "metadata": {
+            "profile": "congestion_impairment"
+          }
+        }
+      ],
+      "metadata": {
+        "profile": "congestion_impairment"
+      }
+    },
+    {
+      "phase": "benchmarking",
+      "duration_seconds": 2249.1813526050028,
+      "start_timestamp": 1794411092.8778133,
+      "operations": [
+        {
+          "name": "tc_stabilization",
+          "duration_seconds": 30.00022812899988,
+          "start_timestamp": 1794411094.7488537,
+          "success": true
+        },
+        {
+          "name": "run_tests",
+          "duration_seconds": 2215.3936740189965,
+          "start_timestamp": 1794411124.7491255,
+          "success": true,
+          "metadata": {
+            "profile": "reorder_impairment"
+          }
+        }
+      ],
+      "metadata": {
+        "profile": "reorder_impairment"
+      }
+    }
+  ]
+}

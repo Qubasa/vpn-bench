@@ -1,0 +1,214 @@
+{
+    "status": "success",
+    "data": {
+        "schema_version": 2,
+        "metadata": {
+            "hyperfine_version": "2.0.0",
+            "start_time": "2026-11-05T04:32:54Z",
+            "platform": {
+                "os": "Linux",
+                "architecture": "x86_64"
+            }
+        },
+        "primary_metric": "time_wall_clock",
+        "results": [
+            {
+                "command": "nix copy --from http://cache.vpn.lom --to file:///tmp/cache?compression=none /nix/store/v3cryf9y7n6mfkad7r8q3wwqi22pqpn4-firefox-158.0.1",
+                "measurements": [
+                    {
+                        "time_wall_clock": {
+                            "value": 10.952029834,
+                            "unit": "second"
+                        },
+                        "time_cpu": {
+                            "value": 14.695744999999999,
+                            "unit": "second"
+                        },
+                        "time_user": {
+                            "value": 12.218077,
+                            "unit": "second"
+                        },
+                        "time_system": {
+                            "value": 2.477668,
+                            "unit": "second"
+                        },
+                        "memory_peak_resident": {
+                            "value": 297930752.0,
+                            "unit": "byte"
+                        },
+                        "cpu_cycles": {
+                            "value": 47602261451
+                        },
+                        "instructions": {
+                            "value": 104905298620
+                        },
+                        "cache_references": {
+                            "value": 909572092
+                        },
+                        "cache_misses": {
+                            "value": 141175120
+                        },
+                        "branch_misses": {
+                            "value": 73353471
+                        },
+                        "exit_code": 0
+                    },
+                    {
+                        "time_wall_clock": {
+                            "value": 10.928523739,
+                            "unit": "second"
+                        },
+                        "time_cpu": {
+                            "value": 14.951481000000001,
+                            "unit": "second"
+                        },
+                        "time_user": {
+                            "value": 12.452163,
+                            "unit": "second"
+                        },
+                        "time_system": {
+                            "value": 2.499318,
+                            "unit": "second"
+                        },
+                        "memory_peak_resident": {
+                            "value": 219119616.0,
+                            "unit": "byte"
+                        },
+                        "cpu_cycles": {
+                            "value": 47637328911
+                        },
+                        "instructions": {
+                            "value": 104997033236
+                        },
+                        "cache_references": {
+                            "value": 914272855
+                        },
+                        "cache_misses": {
+                            "value": 138554194
+                        },
+                        "branch_misses": {
+                            "value": 74085741
+                        },
+                        "exit_code": 0
+                    }
+                ],
+                "parameters": {
+                    "url": {
+                        "value": "http://cache.vpn.lom"
+                    }
+                },
+                "summary": {
+                    "branch_misses": {
+                        "count": 2,
+                        "mean": 73719606.0,
+                        "stddev": 517793.0826594732,
+                        "median": 73719606.0,
+                        "min": 73353471.0,
+                        "max": 74085741.0
+                    },
+                    "cache_misses": {
+                        "count": 2,
+                        "mean": 139864657.0,
+                        "stddev": 1853274.5475881333,
+                        "median": 139864657.0,
+                        "min": 138554194.0,
+                        "max": 141175120.0
+                    },
+                    "cache_references": {
+                        "count": 2,
+                        "mean": 911922473.5,
+                        "stddev": 3323941.394050819,
+                        "median": 911922473.5,
+                        "min": 909572092.0,
+                        "max": 914272855.0
+                    },
+                    "cpu_cycles": {
+                        "count": 2,
+                        "mean": 47619795181.0,
+                        "stddev": 24796438.76498801,
+                        "median": 47619795181.0,
+                        "min": 47602261451.0,
+                        "max": 47637328911.0
+                    },
+                    "instructions": {
+                        "count": 2,
+                        "mean": 104951165928.0,
+                        "stddev": 64866169.04314396,
+                        "median": 104951165928.0,
+                        "min": 104905298620.0,
+                        "max": 104997033236.0
+                    },
+                    "memory_peak_resident": {
+                        "unit": "byte",
+                        "count": 2,
+                        "mean": 258525184.0,
+                        "stddev": 55727888.69861524,
+                        "median": 258525184.0,
+                        "min": 219119616.0,
+                        "max": 297930752.0
+                    },
+                    "time_cpu": {
+                        "unit": "second",
+                        "count": 2,
+                        "mean": 14.823613,
+                        "stddev": 0.1808326597935246,
+                        "median": 14.823613,
+                        "min": 14.695744999999999,
+                        "max": 14.951481000000001
+                    },
+                    "time_system": {
+                        "unit": "second",
+                        "count": 2,
+                        "mean": 2.488493,
+                        "stddev": 0.015308861812688873,
+                        "median": 2.488493,
+                        "min": 2.477668,
+                        "max": 2.499318
+                    },
+                    "time_user": {
+                        "unit": "second",
+                        "count": 2,
+                        "mean": 12.33512,
+                        "stddev": 0.1655237979808351,
+                        "median": 12.33512,
+                        "min": 12.218077,
+                        "max": 12.452163
+                    },
+                    "time_wall_clock": {
+                        "unit": "second",
+                        "count": 2,
+                        "mean": 10.9402767865,
+                        "stddev": 0.01662131917371528,
+                        "median": 10.9402767865,
+                        "min": 10.928523739,
+                        "max": 10.952029834
+                    }
+                },
+                "mean": 10.9402767865,
+                "stddev": 0.01662131917371528,
+                "median": 10.9402767865,
+                "min": 10.928523739,
+                "max": 10.952029834,
+                "user": 12.33512,
+                "system": 2.488493,
+                "times": [
+                    10.952029834,
+                    10.928523739
+                ],
+                "exit_codes": [
+                    0,
+                    0
+                ]
+            }
+        ]
+    },
+    "meta": {
+        "duration_seconds": 46.90924072265625,
+        "test_attempts": 1,
+        "vpn_restart_attempts": 0,
+        "vpn_restart_duration_seconds": 1.3459103107452393,
+        "connectivity_wait_duration_seconds": 80.99420022964478,
+        "source": "yuki",
+        "target": "lom"
+    }
+}

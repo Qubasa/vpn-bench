@@ -1,0 +1,37 @@
+{
+    "status": "success",
+    "data": {
+        "results": [
+            {
+                "command": "nix copy --from http://cache.vpn.luna --to file:///tmp/cache?compression=none /nix/store/8y3bzk5rmdl9dqxnvii0cnx5rigi8vym-firefox-144.0.2",
+                "mean": 23.314305366019997,
+                "stddev": 1.079279438841449,
+                "median": 23.314305366019997,
+                "user": 13.81101666,
+                "system": 3.13879572,
+                "min": 22.551139556019997,
+                "max": 24.077471176019998,
+                "times": [
+                    24.077471176019998,
+                    22.551139556019997
+                ],
+                "exit_codes": [
+                    0,
+                    0
+                ],
+                "parameters": {
+                    "url": "http://cache.vpn.luna"
+                }
+            }
+        ]
+    },
+    "meta": {
+        "duration_seconds": 89.89764428138733,
+        "test_attempts": 1,
+        "vpn_restart_attempts": 0,
+        "vpn_restart_duration_seconds": 2.3973467350006104,
+        "connectivity_wait_duration_seconds": 90.13886499404907,
+        "source": "lom",
+        "target": "luna"
+    }
+}

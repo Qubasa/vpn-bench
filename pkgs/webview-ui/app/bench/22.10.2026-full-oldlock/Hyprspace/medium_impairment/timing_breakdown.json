@@ -1,0 +1,146 @@
+{
+  "vpn_name": "hyprspace",
+  "total_duration_seconds": 14327.777260958217,
+  "start_timestamp": 1792805148.7710075,
+  "end_timestamp": 1792819476.5482683,
+  "phases": [
+    {
+      "phase": "vpn_installation",
+      "duration_seconds": 105.30580028984696,
+      "start_timestamp": 1792805148.7710154,
+      "operations": [
+        {
+          "name": "nix_flake_update",
+          "duration_seconds": 0.10065657645463943,
+          "start_timestamp": 1792805148.7710254,
+          "success": true
+        },
+        {
+          "name": "create_base_inventory",
+          "duration_seconds": 42.110608488321304,
+          "start_timestamp": 1792805148.8716958,
+          "success": true
+        },
+        {
+          "name": "install_hyprspace_config",
+          "duration_seconds": 21.057623954489827,
+          "start_timestamp": 1792805191.1038027,
+          "success": true
+        },
+        {
+          "name": "get_vpn_ips",
+          "duration_seconds": 4.877102750353515,
+          "start_timestamp": 1792805212.733966,
+          "success": true
+        },
+        {
+          "name": "install_nix_cache",
+          "duration_seconds": 0.06521086022257805,
+          "start_timestamp": 1792805217.6110766,
+          "success": true
+        },
+        {
+          "name": "install_connection_timings_service",
+          "duration_seconds": 0.5300820041447878,
+          "start_timestamp": 1792805217.6762965,
+          "success": true
+        },
+        {
+          "name": "run_generators",
+          "duration_seconds": 4.481486625038087,
+          "start_timestamp": 1792805218.7257547,
+          "success": true
+        },
+        {
+          "name": "deploy_vpn_machines",
+          "duration_seconds": 30.869247370399535,
+          "start_timestamp": 1792805223.2072494,
+          "success": true
+        }
+      ],
+      "metadata": {
+        "cvpn_bench_lock": {
+          "rev": "82acad98274dd23faa99c6601d5c633039e4d3b3",
+          "narHash": "sha256-sYJ3GvuhnMiVZ6JsPpy+lJcexVsOohI0E8jNLGyz588=",
+          "lastModified": 1792566461,
+          "type": "git"
+        }
+      }
+    },
+    {
+      "phase": "benchmarking",
+      "duration_seconds": 644.4110616827384,
+      "start_timestamp": 1792805254.0769563,
+      "operations": [
+        {
+          "name": "tc_stabilization",
+          "duration_seconds": 30.00049238000065,
+          "start_timestamp": 1792805254.906281,
+          "success": true
+        },
+        {
+          "name": "run_tests",
+          "duration_seconds": 612.6164189418778,
+          "start_timestamp": 1792805284.906838,
+          "success": true,
+          "metadata": {
+            "profile": "baseline"
+          }
+        }
+      ],
+      "metadata": {
+        "profile": "baseline"
+      }
+    },
+    {
+      "phase": "benchmarking",
+      "duration_seconds": 12558.664927820675,
+      "start_timestamp": 1792805898.4898942,
+      "operations": [
+        {
+          "name": "tc_stabilization",
+          "duration_seconds": 30.000481265597045,
+          "start_timestamp": 1792805900.025289,
+          "success": true
+        },
+        {
+          "name": "run_tests",
+          "duration_seconds": 12525.619967781007,
+          "start_timestamp": 1792805930.0258555,
+          "success": true,
+          "metadata": {
+            "profile": "low_impairment"
+          }
+        }
+      ],
+      "metadata": {
+        "profile": "low_impairment"
+      }
+    },
+    {
+      "phase": "benchmarking",
+      "duration_seconds": 1019.3914734907448,
+      "start_timestamp": 1792818457.156787,
+      "operations": [
+        {
+          "name": "tc_stabilization",
+          "duration_seconds": 30.00049859471619,
+          "start_timestamp": 1792818458.7478783,
+          "success": true
+        },
+        {
+          "name": "run_tests",
+          "duration_seconds": 986.3602958489209,
+          "start_timestamp": 1792818488.748436,
+          "success": true,
+          "metadata": {
+            "profile": "medium_impairment"
+          }
+        }
+      ],
+      "metadata": {
+        "profile": "medium_impairment"
+      }
+    }
+  ]
+}

@@ -1,0 +1,145 @@
+{
+  "vpn_name": "tincr",
+  "total_duration_seconds": 4789.754074279219,
+  "start_timestamp": 1793307827.5162153,
+  "end_timestamp": 1793312617.27029,
+  "phases": [
+    {
+      "phase": "vpn_installation",
+      "duration_seconds": 242.68328600097448,
+      "start_timestamp": 1793307827.5162225,
+      "operations": [
+        {
+          "name": "nix_flake_update",
+          "duration_seconds": 0.09733564220368862,
+          "start_timestamp": 1793307827.5162318,
+          "success": true
+        },
+        {
+          "name": "create_base_inventory",
+          "duration_seconds": 42.408492021262646,
+          "start_timestamp": 1793307827.6135798,
+          "success": true
+        },
+        {
+          "name": "deploy_base_machines",
+          "duration_seconds": 33.87289555836469,
+          "start_timestamp": 1793307870.1376524,
+          "success": true
+        },
+        {
+          "name": "clean_state_dirs",
+          "duration_seconds": 0.8109791493043303,
+          "start_timestamp": 1793307904.0105774,
+          "success": true
+        },
+        {
+          "name": "install_tincr_config",
+          "duration_seconds": 21.035690704360604,
+          "start_timestamp": 1793307904.8215945,
+          "success": true
+        },
+        {
+          "name": "get_vpn_ips",
+          "duration_seconds": 4.866814007051289,
+          "start_timestamp": 1793307926.4631445,
+          "success": true
+        },
+        {
+          "name": "install_nix_cache",
+          "duration_seconds": 0.07030791137367487,
+          "start_timestamp": 1793307931.329966,
+          "success": true
+        },
+        {
+          "name": "install_connection_timings_service",
+          "duration_seconds": 0.5222184350714087,
+          "start_timestamp": 1793307931.4002836,
+          "success": true
+        },
+        {
+          "name": "run_generators",
+          "duration_seconds": 4.6461881045252085,
+          "start_timestamp": 1793307932.4034567,
+          "success": true
+        },
+        {
+          "name": "deploy_vpn_machines",
+          "duration_seconds": 38.22497089486569,
+          "start_timestamp": 1793307937.0496535,
+          "success": true
+        },
+        {
+          "name": "initial_connection_timings",
+          "duration_seconds": 0.6885123290121555,
+          "start_timestamp": 1793307975.2746375,
+          "success": true
+        },
+        {
+          "name": "reboot_connection_timings",
+          "duration_seconds": 94.23549529630691,
+          "start_timestamp": 1793307975.9631803,
+          "success": true
+        }
+      ],
+      "metadata": {
+        "cvpn_bench_lock": {
+          "rev": "134397254c62df9070aa43eab5250447424ce53f",
+          "narHash": "sha256-Yl0nW1YyqnieYWlFqqZfz8Es8kO+wRWl/brsNeFoVYM=",
+          "lastModified": 1793186221,
+          "type": "git"
+        }
+      }
+    },
+    {
+      "phase": "benchmarking",
+      "duration_seconds": 2257.815040986985,
+      "start_timestamp": 1793308070.1998892,
+      "operations": [
+        {
+          "name": "tc_stabilization",
+          "duration_seconds": 30.000522260554135,
+          "start_timestamp": 1793308070.7090368,
+          "success": true
+        },
+        {
+          "name": "run_tests",
+          "duration_seconds": 2226.0735969804227,
+          "start_timestamp": 1793308100.7096183,
+          "success": true,
+          "metadata": {
+            "profile": "baseline"
+          }
+        }
+      ],
+      "metadata": {
+        "profile": "baseline"
+      }
+    },
+    {
+      "phase": "benchmarking",
+      "duration_seconds": 2289.2534882696345,
+      "start_timestamp": 1793310328.01679,
+      "operations": [
+        {
+          "name": "tc_stabilization",
+          "duration_seconds": 30.000506025739014,
+          "start_timestamp": 1793310329.9187677,
+          "success": true
+        },
+        {
+          "name": "run_tests",
+          "duration_seconds": 2255.556354569271,
+          "start_timestamp": 1793310359.9193351,
+          "success": true,
+          "metadata": {
+            "profile": "low_impairment"
+          }
+        }
+      ],
+      "metadata": {
+        "profile": "low_impairment"
+      }
+    }
+  ]
+}

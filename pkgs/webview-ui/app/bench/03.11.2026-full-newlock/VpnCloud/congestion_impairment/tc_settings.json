@@ -1,0 +1,42 @@
+{
+  "alias": "congestion_impairment",
+  "settings": {
+    "method": "receiver-ifb",
+    "latency_ms": 10,
+    "jitter_ms": null,
+    "jitter_distribution": null,
+    "packet_loss_percent": null,
+    "reorder_percent": null,
+    "reorder_displacement_ms": null,
+    "added_rtt_ms": 20,
+    "bandwidth_mbit": 100,
+    "queue_limit_bytes": 250000,
+    "gro_during_profile": "off",
+    "machines": {
+      "lom": {
+        "interface": "enp0s31f6",
+        "ifb": "vpbifb0",
+        "rate_mbit": 1000,
+        "gro_before": "on",
+        "netem_args": "delay 10ms rate 1000mbit limit 100000",
+        "child_qdisc": "tbf rate 100mbit burst 12500 limit 250000"
+      },
+      "luna": {
+        "interface": "enp0s31f6",
+        "ifb": "vpbifb0",
+        "rate_mbit": 1000,
+        "gro_before": "on",
+        "netem_args": "delay 10ms rate 1000mbit limit 100000",
+        "child_qdisc": "tbf rate 100mbit burst 12500 limit 250000"
+      },
+      "yuki": {
+        "interface": "enp0s31f6",
+        "ifb": "vpbifb0",
+        "rate_mbit": 1000,
+        "gro_before": "on",
+        "netem_args": "delay 10ms rate 1000mbit limit 100000",
+        "child_qdisc": "tbf rate 100mbit burst 12500 limit 250000"
+      }
+    }
+  }
+}

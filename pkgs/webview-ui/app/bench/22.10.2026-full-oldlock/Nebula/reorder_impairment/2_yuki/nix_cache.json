@@ -1,0 +1,37 @@
+{
+    "status": "success",
+    "data": {
+        "results": [
+            {
+                "command": "nix copy --from http://cache.vpn.lom --to file:///tmp/cache?compression=none /nix/store/8y3bzk5rmdl9dqxnvii0cnx5rigi8vym-firefox-144.0.2",
+                "mean": 27.33296158844,
+                "stddev": 0.09240489801321995,
+                "median": 27.33296158844,
+                "user": 14.160840199999999,
+                "system": 3.56106232,
+                "min": 27.26762145844,
+                "max": 27.39830171844,
+                "times": [
+                    27.39830171844,
+                    27.26762145844
+                ],
+                "exit_codes": [
+                    0,
+                    0
+                ],
+                "parameters": {
+                    "url": "http://cache.vpn.lom"
+                }
+            }
+        ]
+    },
+    "meta": {
+        "duration_seconds": 99.95884466171265,
+        "test_attempts": 1,
+        "vpn_restart_attempts": 0,
+        "vpn_restart_duration_seconds": 2.125685453414917,
+        "connectivity_wait_duration_seconds": 81.17804598808289,
+        "source": "yuki",
+        "target": "lom"
+    }
+}

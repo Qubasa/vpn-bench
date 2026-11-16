@@ -1,0 +1,145 @@
+{
+  "vpn_name": "hyprspace",
+  "total_duration_seconds": 5003.086309234612,
+  "start_timestamp": 1793851141.876788,
+  "end_timestamp": 1793856144.9630976,
+  "phases": [
+    {
+      "phase": "vpn_installation",
+      "duration_seconds": 112.36706536542624,
+      "start_timestamp": 1793851141.8767948,
+      "operations": [
+        {
+          "name": "nix_flake_update",
+          "duration_seconds": 0.09432115498930216,
+          "start_timestamp": 1793851141.876805,
+          "success": true
+        },
+        {
+          "name": "create_base_inventory",
+          "duration_seconds": 1.0799742545932531,
+          "start_timestamp": 1793851142.1194832,
+          "success": true
+        },
+        {
+          "name": "deploy_base_machines",
+          "duration_seconds": 6.246852409094572,
+          "start_timestamp": 1793851143.3296108,
+          "success": true
+        },
+        {
+          "name": "clean_state_dirs",
+          "duration_seconds": 0.6617826772853732,
+          "start_timestamp": 1793851149.5764914,
+          "success": true
+        },
+        {
+          "name": "install_hyprspace_config",
+          "duration_seconds": 0.4195145023986697,
+          "start_timestamp": 1793851150.2383177,
+          "success": true
+        },
+        {
+          "name": "get_vpn_ips",
+          "duration_seconds": 0.5597558785229921,
+          "start_timestamp": 1793851150.932667,
+          "success": true
+        },
+        {
+          "name": "install_nix_cache",
+          "duration_seconds": 0.0661702724173665,
+          "start_timestamp": 1793851151.492431,
+          "success": true
+        },
+        {
+          "name": "install_connection_timings_service",
+          "duration_seconds": 0.5305337766185403,
+          "start_timestamp": 1793851151.55861,
+          "success": true
+        },
+        {
+          "name": "run_generators",
+          "duration_seconds": 0.1384603325277567,
+          "start_timestamp": 1793851152.6004045,
+          "success": true
+        },
+        {
+          "name": "deploy_vpn_machines",
+          "duration_seconds": 7.88151182513684,
+          "start_timestamp": 1793851152.7388735,
+          "success": true
+        },
+        {
+          "name": "initial_connection_timings",
+          "duration_seconds": 0.15654131025075912,
+          "start_timestamp": 1793851160.6204183,
+          "success": true
+        },
+        {
+          "name": "reboot_connection_timings",
+          "duration_seconds": 93.46598773170263,
+          "start_timestamp": 1793851160.7769873,
+          "success": true
+        }
+      ],
+      "metadata": {
+        "cvpn_bench_lock": {
+          "rev": "b34644545e08752d49ffed7f6bf43a5916159abe",
+          "narHash": "sha256-YhkkghbQ7AZQngknGDYzi09F67TLkc8V9bISsOkjvV0=",
+          "lastModified": 1793746654,
+          "type": "git"
+        }
+      }
+    },
+    {
+      "phase": "benchmarking",
+      "duration_seconds": 2297.0529345395043,
+      "start_timestamp": 1793851254.2442315,
+      "operations": [
+        {
+          "name": "tc_stabilization",
+          "duration_seconds": 30.000411411747336,
+          "start_timestamp": 1793851254.7861328,
+          "success": true
+        },
+        {
+          "name": "run_tests",
+          "duration_seconds": 2265.29402593337,
+          "start_timestamp": 1793851284.7866058,
+          "success": true,
+          "metadata": {
+            "profile": "baseline"
+          }
+        }
+      ],
+      "metadata": {
+        "profile": "baseline"
+      }
+    },
+    {
+      "phase": "benchmarking",
+      "duration_seconds": 2593.6641302686185,
+      "start_timestamp": 1793853551.2989542,
+      "operations": [
+        {
+          "name": "tc_stabilization",
+          "duration_seconds": 30.00048851687461,
+          "start_timestamp": 1793853553.1713738,
+          "success": true
+        },
+        {
+          "name": "run_tests",
+          "duration_seconds": 2559.9682106757537,
+          "start_timestamp": 1793853583.171926,
+          "success": true,
+          "metadata": {
+            "profile": "low_impairment"
+          }
+        }
+      ],
+      "metadata": {
+        "profile": "low_impairment"
+      }
+    }
+  ]
+}

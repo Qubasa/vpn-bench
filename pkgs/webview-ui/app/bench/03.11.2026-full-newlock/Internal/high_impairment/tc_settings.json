@@ -1,0 +1,36 @@
+{
+  "alias": "high_impairment",
+  "settings": {
+    "method": "receiver-ifb",
+    "latency_ms": 20,
+    "jitter_ms": 5,
+    "jitter_distribution": "normal",
+    "packet_loss_percent": 0.05,
+    "added_rtt_ms": 40,
+    "bandwidth_mbit": null,
+    "gro_during_profile": "off",
+    "machines": {
+      "lom": {
+        "interface": "enp0s31f6",
+        "ifb": "vpbifb0",
+        "rate_mbit": 1000,
+        "gro_before": "on",
+        "netem_args": "delay 20ms 5ms distribution normal loss 0.05% rate 1000mbit limit 100000"
+      },
+      "luna": {
+        "interface": "enp0s31f6",
+        "ifb": "vpbifb0",
+        "rate_mbit": 1000,
+        "gro_before": "on",
+        "netem_args": "delay 20ms 5ms distribution normal loss 0.05% rate 1000mbit limit 100000"
+      },
+      "yuki": {
+        "interface": "enp0s31f6",
+        "ifb": "vpbifb0",
+        "rate_mbit": 1000,
+        "gro_before": "on",
+        "netem_args": "delay 20ms 5ms distribution normal loss 0.05% rate 1000mbit limit 100000"
+      }
+    }
+  }
+}

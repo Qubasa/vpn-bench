@@ -1,0 +1,121 @@
+{
+  "vpn_name": "mycelium",
+  "total_duration_seconds": 6236.649114237,
+  "start_timestamp": 1794536228.3795557,
+  "end_timestamp": 1794542465.0286705,
+  "phases": [
+    {
+      "phase": "vpn_installation",
+      "duration_seconds": 172.29458829299983,
+      "start_timestamp": 1794536228.3795636,
+      "operations": [
+        {
+          "name": "nix_flake_update",
+          "duration_seconds": 0.09703039399755653,
+          "start_timestamp": 1794536228.3795733,
+          "success": true
+        },
+        {
+          "name": "create_base_inventory",
+          "duration_seconds": 42.380993748003675,
+          "start_timestamp": 1794536228.4766166,
+          "success": true
+        },
+        {
+          "name": "install_mycelium_config",
+          "duration_seconds": 21.764739979000296,
+          "start_timestamp": 1794536270.9888332,
+          "success": true
+        },
+        {
+          "name": "get_vpn_ips",
+          "duration_seconds": 5.035508928005584,
+          "start_timestamp": 1794536293.4718988,
+          "success": true
+        },
+        {
+          "name": "install_nix_cache",
+          "duration_seconds": 0.06542983199324226,
+          "start_timestamp": 1794536298.5074165,
+          "success": true
+        },
+        {
+          "name": "install_connection_timings_service",
+          "duration_seconds": 0.6541072109976085,
+          "start_timestamp": 1794536298.5728557,
+          "success": true
+        },
+        {
+          "name": "run_generators",
+          "duration_seconds": 4.466574568003125,
+          "start_timestamp": 1794536299.7284973,
+          "success": true
+        },
+        {
+          "name": "deploy_vpn_machines",
+          "duration_seconds": 96.4787377160028,
+          "start_timestamp": 1794536304.19508,
+          "success": true
+        }
+      ],
+      "metadata": {
+        "cvpn_bench_lock": {
+          "rev": "a7e582b94d0d811ea2e131c5243d7df22fc15bd8",
+          "narHash": "sha256-nhKIQa5whqkXRe0exgbl/fQeCt8IIlD+6e2rymnAzdQ=",
+          "lastModified": 1794497663,
+          "type": "git"
+        }
+      }
+    },
+    {
+      "phase": "benchmarking",
+      "duration_seconds": 2964.2832082359964,
+      "start_timestamp": 1794536400.6743288,
+      "operations": [
+        {
+          "name": "tc_stabilization",
+          "duration_seconds": 30.000463566997496,
+          "start_timestamp": 1794536403.1594489,
+          "success": true
+        },
+        {
+          "name": "run_tests",
+          "duration_seconds": 2929.815766564003,
+          "start_timestamp": 1794536433.1599734,
+          "success": true,
+          "metadata": {
+            "profile": "congestion_impairment"
+          }
+        }
+      ],
+      "metadata": {
+        "profile": "congestion_impairment"
+      }
+    },
+    {
+      "phase": "benchmarking",
+      "duration_seconds": 3100.069022640004,
+      "start_timestamp": 1794539364.9596376,
+      "operations": [
+        {
+          "name": "tc_stabilization",
+          "duration_seconds": 30.00034945000516,
+          "start_timestamp": 1794539366.9776187,
+          "success": true
+        },
+        {
+          "name": "run_tests",
+          "duration_seconds": 3065.989981008999,
+          "start_timestamp": 1794539396.9780312,
+          "success": true,
+          "metadata": {
+            "profile": "reorder_impairment"
+          }
+        }
+      ],
+      "metadata": {
+        "profile": "reorder_impairment"
+      }
+    }
+  ]
+}

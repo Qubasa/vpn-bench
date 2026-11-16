@@ -1,0 +1,96 @@
+{
+  "vpn_name": "mycelium",
+  "total_duration_seconds": 2616.785467710346,
+  "start_timestamp": 1792822946.83124,
+  "end_timestamp": 1792825563.6167078,
+  "phases": [
+    {
+      "phase": "vpn_installation",
+      "duration_seconds": 103.41799636557698,
+      "start_timestamp": 1792822946.831248,
+      "operations": [
+        {
+          "name": "nix_flake_update",
+          "duration_seconds": 0.09697338286787271,
+          "start_timestamp": 1792822946.8312576,
+          "success": true
+        },
+        {
+          "name": "create_base_inventory",
+          "duration_seconds": 41.96007441729307,
+          "start_timestamp": 1792822946.9282432,
+          "success": true
+        },
+        {
+          "name": "install_mycelium_config",
+          "duration_seconds": 21.371047139167786,
+          "start_timestamp": 1792822989.0143476,
+          "success": true
+        },
+        {
+          "name": "get_vpn_ips",
+          "duration_seconds": 4.8727180967107415,
+          "start_timestamp": 1792823010.9735217,
+          "success": true
+        },
+        {
+          "name": "install_nix_cache",
+          "duration_seconds": 0.07003410160541534,
+          "start_timestamp": 1792823015.846248,
+          "success": true
+        },
+        {
+          "name": "install_connection_timings_service",
+          "duration_seconds": 0.5299355648458004,
+          "start_timestamp": 1792823015.9162905,
+          "success": true
+        },
+        {
+          "name": "run_generators",
+          "duration_seconds": 4.4695111364126205,
+          "start_timestamp": 1792823017.1174214,
+          "success": true
+        },
+        {
+          "name": "deploy_vpn_machines",
+          "duration_seconds": 28.66207009460777,
+          "start_timestamp": 1792823021.5869408,
+          "success": true
+        }
+      ],
+      "metadata": {
+        "cvpn_bench_lock": {
+          "rev": "82acad98274dd23faa99c6601d5c633039e4d3b3",
+          "narHash": "sha256-sYJ3GvuhnMiVZ6JsPpy+lJcexVsOohI0E8jNLGyz588=",
+          "lastModified": 1792566461,
+          "type": "git"
+        }
+      }
+    },
+    {
+      "phase": "benchmarking",
+      "duration_seconds": 2513.3672748813406,
+      "start_timestamp": 1792823050.2494104,
+      "operations": [
+        {
+          "name": "tc_stabilization",
+          "duration_seconds": 30.000512751750648,
+          "start_timestamp": 1792823052.231655,
+          "success": true
+        },
+        {
+          "name": "run_tests",
+          "duration_seconds": 2479.7889119964093,
+          "start_timestamp": 1792823082.2322779,
+          "success": true,
+          "metadata": {
+            "profile": "high_impairment"
+          }
+        }
+      ],
+      "metadata": {
+        "profile": "high_impairment"
+      }
+    }
+  ]
+}
