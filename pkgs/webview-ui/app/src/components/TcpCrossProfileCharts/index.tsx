@@ -214,6 +214,7 @@ const createSmallMultiplesScatterOption = (
     min: 0,
     axisLabel: {
       fontSize: 10,
+      hideOverlap: true,
     },
   }));
 

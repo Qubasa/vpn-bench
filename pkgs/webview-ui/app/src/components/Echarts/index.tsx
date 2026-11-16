@@ -1,5 +1,5 @@
 import * as echarts from "echarts";
-import { createEffect, onCleanup, on } from "solid-js";
+import { createEffect, onCleanup, onMount, on } from "solid-js";
 import { EChartsCoreOption, ResizeOpts } from "echarts";
 import { JSX } from "solid-js";
 
@@ -45,13 +45,18 @@ export const Echart = (props: EChartsProps) => {
     ),
   );
 
-  createEffect(
-    on(
-      () => props.height,
-      (height) => chartInstance?.resize({ height }),
-      { defer: true },
-    ),
-  );
+  const fitContainer = () =>
+    chartInstance?.resize({ width: props.width, height: props.height });
+
+  createEffect(on(() => props.height, fitContainer, { defer: true }));
+
+  onMount(() => {
+    const observer = new ResizeObserver(fitContainer);
+    if (chartRef) {
+      observer.observe(chartRef);
+    }
+    onCleanup(() => observer.disconnect());
+  });
 
   // Cleanup on unmount
   onCleanup(() => {
@@ -61,5 +66,5 @@ export const Echart = (props: EChartsProps) => {
     }
   });
 
-  return <div ref={chartRef}></div>;
+  return <div ref={chartRef} style={{ contain: "inline-size" }}></div>;
 };

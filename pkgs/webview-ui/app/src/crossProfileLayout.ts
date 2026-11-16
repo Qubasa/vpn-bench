@@ -16,7 +16,13 @@ const GAP_PERCENT = 6;
 
 export interface SmallMultiplesLayout {
   height: number;
-  grids: { left: string; width: string; top: number; height: number }[];
+  grids: {
+    left: string;
+    width: string;
+    top: number;
+    height: number;
+    containLabel: boolean;
+  }[];
   titles: { left: string; top: number }[];
   /** Whether the plot starts a row and so carries the y-axis name. */
   rowStarts: boolean[];
@@ -44,6 +50,7 @@ export const smallMultiplesLayout = (count: number): SmallMultiplesLayout => {
       width: `${WIDTH_PERCENT}%`,
       top: cell.top + TITLE_GAP,
       height: PLOT_HEIGHT,
+      containLabel: true,
     })),
     titles: cells.map((cell) => ({
       left: `${cell.left + WIDTH_PERCENT / 2}%`,
