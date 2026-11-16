@@ -18,6 +18,7 @@ import {
   getCrossProfileNixCacheDataForAlias,
 } from "../../benchData";
 import { useAlias } from "../../AliasContext";
+import { sortTcProfiles } from "@/src/index";
 import { Tabs } from "@kobalte/core/tabs";
 import { useSearchParams } from "@solidjs/router";
 import "../VpnBenchDashboard/style.css";
@@ -115,6 +116,19 @@ export const TcpCrossProfileDashboard = (
     videoStreamingData() ||
     nixCacheData();
 
+  const profileNames = () =>
+    sortTcProfiles([
+      ...new Set([
+        ...(data()?.tcp.bar3d.tc_profiles ?? []),
+        ...(data()?.parallel_tcp.bar3d.tc_profiles ?? []),
+        ...(udpData()?.heatmap.tc_profiles ?? []),
+        ...(pingData()?.heatmap.tc_profiles ?? []),
+        ...(qperfData()?.heatmap.tc_profiles ?? []),
+        ...(videoStreamingData()?.heatmap.tc_profiles ?? []),
+        ...(nixCacheData()?.heatmap.tc_profiles ?? []),
+      ]),
+    ]).map((profile) => profile.replace(/_/g, " "));
+
   return (
     <div class="p-6">
       <div class="mb-6">
@@ -123,7 +137,12 @@ export const TcpCrossProfileDashboard = (
         </h1>
         <p class="mt-2 text-gray-600">
           Comparing throughput and metrics across all VPNs and network
-          impairment profiles (baseline, low, medium, high impairment).
+          impairment profiles
+          <Show when={profileNames().length > 0}>
+            {" "}
+            ({profileNames().join(", ")})
+          </Show>
+          .
         </p>
       </div>
 
