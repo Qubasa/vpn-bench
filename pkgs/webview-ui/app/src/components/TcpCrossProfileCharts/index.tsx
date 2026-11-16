@@ -212,6 +212,7 @@ const createSmallMultiplesScatterOption = (
     nameGap: 25,
     gridIndex: i,
     min: 0,
+    splitNumber: 3,
     axisLabel: {
       fontSize: 10,
       hideOverlap: true,

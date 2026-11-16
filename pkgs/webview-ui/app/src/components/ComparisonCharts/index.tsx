@@ -152,7 +152,8 @@ const createBarChartOption = (
     grid: {
       left: "15%",
       right: "10%",
-      bottom: "15%",
+      bottom: "3%",
+      containLabel: true,
       top: "15%",
     },
     xAxis: {
@@ -568,7 +569,8 @@ const createDualBarChartOption = (
     grid: {
       left: "15%",
       right: "10%",
-      bottom: "50px",
+      bottom: "3%",
+      containLabel: true,
       top: "20%",
     },
     xAxis: {

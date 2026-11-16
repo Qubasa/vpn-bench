@@ -5,7 +5,7 @@ export const profileAxisLabel = {
 };
 
 const COLUMNS = 3;
-const HEADER = 95;
+const HEADER = 115;
 const TITLE_GAP = 25;
 const PLOT_HEIGHT = 300;
 const AXIS_SPACE = 60;
