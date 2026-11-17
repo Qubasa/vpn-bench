@@ -13,6 +13,7 @@ from collections.abc import Callable, Mapping, Sequence
 from pathlib import Path
 from typing import Any, Literal, NamedTuple, TypedDict
 
+from vpn_bench.data import VPN
 from vpn_bench.errors import save_bench_report
 
 log = logging.getLogger(__name__)
@@ -2451,6 +2452,11 @@ def aggregate_benchmark_stats(
 # --- Main Generation Function ---
 
 
+def vpn_kinds(vpn_dirs: Sequence[Path]) -> dict[str, dict[str, str]]:
+    """Map each VPN directory, named after its `VPN` member, to the member's kind."""
+    return {d.name: {"kind": VPN[d.name].kind.value} for d in sorted(vpn_dirs)}
+
+
 def generate_comparison_data(bench_dir: Path, clan_dir: Path | None = None) -> None:
     """
     Generate comparison data for all VPNs and benchmark types.
@@ -2491,6 +2497,8 @@ def generate_comparison_data(bench_dir: Path, clan_dir: Path | None = None) -> N
     if not run_aliases:
         log.warning("No benchmark runs found")
         return
+
+    save_bench_report(general_dir, vpn_kinds(vpn_dirs), "vpns.json")
 
     log.info(f"Found VPNs: {[d.name for d in vpn_dirs]}")
     log.info(f"Found run aliases: {run_aliases}")

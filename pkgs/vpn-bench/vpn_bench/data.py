@@ -44,6 +44,14 @@ class TrMachine(TypedDict):
     provider: Provider
 
 
+class VpnKind(Enum):
+    """What a benchmarked configuration puts between two hosts."""
+
+    Mesh = "mesh"
+    PointToPoint = "point_to_point"
+    NoVpn = "no_vpn"
+
+
 class VPN(Enum):
     Internal = "internal"
     Zerotier = "zerotier"
@@ -72,6 +80,27 @@ class VPN(Enum):
             return VPN(VPN._value2member_map_[label])
         msg = f"Unknown VPN: {label}"
         raise ValueError(msg)
+
+    @property
+    def kind(self) -> VpnKind:
+        match self:
+            case VPN.Internal:
+                return VpnKind.NoVpn
+            case VPN.Wireguard:
+                return VpnKind.PointToPoint
+            case (
+                VPN.Zerotier
+                | VPN.Mycelium
+                | VPN.Hyprspace
+                | VPN.Yggdrasil
+                | VPN.VpnCloud
+                | VPN.Easytier
+                | VPN.Nebula
+                | VPN.Tinc
+                | VPN.Tincr
+                | VPN.Headscale
+            ):
+                return VpnKind.Mesh
 
     def get_state_dirs(self) -> list[str]:
         """Get the state directories for this VPN that need to be cleaned up.
