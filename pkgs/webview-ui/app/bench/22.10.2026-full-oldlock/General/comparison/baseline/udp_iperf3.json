@@ -1,8 +1,157 @@
 {
     "status": "success",
     "data": {
+        "Tinc": {
+            "status": "success",
+            "pairs_ok": 3,
+            "pairs_total": 3,
+            "data": {
+                "sender_throughput_mbps": {
+                    "min": 5977.901728573623,
+                    "average": 6063.31294928513,
+                    "max": 6191.189218604266,
+                    "percentiles": {
+                        "p25": 6063.31294928513,
+                        "p50": 6063.31294928513,
+                        "p75": 6063.31294928513
+                    }
+                },
+                "receiver_throughput_mbps": {
+                    "min": 824.629672334452,
+                    "average": 833.655348511049,
+                    "max": 839.9766397920124,
+                    "percentiles": {
+                        "p25": 833.655348511049,
+                        "p50": 833.655348511049,
+                        "p75": 833.655348511049
+                    }
+                },
+                "jitter_ms": {
+                    "min": 0.017473357509005364,
+                    "average": 0.02065167540851255,
+                    "max": 0.025105539125235138,
+                    "percentiles": {
+                        "p25": 0.02065167540851255,
+                        "p50": 0.02065167540851255,
+                        "p75": 0.02065167540851255
+                    }
+                },
+                "lost_percent": {
+                    "min": 86.01312907662023,
+                    "average": 86.18409294389811,
+                    "max": 86.42963867722437,
+                    "percentiles": {
+                        "p25": 86.18409294389811,
+                        "p50": 86.18409294389811,
+                        "p75": 86.18409294389811
+                    }
+                },
+                "total_bytes_sent": {
+                    "min": 22417992300.0,
+                    "average": 22738306030.0,
+                    "max": 23217858840.0,
+                    "percentiles": {
+                        "p25": 22738306030.0,
+                        "p50": 22738306030.0,
+                        "p75": 22738306030.0
+                    }
+                },
+                "total_bytes_received": {
+                    "min": 3113914617.0,
+                    "average": 3140917340.0,
+                    "max": 3158090067.0,
+                    "percentiles": {
+                        "p25": 3140917340.0,
+                        "p50": 3140917340.0,
+                        "p75": 3140917340.0
+                    }
+                },
+                "duration_seconds": {
+                    "min": 30.001152,
+                    "average": 30.001164333333335,
+                    "max": 30.001179,
+                    "percentiles": {
+                        "p25": 30.001164333333335,
+                        "p50": 30.001164333333335,
+                        "p75": 30.001164333333335
+                    }
+                },
+                "blksize_bytes": {
+                    "min": 1353.0,
+                    "average": 1353.0,
+                    "max": 1353.0,
+                    "percentiles": {
+                        "p25": 1353.0,
+                        "p50": 1353.0,
+                        "p75": 1353.0
+                    }
+                },
+                "iperf3_client_cpu_percent": {
+                    "min": 98.85758361338112,
+                    "average": 99.48607787207409,
+                    "max": 99.8147353613645,
+                    "percentiles": {
+                        "p25": 99.48607787207409,
+                        "p50": 99.48607787207409,
+                        "p75": 99.48607787207409
+                    }
+                },
+                "iperf3_server_cpu_percent": {
+                    "min": 18.09707043397099,
+                    "average": 18.893723144354905,
+                    "max": 19.746484144136968,
+                    "percentiles": {
+                        "p25": 18.893723144354905,
+                        "p50": 18.893723144354905,
+                        "p75": 18.893723144354905
+                    }
+                },
+                "client_host_cpu_percent": {
+                    "min": 25.354499979329447,
+                    "average": 25.3937363532933,
+                    "max": 25.44228447737585,
+                    "percentiles": {
+                        "p25": 25.3937363532933,
+                        "p50": 25.3937363532933,
+                        "p75": 25.3937363532933
+                    }
+                },
+                "server_host_cpu_percent": {
+                    "min": 11.617549117549117,
+                    "average": 12.080975878831254,
+                    "max": 12.336798336798337,
+                    "percentiles": {
+                        "p25": 12.080975878831254,
+                        "p50": 12.080975878831254,
+                        "p75": 12.080975878831254
+                    }
+                },
+                "client_vpn_cpu_percent": {
+                    "min": 98.17325565912056,
+                    "average": 98.76463633147398,
+                    "max": 99.07633928571462,
+                    "percentiles": {
+                        "p25": 98.76463633147398,
+                        "p50": 98.76463633147398,
+                        "p75": 98.76463633147398
+                    }
+                },
+                "server_vpn_cpu_percent": {
+                    "min": 61.92955081967213,
+                    "average": 64.43521218146842,
+                    "max": 66.03426873555637,
+                    "percentiles": {
+                        "p25": 64.43521218146842,
+                        "p50": 64.43521218146842,
+                        "p75": 64.43521218146842
+                    }
+                }
+            }
+        },
         "Headscale": {
             "status": "success",
+            "pairs_ok": 3,
+            "pairs_total": 3,
             "data": {
                 "sender_throughput_mbps": {
                     "min": 4507.749038367951,
@@ -148,6 +297,8 @@
         },
         "Hyprspace": {
             "status": "success",
+            "pairs_ok": 1,
+            "pairs_total": 3,
             "data": {
                 "sender_throughput_mbps": {
                     "min": 4224.025001924943,
@@ -291,153 +442,137 @@
                 }
             }
         },
-        "Tinc": {
+        "Internal": {
             "status": "success",
+            "pairs_ok": 3,
+            "pairs_total": 3,
             "data": {
                 "sender_throughput_mbps": {
-                    "min": 5977.901728573623,
-                    "average": 6063.31294928513,
-                    "max": 6191.189218604266,
+                    "min": 814.994041269732,
+                    "average": 829.5951972100671,
+                    "max": 838.638881731813,
                     "percentiles": {
-                        "p25": 6063.31294928513,
-                        "p50": 6063.31294928513,
-                        "p75": 6063.31294928513
+                        "p25": 829.5951972100671,
+                        "p50": 829.5951972100671,
+                        "p75": 829.5951972100671
                     }
                 },
                 "receiver_throughput_mbps": {
-                    "min": 824.629672334452,
-                    "average": 833.655348511049,
-                    "max": 839.9766397920124,
+                    "min": 814.9769003648393,
+                    "average": 829.5995138810797,
+                    "max": 838.631558022205,
                     "percentiles": {
-                        "p25": 833.655348511049,
-                        "p50": 833.655348511049,
-                        "p75": 833.655348511049
+                        "p25": 829.5995138810797,
+                        "p50": 829.5995138810797,
+                        "p75": 829.5995138810797
                     }
                 },
                 "jitter_ms": {
-                    "min": 0.017473357509005364,
-                    "average": 0.02065167540851255,
-                    "max": 0.025105539125235138,
+                    "min": 0.00776888097277439,
+                    "average": 0.02321869858198434,
+                    "max": 0.04294514281956254,
                     "percentiles": {
-                        "p25": 0.02065167540851255,
-                        "p50": 0.02065167540851255,
-                        "p75": 0.02065167540851255
+                        "p25": 0.02321869858198434,
+                        "p50": 0.02321869858198434,
+                        "p75": 0.02321869858198434
                     }
                 },
                 "lost_percent": {
-                    "min": 86.01312907662023,
-                    "average": 86.18409294389811,
-                    "max": 86.42963867722437,
+                    "min": 0,
+                    "average": 0,
+                    "max": 0,
                     "percentiles": {
-                        "p25": 86.18409294389811,
-                        "p50": 86.18409294389811,
-                        "p75": 86.18409294389811
+                        "p25": 0,
+                        "p50": 0,
+                        "p75": 0
                     }
                 },
                 "total_bytes_sent": {
-                    "min": 22417992300.0,
-                    "average": 22738306030.0,
-                    "max": 23217858840.0,
+                    "min": 3056366000.0,
+                    "average": 3111129360.0,
+                    "max": 3145041520.0,
                     "percentiles": {
-                        "p25": 22738306030.0,
-                        "p50": 22738306030.0,
-                        "p75": 22738306030.0
+                        "p25": 3111129360.0,
+                        "p50": 3111129360.0,
+                        "p75": 3111129360.0
                     }
                 },
                 "total_bytes_received": {
-                    "min": 3113914617.0,
-                    "average": 3140917340.0,
-                    "max": 3158090067.0,
+                    "min": 3056366000.0,
+                    "average": 3111129360.0,
+                    "max": 3145041520.0,
                     "percentiles": {
-                        "p25": 3140917340.0,
-                        "p50": 3140917340.0,
-                        "p75": 3140917340.0
+                        "p25": 3111129360.0,
+                        "p50": 3111129360.0,
+                        "p75": 3111129360.0
                     }
                 },
                 "duration_seconds": {
-                    "min": 30.001152,
-                    "average": 30.001164333333335,
-                    "max": 30.001179,
+                    "min": 30.001358,
+                    "average": 30.001420666666668,
+                    "max": 30.001514,
                     "percentiles": {
-                        "p25": 30.001164333333335,
-                        "p50": 30.001164333333335,
-                        "p75": 30.001164333333335
+                        "p25": 30.001420666666668,
+                        "p50": 30.001420666666668,
+                        "p75": 30.001420666666668
                     }
                 },
                 "blksize_bytes": {
-                    "min": 1353.0,
-                    "average": 1353.0,
-                    "max": 1353.0,
+                    "min": 1448.0,
+                    "average": 1448.0,
+                    "max": 1448.0,
                     "percentiles": {
-                        "p25": 1353.0,
-                        "p50": 1353.0,
-                        "p75": 1353.0
+                        "p25": 1448.0,
+                        "p50": 1448.0,
+                        "p75": 1448.0
                     }
                 },
                 "iperf3_client_cpu_percent": {
-                    "min": 98.85758361338112,
-                    "average": 99.48607787207409,
-                    "max": 99.8147353613645,
+                    "min": 24.53272567214039,
+                    "average": 34.41560133759949,
+                    "max": 47.47891899968713,
                     "percentiles": {
-                        "p25": 99.48607787207409,
-                        "p50": 99.48607787207409,
-                        "p75": 99.48607787207409
+                        "p25": 34.41560133759949,
+                        "p50": 34.41560133759949,
+                        "p75": 34.41560133759949
                     }
                 },
                 "iperf3_server_cpu_percent": {
-                    "min": 18.09707043397099,
-                    "average": 18.893723144354905,
-                    "max": 19.746484144136968,
+                    "min": 23.7452345590079,
+                    "average": 25.832190382669484,
+                    "max": 26.995726888577458,
                     "percentiles": {
-                        "p25": 18.893723144354905,
-                        "p50": 18.893723144354905,
-                        "p75": 18.893723144354905
+                        "p25": 25.832190382669484,
+                        "p50": 25.832190382669484,
+                        "p75": 25.832190382669484
                     }
                 },
                 "client_host_cpu_percent": {
-                    "min": 25.354499979329447,
-                    "average": 25.3937363532933,
-                    "max": 25.44228447737585,
+                    "min": 4.061379367859228,
+                    "average": 5.43011498170725,
+                    "max": 7.296155294314521,
                     "percentiles": {
-                        "p25": 25.3937363532933,
-                        "p50": 25.3937363532933,
-                        "p75": 25.3937363532933
+                        "p25": 5.43011498170725,
+                        "p50": 5.43011498170725,
+                        "p75": 5.43011498170725
                     }
                 },
                 "server_host_cpu_percent": {
-                    "min": 11.617549117549117,
-                    "average": 12.080975878831254,
-                    "max": 12.336798336798337,
+                    "min": 7.261247040252565,
+                    "average": 7.7949361923995255,
+                    "max": 8.158517841565239,
                     "percentiles": {
-                        "p25": 12.080975878831254,
-                        "p50": 12.080975878831254,
-                        "p75": 12.080975878831254
-                    }
-                },
-                "client_vpn_cpu_percent": {
-                    "min": 98.17325565912056,
-                    "average": 98.76463633147398,
-                    "max": 99.07633928571462,
-                    "percentiles": {
-                        "p25": 98.76463633147398,
-                        "p50": 98.76463633147398,
-                        "p75": 98.76463633147398
-                    }
-                },
-                "server_vpn_cpu_percent": {
-                    "min": 61.92955081967213,
-                    "average": 64.43521218146842,
-                    "max": 66.03426873555637,
-                    "percentiles": {
-                        "p25": 64.43521218146842,
-                        "p50": 64.43521218146842,
-                        "p75": 64.43521218146842
+                        "p25": 7.7949361923995255,
+                        "p50": 7.7949361923995255,
+                        "p75": 7.7949361923995255
                     }
                 }
             }
         },
         "Easytier": {
             "status": "success",
+            "pairs_ok": 3,
+            "pairs_total": 3,
             "data": {
                 "sender_throughput_mbps": {
                     "min": 5543.5777816865175,
@@ -581,133 +716,10 @@
                 }
             }
         },
-        "Internal": {
-            "status": "success",
-            "data": {
-                "sender_throughput_mbps": {
-                    "min": 814.994041269732,
-                    "average": 829.5951972100671,
-                    "max": 838.638881731813,
-                    "percentiles": {
-                        "p25": 829.5951972100671,
-                        "p50": 829.5951972100671,
-                        "p75": 829.5951972100671
-                    }
-                },
-                "receiver_throughput_mbps": {
-                    "min": 814.9769003648393,
-                    "average": 829.5995138810797,
-                    "max": 838.631558022205,
-                    "percentiles": {
-                        "p25": 829.5995138810797,
-                        "p50": 829.5995138810797,
-                        "p75": 829.5995138810797
-                    }
-                },
-                "jitter_ms": {
-                    "min": 0.00776888097277439,
-                    "average": 0.02321869858198434,
-                    "max": 0.04294514281956254,
-                    "percentiles": {
-                        "p25": 0.02321869858198434,
-                        "p50": 0.02321869858198434,
-                        "p75": 0.02321869858198434
-                    }
-                },
-                "lost_percent": {
-                    "min": 0,
-                    "average": 0,
-                    "max": 0,
-                    "percentiles": {
-                        "p25": 0,
-                        "p50": 0,
-                        "p75": 0
-                    }
-                },
-                "total_bytes_sent": {
-                    "min": 3056366000.0,
-                    "average": 3111129360.0,
-                    "max": 3145041520.0,
-                    "percentiles": {
-                        "p25": 3111129360.0,
-                        "p50": 3111129360.0,
-                        "p75": 3111129360.0
-                    }
-                },
-                "total_bytes_received": {
-                    "min": 3056366000.0,
-                    "average": 3111129360.0,
-                    "max": 3145041520.0,
-                    "percentiles": {
-                        "p25": 3111129360.0,
-                        "p50": 3111129360.0,
-                        "p75": 3111129360.0
-                    }
-                },
-                "duration_seconds": {
-                    "min": 30.001358,
-                    "average": 30.001420666666668,
-                    "max": 30.001514,
-                    "percentiles": {
-                        "p25": 30.001420666666668,
-                        "p50": 30.001420666666668,
-                        "p75": 30.001420666666668
-                    }
-                },
-                "blksize_bytes": {
-                    "min": 1448.0,
-                    "average": 1448.0,
-                    "max": 1448.0,
-                    "percentiles": {
-                        "p25": 1448.0,
-                        "p50": 1448.0,
-                        "p75": 1448.0
-                    }
-                },
-                "iperf3_client_cpu_percent": {
-                    "min": 24.53272567214039,
-                    "average": 34.41560133759949,
-                    "max": 47.47891899968713,
-                    "percentiles": {
-                        "p25": 34.41560133759949,
-                        "p50": 34.41560133759949,
-                        "p75": 34.41560133759949
-                    }
-                },
-                "iperf3_server_cpu_percent": {
-                    "min": 23.7452345590079,
-                    "average": 25.832190382669484,
-                    "max": 26.995726888577458,
-                    "percentiles": {
-                        "p25": 25.832190382669484,
-                        "p50": 25.832190382669484,
-                        "p75": 25.832190382669484
-                    }
-                },
-                "client_host_cpu_percent": {
-                    "min": 4.061379367859228,
-                    "average": 5.43011498170725,
-                    "max": 7.296155294314521,
-                    "percentiles": {
-                        "p25": 5.43011498170725,
-                        "p50": 5.43011498170725,
-                        "p75": 5.43011498170725
-                    }
-                },
-                "server_host_cpu_percent": {
-                    "min": 7.261247040252565,
-                    "average": 7.7949361923995255,
-                    "max": 8.158517841565239,
-                    "percentiles": {
-                        "p25": 7.7949361923995255,
-                        "p50": 7.7949361923995255,
-                        "p75": 7.7949361923995255
-                    }
-                }
-            }
-        },
         "Wireguard": {
             "status": "success",
+            "pairs_ok": 3,
+            "pairs_total": 3,
             "data": {
                 "sender_throughput_mbps": {
                     "min": 826.0957898210401,
@@ -831,8 +843,44 @@
                 }
             }
         },
+        "Mycelium": {
+            "status": "error",
+            "pairs_ok": 0,
+            "pairs_total": 3,
+            "error_type": "CmdOut",
+            "error": {
+                "stdout": "{\n\t\"start\":\t{\n\t\t\"connected\":\t[{\n\t\t\t\t\"socket\":\t5,\n\t\t\t\t\"local_host\":\t\"5c7:64cd:cb2f:94ed:b384:a3df:9598:34dd\",\n\t\t\t\t\"local_port\":\t55837,\n\t\t\t\t\"remote_host\":\t\"5dc:123a:c708:d442:5b3e:2bd5:42ef:225\",\n\t\t\t\t\"remote_port\":\t5201\n\t\t\t}],\n\t\t\"version\":\t\"iperf 3.20\",\n\t\t\"system_info\":\t\"Linux lom 6.12.57 #1-NixOS SMP PREEMPT_DYNAMIC Sun Nov  2 13:15:23 UTC 2025 x86_64\",\n\t\t\"timestamp\":\t{\n\t\t\t\"time\":\t\"Sat, 24 Oct 2026 05:33:54 GMT\",\n\t\t\t\"timesecs\":\t1792820034,\n\t\t\t\"timemillisecs\":\t1792820034507\n\t\t},\n\t\t\"connecting_to\":\t{\n\t\t\t\"host\":\t\"vpn.luna\",\n\t\t\t\"port\":\t5201\n\t\t},\n\t\t\"cookie\":\t\"xu7s7qa757myyokxfakzuscahfju7elsfvul\",\n\t\t\"target_bitrate\":\t0,\n\t\t\"fq_rate\":\t0,\n\t\t\"sock_bufsize\":\t0,\n\t\t\"sndbuf_actual\":\t212992,\n\t\t\"rcvbuf_actual\":\t212992,\n\t\t\"test_start\":\t{\n\t\t\t\"protocol\":\t\"UDP\",\n\t\t\t\"num_streams\":\t1,\n\t\t\t\"blksize\":\t1328,\n\t\t\t\"omit\":\t0,\n\t\t\t\"duration\":\t30,\n\t\t\t\"bytes\":\t0,\n\t\t\t\"blocks\":\t0,\n\t\t\t\"reverse\":\t0,\n\t\t\t\"tos\":\t0,\n\t\t\t\"target_bitrate\":\t0,\n\t\t\t\"bidir\":\t0,\n\t\t\t\"fqrate\":\t0,\n\t\t\t\"interval\":\t1\n\t\t}\n\t},\n\t\"intervals\":\t[{\n\t\t\t\"streams\":\t[{\n\t\t\t\t\t\"socket\":\t5,\n\t\t\t\t\t\"start\":\t0,\n\t\t\t\t\t\"end\":\t1.000595,\n\t\t\t\t\t\"seconds\":\t1.0005949735641479,\n\t\t\t\t\t\"bytes\":\t585929536,\n\t\t\t\t\t\"bits_per_second\":\t4684649045.6605215,\n\t\t\t\t\t\"packets\":\t441214,\n\t\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\t\"sender\":\ttrue\n\t\t\t\t}],\n\t\t\t\"sum\":\t{\n\t\t\t\t\"start\":\t0,\n\t\t\t\t\"end\":\t1.000595,\n\t\t\t\t\"seconds\":\t1.0005949735641479,\n\t\t\t\t\"bytes\":\t585929536,\n\t\t\t\t\"bits_per_second\":\t4684649045.6605215,\n\t\t\t\t\"packets\":\t441214,\n\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\"sender\":\ttrue\n\t\t\t}\n\t\t}, {\n\t\t\t\"streams\":\t[{\n\t\t\t\t\t\"socket\":\t5,\n\t\t\t\t\t\"start\":\t1.000595,\n\t\t\t\t\t\"end\":\t2.000568,\n\t\t\t\t\t\"seconds\":\t0.99997299909591675,\n\t\t\t\t\t\"bytes\":\t575484816,\n\t\t\t\t\t\"bits_per_second\":\t4604002840.2390881,\n\t\t\t\t\t\"packets\":\t433347,\n\t\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\t\"sender\":\ttrue\n\t\t\t\t}],\n\t\t\t\"sum\":\t{\n\t\t\t\t\"start\":\t1.000595,\n\t\t\t\t\"end\":\t2.000568,\n\t\t\t\t\"seconds\":\t0.99997299909591675,\n\t\t\t\t\"bytes\":\t575484816,\n\t\t\t\t\"bits_per_second\":\t4604002840.2390881,\n\t\t\t\t\"packets\":\t433347,\n\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\"sender\":\ttrue\n\t\t\t}\n\t\t}, {\n\t\t\t\"streams\":\t[{\n\t\t\t\t\t\"socket\":\t5,\n\t\t\t\t\t\"start\":\t2.000568,\n\t\t\t\t\t\"end\":\t3.000564,\n\t\t\t\t\t\"seconds\":\t0.9999960064888,\n\t\t\t\t\t\"bytes\":\t597727488,\n\t\t\t\t\t\"bits_per_second\":\t4781839000.3276043,\n\t\t\t\t\t\"packets\":\t450096,\n\t\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\t\"sender\":\ttrue\n\t\t\t\t}],\n\t\t\t\"sum\":\t{\n\t\t\t\t\"start\":\t2.000568,\n\t\t\t\t\"end\":\t3.000564,\n\t\t\t\t\"seconds\":\t0.9999960064888,\n\t\t\t\t\"bytes\":\t597727488,\n\t\t\t\t\"bits_per_second\":\t4781839000.3276043,\n\t\t\t\t\"packets\":\t450096,\n\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\"sender\":\ttrue\n\t\t\t}\n\t\t}, {\n\t\t\t\"streams\":\t[{\n\t\t\t\t\t\"socket\":\t5,\n\t\t\t\t\t\"start\":\t3.000564,\n\t\t\t\t\t\"end\":\t4.000563,\n\t\t\t\t\t\"seconds\":\t0.99999898672103882,\n\t\t\t\t\t\"bytes\":\t570982896,\n\t\t\t\t\t\"bits_per_second\":\t4567867796.5243359,\n\t\t\t\t\t\"packets\":\t429957,\n\t\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\t\"sender\":\ttrue\n\t\t\t\t}],\n\t\t\t\"sum\":\t{\n\t\t\t\t\"start\":\t3.000564,\n\t\t\t\t\"end\":\t4.000563,\n\t\t\t\t\"seconds\":\t0.99999898672103882,\n\t\t\t\t\"bytes\":\t570982896,\n\t\t\t\t\"bits_per_second\":\t4567867796.5243359,\n\t\t\t\t\"packets\":\t429957,\n\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\"sender\":\ttrue\n\t\t\t}\n\t\t}, {\n\t\t\t\"streams\":\t[{\n\t\t\t\t\t\"socket\":\t5,\n\t\t\t\t\t\"start\":\t4.000563,\n\t\t\t\t\t\"end\":\t5.000565,\n\t\t\t\t\t\"seconds\":\t1.0000020265579224,\n\t\t\t\t\t\"bytes\":\t565384048,\n\t\t\t\t\t\"bits_per_second\":\t4523063217.7504025,\n\t\t\t\t\t\"packets\":\t425742,\n\t\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\t\"sender\":\ttrue\n\t\t\t\t}],\n\t\t\t\"sum\":\t{\n\t\t\t\t\"start\":\t4.000563,\n\t\t\t\t\"end\":\t5.000565,\n\t\t\t\t\"seconds\":\t1.0000020265579224,\n\t\t\t\t\"bytes\":\t565384048,\n\t\t\t\t\"bits_per_second\":\t4523063217.7504025,\n\t\t\t\t\"packets\":\t425742,\n\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\"sender\":\ttrue\n\t\t\t}\n\t\t}, {\n\t\t\t\"streams\":\t[{\n\t\t\t\t\t\"socket\":\t5,\n\t\t\t\t\t\"start\":\t5.000565,\n\t\t\t\t\t\"end\":\t6.000564,\n\t\t\t\t\t\"seconds\":\t0.99999898672103882,\n\t\t\t\t\t\"bytes\":\t572850064,\n\t\t\t\t\t\"bits_per_second\":\t4582805155.6600475,\n\t\t\t\t\t\"packets\":\t431364,\n\t\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\t\"sender\":\ttrue\n\t\t\t\t}],\n\t\t\t\"sum\":\t{\n\t\t\t\t\"start\":\t5.000565,\n\t\t\t\t\"end\":\t6.000564,\n\t\t\t\t\"seconds\":\t0.99999898672103882,\n\t\t\t\t\"bytes\":\t572850064,\n\t\t\t\t\"bits_per_second\":\t4582805155.6600475,\n\t\t\t\t\"packets\":\t431364,\n\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\"sender\":\ttrue\n\t\t\t}\n\t\t}, {\n\t\t\t\"streams\":\t[{\n\t\t\t\t\t\"socket\":\t5,\n\t\t\t\t\t\"start\":\t6.000564,\n\t\t\t\t\t\"end\":\t7.000561,\n\t\t\t\t\t\"seconds\":\t0.99999701976776123,\n\t\t\t\t\t\"bytes\":\t561547456,\n\t\t\t\t\t\"bits_per_second\":\t4492393036.3745565,\n\t\t\t\t\t\"packets\":\t422852,\n\t\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\t\"sender\":\ttrue\n\t\t\t\t}],\n\t\t\t\"sum\":\t{\n\t\t\t\t\"start\":\t6.000564,\n\t\t\t\t\"end\":\t7.000561,\n\t\t\t\t\"seconds\":\t0.99999701976776123,\n\t\t\t\t\"bytes\":\t561547456,\n\t\t\t\t\"bits_per_second\":\t4492393036.3745565,\n\t\t\t\t\"packets\":\t422852,\n\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\"sender\":\ttrue\n\t\t\t}\n\t\t}, {\n\t\t\t\"streams\":\t[{\n\t\t\t\t\t\"socket\":\t5,\n\t\t\t\t\t\"start\":\t7.000561,\n\t\t\t\t\t\"end\":\t8.000563,\n\t\t\t\t\t\"seconds\":\t1.0000020265579224,\n\t\t\t\t\t\"bytes\":\t576389184,\n\t\t\t\t\t\"bits_per_second\":\t4611104127.3304,\n\t\t\t\t\t\"packets\":\t434028,\n\t\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\t\"sender\":\ttrue\n\t\t\t\t}],\n\t\t\t\"sum\":\t{\n\t\t\t\t\"start\":\t7.000561,\n\t\t\t\t\"end\":\t8.000563,\n\t\t\t\t\"seconds\":\t1.0000020265579224,\n\t\t\t\t\"bytes\":\t576389184,\n\t\t\t\t\"bits_per_second\":\t4611104127.3304,\n\t\t\t\t\"packets\":\t434028,\n\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\"sender\":\ttrue\n\t\t\t}\n\t\t}, {\n\t\t\t\"streams\":\t[{\n\t\t\t\t\t\"socket\":\t5,\n\t\t\t\t\t\"start\":\t8.000563,\n\t\t\t\t\t\"end\":\t9.000574,\n\t\t\t\t\t\"seconds\":\t1.0000109672546387,\n\t\t\t\t\t\"bytes\":\t589535056,\n\t\t\t\t\t\"bits_per_second\":\t4716228723.91865,\n\t\t\t\t\t\"packets\":\t443927,\n\t\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\t\"sender\":\ttrue\n\t\t\t\t}],\n\t\t\t\"sum\":\t{\n\t\t\t\t\"start\":\t8.000563,\n\t\t\t\t\"end\":\t9.000574,\n\t\t\t\t\"seconds\":\t1.0000109672546387,\n\t\t\t\t\"bytes\":\t589535056,\n\t\t\t\t\"bits_per_second\":\t4716228723.91865,\n\t\t\t\t\"packets\":\t443927,\n\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\"sender\":\ttrue\n\t\t\t}\n\t\t}, {\n\t\t\t\"streams\":\t[{\n\t\t\t\t\t\"socket\":\t5,\n\t\t\t\t\t\"start\":\t9.000574,\n\t\t\t\t\t\"end\":\t10.000562,\n\t\t\t\t\t\"seconds\":\t0.9999880194664,\n\t\t\t\t\t\"bytes\":\t589645280,\n\t\t\t\t\t\"bits_per_second\":\t4717218754.79779,\n\t\t\t\t\t\"packets\":\t444011,\n\t\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\t\"sender\":\ttrue\n\t\t\t\t}],\n\t\t\t\"sum\":\t{\n\t\t\t\t\"start\":\t9.000574,\n\t\t\t\t\"end\":\t10.000562,\n\t\t\t\t\"seconds\":\t0.9999880194664,\n\t\t\t\t\"bytes\":\t589645280,\n\t\t\t\t\"bits_per_second\":\t4717218754.79779,\n\t\t\t\t\"packets\":\t444011,\n\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\"sender\":\ttrue\n\t\t\t}\n\t\t}, {\n\t\t\t\"streams\":\t[{\n\t\t\t\t\t\"socket\":\t5,\n\t\t\t\t\t\"start\":\t10.000562,\n\t\t\t\t\t\"end\":\t11.000562,\n\t\t\t\t\t\"seconds\":\t1,\n\t\t\t\t\t\"bytes\":\t610696736,\n\t\t\t\t\t\"bits_per_second\":\t4885573888,\n\t\t\t\t\t\"packets\":\t459863,\n\t\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\t\"sender\":\ttrue\n\t\t\t\t}],\n\t\t\t\"sum\":\t{\n\t\t\t\t\"start\":\t10.000562,\n\t\t\t\t\"end\":\t11.000562,\n\t\t\t\t\"seconds\":\t1,\n\t\t\t\t\"bytes\":\t610696736,\n\t\t\t\t\"bits_per_second\":\t4885573888,\n\t\t\t\t\"packets\":\t459863,\n\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\"sender\":\ttrue\n\t\t\t}\n\t\t}, {\n\t\t\t\"streams\":\t[{\n\t\t\t\t\t\"socket\":\t5,\n\t\t\t\t\t\"start\":\t11.000562,\n\t\t\t\t\t\"end\":\t12.000562,\n\t\t\t\t\t\"seconds\":\t1,\n\t\t\t\t\t\"bytes\":\t608947760,\n\t\t\t\t\t\"bits_per_second\":\t4871582080,\n\t\t\t\t\t\"packets\":\t458545,\n\t\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\t\"sender\":\ttrue\n\t\t\t\t}],\n\t\t\t\"sum\":\t{\n\t\t\t\t\"start\":\t11.000562,\n\t\t\t\t\"end\":\t12.000562,\n\t\t\t\t\"seconds\":\t1,\n\t\t\t\t\"bytes\":\t608947760,\n\t\t\t\t\"bits_per_second\":\t4871582080,\n\t\t\t\t\"packets\":\t458545,\n\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\"sender\":\ttrue\n\t\t\t}\n\t\t}, {\n\t\t\t\"streams\":\t[{\n\t\t\t\t\t\"socket\":\t5,\n\t\t\t\t\t\"start\":\t12.000562,\n\t\t\t\t\t\"end\":\t13.000561,\n\t\t\t\t\t\"seconds\":\t0.99999898672103882,\n\t\t\t\t\t\"bytes\":\t603621152,\n\t\t\t\t\t\"bits_per_second\":\t4828974109.09787,\n\t\t\t\t\t\"packets\":\t454535,\n\t\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\t\"sender\":\ttrue\n\t\t\t\t}],\n\t\t\t\"sum\":\t{\n\t\t\t\t\"start\":\t12.000562,\n\t\t\t\t\"end\":\t13.000561,\n\t\t\t\t\"seconds\":\t0.99999898672103882,\n\t\t\t\t\"bytes\":\t603621152,\n\t\t\t\t\"bits_per_second\":\t4828974109.09787,\n\t\t\t\t\"packets\":\t454535,\n\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\"sender\":\ttrue\n\t\t\t}\n\t\t}, {\n\t\t\t\"streams\":\t[{\n\t\t\t\t\t\"socket\":\t5,\n\t\t\t\t\t\"start\":\t13.000561,\n\t\t\t\t\t\"end\":\t14.000562,\n\t\t\t\t\t\"seconds\":\t1.0000009536743164,\n\t\t\t\t\t\"bytes\":\t605763216,\n\t\t\t\t\t\"bits_per_second\":\t4846101106.39784,\n\t\t\t\t\t\"packets\":\t456147,\n\t\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\t\"sender\":\ttrue\n\t\t\t\t}],\n\t\t\t\"sum\":\t{\n\t\t\t\t\"start\":\t13.000561,\n\t\t\t\t\"end\":\t14.000562,\n\t\t\t\t\"seconds\":\t1.0000009536743164,\n\t\t\t\t\"bytes\":\t605763216,\n\t\t\t\t\"bits_per_second\":\t4846101106.39784,\n\t\t\t\t\"packets\":\t456147,\n\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\"sender\":\ttrue\n\t\t\t}\n\t\t}, {\n\t\t\t\"streams\":\t[{\n\t\t\t\t\t\"socket\":\t5,\n\t\t\t\t\t\"start\":\t14.000562,\n\t\t\t\t\t\"end\":\t15.000601,\n\t\t\t\t\t\"seconds\":\t1.0000389814376831,\n\t\t\t\t\t\"bytes\":\t601008976,\n\t\t\t\t\t\"bits_per_second\":\t4807884389.7542734,\n\t\t\t\t\t\"packets\":\t452567,\n\t\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\t\"sender\":\ttrue\n\t\t\t\t}],\n\t\t\t\"sum\":\t{\n\t\t\t\t\"start\":\t14.000562,\n\t\t\t\t\"end\":\t15.000601,\n\t\t\t\t\"seconds\":\t1.0000389814376831,\n\t\t\t\t\"bytes\":\t601008976,\n\t\t\t\t\"bits_per_second\":\t4807884389.7542734,\n\t\t\t\t\"packets\":\t452567,\n\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\"sender\":\ttrue\n\t\t\t}\n\t\t}, {\n\t\t\t\"streams\":\t[{\n\t\t\t\t\t\"socket\":\t5,\n\t\t\t\t\t\"start\":\t15.000601,\n\t\t\t\t\t\"end\":\t16.000564,\n\t\t\t\t\t\"seconds\":\t0.99996298551559448,\n\t\t\t\t\t\"bytes\":\t602079344,\n\t\t\t\t\t\"bits_per_second\":\t4816813043.8512955,\n\t\t\t\t\t\"packets\":\t453374,\n\t\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\t\"sender\":\ttrue\n\t\t\t\t}],\n\t\t\t\"sum\":\t{\n\t\t\t\t\"start\":\t15.000601,\n\t\t\t\t\"end\":\t16.000564,\n\t\t\t\t\"seconds\":\t0.99996298551559448,\n\t\t\t\t\"bytes\":\t602079344,\n\t\t\t\t\"bits_per_second\":\t4816813043.8512955,\n\t\t\t\t\"packets\":\t453374,\n\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\"sender\":\ttrue\n\t\t\t}\n\t\t}, {\n\t\t\t\"streams\":\t[{\n\t\t\t\t\t\"socket\":\t5,\n\t\t\t\t\t\"start\":\t16.000564,\n\t\t\t\t\t\"end\":\t17.000588,\n\t\t\t\t\t\"seconds\":\t1.0000239610672,\n\t\t\t\t\t\"bytes\":\t557477136,\n\t\t\t\t\t\"bits_per_second\":\t4459710228.5835218,\n\t\t\t\t\t\"packets\":\t419788,\n\t\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\t\"sender\":\ttrue\n\t\t\t\t}],\n\t\t\t\"sum\":\t{\n\t\t\t\t\"start\":\t16.000564,\n\t\t\t\t\"end\":\t17.000588,\n\t\t\t\t\"seconds\":\t1.0000239610672,\n\t\t\t\t\"bytes\":\t557477136,\n\t\t\t\t\"bits_per_second\":\t4459710228.5835218,\n\t\t\t\t\"packets\":\t419788,\n\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\"sender\":\ttrue\n\t\t\t}\n\t\t}, {\n\t\t\t\"streams\":\t[{\n\t\t\t\t\t\"socket\":\t5,\n\t\t\t\t\t\"start\":\t17.000588,\n\t\t\t\t\t\"end\":\t18.000563,\n\t\t\t\t\t\"seconds\":\t0.999975025653839,\n\t\t\t\t\t\"bytes\":\t556764000,\n\t\t\t\t\t\"bits_per_second\":\t4454223241.3131065,\n\t\t\t\t\t\"packets\":\t419251,\n\t\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\t\"sender\":\ttrue\n\t\t\t\t}],\n\t\t\t\"sum\":\t{\n\t\t\t\t\"start\":\t17.000588,\n\t\t\t\t\"end\":\t18.000563,\n\t\t\t\t\"seconds\":\t0.999975025653839,\n\t\t\t\t\"bytes\":\t556764000,\n\t\t\t\t\"bits_per_second\":\t4454223241.3131065,\n\t\t\t\t\"packets\":\t419251,\n\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\"sender\":\ttrue\n\t\t\t}\n\t\t}, {\n\t\t\t\"streams\":\t[{\n\t\t\t\t\t\"socket\":\t5,\n\t\t\t\t\t\"start\":\t18.000563,\n\t\t\t\t\t\"end\":\t19.00058,\n\t\t\t\t\t\"seconds\":\t1.0000170469284058,\n\t\t\t\t\t\"bytes\":\t578658736,\n\t\t\t\t\t\"bits_per_second\":\t4629190974.51288,\n\t\t\t\t\t\"packets\":\t435737,\n\t\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\t\"sender\":\ttrue\n\t\t\t\t}],\n\t\t\t\"sum\":\t{\n\t\t\t\t\"start\":\t18.000563,\n\t\t\t\t\"end\":\t19.00058,\n\t\t\t\t\"seconds\":\t1.0000170469284058,\n\t\t\t\t\"bytes\":\t578658736,\n\t\t\t\t\"bits_per_second\":\t4629190974.51288,\n\t\t\t\t\"packets\":\t435737,\n\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\"sender\":\ttrue\n\t\t\t}\n\t\t}, {\n\t\t\t\"streams\":\t[{\n\t\t\t\t\t\"socket\":\t5,\n\t\t\t\t\t\"start\":\t19.00058,\n\t\t\t\t\t\"end\":\t20.000561,\n\t\t\t\t\t\"seconds\":\t0.99998098611831665,\n\t\t\t\t\t\"bytes\":\t611711328,\n\t\t\t\t\t\"bits_per_second\":\t4893783673.8237581,\n\t\t\t\t\t\"packets\":\t460627,\n\t\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\t\"sender\":\ttrue\n\t\t\t\t}],\n\t\t\t\"sum\":\t{\n\t\t\t\t\"start\":\t19.00058,\n\t\t\t\t\"end\":\t20.000561,\n\t\t\t\t\"seconds\":\t0.99998098611831665,\n\t\t\t\t\"bytes\":\t611711328,\n\t\t\t\t\"bits_per_second\":\t4893783673.8237581,\n\t\t\t\t\"packets\":\t460627,\n\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\"sender\":\ttrue\n\t\t\t}\n\t\t}, {\n\t\t\t\"streams\":\t[{\n\t\t\t\t\t\"socket\":\t5,\n\t\t\t\t\t\"start\":\t20.000561,\n\t\t\t\t\t\"end\":\t21.000562,\n\t\t\t\t\t\"seconds\":\t1.0000009536743164,\n\t\t\t\t\t\"bytes\":\t559321728,\n\t\t\t\t\t\"bits_per_second\":\t4474569556.7179365,\n\t\t\t\t\t\"packets\":\t421176,\n\t\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\t\"sender\":\ttrue\n\t\t\t\t}],\n\t\t\t\"sum\":\t{\n\t\t\t\t\"start\":\t20.000561,\n\t\t\t\t\"end\":\t21.000562,\n\t\t\t\t\"seconds\":\t1.0000009536743164,\n\t\t\t\t\"bytes\":\t559321728,\n\t\t\t\t\"bits_per_second\":\t4474569556.7179365,\n\t\t\t\t\"packets\":\t421176,\n\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\"sender\":\ttrue\n\t\t\t}\n\t\t}, {\n\t\t\t\"streams\":\t[{\n\t\t\t\t\t\"socket\":\t5,\n\t\t\t\t\t\"start\":\t21.000562,\n\t\t\t\t\t\"end\":\t22.000574,\n\t\t\t\t\t\"seconds\":\t1.0000120401382446,\n\t\t\t\t\t\"bytes\":\t566580576,\n\t\t\t\t\t\"bits_per_second\":\t4532590034.9893723,\n\t\t\t\t\t\"packets\":\t426643,\n\t\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\t\"sender\":\ttrue\n\t\t\t\t}],\n\t\t\t\"sum\":\t{\n\t\t\t\t\"start\":\t21.000562,\n\t\t\t\t\"end\":\t22.000574,\n\t\t\t\t\"seconds\":\t1.0000120401382446,\n\t\t\t\t\"bytes\":\t566580576,\n\t\t\t\t\"bits_per_second\":\t4532590034.9893723,\n\t\t\t\t\"packets\":\t426643,\n\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\"sender\":\ttrue\n\t\t\t}\n\t\t}, {\n\t\t\t\"streams\":\t[{\n\t\t\t\t\t\"socket\":\t5,\n\t\t\t\t\t\"start\":\t22.000574,\n\t\t\t\t\t\"end\":\t23.00056,\n\t\t\t\t\t\"seconds\":\t0.99998599290847778,\n\t\t\t\t\t\"bytes\":\t580209840,\n\t\t\t\t\t\"bits_per_second\":\t4641743737.32935,\n\t\t\t\t\t\"packets\":\t436905,\n\t\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\t\"sender\":\ttrue\n\t\t\t\t}],\n\t\t\t\"sum\":\t{\n\t\t\t\t\"start\":\t22.000574,\n\t\t\t\t\"end\":\t23.00056,\n\t\t\t\t\"seconds\":\t0.99998599290847778,\n\t\t\t\t\"bytes\":\t580209840,\n\t\t\t\t\"bits_per_second\":\t4641743737.32935,\n\t\t\t\t\"packets\":\t436905,\n\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\"sender\":\ttrue\n\t\t\t}\n\t\t}, {\n\t\t\t\"streams\":\t[{\n\t\t\t\t\t\"socket\":\t5,\n\t\t\t\t\t\"start\":\t23.00056,\n\t\t\t\t\t\"end\":\t24.00056,\n\t\t\t\t\t\"seconds\":\t1,\n\t\t\t\t\t\"bytes\":\t614464272,\n\t\t\t\t\t\"bits_per_second\":\t4915714176,\n\t\t\t\t\t\"packets\":\t462700,\n\t\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\t\"sender\":\ttrue\n\t\t\t\t}],\n\t\t\t\"sum\":\t{\n\t\t\t\t\"start\":\t23.00056,\n\t\t\t\t\"end\":\t24.00056,\n\t\t\t\t\"seconds\":\t1,\n\t\t\t\t\"bytes\":\t614464272,\n\t\t\t\t\"bits_per_second\":\t4915714176,\n\t\t\t\t\"packets\":\t462700,\n\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\"sender\":\ttrue\n\t\t\t}\n\t\t}, {\n\t\t\t\"streams\":\t[{\n\t\t\t\t\t\"socket\":\t5,\n\t\t\t\t\t\"start\":\t24.00056,\n\t\t\t\t\t\"end\":\t25.000941,\n\t\t\t\t\t\"seconds\":\t1.0003809928894043,\n\t\t\t\t\t\"bytes\":\t612417824,\n\t\t\t\t\t\"bits_per_second\":\t4897476688.20577,\n\t\t\t\t\t\"packets\":\t461158,\n\t\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\t\"sender\":\ttrue\n\t\t\t\t}],\n\t\t\t\"sum\":\t{\n\t\t\t\t\"start\":\t24.00056,\n\t\t\t\t\"end\":\t25.000941,\n\t\t\t\t\"seconds\":\t1.0003809928894043,\n\t\t\t\t\"bytes\":\t612417824,\n\t\t\t\t\"bits_per_second\":\t4897476688.20577,\n\t\t\t\t\"packets\":\t461158,\n\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\"sender\":\ttrue\n\t\t\t}\n\t\t}, {\n\t\t\t\"streams\":\t[{\n\t\t\t\t\t\"socket\":\t5,\n\t\t\t\t\t\"start\":\t25.000941,\n\t\t\t\t\t\"end\":\t26.000579,\n\t\t\t\t\t\"seconds\":\t0.999638020992279,\n\t\t\t\t\t\"bytes\":\t616875920,\n\t\t\t\t\t\"bits_per_second\":\t4936794375.9295216,\n\t\t\t\t\t\"packets\":\t464515,\n\t\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\t\"sender\":\ttrue\n\t\t\t\t}],\n\t\t\t\"sum\":\t{\n\t\t\t\t\"start\":\t25.000941,\n\t\t\t\t\"end\":\t26.000579,\n\t\t\t\t\"seconds\":\t0.999638020992279,\n\t\t\t\t\"bytes\":\t616875920,\n\t\t\t\t\"bits_per_second\":\t4936794375.9295216,\n\t\t\t\t\"packets\":\t464515,\n\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\"sender\":\ttrue\n\t\t\t}\n\t\t}, {\n\t\t\t\"streams\":\t[{\n\t\t\t\t\t\"socket\":\t5,\n\t\t\t\t\t\"start\":\t26.000579,\n\t\t\t\t\t\"end\":\t27.000567,\n\t\t\t\t\t\"seconds\":\t0.9999880194664,\n\t\t\t\t\t\"bytes\":\t617626240,\n\t\t\t\t\t\"bits_per_second\":\t4941069116.64457,\n\t\t\t\t\t\"packets\":\t465080,\n\t\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\t\"sender\":\ttrue\n\t\t\t\t}],\n\t\t\t\"sum\":\t{\n\t\t\t\t\"start\":\t26.000579,\n\t\t\t\t\"end\":\t27.000567,\n\t\t\t\t\"seconds\":\t0.9999880194664,\n\t\t\t\t\"bytes\":\t617626240,\n\t\t\t\t\"bits_per_second\":\t4941069116.64457,\n\t\t\t\t\"packets\":\t465080,\n\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\"sender\":\ttrue\n\t\t\t}\n\t\t}, {\n\t\t\t\"streams\":\t[{\n\t\t\t\t\t\"socket\":\t5,\n\t\t\t\t\t\"start\":\t27.000567,\n\t\t\t\t\t\"end\":\t28.000598,\n\t\t\t\t\t\"seconds\":\t1.0000309944152832,\n\t\t\t\t\t\"bytes\":\t593904176,\n\t\t\t\t\t\"bits_per_second\":\t4751086150.8627939,\n\t\t\t\t\t\"packets\":\t447217,\n\t\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\t\"sender\":\ttrue\n\t\t\t\t}],\n\t\t\t\"sum\":\t{\n\t\t\t\t\"start\":\t27.000567,\n\t\t\t\t\"end\":\t28.000598,\n\t\t\t\t\"seconds\":\t1.0000309944152832,\n\t\t\t\t\"bytes\":\t593904176,\n\t\t\t\t\"bits_per_second\":\t4751086150.8627939,\n\t\t\t\t\"packets\":\t447217,\n\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\"sender\":\ttrue\n\t\t\t}\n\t\t}, {\n\t\t\t\"streams\":\t[{\n\t\t\t\t\t\"socket\":\t5,\n\t\t\t\t\t\"start\":\t28.000598,\n\t\t\t\t\t\"end\":\t29.000565,\n\t\t\t\t\t\"seconds\":\t0.99996697902679443,\n\t\t\t\t\t\"bytes\":\t575460912,\n\t\t\t\t\t\"bits_per_second\":\t4603839319.2548037,\n\t\t\t\t\t\"packets\":\t433329,\n\t\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\t\"sender\":\ttrue\n\t\t\t\t}],\n\t\t\t\"sum\":\t{\n\t\t\t\t\"start\":\t28.000598,\n\t\t\t\t\"end\":\t29.000565,\n\t\t\t\t\"seconds\":\t0.99996697902679443,\n\t\t\t\t\"bytes\":\t575460912,\n\t\t\t\t\"bits_per_second\":\t4603839319.2548037,\n\t\t\t\t\"packets\":\t433329,\n\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\"sender\":\ttrue\n\t\t\t}\n\t\t}, {\n\t\t\t\"streams\":\t[{\n\t\t\t\t\t\"socket\":\t5,\n\t\t\t\t\t\"start\":\t29.000565,\n\t\t\t\t\t\"end\":\t30.000697,\n\t\t\t\t\t\"seconds\":\t1.0001319646835327,\n\t\t\t\t\t\"bytes\":\t608178848,\n\t\t\t\t\t\"bits_per_second\":\t4864788803.6850681,\n\t\t\t\t\t\"packets\":\t457965,\n\t\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\t\"sender\":\ttrue\n\t\t\t\t}],\n\t\t\t\"sum\":\t{\n\t\t\t\t\"start\":\t29.000565,\n\t\t\t\t\"end\":\t30.000697,\n\t\t\t\t\"seconds\":\t1.0001319646835327,\n\t\t\t\t\"bytes\":\t608178848,\n\t\t\t\t\"bits_per_second\":\t4864788803.6850681,\n\t\t\t\t\"packets\":\t457965,\n\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\"sender\":\ttrue\n\t\t\t}\n\t\t}],\n\t\"end\":\t{\n\t\t\"streams\":\t[{\n\t\t\t\t\"udp\":\t{\n\t\t\t\t\t\"socket\":\t5,\n\t\t\t\t\t\"start\":\t0,\n\t\t\t\t\t\"end\":\t30.000697,\n\t\t\t\t\t\"seconds\":\t30.000697,\n\t\t\t\t\t\"bytes\":\t17667260480,\n\t\t\t\t\t\"bits_per_second\":\t4711160005.3825417,\n\t\t\t\t\t\"jitter_ms\":\t0,\n\t\t\t\t\t\"lost_packets\":\t0,\n\t\t\t\t\t\"packets\":\t13303660,\n\t\t\t\t\t\"lost_percent\":\t0,\n\t\t\t\t\t\"out_of_order\":\t0,\n\t\t\t\t\t\"sender\":\ttrue\n\t\t\t\t}\n\t\t\t}],\n\t\t\"sum\":\t{\n\t\t\t\"start\":\t0,\n\t\t\t\"end\":\t30.000697,\n\t\t\t\"seconds\":\t30.000697,\n\t\t\t\"bytes\":\t17667260480,\n\t\t\t\"bits_per_second\":\t4711160005.3825417,\n\t\t\t\"jitter_ms\":\t0,\n\t\t\t\"lost_packets\":\t0,\n\t\t\t\"packets\":\t13303660,\n\t\t\t\"lost_percent\":\t0,\n\t\t\t\"sender\":\ttrue\n\t\t},\n\t\t\"sum_sent\":\t{\n\t\t\t\"start\":\t0,\n\t\t\t\"end\":\t30.000697,\n\t\t\t\"seconds\":\t30.000697,\n\t\t\t\"bytes\":\t17667260480,\n\t\t\t\"bits_per_second\":\t4711160005.3825417,\n\t\t\t\"jitter_ms\":\t0,\n\t\t\t\"lost_packets\":\t0,\n\t\t\t\"packets\":\t13303660,\n\t\t\t\"lost_percent\":\t0,\n\t\t\t\"sender\":\ttrue\n\t\t},\n\t\t\"sum_received\":\t{\n\t\t\t\"start\":\t0,\n\t\t\t\"end\":\t30.000697,\n\t\t\t\"seconds\":\t30.000697,\n\t\t\t\"bytes\":\t0,\n\t\t\t\"bits_per_second\":\t0,\n\t\t\t\"jitter_ms\":\t0,\n\t\t\t\"lost_packets\":\t0,\n\t\t\t\"packets\":\t0,\n\t\t\t\"lost_percent\":\t0,\n\t\t\t\"sender\":\tfalse\n\t\t},\n\t\t\"cpu_utilization_percent\":\t{\n\t\t\t\"host_total\":\t99.40730092903,\n\t\t\t\"host_user\":\t20.320910137344853,\n\t\t\t\"host_system\":\t79.086394123607874,\n\t\t\t\"remote_total\":\t0,\n\t\t\t\"remote_user\":\t0,\n\t\t\t\"remote_system\":\t0\n\t\t}\n\t},\n\t\"error\":\t\"control socket has closed unexpectedly\"\n}\n",
+                "stderr": "#cpu-before\n36652.21 284099.02\ncpu  397504 20 305444 28409903 8057 57084 55282 0 0 0\nusage_usec 32734893\n#ss\n0      0      [5c7:64cd:cb2f:94ed:b384:a3df:9598:34dd]:50548 [5dc:123a:c708:d442:5b3e:2bd5:42ef:225]:5201\n\t cubic wscale:7,7 rto:202 rtt:1.255/0.409 ato:40 mss:1328 pmtu:1400 rcvmss:536 advmss:1328 cwnd:10 bytes_sent:558 bytes_acked:559 bytes_received:4 segs_out:7 segs_in:7 data_segs_out:3 data_segs_in:4 send 84653386bps lastsnd:5029 lastrcv:5019 lastack:5019 pacing_rate 169256192bps delivery_rate 16971240bps delivered:4 app_limited busy:2ms rcv_space:13280 rcv_ssthresh:64208 minrtt:1.037 snd_wnd:64640 rcv_wnd:64384\n#cpu-after\n36722.24 284479.02\ncpu  406687 20 313239 28447903 8059 57202 55895 0 0 0\nusage_usec 134224453\n",
+                "cwd": "/home/agent/Projects/vpn-benchmark-suite",
+                "command_list": [
+                    "ssh",
+                    "root@95.216.26.96",
+                    "-A",
+                    "-o",
+                    "StrictHostKeyChecking=no",
+                    "-o",
+                    "UserKnownHostsFile=/dev/null",
+                    "-o",
+                    "ControlMaster=auto",
+                    "-o",
+                    "ControlPersist=1m",
+                    "-o",
+                    "ControlPath=/tmp/clan-sshhbp8p0si/socket",
+                    "--",
+                    "bash",
+                    "-c",
+                    "'export IPERF3_PASSWORD=mambaBudo; exec \"$@\"'",
+                    "--",
+                    "bash -c 'snap() {\n  cat /proc/uptime\n  head -n 1 /proc/stat\n  if [ -n \"$1\" ]; then\n    cg=$(systemctl show --property ControlGroup --value \"$1\")\n    if [ -n \"$cg\" ]; then\n      grep '\"'\"'^usage_usec '\"'\"' \"/sys/fs/cgroup$cg/cpu.stat\" 2>/dev/null\n    fi\n  fi\n}\nunit=$1\nshift\necho '\"'\"'#cpu-before'\"'\"' >&2\nsnap \"$unit\" >&2\n\"$@\" &\npid=$!\nfor _ in $(seq 5); do\n  sleep 1\n  kill -0 \"$pid\" 2>/dev/null || break\ndone\necho '\"'\"'#ss'\"'\"' >&2\nss -tinH state established '\"'\"'( dport = :5201 )'\"'\"' >&2\nwait \"$pid\"\nrc=$?\necho '\"'\"'#cpu-after'\"'\"' >&2\nsnap \"$unit\" >&2\nexit \"$rc\"\n' vpb-iperf mycelium.service iperf --connect-timeout 5000 --time 30 --json -Z -c vpn.luna --username mario --rsa-public-key-path /tmp/iperf3.public -u --udp-counters-64bit -b 0"
+                ],
+                "returncode": 1
+            },
+            "machine": "0_lom"
+        },
         "Tincr": {
             "status": "success",
+            "pairs_ok": 3,
+            "pairs_total": 3,
             "data": {
                 "sender_throughput_mbps": {
                     "min": 5710.066804039039,
@@ -976,8 +1024,304 @@
                 }
             }
         },
+        "Yggdrasil": {
+            "status": "success",
+            "pairs_ok": 3,
+            "pairs_total": 3,
+            "data": {
+                "sender_throughput_mbps": {
+                    "min": 82175.63922036852,
+                    "average": 82564.26638918438,
+                    "max": 83219.44259081074,
+                    "percentiles": {
+                        "p25": 82564.26638918438,
+                        "p50": 82564.26638918438,
+                        "p75": 82564.26638918438
+                    }
+                },
+                "receiver_throughput_mbps": {
+                    "min": 769.1529631907653,
+                    "average": 774.0412225780955,
+                    "max": 778.1612463201697,
+                    "percentiles": {
+                        "p25": 774.0412225780955,
+                        "p50": 774.0412225780955,
+                        "p75": 774.0412225780955
+                    }
+                },
+                "jitter_ms": {
+                    "min": 0.3209452450226241,
+                    "average": 0.3346693529482815,
+                    "max": 0.35547755098067113,
+                    "percentiles": {
+                        "p25": 0.3346693529482815,
+                        "p50": 0.3346693529482815,
+                        "p75": 0.3346693529482815
+                    }
+                },
+                "lost_percent": {
+                    "min": 99.04717008146085,
+                    "average": 99.05550819106372,
+                    "max": 99.0691827989017,
+                    "percentiles": {
+                        "p25": 99.05550819106372,
+                        "p50": 99.05550819106372,
+                        "p75": 99.05550819106372
+                    }
+                },
+                "total_bytes_sent": {
+                    "min": 308164656170.0,
+                    "average": 309623040426.6667,
+                    "max": 312081574940.0,
+                    "percentiles": {
+                        "p25": 309623040426.6667,
+                        "p50": 309623040426.6667,
+                        "p75": 309623040426.6667
+                    }
+                },
+                "total_bytes_received": {
+                    "min": 2904647133.0,
+                    "average": 2922987403.3333335,
+                    "max": 2938196408.0,
+                    "percentiles": {
+                        "p25": 2922987403.3333335,
+                        "p50": 2922987403.3333335,
+                        "p75": 2922987403.3333335
+                    }
+                },
+                "duration_seconds": {
+                    "min": 30.000585,
+                    "average": 30.00068166666667,
+                    "max": 30.000833,
+                    "percentiles": {
+                        "p25": 30.00068166666667,
+                        "p50": 30.00068166666667,
+                        "p75": 30.00068166666667
+                    }
+                },
+                "blksize_bytes": {
+                    "min": 32731.0,
+                    "average": 32731.0,
+                    "max": 32731.0,
+                    "percentiles": {
+                        "p25": 32731.0,
+                        "p50": 32731.0,
+                        "p75": 32731.0
+                    }
+                },
+                "iperf3_client_cpu_percent": {
+                    "min": 99.57111886495584,
+                    "average": 99.59420038254304,
+                    "max": 99.6300530784282,
+                    "percentiles": {
+                        "p25": 99.59420038254304,
+                        "p50": 99.59420038254304,
+                        "p75": 99.59420038254304
+                    }
+                },
+                "iperf3_server_cpu_percent": {
+                    "min": 2.128795259353528,
+                    "average": 2.2995900035380124,
+                    "max": 2.5052542333884373,
+                    "percentiles": {
+                        "p25": 2.2995900035380124,
+                        "p50": 2.2995900035380124,
+                        "p75": 2.2995900035380124
+                    }
+                },
+                "client_host_cpu_percent": {
+                    "min": 37.852845904673764,
+                    "average": 37.93911642194589,
+                    "max": 38.05380411937789,
+                    "percentiles": {
+                        "p25": 37.93911642194589,
+                        "p50": 37.93911642194589,
+                        "p75": 37.93911642194589
+                    }
+                },
+                "server_host_cpu_percent": {
+                    "min": 13.155155905249574,
+                    "average": 13.959088236297376,
+                    "max": 15.063755312942746,
+                    "percentiles": {
+                        "p25": 13.959088236297376,
+                        "p50": 13.959088236297376,
+                        "p75": 13.959088236297376
+                    }
+                },
+                "client_vpn_cpu_percent": {
+                    "min": 185.74760409781896,
+                    "average": 185.89577106290935,
+                    "max": 186.01915041322314,
+                    "percentiles": {
+                        "p25": 185.89577106290935,
+                        "p50": 185.89577106290935,
+                        "p75": 185.89577106290935
+                    }
+                },
+                "server_vpn_cpu_percent": {
+                    "min": 82.62544739429697,
+                    "average": 87.64816740158007,
+                    "max": 93.8818866688503,
+                    "percentiles": {
+                        "p25": 87.64816740158007,
+                        "p50": 87.64816740158007,
+                        "p75": 87.64816740158007
+                    }
+                }
+            }
+        },
+        "Nebula": {
+            "status": "success",
+            "pairs_ok": 3,
+            "pairs_total": 3,
+            "data": {
+                "sender_throughput_mbps": {
+                    "min": 5239.0158718783505,
+                    "average": 5452.346417771521,
+                    "max": 5563.4795667900835,
+                    "percentiles": {
+                        "p25": 5452.346417771521,
+                        "p50": 5452.346417771521,
+                        "p75": 5452.346417771521
+                    }
+                },
+                "receiver_throughput_mbps": {
+                    "min": 823.0042470019746,
+                    "average": 827.6135398389521,
+                    "max": 830.3971958717594,
+                    "percentiles": {
+                        "p25": 827.6135398389521,
+                        "p50": 827.6135398389521,
+                        "p75": 827.6135398389521
+                    }
+                },
+                "jitter_ms": {
+                    "min": 0.010088601785647282,
+                    "average": 0.01422133458731645,
+                    "max": 0.017323158898702392,
+                    "percentiles": {
+                        "p25": 0.01422133458731645,
+                        "p50": 0.01422133458731645,
+                        "p75": 0.01422133458731645
+                    }
+                },
+                "lost_percent": {
+                    "min": 84.28665718705564,
+                    "average": 84.77310820572481,
+                    "max": 85.04624886072756,
+                    "percentiles": {
+                        "p25": 84.77310820572481,
+                        "p50": 84.77310820572481,
+                        "p75": 84.77310820572481
+                    }
+                },
+                "total_bytes_sent": {
+                    "min": 19647079000.0,
+                    "average": 20446994106.666668,
+                    "max": 20863855080.0,
+                    "percentiles": {
+                        "p25": 20446994106.666668,
+                        "p50": 20446994106.666668,
+                        "p75": 20446994106.666668
+                    }
+                },
+                "total_bytes_received": {
+                    "min": 3087209192.0,
+                    "average": 3111383600.0,
+                    "max": 3132087680.0,
+                    "percentiles": {
+                        "p25": 3111383600.0,
+                        "p50": 3111383600.0,
+                        "p75": 3111383600.0
+                    }
+                },
+                "duration_seconds": {
+                    "min": 30.000733,
+                    "average": 30.001022666666668,
+                    "max": 30.001175,
+                    "percentiles": {
+                        "p25": 30.001022666666668,
+                        "p50": 30.001022666666668,
+                        "p75": 30.001022666666668
+                    }
+                },
+                "blksize_bytes": {
+                    "min": 1228.0,
+                    "average": 1228.0,
+                    "max": 1228.0,
+                    "percentiles": {
+                        "p25": 1228.0,
+                        "p50": 1228.0,
+                        "p75": 1228.0
+                    }
+                },
+                "iperf3_client_cpu_percent": {
+                    "min": 98.7422176633851,
+                    "average": 99.44787241987814,
+                    "max": 99.80470641934677,
+                    "percentiles": {
+                        "p25": 99.44787241987814,
+                        "p50": 99.44787241987814,
+                        "p75": 99.44787241987814
+                    }
+                },
+                "iperf3_server_cpu_percent": {
+                    "min": 16.545383324883147,
+                    "average": 17.282424572153705,
+                    "max": 17.706264291643826,
+                    "percentiles": {
+                        "p25": 17.282424572153705,
+                        "p50": 17.282424572153705,
+                        "p75": 17.282424572153705
+                    }
+                },
+                "client_host_cpu_percent": {
+                    "min": 17.82686023907019,
+                    "average": 18.194024504797028,
+                    "max": 18.761511071092375,
+                    "percentiles": {
+                        "p25": 18.194024504797028,
+                        "p50": 18.194024504797028,
+                        "p75": 18.194024504797028
+                    }
+                },
+                "server_host_cpu_percent": {
+                    "min": 9.296492914768214,
+                    "average": 9.608394312405428,
+                    "max": 9.86693447150389,
+                    "percentiles": {
+                        "p25": 9.608394312405428,
+                        "p50": 9.608394312405428,
+                        "p75": 9.608394312405428
+                    }
+                },
+                "client_vpn_cpu_percent": {
+                    "min": 32.05926764314227,
+                    "average": 32.480884703739896,
+                    "max": 33.21700299700303,
+                    "percentiles": {
+                        "p25": 32.480884703739896,
+                        "p50": 32.480884703739896,
+                        "p75": 32.480884703739896
+                    }
+                },
+                "server_vpn_cpu_percent": {
+                    "min": 41.349307387862886,
+                    "average": 42.849230136020424,
+                    "max": 44.167761292449654,
+                    "percentiles": {
+                        "p25": 42.849230136020424,
+                        "p50": 42.849230136020424,
+                        "p75": 42.849230136020424
+                    }
+                }
+            }
+        },
         "VpnCloud": {
             "status": "success",
+            "pairs_ok": 3,
+            "pairs_total": 3,
             "data": {
                 "sender_throughput_mbps": {
                     "min": 6012.15051397944,
@@ -1123,6 +1467,8 @@
         },
         "Zerotier": {
             "status": "success",
+            "pairs_ok": 3,
+            "pairs_total": 3,
             "data": {
                 "sender_throughput_mbps": {
                     "min": 11462.716163616924,
@@ -1262,328 +1608,6 @@
                         "p25": 36.29476776033626,
                         "p50": 36.29476776033626,
                         "p75": 36.29476776033626
-                    }
-                }
-            }
-        },
-        "Yggdrasil": {
-            "status": "success",
-            "data": {
-                "sender_throughput_mbps": {
-                    "min": 82175.63922036852,
-                    "average": 82564.26638918438,
-                    "max": 83219.44259081074,
-                    "percentiles": {
-                        "p25": 82564.26638918438,
-                        "p50": 82564.26638918438,
-                        "p75": 82564.26638918438
-                    }
-                },
-                "receiver_throughput_mbps": {
-                    "min": 769.1529631907653,
-                    "average": 774.0412225780955,
-                    "max": 778.1612463201697,
-                    "percentiles": {
-                        "p25": 774.0412225780955,
-                        "p50": 774.0412225780955,
-                        "p75": 774.0412225780955
-                    }
-                },
-                "jitter_ms": {
-                    "min": 0.3209452450226241,
-                    "average": 0.3346693529482815,
-                    "max": 0.35547755098067113,
-                    "percentiles": {
-                        "p25": 0.3346693529482815,
-                        "p50": 0.3346693529482815,
-                        "p75": 0.3346693529482815
-                    }
-                },
-                "lost_percent": {
-                    "min": 99.04717008146085,
-                    "average": 99.05550819106372,
-                    "max": 99.0691827989017,
-                    "percentiles": {
-                        "p25": 99.05550819106372,
-                        "p50": 99.05550819106372,
-                        "p75": 99.05550819106372
-                    }
-                },
-                "total_bytes_sent": {
-                    "min": 308164656170.0,
-                    "average": 309623040426.6667,
-                    "max": 312081574940.0,
-                    "percentiles": {
-                        "p25": 309623040426.6667,
-                        "p50": 309623040426.6667,
-                        "p75": 309623040426.6667
-                    }
-                },
-                "total_bytes_received": {
-                    "min": 2904647133.0,
-                    "average": 2922987403.3333335,
-                    "max": 2938196408.0,
-                    "percentiles": {
-                        "p25": 2922987403.3333335,
-                        "p50": 2922987403.3333335,
-                        "p75": 2922987403.3333335
-                    }
-                },
-                "duration_seconds": {
-                    "min": 30.000585,
-                    "average": 30.00068166666667,
-                    "max": 30.000833,
-                    "percentiles": {
-                        "p25": 30.00068166666667,
-                        "p50": 30.00068166666667,
-                        "p75": 30.00068166666667
-                    }
-                },
-                "blksize_bytes": {
-                    "min": 32731.0,
-                    "average": 32731.0,
-                    "max": 32731.0,
-                    "percentiles": {
-                        "p25": 32731.0,
-                        "p50": 32731.0,
-                        "p75": 32731.0
-                    }
-                },
-                "iperf3_client_cpu_percent": {
-                    "min": 99.57111886495584,
-                    "average": 99.59420038254304,
-                    "max": 99.6300530784282,
-                    "percentiles": {
-                        "p25": 99.59420038254304,
-                        "p50": 99.59420038254304,
-                        "p75": 99.59420038254304
-                    }
-                },
-                "iperf3_server_cpu_percent": {
-                    "min": 2.128795259353528,
-                    "average": 2.2995900035380124,
-                    "max": 2.5052542333884373,
-                    "percentiles": {
-                        "p25": 2.2995900035380124,
-                        "p50": 2.2995900035380124,
-                        "p75": 2.2995900035380124
-                    }
-                },
-                "client_host_cpu_percent": {
-                    "min": 37.852845904673764,
-                    "average": 37.93911642194589,
-                    "max": 38.05380411937789,
-                    "percentiles": {
-                        "p25": 37.93911642194589,
-                        "p50": 37.93911642194589,
-                        "p75": 37.93911642194589
-                    }
-                },
-                "server_host_cpu_percent": {
-                    "min": 13.155155905249574,
-                    "average": 13.959088236297376,
-                    "max": 15.063755312942746,
-                    "percentiles": {
-                        "p25": 13.959088236297376,
-                        "p50": 13.959088236297376,
-                        "p75": 13.959088236297376
-                    }
-                },
-                "client_vpn_cpu_percent": {
-                    "min": 185.74760409781896,
-                    "average": 185.89577106290935,
-                    "max": 186.01915041322314,
-                    "percentiles": {
-                        "p25": 185.89577106290935,
-                        "p50": 185.89577106290935,
-                        "p75": 185.89577106290935
-                    }
-                },
-                "server_vpn_cpu_percent": {
-                    "min": 82.62544739429697,
-                    "average": 87.64816740158007,
-                    "max": 93.8818866688503,
-                    "percentiles": {
-                        "p25": 87.64816740158007,
-                        "p50": 87.64816740158007,
-                        "p75": 87.64816740158007
-                    }
-                }
-            }
-        },
-        "Mycelium": {
-            "status": "error",
-            "error_type": "CmdOut",
-            "error": {
-                "stdout": "{\n\t\"start\":\t{\n\t\t\"connected\":\t[{\n\t\t\t\t\"socket\":\t5,\n\t\t\t\t\"local_host\":\t\"5c7:64cd:cb2f:94ed:b384:a3df:9598:34dd\",\n\t\t\t\t\"local_port\":\t55837,\n\t\t\t\t\"remote_host\":\t\"5dc:123a:c708:d442:5b3e:2bd5:42ef:225\",\n\t\t\t\t\"remote_port\":\t5201\n\t\t\t}],\n\t\t\"version\":\t\"iperf 3.20\",\n\t\t\"system_info\":\t\"Linux lom 6.12.57 #1-NixOS SMP PREEMPT_DYNAMIC Sun Nov  2 13:15:23 UTC 2025 x86_64\",\n\t\t\"timestamp\":\t{\n\t\t\t\"time\":\t\"Sat, 24 Oct 2026 05:33:54 GMT\",\n\t\t\t\"timesecs\":\t1792820034,\n\t\t\t\"timemillisecs\":\t1792820034507\n\t\t},\n\t\t\"connecting_to\":\t{\n\t\t\t\"host\":\t\"vpn.luna\",\n\t\t\t\"port\":\t5201\n\t\t},\n\t\t\"cookie\":\t\"xu7s7qa757myyokxfakzuscahfju7elsfvul\",\n\t\t\"target_bitrate\":\t0,\n\t\t\"fq_rate\":\t0,\n\t\t\"sock_bufsize\":\t0,\n\t\t\"sndbuf_actual\":\t212992,\n\t\t\"rcvbuf_actual\":\t212992,\n\t\t\"test_start\":\t{\n\t\t\t\"protocol\":\t\"UDP\",\n\t\t\t\"num_streams\":\t1,\n\t\t\t\"blksize\":\t1328,\n\t\t\t\"omit\":\t0,\n\t\t\t\"duration\":\t30,\n\t\t\t\"bytes\":\t0,\n\t\t\t\"blocks\":\t0,\n\t\t\t\"reverse\":\t0,\n\t\t\t\"tos\":\t0,\n\t\t\t\"target_bitrate\":\t0,\n\t\t\t\"bidir\":\t0,\n\t\t\t\"fqrate\":\t0,\n\t\t\t\"interval\":\t1\n\t\t}\n\t},\n\t\"intervals\":\t[{\n\t\t\t\"streams\":\t[{\n\t\t\t\t\t\"socket\":\t5,\n\t\t\t\t\t\"start\":\t0,\n\t\t\t\t\t\"end\":\t1.000595,\n\t\t\t\t\t\"seconds\":\t1.0005949735641479,\n\t\t\t\t\t\"bytes\":\t585929536,\n\t\t\t\t\t\"bits_per_second\":\t4684649045.6605215,\n\t\t\t\t\t\"packets\":\t441214,\n\t\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\t\"sender\":\ttrue\n\t\t\t\t}],\n\t\t\t\"sum\":\t{\n\t\t\t\t\"start\":\t0,\n\t\t\t\t\"end\":\t1.000595,\n\t\t\t\t\"seconds\":\t1.0005949735641479,\n\t\t\t\t\"bytes\":\t585929536,\n\t\t\t\t\"bits_per_second\":\t4684649045.6605215,\n\t\t\t\t\"packets\":\t441214,\n\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\"sender\":\ttrue\n\t\t\t}\n\t\t}, {\n\t\t\t\"streams\":\t[{\n\t\t\t\t\t\"socket\":\t5,\n\t\t\t\t\t\"start\":\t1.000595,\n\t\t\t\t\t\"end\":\t2.000568,\n\t\t\t\t\t\"seconds\":\t0.99997299909591675,\n\t\t\t\t\t\"bytes\":\t575484816,\n\t\t\t\t\t\"bits_per_second\":\t4604002840.2390881,\n\t\t\t\t\t\"packets\":\t433347,\n\t\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\t\"sender\":\ttrue\n\t\t\t\t}],\n\t\t\t\"sum\":\t{\n\t\t\t\t\"start\":\t1.000595,\n\t\t\t\t\"end\":\t2.000568,\n\t\t\t\t\"seconds\":\t0.99997299909591675,\n\t\t\t\t\"bytes\":\t575484816,\n\t\t\t\t\"bits_per_second\":\t4604002840.2390881,\n\t\t\t\t\"packets\":\t433347,\n\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\"sender\":\ttrue\n\t\t\t}\n\t\t}, {\n\t\t\t\"streams\":\t[{\n\t\t\t\t\t\"socket\":\t5,\n\t\t\t\t\t\"start\":\t2.000568,\n\t\t\t\t\t\"end\":\t3.000564,\n\t\t\t\t\t\"seconds\":\t0.9999960064888,\n\t\t\t\t\t\"bytes\":\t597727488,\n\t\t\t\t\t\"bits_per_second\":\t4781839000.3276043,\n\t\t\t\t\t\"packets\":\t450096,\n\t\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\t\"sender\":\ttrue\n\t\t\t\t}],\n\t\t\t\"sum\":\t{\n\t\t\t\t\"start\":\t2.000568,\n\t\t\t\t\"end\":\t3.000564,\n\t\t\t\t\"seconds\":\t0.9999960064888,\n\t\t\t\t\"bytes\":\t597727488,\n\t\t\t\t\"bits_per_second\":\t4781839000.3276043,\n\t\t\t\t\"packets\":\t450096,\n\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\"sender\":\ttrue\n\t\t\t}\n\t\t}, {\n\t\t\t\"streams\":\t[{\n\t\t\t\t\t\"socket\":\t5,\n\t\t\t\t\t\"start\":\t3.000564,\n\t\t\t\t\t\"end\":\t4.000563,\n\t\t\t\t\t\"seconds\":\t0.99999898672103882,\n\t\t\t\t\t\"bytes\":\t570982896,\n\t\t\t\t\t\"bits_per_second\":\t4567867796.5243359,\n\t\t\t\t\t\"packets\":\t429957,\n\t\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\t\"sender\":\ttrue\n\t\t\t\t}],\n\t\t\t\"sum\":\t{\n\t\t\t\t\"start\":\t3.000564,\n\t\t\t\t\"end\":\t4.000563,\n\t\t\t\t\"seconds\":\t0.99999898672103882,\n\t\t\t\t\"bytes\":\t570982896,\n\t\t\t\t\"bits_per_second\":\t4567867796.5243359,\n\t\t\t\t\"packets\":\t429957,\n\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\"sender\":\ttrue\n\t\t\t}\n\t\t}, {\n\t\t\t\"streams\":\t[{\n\t\t\t\t\t\"socket\":\t5,\n\t\t\t\t\t\"start\":\t4.000563,\n\t\t\t\t\t\"end\":\t5.000565,\n\t\t\t\t\t\"seconds\":\t1.0000020265579224,\n\t\t\t\t\t\"bytes\":\t565384048,\n\t\t\t\t\t\"bits_per_second\":\t4523063217.7504025,\n\t\t\t\t\t\"packets\":\t425742,\n\t\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\t\"sender\":\ttrue\n\t\t\t\t}],\n\t\t\t\"sum\":\t{\n\t\t\t\t\"start\":\t4.000563,\n\t\t\t\t\"end\":\t5.000565,\n\t\t\t\t\"seconds\":\t1.0000020265579224,\n\t\t\t\t\"bytes\":\t565384048,\n\t\t\t\t\"bits_per_second\":\t4523063217.7504025,\n\t\t\t\t\"packets\":\t425742,\n\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\"sender\":\ttrue\n\t\t\t}\n\t\t}, {\n\t\t\t\"streams\":\t[{\n\t\t\t\t\t\"socket\":\t5,\n\t\t\t\t\t\"start\":\t5.000565,\n\t\t\t\t\t\"end\":\t6.000564,\n\t\t\t\t\t\"seconds\":\t0.99999898672103882,\n\t\t\t\t\t\"bytes\":\t572850064,\n\t\t\t\t\t\"bits_per_second\":\t4582805155.6600475,\n\t\t\t\t\t\"packets\":\t431364,\n\t\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\t\"sender\":\ttrue\n\t\t\t\t}],\n\t\t\t\"sum\":\t{\n\t\t\t\t\"start\":\t5.000565,\n\t\t\t\t\"end\":\t6.000564,\n\t\t\t\t\"seconds\":\t0.99999898672103882,\n\t\t\t\t\"bytes\":\t572850064,\n\t\t\t\t\"bits_per_second\":\t4582805155.6600475,\n\t\t\t\t\"packets\":\t431364,\n\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\"sender\":\ttrue\n\t\t\t}\n\t\t}, {\n\t\t\t\"streams\":\t[{\n\t\t\t\t\t\"socket\":\t5,\n\t\t\t\t\t\"start\":\t6.000564,\n\t\t\t\t\t\"end\":\t7.000561,\n\t\t\t\t\t\"seconds\":\t0.99999701976776123,\n\t\t\t\t\t\"bytes\":\t561547456,\n\t\t\t\t\t\"bits_per_second\":\t4492393036.3745565,\n\t\t\t\t\t\"packets\":\t422852,\n\t\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\t\"sender\":\ttrue\n\t\t\t\t}],\n\t\t\t\"sum\":\t{\n\t\t\t\t\"start\":\t6.000564,\n\t\t\t\t\"end\":\t7.000561,\n\t\t\t\t\"seconds\":\t0.99999701976776123,\n\t\t\t\t\"bytes\":\t561547456,\n\t\t\t\t\"bits_per_second\":\t4492393036.3745565,\n\t\t\t\t\"packets\":\t422852,\n\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\"sender\":\ttrue\n\t\t\t}\n\t\t}, {\n\t\t\t\"streams\":\t[{\n\t\t\t\t\t\"socket\":\t5,\n\t\t\t\t\t\"start\":\t7.000561,\n\t\t\t\t\t\"end\":\t8.000563,\n\t\t\t\t\t\"seconds\":\t1.0000020265579224,\n\t\t\t\t\t\"bytes\":\t576389184,\n\t\t\t\t\t\"bits_per_second\":\t4611104127.3304,\n\t\t\t\t\t\"packets\":\t434028,\n\t\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\t\"sender\":\ttrue\n\t\t\t\t}],\n\t\t\t\"sum\":\t{\n\t\t\t\t\"start\":\t7.000561,\n\t\t\t\t\"end\":\t8.000563,\n\t\t\t\t\"seconds\":\t1.0000020265579224,\n\t\t\t\t\"bytes\":\t576389184,\n\t\t\t\t\"bits_per_second\":\t4611104127.3304,\n\t\t\t\t\"packets\":\t434028,\n\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\"sender\":\ttrue\n\t\t\t}\n\t\t}, {\n\t\t\t\"streams\":\t[{\n\t\t\t\t\t\"socket\":\t5,\n\t\t\t\t\t\"start\":\t8.000563,\n\t\t\t\t\t\"end\":\t9.000574,\n\t\t\t\t\t\"seconds\":\t1.0000109672546387,\n\t\t\t\t\t\"bytes\":\t589535056,\n\t\t\t\t\t\"bits_per_second\":\t4716228723.91865,\n\t\t\t\t\t\"packets\":\t443927,\n\t\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\t\"sender\":\ttrue\n\t\t\t\t}],\n\t\t\t\"sum\":\t{\n\t\t\t\t\"start\":\t8.000563,\n\t\t\t\t\"end\":\t9.000574,\n\t\t\t\t\"seconds\":\t1.0000109672546387,\n\t\t\t\t\"bytes\":\t589535056,\n\t\t\t\t\"bits_per_second\":\t4716228723.91865,\n\t\t\t\t\"packets\":\t443927,\n\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\"sender\":\ttrue\n\t\t\t}\n\t\t}, {\n\t\t\t\"streams\":\t[{\n\t\t\t\t\t\"socket\":\t5,\n\t\t\t\t\t\"start\":\t9.000574,\n\t\t\t\t\t\"end\":\t10.000562,\n\t\t\t\t\t\"seconds\":\t0.9999880194664,\n\t\t\t\t\t\"bytes\":\t589645280,\n\t\t\t\t\t\"bits_per_second\":\t4717218754.79779,\n\t\t\t\t\t\"packets\":\t444011,\n\t\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\t\"sender\":\ttrue\n\t\t\t\t}],\n\t\t\t\"sum\":\t{\n\t\t\t\t\"start\":\t9.000574,\n\t\t\t\t\"end\":\t10.000562,\n\t\t\t\t\"seconds\":\t0.9999880194664,\n\t\t\t\t\"bytes\":\t589645280,\n\t\t\t\t\"bits_per_second\":\t4717218754.79779,\n\t\t\t\t\"packets\":\t444011,\n\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\"sender\":\ttrue\n\t\t\t}\n\t\t}, {\n\t\t\t\"streams\":\t[{\n\t\t\t\t\t\"socket\":\t5,\n\t\t\t\t\t\"start\":\t10.000562,\n\t\t\t\t\t\"end\":\t11.000562,\n\t\t\t\t\t\"seconds\":\t1,\n\t\t\t\t\t\"bytes\":\t610696736,\n\t\t\t\t\t\"bits_per_second\":\t4885573888,\n\t\t\t\t\t\"packets\":\t459863,\n\t\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\t\"sender\":\ttrue\n\t\t\t\t}],\n\t\t\t\"sum\":\t{\n\t\t\t\t\"start\":\t10.000562,\n\t\t\t\t\"end\":\t11.000562,\n\t\t\t\t\"seconds\":\t1,\n\t\t\t\t\"bytes\":\t610696736,\n\t\t\t\t\"bits_per_second\":\t4885573888,\n\t\t\t\t\"packets\":\t459863,\n\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\"sender\":\ttrue\n\t\t\t}\n\t\t}, {\n\t\t\t\"streams\":\t[{\n\t\t\t\t\t\"socket\":\t5,\n\t\t\t\t\t\"start\":\t11.000562,\n\t\t\t\t\t\"end\":\t12.000562,\n\t\t\t\t\t\"seconds\":\t1,\n\t\t\t\t\t\"bytes\":\t608947760,\n\t\t\t\t\t\"bits_per_second\":\t4871582080,\n\t\t\t\t\t\"packets\":\t458545,\n\t\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\t\"sender\":\ttrue\n\t\t\t\t}],\n\t\t\t\"sum\":\t{\n\t\t\t\t\"start\":\t11.000562,\n\t\t\t\t\"end\":\t12.000562,\n\t\t\t\t\"seconds\":\t1,\n\t\t\t\t\"bytes\":\t608947760,\n\t\t\t\t\"bits_per_second\":\t4871582080,\n\t\t\t\t\"packets\":\t458545,\n\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\"sender\":\ttrue\n\t\t\t}\n\t\t}, {\n\t\t\t\"streams\":\t[{\n\t\t\t\t\t\"socket\":\t5,\n\t\t\t\t\t\"start\":\t12.000562,\n\t\t\t\t\t\"end\":\t13.000561,\n\t\t\t\t\t\"seconds\":\t0.99999898672103882,\n\t\t\t\t\t\"bytes\":\t603621152,\n\t\t\t\t\t\"bits_per_second\":\t4828974109.09787,\n\t\t\t\t\t\"packets\":\t454535,\n\t\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\t\"sender\":\ttrue\n\t\t\t\t}],\n\t\t\t\"sum\":\t{\n\t\t\t\t\"start\":\t12.000562,\n\t\t\t\t\"end\":\t13.000561,\n\t\t\t\t\"seconds\":\t0.99999898672103882,\n\t\t\t\t\"bytes\":\t603621152,\n\t\t\t\t\"bits_per_second\":\t4828974109.09787,\n\t\t\t\t\"packets\":\t454535,\n\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\"sender\":\ttrue\n\t\t\t}\n\t\t}, {\n\t\t\t\"streams\":\t[{\n\t\t\t\t\t\"socket\":\t5,\n\t\t\t\t\t\"start\":\t13.000561,\n\t\t\t\t\t\"end\":\t14.000562,\n\t\t\t\t\t\"seconds\":\t1.0000009536743164,\n\t\t\t\t\t\"bytes\":\t605763216,\n\t\t\t\t\t\"bits_per_second\":\t4846101106.39784,\n\t\t\t\t\t\"packets\":\t456147,\n\t\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\t\"sender\":\ttrue\n\t\t\t\t}],\n\t\t\t\"sum\":\t{\n\t\t\t\t\"start\":\t13.000561,\n\t\t\t\t\"end\":\t14.000562,\n\t\t\t\t\"seconds\":\t1.0000009536743164,\n\t\t\t\t\"bytes\":\t605763216,\n\t\t\t\t\"bits_per_second\":\t4846101106.39784,\n\t\t\t\t\"packets\":\t456147,\n\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\"sender\":\ttrue\n\t\t\t}\n\t\t}, {\n\t\t\t\"streams\":\t[{\n\t\t\t\t\t\"socket\":\t5,\n\t\t\t\t\t\"start\":\t14.000562,\n\t\t\t\t\t\"end\":\t15.000601,\n\t\t\t\t\t\"seconds\":\t1.0000389814376831,\n\t\t\t\t\t\"bytes\":\t601008976,\n\t\t\t\t\t\"bits_per_second\":\t4807884389.7542734,\n\t\t\t\t\t\"packets\":\t452567,\n\t\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\t\"sender\":\ttrue\n\t\t\t\t}],\n\t\t\t\"sum\":\t{\n\t\t\t\t\"start\":\t14.000562,\n\t\t\t\t\"end\":\t15.000601,\n\t\t\t\t\"seconds\":\t1.0000389814376831,\n\t\t\t\t\"bytes\":\t601008976,\n\t\t\t\t\"bits_per_second\":\t4807884389.7542734,\n\t\t\t\t\"packets\":\t452567,\n\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\"sender\":\ttrue\n\t\t\t}\n\t\t}, {\n\t\t\t\"streams\":\t[{\n\t\t\t\t\t\"socket\":\t5,\n\t\t\t\t\t\"start\":\t15.000601,\n\t\t\t\t\t\"end\":\t16.000564,\n\t\t\t\t\t\"seconds\":\t0.99996298551559448,\n\t\t\t\t\t\"bytes\":\t602079344,\n\t\t\t\t\t\"bits_per_second\":\t4816813043.8512955,\n\t\t\t\t\t\"packets\":\t453374,\n\t\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\t\"sender\":\ttrue\n\t\t\t\t}],\n\t\t\t\"sum\":\t{\n\t\t\t\t\"start\":\t15.000601,\n\t\t\t\t\"end\":\t16.000564,\n\t\t\t\t\"seconds\":\t0.99996298551559448,\n\t\t\t\t\"bytes\":\t602079344,\n\t\t\t\t\"bits_per_second\":\t4816813043.8512955,\n\t\t\t\t\"packets\":\t453374,\n\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\"sender\":\ttrue\n\t\t\t}\n\t\t}, {\n\t\t\t\"streams\":\t[{\n\t\t\t\t\t\"socket\":\t5,\n\t\t\t\t\t\"start\":\t16.000564,\n\t\t\t\t\t\"end\":\t17.000588,\n\t\t\t\t\t\"seconds\":\t1.0000239610672,\n\t\t\t\t\t\"bytes\":\t557477136,\n\t\t\t\t\t\"bits_per_second\":\t4459710228.5835218,\n\t\t\t\t\t\"packets\":\t419788,\n\t\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\t\"sender\":\ttrue\n\t\t\t\t}],\n\t\t\t\"sum\":\t{\n\t\t\t\t\"start\":\t16.000564,\n\t\t\t\t\"end\":\t17.000588,\n\t\t\t\t\"seconds\":\t1.0000239610672,\n\t\t\t\t\"bytes\":\t557477136,\n\t\t\t\t\"bits_per_second\":\t4459710228.5835218,\n\t\t\t\t\"packets\":\t419788,\n\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\"sender\":\ttrue\n\t\t\t}\n\t\t}, {\n\t\t\t\"streams\":\t[{\n\t\t\t\t\t\"socket\":\t5,\n\t\t\t\t\t\"start\":\t17.000588,\n\t\t\t\t\t\"end\":\t18.000563,\n\t\t\t\t\t\"seconds\":\t0.999975025653839,\n\t\t\t\t\t\"bytes\":\t556764000,\n\t\t\t\t\t\"bits_per_second\":\t4454223241.3131065,\n\t\t\t\t\t\"packets\":\t419251,\n\t\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\t\"sender\":\ttrue\n\t\t\t\t}],\n\t\t\t\"sum\":\t{\n\t\t\t\t\"start\":\t17.000588,\n\t\t\t\t\"end\":\t18.000563,\n\t\t\t\t\"seconds\":\t0.999975025653839,\n\t\t\t\t\"bytes\":\t556764000,\n\t\t\t\t\"bits_per_second\":\t4454223241.3131065,\n\t\t\t\t\"packets\":\t419251,\n\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\"sender\":\ttrue\n\t\t\t}\n\t\t}, {\n\t\t\t\"streams\":\t[{\n\t\t\t\t\t\"socket\":\t5,\n\t\t\t\t\t\"start\":\t18.000563,\n\t\t\t\t\t\"end\":\t19.00058,\n\t\t\t\t\t\"seconds\":\t1.0000170469284058,\n\t\t\t\t\t\"bytes\":\t578658736,\n\t\t\t\t\t\"bits_per_second\":\t4629190974.51288,\n\t\t\t\t\t\"packets\":\t435737,\n\t\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\t\"sender\":\ttrue\n\t\t\t\t}],\n\t\t\t\"sum\":\t{\n\t\t\t\t\"start\":\t18.000563,\n\t\t\t\t\"end\":\t19.00058,\n\t\t\t\t\"seconds\":\t1.0000170469284058,\n\t\t\t\t\"bytes\":\t578658736,\n\t\t\t\t\"bits_per_second\":\t4629190974.51288,\n\t\t\t\t\"packets\":\t435737,\n\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\"sender\":\ttrue\n\t\t\t}\n\t\t}, {\n\t\t\t\"streams\":\t[{\n\t\t\t\t\t\"socket\":\t5,\n\t\t\t\t\t\"start\":\t19.00058,\n\t\t\t\t\t\"end\":\t20.000561,\n\t\t\t\t\t\"seconds\":\t0.99998098611831665,\n\t\t\t\t\t\"bytes\":\t611711328,\n\t\t\t\t\t\"bits_per_second\":\t4893783673.8237581,\n\t\t\t\t\t\"packets\":\t460627,\n\t\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\t\"sender\":\ttrue\n\t\t\t\t}],\n\t\t\t\"sum\":\t{\n\t\t\t\t\"start\":\t19.00058,\n\t\t\t\t\"end\":\t20.000561,\n\t\t\t\t\"seconds\":\t0.99998098611831665,\n\t\t\t\t\"bytes\":\t611711328,\n\t\t\t\t\"bits_per_second\":\t4893783673.8237581,\n\t\t\t\t\"packets\":\t460627,\n\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\"sender\":\ttrue\n\t\t\t}\n\t\t}, {\n\t\t\t\"streams\":\t[{\n\t\t\t\t\t\"socket\":\t5,\n\t\t\t\t\t\"start\":\t20.000561,\n\t\t\t\t\t\"end\":\t21.000562,\n\t\t\t\t\t\"seconds\":\t1.0000009536743164,\n\t\t\t\t\t\"bytes\":\t559321728,\n\t\t\t\t\t\"bits_per_second\":\t4474569556.7179365,\n\t\t\t\t\t\"packets\":\t421176,\n\t\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\t\"sender\":\ttrue\n\t\t\t\t}],\n\t\t\t\"sum\":\t{\n\t\t\t\t\"start\":\t20.000561,\n\t\t\t\t\"end\":\t21.000562,\n\t\t\t\t\"seconds\":\t1.0000009536743164,\n\t\t\t\t\"bytes\":\t559321728,\n\t\t\t\t\"bits_per_second\":\t4474569556.7179365,\n\t\t\t\t\"packets\":\t421176,\n\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\"sender\":\ttrue\n\t\t\t}\n\t\t}, {\n\t\t\t\"streams\":\t[{\n\t\t\t\t\t\"socket\":\t5,\n\t\t\t\t\t\"start\":\t21.000562,\n\t\t\t\t\t\"end\":\t22.000574,\n\t\t\t\t\t\"seconds\":\t1.0000120401382446,\n\t\t\t\t\t\"bytes\":\t566580576,\n\t\t\t\t\t\"bits_per_second\":\t4532590034.9893723,\n\t\t\t\t\t\"packets\":\t426643,\n\t\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\t\"sender\":\ttrue\n\t\t\t\t}],\n\t\t\t\"sum\":\t{\n\t\t\t\t\"start\":\t21.000562,\n\t\t\t\t\"end\":\t22.000574,\n\t\t\t\t\"seconds\":\t1.0000120401382446,\n\t\t\t\t\"bytes\":\t566580576,\n\t\t\t\t\"bits_per_second\":\t4532590034.9893723,\n\t\t\t\t\"packets\":\t426643,\n\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\"sender\":\ttrue\n\t\t\t}\n\t\t}, {\n\t\t\t\"streams\":\t[{\n\t\t\t\t\t\"socket\":\t5,\n\t\t\t\t\t\"start\":\t22.000574,\n\t\t\t\t\t\"end\":\t23.00056,\n\t\t\t\t\t\"seconds\":\t0.99998599290847778,\n\t\t\t\t\t\"bytes\":\t580209840,\n\t\t\t\t\t\"bits_per_second\":\t4641743737.32935,\n\t\t\t\t\t\"packets\":\t436905,\n\t\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\t\"sender\":\ttrue\n\t\t\t\t}],\n\t\t\t\"sum\":\t{\n\t\t\t\t\"start\":\t22.000574,\n\t\t\t\t\"end\":\t23.00056,\n\t\t\t\t\"seconds\":\t0.99998599290847778,\n\t\t\t\t\"bytes\":\t580209840,\n\t\t\t\t\"bits_per_second\":\t4641743737.32935,\n\t\t\t\t\"packets\":\t436905,\n\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\"sender\":\ttrue\n\t\t\t}\n\t\t}, {\n\t\t\t\"streams\":\t[{\n\t\t\t\t\t\"socket\":\t5,\n\t\t\t\t\t\"start\":\t23.00056,\n\t\t\t\t\t\"end\":\t24.00056,\n\t\t\t\t\t\"seconds\":\t1,\n\t\t\t\t\t\"bytes\":\t614464272,\n\t\t\t\t\t\"bits_per_second\":\t4915714176,\n\t\t\t\t\t\"packets\":\t462700,\n\t\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\t\"sender\":\ttrue\n\t\t\t\t}],\n\t\t\t\"sum\":\t{\n\t\t\t\t\"start\":\t23.00056,\n\t\t\t\t\"end\":\t24.00056,\n\t\t\t\t\"seconds\":\t1,\n\t\t\t\t\"bytes\":\t614464272,\n\t\t\t\t\"bits_per_second\":\t4915714176,\n\t\t\t\t\"packets\":\t462700,\n\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\"sender\":\ttrue\n\t\t\t}\n\t\t}, {\n\t\t\t\"streams\":\t[{\n\t\t\t\t\t\"socket\":\t5,\n\t\t\t\t\t\"start\":\t24.00056,\n\t\t\t\t\t\"end\":\t25.000941,\n\t\t\t\t\t\"seconds\":\t1.0003809928894043,\n\t\t\t\t\t\"bytes\":\t612417824,\n\t\t\t\t\t\"bits_per_second\":\t4897476688.20577,\n\t\t\t\t\t\"packets\":\t461158,\n\t\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\t\"sender\":\ttrue\n\t\t\t\t}],\n\t\t\t\"sum\":\t{\n\t\t\t\t\"start\":\t24.00056,\n\t\t\t\t\"end\":\t25.000941,\n\t\t\t\t\"seconds\":\t1.0003809928894043,\n\t\t\t\t\"bytes\":\t612417824,\n\t\t\t\t\"bits_per_second\":\t4897476688.20577,\n\t\t\t\t\"packets\":\t461158,\n\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\"sender\":\ttrue\n\t\t\t}\n\t\t}, {\n\t\t\t\"streams\":\t[{\n\t\t\t\t\t\"socket\":\t5,\n\t\t\t\t\t\"start\":\t25.000941,\n\t\t\t\t\t\"end\":\t26.000579,\n\t\t\t\t\t\"seconds\":\t0.999638020992279,\n\t\t\t\t\t\"bytes\":\t616875920,\n\t\t\t\t\t\"bits_per_second\":\t4936794375.9295216,\n\t\t\t\t\t\"packets\":\t464515,\n\t\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\t\"sender\":\ttrue\n\t\t\t\t}],\n\t\t\t\"sum\":\t{\n\t\t\t\t\"start\":\t25.000941,\n\t\t\t\t\"end\":\t26.000579,\n\t\t\t\t\"seconds\":\t0.999638020992279,\n\t\t\t\t\"bytes\":\t616875920,\n\t\t\t\t\"bits_per_second\":\t4936794375.9295216,\n\t\t\t\t\"packets\":\t464515,\n\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\"sender\":\ttrue\n\t\t\t}\n\t\t}, {\n\t\t\t\"streams\":\t[{\n\t\t\t\t\t\"socket\":\t5,\n\t\t\t\t\t\"start\":\t26.000579,\n\t\t\t\t\t\"end\":\t27.000567,\n\t\t\t\t\t\"seconds\":\t0.9999880194664,\n\t\t\t\t\t\"bytes\":\t617626240,\n\t\t\t\t\t\"bits_per_second\":\t4941069116.64457,\n\t\t\t\t\t\"packets\":\t465080,\n\t\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\t\"sender\":\ttrue\n\t\t\t\t}],\n\t\t\t\"sum\":\t{\n\t\t\t\t\"start\":\t26.000579,\n\t\t\t\t\"end\":\t27.000567,\n\t\t\t\t\"seconds\":\t0.9999880194664,\n\t\t\t\t\"bytes\":\t617626240,\n\t\t\t\t\"bits_per_second\":\t4941069116.64457,\n\t\t\t\t\"packets\":\t465080,\n\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\"sender\":\ttrue\n\t\t\t}\n\t\t}, {\n\t\t\t\"streams\":\t[{\n\t\t\t\t\t\"socket\":\t5,\n\t\t\t\t\t\"start\":\t27.000567,\n\t\t\t\t\t\"end\":\t28.000598,\n\t\t\t\t\t\"seconds\":\t1.0000309944152832,\n\t\t\t\t\t\"bytes\":\t593904176,\n\t\t\t\t\t\"bits_per_second\":\t4751086150.8627939,\n\t\t\t\t\t\"packets\":\t447217,\n\t\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\t\"sender\":\ttrue\n\t\t\t\t}],\n\t\t\t\"sum\":\t{\n\t\t\t\t\"start\":\t27.000567,\n\t\t\t\t\"end\":\t28.000598,\n\t\t\t\t\"seconds\":\t1.0000309944152832,\n\t\t\t\t\"bytes\":\t593904176,\n\t\t\t\t\"bits_per_second\":\t4751086150.8627939,\n\t\t\t\t\"packets\":\t447217,\n\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\"sender\":\ttrue\n\t\t\t}\n\t\t}, {\n\t\t\t\"streams\":\t[{\n\t\t\t\t\t\"socket\":\t5,\n\t\t\t\t\t\"start\":\t28.000598,\n\t\t\t\t\t\"end\":\t29.000565,\n\t\t\t\t\t\"seconds\":\t0.99996697902679443,\n\t\t\t\t\t\"bytes\":\t575460912,\n\t\t\t\t\t\"bits_per_second\":\t4603839319.2548037,\n\t\t\t\t\t\"packets\":\t433329,\n\t\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\t\"sender\":\ttrue\n\t\t\t\t}],\n\t\t\t\"sum\":\t{\n\t\t\t\t\"start\":\t28.000598,\n\t\t\t\t\"end\":\t29.000565,\n\t\t\t\t\"seconds\":\t0.99996697902679443,\n\t\t\t\t\"bytes\":\t575460912,\n\t\t\t\t\"bits_per_second\":\t4603839319.2548037,\n\t\t\t\t\"packets\":\t433329,\n\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\"sender\":\ttrue\n\t\t\t}\n\t\t}, {\n\t\t\t\"streams\":\t[{\n\t\t\t\t\t\"socket\":\t5,\n\t\t\t\t\t\"start\":\t29.000565,\n\t\t\t\t\t\"end\":\t30.000697,\n\t\t\t\t\t\"seconds\":\t1.0001319646835327,\n\t\t\t\t\t\"bytes\":\t608178848,\n\t\t\t\t\t\"bits_per_second\":\t4864788803.6850681,\n\t\t\t\t\t\"packets\":\t457965,\n\t\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\t\"sender\":\ttrue\n\t\t\t\t}],\n\t\t\t\"sum\":\t{\n\t\t\t\t\"start\":\t29.000565,\n\t\t\t\t\"end\":\t30.000697,\n\t\t\t\t\"seconds\":\t1.0001319646835327,\n\t\t\t\t\"bytes\":\t608178848,\n\t\t\t\t\"bits_per_second\":\t4864788803.6850681,\n\t\t\t\t\"packets\":\t457965,\n\t\t\t\t\"omitted\":\tfalse,\n\t\t\t\t\"sender\":\ttrue\n\t\t\t}\n\t\t}],\n\t\"end\":\t{\n\t\t\"streams\":\t[{\n\t\t\t\t\"udp\":\t{\n\t\t\t\t\t\"socket\":\t5,\n\t\t\t\t\t\"start\":\t0,\n\t\t\t\t\t\"end\":\t30.000697,\n\t\t\t\t\t\"seconds\":\t30.000697,\n\t\t\t\t\t\"bytes\":\t17667260480,\n\t\t\t\t\t\"bits_per_second\":\t4711160005.3825417,\n\t\t\t\t\t\"jitter_ms\":\t0,\n\t\t\t\t\t\"lost_packets\":\t0,\n\t\t\t\t\t\"packets\":\t13303660,\n\t\t\t\t\t\"lost_percent\":\t0,\n\t\t\t\t\t\"out_of_order\":\t0,\n\t\t\t\t\t\"sender\":\ttrue\n\t\t\t\t}\n\t\t\t}],\n\t\t\"sum\":\t{\n\t\t\t\"start\":\t0,\n\t\t\t\"end\":\t30.000697,\n\t\t\t\"seconds\":\t30.000697,\n\t\t\t\"bytes\":\t17667260480,\n\t\t\t\"bits_per_second\":\t4711160005.3825417,\n\t\t\t\"jitter_ms\":\t0,\n\t\t\t\"lost_packets\":\t0,\n\t\t\t\"packets\":\t13303660,\n\t\t\t\"lost_percent\":\t0,\n\t\t\t\"sender\":\ttrue\n\t\t},\n\t\t\"sum_sent\":\t{\n\t\t\t\"start\":\t0,\n\t\t\t\"end\":\t30.000697,\n\t\t\t\"seconds\":\t30.000697,\n\t\t\t\"bytes\":\t17667260480,\n\t\t\t\"bits_per_second\":\t4711160005.3825417,\n\t\t\t\"jitter_ms\":\t0,\n\t\t\t\"lost_packets\":\t0,\n\t\t\t\"packets\":\t13303660,\n\t\t\t\"lost_percent\":\t0,\n\t\t\t\"sender\":\ttrue\n\t\t},\n\t\t\"sum_received\":\t{\n\t\t\t\"start\":\t0,\n\t\t\t\"end\":\t30.000697,\n\t\t\t\"seconds\":\t30.000697,\n\t\t\t\"bytes\":\t0,\n\t\t\t\"bits_per_second\":\t0,\n\t\t\t\"jitter_ms\":\t0,\n\t\t\t\"lost_packets\":\t0,\n\t\t\t\"packets\":\t0,\n\t\t\t\"lost_percent\":\t0,\n\t\t\t\"sender\":\tfalse\n\t\t},\n\t\t\"cpu_utilization_percent\":\t{\n\t\t\t\"host_total\":\t99.40730092903,\n\t\t\t\"host_user\":\t20.320910137344853,\n\t\t\t\"host_system\":\t79.086394123607874,\n\t\t\t\"remote_total\":\t0,\n\t\t\t\"remote_user\":\t0,\n\t\t\t\"remote_system\":\t0\n\t\t}\n\t},\n\t\"error\":\t\"control socket has closed unexpectedly\"\n}\n",
-                "stderr": "#cpu-before\n36652.21 284099.02\ncpu  397504 20 305444 28409903 8057 57084 55282 0 0 0\nusage_usec 32734893\n#ss\n0      0      [5c7:64cd:cb2f:94ed:b384:a3df:9598:34dd]:50548 [5dc:123a:c708:d442:5b3e:2bd5:42ef:225]:5201\n\t cubic wscale:7,7 rto:202 rtt:1.255/0.409 ato:40 mss:1328 pmtu:1400 rcvmss:536 advmss:1328 cwnd:10 bytes_sent:558 bytes_acked:559 bytes_received:4 segs_out:7 segs_in:7 data_segs_out:3 data_segs_in:4 send 84653386bps lastsnd:5029 lastrcv:5019 lastack:5019 pacing_rate 169256192bps delivery_rate 16971240bps delivered:4 app_limited busy:2ms rcv_space:13280 rcv_ssthresh:64208 minrtt:1.037 snd_wnd:64640 rcv_wnd:64384\n#cpu-after\n36722.24 284479.02\ncpu  406687 20 313239 28447903 8059 57202 55895 0 0 0\nusage_usec 134224453\n",
-                "cwd": "/home/agent/Projects/vpn-benchmark-suite",
-                "command_list": [
-                    "ssh",
-                    "root@95.216.26.96",
-                    "-A",
-                    "-o",
-                    "StrictHostKeyChecking=no",
-                    "-o",
-                    "UserKnownHostsFile=/dev/null",
-                    "-o",
-                    "ControlMaster=auto",
-                    "-o",
-                    "ControlPersist=1m",
-                    "-o",
-                    "ControlPath=/tmp/clan-sshhbp8p0si/socket",
-                    "--",
-                    "bash",
-                    "-c",
-                    "'export IPERF3_PASSWORD=mambaBudo; exec \"$@\"'",
-                    "--",
-                    "bash -c 'snap() {\n  cat /proc/uptime\n  head -n 1 /proc/stat\n  if [ -n \"$1\" ]; then\n    cg=$(systemctl show --property ControlGroup --value \"$1\")\n    if [ -n \"$cg\" ]; then\n      grep '\"'\"'^usage_usec '\"'\"' \"/sys/fs/cgroup$cg/cpu.stat\" 2>/dev/null\n    fi\n  fi\n}\nunit=$1\nshift\necho '\"'\"'#cpu-before'\"'\"' >&2\nsnap \"$unit\" >&2\n\"$@\" &\npid=$!\nfor _ in $(seq 5); do\n  sleep 1\n  kill -0 \"$pid\" 2>/dev/null || break\ndone\necho '\"'\"'#ss'\"'\"' >&2\nss -tinH state established '\"'\"'( dport = :5201 )'\"'\"' >&2\nwait \"$pid\"\nrc=$?\necho '\"'\"'#cpu-after'\"'\"' >&2\nsnap \"$unit\" >&2\nexit \"$rc\"\n' vpb-iperf mycelium.service iperf --connect-timeout 5000 --time 30 --json -Z -c vpn.luna --username mario --rsa-public-key-path /tmp/iperf3.public -u --udp-counters-64bit -b 0"
-                ],
-                "returncode": 1
-            },
-            "machine": "0_lom"
-        },
-        "Nebula": {
-            "status": "success",
-            "data": {
-                "sender_throughput_mbps": {
-                    "min": 5239.0158718783505,
-                    "average": 5452.346417771521,
-                    "max": 5563.4795667900835,
-                    "percentiles": {
-                        "p25": 5452.346417771521,
-                        "p50": 5452.346417771521,
-                        "p75": 5452.346417771521
-                    }
-                },
-                "receiver_throughput_mbps": {
-                    "min": 823.0042470019746,
-                    "average": 827.6135398389521,
-                    "max": 830.3971958717594,
-                    "percentiles": {
-                        "p25": 827.6135398389521,
-                        "p50": 827.6135398389521,
-                        "p75": 827.6135398389521
-                    }
-                },
-                "jitter_ms": {
-                    "min": 0.010088601785647282,
-                    "average": 0.01422133458731645,
-                    "max": 0.017323158898702392,
-                    "percentiles": {
-                        "p25": 0.01422133458731645,
-                        "p50": 0.01422133458731645,
-                        "p75": 0.01422133458731645
-                    }
-                },
-                "lost_percent": {
-                    "min": 84.28665718705564,
-                    "average": 84.77310820572481,
-                    "max": 85.04624886072756,
-                    "percentiles": {
-                        "p25": 84.77310820572481,
-                        "p50": 84.77310820572481,
-                        "p75": 84.77310820572481
-                    }
-                },
-                "total_bytes_sent": {
-                    "min": 19647079000.0,
-                    "average": 20446994106.666668,
-                    "max": 20863855080.0,
-                    "percentiles": {
-                        "p25": 20446994106.666668,
-                        "p50": 20446994106.666668,
-                        "p75": 20446994106.666668
-                    }
-                },
-                "total_bytes_received": {
-                    "min": 3087209192.0,
-                    "average": 3111383600.0,
-                    "max": 3132087680.0,
-                    "percentiles": {
-                        "p25": 3111383600.0,
-                        "p50": 3111383600.0,
-                        "p75": 3111383600.0
-                    }
-                },
-                "duration_seconds": {
-                    "min": 30.000733,
-                    "average": 30.001022666666668,
-                    "max": 30.001175,
-                    "percentiles": {
-                        "p25": 30.001022666666668,
-                        "p50": 30.001022666666668,
-                        "p75": 30.001022666666668
-                    }
-                },
-                "blksize_bytes": {
-                    "min": 1228.0,
-                    "average": 1228.0,
-                    "max": 1228.0,
-                    "percentiles": {
-                        "p25": 1228.0,
-                        "p50": 1228.0,
-                        "p75": 1228.0
-                    }
-                },
-                "iperf3_client_cpu_percent": {
-                    "min": 98.7422176633851,
-                    "average": 99.44787241987814,
-                    "max": 99.80470641934677,
-                    "percentiles": {
-                        "p25": 99.44787241987814,
-                        "p50": 99.44787241987814,
-                        "p75": 99.44787241987814
-                    }
-                },
-                "iperf3_server_cpu_percent": {
-                    "min": 16.545383324883147,
-                    "average": 17.282424572153705,
-                    "max": 17.706264291643826,
-                    "percentiles": {
-                        "p25": 17.282424572153705,
-                        "p50": 17.282424572153705,
-                        "p75": 17.282424572153705
-                    }
-                },
-                "client_host_cpu_percent": {
-                    "min": 17.82686023907019,
-                    "average": 18.194024504797028,
-                    "max": 18.761511071092375,
-                    "percentiles": {
-                        "p25": 18.194024504797028,
-                        "p50": 18.194024504797028,
-                        "p75": 18.194024504797028
-                    }
-                },
-                "server_host_cpu_percent": {
-                    "min": 9.296492914768214,
-                    "average": 9.608394312405428,
-                    "max": 9.86693447150389,
-                    "percentiles": {
-                        "p25": 9.608394312405428,
-                        "p50": 9.608394312405428,
-                        "p75": 9.608394312405428
-                    }
-                },
-                "client_vpn_cpu_percent": {
-                    "min": 32.05926764314227,
-                    "average": 32.480884703739896,
-                    "max": 33.21700299700303,
-                    "percentiles": {
-                        "p25": 32.480884703739896,
-                        "p50": 32.480884703739896,
-                        "p75": 32.480884703739896
-                    }
-                },
-                "server_vpn_cpu_percent": {
-                    "min": 41.349307387862886,
-                    "average": 42.849230136020424,
-                    "max": 44.167761292449654,
-                    "percentiles": {
-                        "p25": 42.849230136020424,
-                        "p50": 42.849230136020424,
-                        "p75": 42.849230136020424
                     }
                 }
             }

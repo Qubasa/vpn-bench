@@ -1,63 +1,10 @@
 {
     "status": "success",
     "data": {
-        "Headscale": {
-            "status": "error",
-            "error_type": "ClanError",
-            "error": {
-                "description": null,
-                "msg": "QUIC handshake failed: qperf reported no connection establishment time. Output: 'starting client with host vpn.luna, port 18000, runtime 30s, cc reno, iw 10\\nconnection closed'",
-                "location": "NoneType: None\n"
-            },
-            "machine": "0_lom"
-        },
-        "Hyprspace": {
-            "status": "success",
-            "data": {
-                "total_bandwidth_mbps": {
-                    "min": 49.831,
-                    "average": 83.04964444444444,
-                    "max": 85.705,
-                    "percentiles": {
-                        "p25": 83.352,
-                        "p50": 84.40216666666667,
-                        "p75": 84.86816666666667
-                    }
-                },
-                "cpu_usage_percent": {
-                    "min": 2.33,
-                    "average": 10.672847222222222,
-                    "max": 44.44,
-                    "percentiles": {
-                        "p25": 8.528333333333332,
-                        "p50": 10.278333333333334,
-                        "p75": 12.691666666666666
-                    }
-                },
-                "ttfb_ms": {
-                    "min": 52.0,
-                    "average": 111.95833333333333,
-                    "max": 138.0,
-                    "percentiles": {
-                        "p25": 102.66666666666667,
-                        "p50": 120.66666666666667,
-                        "p75": 125.66666666666667
-                    }
-                },
-                "conn_time_ms": {
-                    "min": 30.0,
-                    "average": 90.54166666666667,
-                    "max": 116.0,
-                    "percentiles": {
-                        "p25": 81.58333333333333,
-                        "p50": 99.33333333333333,
-                        "p75": 104.16666666666667
-                    }
-                }
-            }
-        },
         "Tinc": {
             "status": "success",
+            "pairs_ok": 3,
+            "pairs_total": 3,
             "data": {
                 "total_bandwidth_mbps": {
                     "min": 82.612,
@@ -101,53 +48,69 @@
                 }
             }
         },
-        "Easytier": {
+        "Headscale": {
+            "status": "error",
+            "pairs_ok": 0,
+            "pairs_total": 3,
+            "error_type": "ClanError",
+            "error": {
+                "description": null,
+                "msg": "QUIC handshake failed: qperf reported no connection establishment time. Output: 'starting client with host vpn.luna, port 18000, runtime 30s, cc reno, iw 10\\nconnection closed'",
+                "location": "NoneType: None\n"
+            },
+            "machine": "0_lom"
+        },
+        "Hyprspace": {
             "status": "success",
+            "pairs_ok": 3,
+            "pairs_total": 3,
             "data": {
                 "total_bandwidth_mbps": {
-                    "min": 21.15491,
-                    "average": 80.30835011111111,
-                    "max": 84.811,
+                    "min": 49.831,
+                    "average": 83.04964444444444,
+                    "max": 85.705,
                     "percentiles": {
-                        "p25": 80.19116666666667,
-                        "p50": 83.3955,
-                        "p75": 84.09566666666667
+                        "p25": 83.352,
+                        "p50": 84.40216666666667,
+                        "p75": 84.86816666666667
                     }
                 },
                 "cpu_usage_percent": {
-                    "min": 0.0,
-                    "average": 5.134055555555555,
-                    "max": 23.96,
+                    "min": 2.33,
+                    "average": 10.672847222222222,
+                    "max": 44.44,
                     "percentiles": {
-                        "p25": 3.07,
-                        "p50": 4.7316666666666665,
-                        "p75": 5.895833333333333
+                        "p25": 8.528333333333332,
+                        "p50": 10.278333333333334,
+                        "p75": 12.691666666666666
                     }
                 },
                 "ttfb_ms": {
                     "min": 52.0,
-                    "average": 68.625,
-                    "max": 90.0,
+                    "average": 111.95833333333333,
+                    "max": 138.0,
                     "percentiles": {
-                        "p25": 58.666666666666664,
-                        "p50": 71.0,
-                        "p75": 77.58333333333333
+                        "p25": 102.66666666666667,
+                        "p50": 120.66666666666667,
+                        "p75": 125.66666666666667
                     }
                 },
                 "conn_time_ms": {
-                    "min": 28.0,
-                    "average": 32.791666666666664,
-                    "max": 57.0,
+                    "min": 30.0,
+                    "average": 90.54166666666667,
+                    "max": 116.0,
                     "percentiles": {
-                        "p25": 28.75,
-                        "p50": 30.666666666666668,
-                        "p75": 37.583333333333336
+                        "p25": 81.58333333333333,
+                        "p50": 99.33333333333333,
+                        "p75": 104.16666666666667
                     }
                 }
             }
         },
         "Internal": {
             "status": "success",
+            "pairs_ok": 3,
+            "pairs_total": 3,
             "data": {
                 "total_bandwidth_mbps": {
                     "min": 87.19800000000001,
@@ -191,8 +154,57 @@
                 }
             }
         },
+        "Easytier": {
+            "status": "success",
+            "pairs_ok": 3,
+            "pairs_total": 3,
+            "data": {
+                "total_bandwidth_mbps": {
+                    "min": 21.15491,
+                    "average": 80.30835011111111,
+                    "max": 84.811,
+                    "percentiles": {
+                        "p25": 80.19116666666667,
+                        "p50": 83.3955,
+                        "p75": 84.09566666666667
+                    }
+                },
+                "cpu_usage_percent": {
+                    "min": 0.0,
+                    "average": 5.134055555555555,
+                    "max": 23.96,
+                    "percentiles": {
+                        "p25": 3.07,
+                        "p50": 4.7316666666666665,
+                        "p75": 5.895833333333333
+                    }
+                },
+                "ttfb_ms": {
+                    "min": 52.0,
+                    "average": 68.625,
+                    "max": 90.0,
+                    "percentiles": {
+                        "p25": 58.666666666666664,
+                        "p50": 71.0,
+                        "p75": 77.58333333333333
+                    }
+                },
+                "conn_time_ms": {
+                    "min": 28.0,
+                    "average": 32.791666666666664,
+                    "max": 57.0,
+                    "percentiles": {
+                        "p25": 28.75,
+                        "p50": 30.666666666666668,
+                        "p75": 37.583333333333336
+                    }
+                }
+            }
+        },
         "Wireguard": {
             "status": "success",
+            "pairs_ok": 3,
+            "pairs_total": 3,
             "data": {
                 "total_bandwidth_mbps": {
                     "min": 83.496,
@@ -236,8 +248,57 @@
                 }
             }
         },
+        "Mycelium": {
+            "status": "success",
+            "pairs_ok": 3,
+            "pairs_total": 3,
+            "data": {
+                "total_bandwidth_mbps": {
+                    "min": 64.022,
+                    "average": 79.08565722222222,
+                    "max": 81.827,
+                    "percentiles": {
+                        "p25": 78.16441666666667,
+                        "p50": 79.656435,
+                        "p75": 80.2984675
+                    }
+                },
+                "cpu_usage_percent": {
+                    "min": 0.0,
+                    "average": 6.579304054054054,
+                    "max": 23.16,
+                    "percentiles": {
+                        "p25": 4.043333333333333,
+                        "p50": 5.861666666666666,
+                        "p75": 8.429166666666667
+                    }
+                },
+                "ttfb_ms": {
+                    "min": 59.0,
+                    "average": 87.58333333333333,
+                    "max": 119.0,
+                    "percentiles": {
+                        "p25": 78.41666666666667,
+                        "p50": 88.66666666666667,
+                        "p75": 99.08333333333333
+                    }
+                },
+                "conn_time_ms": {
+                    "min": 30.0,
+                    "average": 41.625,
+                    "max": 59.0,
+                    "percentiles": {
+                        "p25": 33.833333333333336,
+                        "p50": 41.833333333333336,
+                        "p75": 48.833333333333336
+                    }
+                }
+            }
+        },
         "Tincr": {
             "status": "success",
+            "pairs_ok": 3,
+            "pairs_total": 3,
             "data": {
                 "total_bandwidth_mbps": {
                     "min": 72.852,
@@ -281,8 +342,69 @@
                 }
             }
         },
+        "Yggdrasil": {
+            "status": "success",
+            "pairs_ok": 3,
+            "pairs_total": 3,
+            "data": {
+                "total_bandwidth_mbps": {
+                    "min": 73.584,
+                    "average": 77.91654444444445,
+                    "max": 80.314,
+                    "percentiles": {
+                        "p25": 77.44733333333333,
+                        "p50": 77.88166666666667,
+                        "p75": 78.43558333333333
+                    }
+                },
+                "cpu_usage_percent": {
+                    "min": 6.06,
+                    "average": 12.906513888888888,
+                    "max": 22.68,
+                    "percentiles": {
+                        "p25": 10.817499999999999,
+                        "p50": 12.896666666666667,
+                        "p75": 14.863333333333333
+                    }
+                },
+                "ttfb_ms": {
+                    "min": 128.0,
+                    "average": 292.7916666666667,
+                    "max": 365.0,
+                    "percentiles": {
+                        "p25": 302.25,
+                        "p50": 315.3333333333333,
+                        "p75": 318.4166666666667
+                    }
+                },
+                "conn_time_ms": {
+                    "min": 106.0,
+                    "average": 236.70833333333334,
+                    "max": 283.0,
+                    "percentiles": {
+                        "p25": 249.41666666666666,
+                        "p50": 252.33333333333334,
+                        "p75": 256.5
+                    }
+                }
+            }
+        },
+        "Nebula": {
+            "status": "error",
+            "pairs_ok": 0,
+            "pairs_total": 3,
+            "error_type": "ClanError",
+            "error": {
+                "description": null,
+                "msg": "QUIC handshake failed: qperf reported no connection establishment time. Output: 'starting client with host vpn.luna, port 18000, runtime 30s, cc reno, iw 10\\nconnection closed'",
+                "location": "NoneType: None\n"
+            },
+            "machine": "0_lom"
+        },
         "VpnCloud": {
             "status": "success",
+            "pairs_ok": 3,
+            "pairs_total": 3,
             "data": {
                 "total_bandwidth_mbps": {
                     "min": 84.07000000000001,
@@ -328,6 +450,8 @@
         },
         "Zerotier": {
             "status": "success",
+            "pairs_ok": 3,
+            "pairs_total": 3,
             "data": {
                 "total_bandwidth_mbps": {
                     "min": 82.369,
@@ -370,106 +494,6 @@
                     }
                 }
             }
-        },
-        "Yggdrasil": {
-            "status": "success",
-            "data": {
-                "total_bandwidth_mbps": {
-                    "min": 73.584,
-                    "average": 77.91654444444445,
-                    "max": 80.314,
-                    "percentiles": {
-                        "p25": 77.44733333333333,
-                        "p50": 77.88166666666667,
-                        "p75": 78.43558333333333
-                    }
-                },
-                "cpu_usage_percent": {
-                    "min": 6.06,
-                    "average": 12.906513888888888,
-                    "max": 22.68,
-                    "percentiles": {
-                        "p25": 10.817499999999999,
-                        "p50": 12.896666666666667,
-                        "p75": 14.863333333333333
-                    }
-                },
-                "ttfb_ms": {
-                    "min": 128.0,
-                    "average": 292.7916666666667,
-                    "max": 365.0,
-                    "percentiles": {
-                        "p25": 302.25,
-                        "p50": 315.3333333333333,
-                        "p75": 318.4166666666667
-                    }
-                },
-                "conn_time_ms": {
-                    "min": 106.0,
-                    "average": 236.70833333333334,
-                    "max": 283.0,
-                    "percentiles": {
-                        "p25": 249.41666666666666,
-                        "p50": 252.33333333333334,
-                        "p75": 256.5
-                    }
-                }
-            }
-        },
-        "Mycelium": {
-            "status": "success",
-            "data": {
-                "total_bandwidth_mbps": {
-                    "min": 64.022,
-                    "average": 79.08565722222222,
-                    "max": 81.827,
-                    "percentiles": {
-                        "p25": 78.16441666666667,
-                        "p50": 79.656435,
-                        "p75": 80.2984675
-                    }
-                },
-                "cpu_usage_percent": {
-                    "min": 0.0,
-                    "average": 6.579304054054054,
-                    "max": 23.16,
-                    "percentiles": {
-                        "p25": 4.043333333333333,
-                        "p50": 5.861666666666666,
-                        "p75": 8.429166666666667
-                    }
-                },
-                "ttfb_ms": {
-                    "min": 59.0,
-                    "average": 87.58333333333333,
-                    "max": 119.0,
-                    "percentiles": {
-                        "p25": 78.41666666666667,
-                        "p50": 88.66666666666667,
-                        "p75": 99.08333333333333
-                    }
-                },
-                "conn_time_ms": {
-                    "min": 30.0,
-                    "average": 41.625,
-                    "max": 59.0,
-                    "percentiles": {
-                        "p25": 33.833333333333336,
-                        "p50": 41.833333333333336,
-                        "p75": 48.833333333333336
-                    }
-                }
-            }
-        },
-        "Nebula": {
-            "status": "error",
-            "error_type": "ClanError",
-            "error": {
-                "description": null,
-                "msg": "QUIC handshake failed: qperf reported no connection establishment time. Output: 'starting client with host vpn.luna, port 18000, runtime 30s, cc reno, iw 10\\nconnection closed'",
-                "location": "NoneType: None\n"
-            },
-            "machine": "0_lom"
         }
     }
 }
