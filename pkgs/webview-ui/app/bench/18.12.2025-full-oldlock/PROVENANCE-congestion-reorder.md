@@ -2,7 +2,7 @@
 
 The congestion and reorder profiles of `11.11.2026-newprofiles-newlock` on the old
 lock: same 12 VPNs and tests (`--skip-con-times`), with the VPN versions, clan-core
-(`fe53467`) and nixpkgs (`e1ebeec`) of `22.10.2026-full-oldlock`, which holds Baseline,
+(`fe53467`) and nixpkgs (`e1ebeec`) of `18.12.2025-full-oldlock`, which holds Baseline,
 Low, Medium and High on this lock.
 Rig: NixOS 25.11.19800101.e1ebeec, kernel 6.12.57 on lom, luna and yuki, deployed and
 rebooted into with `deploy_reboot_oldlock.sh` before the run (the hosts ran the new lock).
@@ -23,9 +23,9 @@ Profiles, per direction, applied by each machine to the traffic it receives (ifb
   from formatting; Baseline to High produce the same netem line as in 22.10 (plus an
   explicit `handle 1:`).
 - Not backported: `65f9625`, which runs the benchmark clients in a prioritized
-  `benchmark.slice`. The measurement setup equals `22.10.2026-full-oldlock`, so the
+  `benchmark.slice`. The measurement setup equals `18.12.2025-full-oldlock`, so the
   comparison with `11.11.2026-newprofiles-newlock` differs in the VPN versions and that
-  slice, as `22.10.2026-full-oldlock` vs `03.11.2026-full-newlock` does.
+  slice, as `18.12.2025-full-oldlock` vs `03.11.2026-full-newlock` does.
 
 ## Driver
 
@@ -55,7 +55,7 @@ Hyprspace.
 
 ## Error results (29, none missing)
 
-Known mechanisms, also present in `22.10.2026-full-oldlock` or the new-lock runs, not
+Known mechanisms, also present in `18.12.2025-full-oldlock` or the new-lock runs, not
 re-run:
 
 - Headscale and Nebula qperf, both profiles: QUIC handshake failed.
@@ -121,15 +121,15 @@ its paced UDP capacity.
 
 | VPN | rev | narHash | version |
 |---|---|---|---|
-| Easytier | a7e582b94d0d811ea2e131c5243d7df22fc15bd8 | `sha256-nhKIQa5whqkXRe0exgbl/fQeCt8IIlD+6e2rymnAzdQ=` | as 22.10.2026-full-oldlock |
-| Headscale | a7e582b94d0d811ea2e131c5243d7df22fc15bd8 | `sha256-nhKIQa5whqkXRe0exgbl/fQeCt8IIlD+6e2rymnAzdQ=` | as 22.10.2026-full-oldlock |
-| Hyprspace | a7e582b94d0d811ea2e131c5243d7df22fc15bd8 | `sha256-nhKIQa5whqkXRe0exgbl/fQeCt8IIlD+6e2rymnAzdQ=` | as 22.10.2026-full-oldlock |
-| Internal | a7e582b94d0d811ea2e131c5243d7df22fc15bd8 | `sha256-nhKIQa5whqkXRe0exgbl/fQeCt8IIlD+6e2rymnAzdQ=` | as 22.10.2026-full-oldlock |
-| Mycelium | a7e582b94d0d811ea2e131c5243d7df22fc15bd8 | `sha256-nhKIQa5whqkXRe0exgbl/fQeCt8IIlD+6e2rymnAzdQ=` | as 22.10.2026-full-oldlock |
-| Nebula | a7e582b94d0d811ea2e131c5243d7df22fc15bd8 | `sha256-nhKIQa5whqkXRe0exgbl/fQeCt8IIlD+6e2rymnAzdQ=` | as 22.10.2026-full-oldlock |
-| Tinc | a7e582b94d0d811ea2e131c5243d7df22fc15bd8 | `sha256-nhKIQa5whqkXRe0exgbl/fQeCt8IIlD+6e2rymnAzdQ=` | as 22.10.2026-full-oldlock |
-| Tincr | a7e582b94d0d811ea2e131c5243d7df22fc15bd8 | `sha256-nhKIQa5whqkXRe0exgbl/fQeCt8IIlD+6e2rymnAzdQ=` | as 22.10.2026-full-oldlock |
-| VpnCloud | a7e582b94d0d811ea2e131c5243d7df22fc15bd8 | `sha256-nhKIQa5whqkXRe0exgbl/fQeCt8IIlD+6e2rymnAzdQ=` | as 22.10.2026-full-oldlock |
-| Wireguard | a7e582b94d0d811ea2e131c5243d7df22fc15bd8 | `sha256-nhKIQa5whqkXRe0exgbl/fQeCt8IIlD+6e2rymnAzdQ=` | as 22.10.2026-full-oldlock |
-| Yggdrasil | a7e582b94d0d811ea2e131c5243d7df22fc15bd8 | `sha256-nhKIQa5whqkXRe0exgbl/fQeCt8IIlD+6e2rymnAzdQ=` | as 22.10.2026-full-oldlock |
-| Zerotier | a7e582b94d0d811ea2e131c5243d7df22fc15bd8 | `sha256-nhKIQa5whqkXRe0exgbl/fQeCt8IIlD+6e2rymnAzdQ=` | as 22.10.2026-full-oldlock |
+| Easytier | a7e582b94d0d811ea2e131c5243d7df22fc15bd8 | `sha256-nhKIQa5whqkXRe0exgbl/fQeCt8IIlD+6e2rymnAzdQ=` | as 18.12.2025-full-oldlock |
+| Headscale | a7e582b94d0d811ea2e131c5243d7df22fc15bd8 | `sha256-nhKIQa5whqkXRe0exgbl/fQeCt8IIlD+6e2rymnAzdQ=` | as 18.12.2025-full-oldlock |
+| Hyprspace | a7e582b94d0d811ea2e131c5243d7df22fc15bd8 | `sha256-nhKIQa5whqkXRe0exgbl/fQeCt8IIlD+6e2rymnAzdQ=` | as 18.12.2025-full-oldlock |
+| Internal | a7e582b94d0d811ea2e131c5243d7df22fc15bd8 | `sha256-nhKIQa5whqkXRe0exgbl/fQeCt8IIlD+6e2rymnAzdQ=` | as 18.12.2025-full-oldlock |
+| Mycelium | a7e582b94d0d811ea2e131c5243d7df22fc15bd8 | `sha256-nhKIQa5whqkXRe0exgbl/fQeCt8IIlD+6e2rymnAzdQ=` | as 18.12.2025-full-oldlock |
+| Nebula | a7e582b94d0d811ea2e131c5243d7df22fc15bd8 | `sha256-nhKIQa5whqkXRe0exgbl/fQeCt8IIlD+6e2rymnAzdQ=` | as 18.12.2025-full-oldlock |
+| Tinc | a7e582b94d0d811ea2e131c5243d7df22fc15bd8 | `sha256-nhKIQa5whqkXRe0exgbl/fQeCt8IIlD+6e2rymnAzdQ=` | as 18.12.2025-full-oldlock |
+| Tincr | a7e582b94d0d811ea2e131c5243d7df22fc15bd8 | `sha256-nhKIQa5whqkXRe0exgbl/fQeCt8IIlD+6e2rymnAzdQ=` | as 18.12.2025-full-oldlock |
+| VpnCloud | a7e582b94d0d811ea2e131c5243d7df22fc15bd8 | `sha256-nhKIQa5whqkXRe0exgbl/fQeCt8IIlD+6e2rymnAzdQ=` | as 18.12.2025-full-oldlock |
+| Wireguard | a7e582b94d0d811ea2e131c5243d7df22fc15bd8 | `sha256-nhKIQa5whqkXRe0exgbl/fQeCt8IIlD+6e2rymnAzdQ=` | as 18.12.2025-full-oldlock |
+| Yggdrasil | a7e582b94d0d811ea2e131c5243d7df22fc15bd8 | `sha256-nhKIQa5whqkXRe0exgbl/fQeCt8IIlD+6e2rymnAzdQ=` | as 18.12.2025-full-oldlock |
+| Zerotier | a7e582b94d0d811ea2e131c5243d7df22fc15bd8 | `sha256-nhKIQa5whqkXRe0exgbl/fQeCt8IIlD+6e2rymnAzdQ=` | as 18.12.2025-full-oldlock |

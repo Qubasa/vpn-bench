@@ -3,7 +3,7 @@
 Full run on the updated stack: 12 VPNs (Internal and the 11 VPNs plus tincr), all tests
 (iperf3, iperf3-parallel-tcp, qperf, nix-cache, ping, rist-stream, connection times) and
 the four tc profiles (Baseline, Low, Medium, High). Same rig, tests and profiles as
-`22.10.2026-full-oldlock`; what changed is every VPN's version (latest upstream release or
+`18.12.2025-full-oldlock`; what changed is every VPN's version (latest upstream release or
 commit, `vpn-versions.nix`), clan-core and with it nixpkgs.
 Rig: NixOS 26.11.20261020.5adc508, kernel 6.18.57 on lom, luna and yuki.
 
@@ -58,7 +58,7 @@ instead of `mean`, `times`, ...). The per-machine `nix_cache.json` files saved b
 
 ## Error results (59, none missing)
 
-Same mechanisms as in `22.10.2026-full-oldlock`, not re-run:
+Same mechanisms as in `18.12.2025-full-oldlock`, not re-run:
 
 - Headscale and Nebula qperf, all profiles: QUIC handshake failed.
 - Hyprspace UDP (11 of 12 pairs) and Mycelium UDP (12 of 12): `control socket has closed

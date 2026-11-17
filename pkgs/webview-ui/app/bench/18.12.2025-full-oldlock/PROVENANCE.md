@@ -1,4 +1,4 @@
-# Provenance of 22.10.2026-full-oldlock
+# Provenance of 18.12.2025-full-oldlock
 
 Full re-run with the fixed vpb code: 11 VPNs, all tests (iperf3, iperf3-parallel-tcp,
 qperf, nix-cache, ping, rist-stream, connection times) and the four tc profiles
@@ -6,6 +6,9 @@ qperf, nix-cache, ping, rist-stream, connection times) and the four tc profiles
 clan-core and nixpkgs pins). Replaces the 18.12.2025 data. tincr was added later as
 a twelfth, additional result directory (`Tincr/`, see "Tincr addition").
 Rig: NixOS 25.11.19800101.e1ebeec, kernel 6.12.57 on lom, luna and yuki.
+
+Named after the 18.12.2025 package versions. Until 2026-11-17 the alias was
+`22.10.2026-full-oldlock`, the start date of its first run. The logs below keep that name.
 
 Since 2026-11-16 this alias also holds the Congestion and Reorder profiles of
 `12.11.2026-newprofiles-oldlock` (same VPN versions, clan-core and nixpkgs; vpb `a7e582b`),
