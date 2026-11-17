@@ -25,6 +25,7 @@ let
     "2c7f050fc5398ecd8ac5f77e9bb5bd91aa2e9e35" = "v0.5.15";
     "27047635f237d1f3e0b08c0f487674757f30d2f7" = "v1.104.4";
     "fc5c3ec22090b5b2a0f274e863651fe9ca489bf4" = "1.16.2";
+    "2872934d005dce7fbcc30e5e57f7c435c4203147" = "v0.1.0+69";
   };
 
   sourceUrl =
@@ -160,6 +161,10 @@ let
       src = inputs.yggdrasil;
       pkg = pkgsX86.yggdrasil;
     };
+    yip = {
+      src = inputs.yip;
+      pkg = pkgsX86.yip;
+    };
     zerotierone = {
       src = inputs.zerotierone;
       pkg = pkgsX86.zerotierone;
@@ -236,6 +241,7 @@ let
       "wireguard-tools"
     ];
     Yggdrasil = [ "yggdrasil" ];
+    Yip = [ "yip" ];
     Zerotier = [ "zerotierone" ];
   };
 in

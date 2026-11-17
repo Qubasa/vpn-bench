@@ -353,6 +353,34 @@ def install_headscale(config: Config, tr_machines: list[TrMachine]) -> None:
     inventory_store.write(inventory, message="Add headscale configuration")
 
 
+def _public_address_peers(
+    vpn_name: str, tr_machines: list[TrMachine]
+) -> dict[str, Any]:
+    """Peer role machines of a full static mesh, each with its public IPv4."""
+    machines: dict[str, Any] = {}
+    for tr_machine in tr_machines:
+        if tr_machine["ipv4"] is None:
+            msg = f"{vpn_name} requires public IPv4 addresses"
+            raise VpnBenchError(msg)
+        machines[tr_machine["name"]] = {
+            "settings": {"publicAddress": tr_machine["ipv4"]}
+        }
+    return machines
+
+
+def install_yip(config: Config, tr_machines: list[TrMachine]) -> None:
+    inventory_store = InventoryStore(Flake(str(config.clan_dir)))
+    inventory = inventory_store.read()
+    conf: dict[str, Any] = {
+        "module": {"name": "yip", "input": "cvpn-bench"},
+        "roles": {
+            "peer": {"machines": _public_address_peers("yip", tr_machines)},
+        },
+    }
+    set_value_by_path_tuple(inventory, ("instances", "yip"), conf)
+    inventory_store.write(inventory, message="Add yip configuration")
+
+
 def get_vpn_ips(
     config: Config, machines: list[Machine], vpn: VPN, tr_machines: list[TrMachine]
 ) -> list[BenchMachine]:
@@ -390,6 +418,8 @@ def get_vpn_ips(
                 vpn_ip = get_machine_var(machine, "tinc-tinc/ip").value.decode()
             case VPN.Tincr:
                 vpn_ip = get_machine_var(machine, "tincr-tincr/ip").value.decode()
+            case VPN.Yip:
+                vpn_ip = get_machine_var(machine, "yip-yip/ip").value.decode()
             case VPN.Headscale:
                 # Headscale assigns IPs dynamically, query IPv6 via tailscale CLI
                 result = ssh_run(
@@ -622,6 +652,8 @@ def install_vpn(
                 install_tincr(config, tr_machines)
             case VPN.Headscale:
                 install_headscale(config, tr_machines)
+            case VPN.Yip:
+                install_yip(config, tr_machines)
             case VPN.Internal:
                 pass
             case _:

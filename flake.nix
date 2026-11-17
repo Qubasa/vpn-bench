@@ -55,6 +55,11 @@
     url = "github:threefoldtech/mycelium/v0.7.10";
     flake = false;
   };
+  inputs.yip = {
+    # No release since v0.1.0; main carries the multi-core and AF_XDP data plane.
+    url = "github:femboyisp/yip/2872934d005dce7fbcc30e5e57f7c435c4203147";
+    flake = false;
+  };
   # Official apps that live outside the VPN's repository, pinned to their last commit before
   # the benchmarked VPN commit. Only the source analysis reads them.
   inputs.wireguard-apple = {
@@ -124,6 +129,7 @@
         ./pkgs/wireguard-tools/flake-module.nix
         ./pkgs/yggdrasil/flake-module.nix
         ./pkgs/mycelium/flake-module.nix
+        ./pkgs/yip/flake-module.nix
       ];
 
       flake =
@@ -218,6 +224,7 @@
               packages = self.packages;
             }
           );
+          "yip" = lib.modules.importApply ./clanModules/yip { packages = self.packages; };
           "phantun" = (lib.modules.importApply ./clanModules/phantun { packages = self.packages; });
           "tcp-reorder-tune" = ./clanModules/tcp-reorder-tune;
         };

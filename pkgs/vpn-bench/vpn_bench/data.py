@@ -57,6 +57,7 @@ class VPN(Enum):
     Tinc = "tinc"
     Tincr = "tincr"
     Headscale = "headscale"
+    Yip = "yip"
 
     @staticmethod
     def from_str(label: str) -> "VPN":
@@ -95,6 +96,8 @@ class VPN(Enum):
                 return ["/etc/tinc"]
             case VPN.Headscale:
                 return ["/var/lib/headscale", "/var/lib/tailscale"]
+            case VPN.Yip:
+                return []  # yipd keeps no state, its config lives in /run/yipd
             case _:
                 msg = f"Missing state directories for VPN: {self}"
                 raise NotImplementedError(msg)
