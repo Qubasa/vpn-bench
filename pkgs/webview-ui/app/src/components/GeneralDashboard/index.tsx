@@ -436,6 +436,63 @@ const RunTimeBanner = (props: { seconds: number }) => {
   );
 };
 
+// Connection times are measured once per run, so the tab ignores the profile selector
+const ConnectionTimesSection = (props: {
+  comparisonData?: ComparisonData;
+  profiles: string[];
+}) => {
+  const source = createMemo(() => {
+    const profile = props.profiles.find(
+      (p) => props.comparisonData?.[p]?.connectionTimings,
+    );
+    return profile ? { profile, data: props.comparisonData?.[profile] } : null;
+  });
+  return (
+    <Show
+      when={source()}
+      fallback={
+        <FallbackMessage message="No connection timing data available for this run." />
+      }
+    >
+      {(s) => (
+        <div
+          style={{ display: "flex", "flex-direction": "column", gap: "20px" }}
+        >
+          <div
+            style={{
+              background: "#f0f5ff",
+              border: "1px solid #adc6ff",
+              "border-radius": "6px",
+              padding: "12px 16px",
+              color: "#333",
+            }}
+          >
+            Measured once per run, in the{" "}
+            <strong>{s().profile.replace(/_/g, " ")}</strong> profile. The
+            profile selector above does not change these charts.
+          </div>
+          <Show when={s().data?.connectionTimings}>
+            {(timings) => (
+              <ConnectionTimingsChart
+                report={timings()}
+                title="Bootstrap Connection Times"
+              />
+            )}
+          </Show>
+          <Show when={s().data?.rebootConnectionTimings}>
+            {(timings) => (
+              <ConnectionTimingsChart
+                report={timings()}
+                title="Reboot Connection Times"
+              />
+            )}
+          </Show>
+        </div>
+      )}
+    </Show>
+  );
+};
+
 export const GeneralDashboard = (props: GeneralDashboardProps) => {
   // Get URL search params for state sync
   const [searchParams, setSearchParams] = useSearchParams();
@@ -480,6 +537,7 @@ export const GeneralDashboard = (props: GeneralDashboardProps) => {
     "nix-cache-comparison",
     "parallel-tcp-comparison",
     "benchmark-stats",
+    "connection-times",
   ] as const;
 
   type ValidTab = (typeof validTabs)[number];
@@ -578,6 +636,9 @@ export const GeneralDashboard = (props: GeneralDashboardProps) => {
           </Tabs.Trigger>
           <Tabs.Trigger class="tabs__trigger" value="benchmark-stats">
             Test Timings
+          </Tabs.Trigger>
+          <Tabs.Trigger class="tabs__trigger" value="connection-times">
+            Connection Times
           </Tabs.Trigger>
           <Tabs.Indicator class="tabs__indicator" />
         </Tabs.List>
@@ -721,6 +782,13 @@ export const GeneralDashboard = (props: GeneralDashboardProps) => {
           >
             {(data) => <TimeBreakdownPieChart data={data()} />}
           </Show>
+        </Tabs.Content>
+
+        <Tabs.Content class="tabs__content" value="connection-times">
+          <ConnectionTimesSection
+            comparisonData={props.comparisonData}
+            profiles={runAliases()}
+          />
         </Tabs.Content>
       </Tabs>
     </div>

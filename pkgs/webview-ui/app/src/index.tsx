@@ -38,7 +38,6 @@ import {
   MixedReport,
 } from "./benchData";
 import { GeneralDashboard } from "./components/GeneralDashboard";
-import { ConnectionTimesDashboard } from "./components/ConnectionTimesDashboard";
 import { TcpCrossProfileDashboard } from "./components/TcpCrossProfileDashboard";
 import { QperfData, QperfReport } from "./components/QperfCharts";
 import { HyperfineData, HyperfineReport } from "./components/HyperfineCharts";
@@ -387,27 +386,6 @@ function generateAppRouteFromGeneralData(
   ];
 }
 
-function ConnectionTimesDashboardWrapper() {
-  const { comparisonData: aliasComparisonData } = useAlias();
-  return <ConnectionTimesDashboard comparisonData={aliasComparisonData()} />;
-}
-
-function generateConnectionTimesRoute(comparison: ComparisonData): AppRoute[] {
-  if (Object.keys(comparison).length === 0) {
-    return [];
-  }
-
-  return [
-    {
-      path: "/connection-times",
-      label: "Connection Times",
-      component: () => <ConnectionTimesDashboardWrapper />,
-      category: "analysis" as const,
-      hidden: true,
-    },
-  ];
-}
-
 function generateCrossProfileRoute(): AppRoute[] {
   return [
     {
@@ -457,7 +435,6 @@ export const routes: AppRoute[] =
         },
         ...generateRoutesFromAllBenchData(allBenchData),
         ...generateAppRouteFromGeneralData(comparisonData),
-        ...generateConnectionTimesRoute(comparisonData),
         ...generateCrossProfileRoute(),
         ...generateFeatureMatrixRoute(),
         ...generateHardwareRoute(),
