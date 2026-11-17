@@ -1,8 +1,12 @@
-import { Echart } from "../Echarts"; // Assuming Echart component handles rendering
+import { createMemo, Show } from "solid-js";
+import type {
+  DefaultLabelFormatterCallbackParams,
+  TooltipComponentFormatterCallbackParams,
+} from "echarts";
+import { Echart } from "../Echarts";
 import { createErrorBarSeries } from "../Echarts/errorBars";
 import { formatAxisValue } from "../Echarts/formatters";
 import type { VpbIperfData } from "../IperfTcpCharts";
-/* eslint-disable  @typescript-eslint/no-explicit-any */
 
 // Define interfaces for UDP reports based on provided JSON
 export interface IperfUdpReportData {
@@ -210,248 +214,254 @@ interface IperfUdpChartsProps {
   };
 }
 
+type UdpReceiverSummary = IperfUdpReportData["end"]["sum_received"];
+type UdpInterval = NonNullable<IperfUdpReportData["intervals"]>[number];
+type UdpIntervalReceiver = NonNullable<UdpInterval["sum_bidir_reverse"]>;
+
+// Receiver side of the measured flow, the reverse flow only in --bidir runs
+const udpReceiverSummary = (
+  data: IperfUdpReportData,
+): UdpReceiverSummary | undefined =>
+  data.start?.test_start?.bidir === 1
+    ? data.end?.sum_received_bidir_reverse
+    : data.end?.sum_received;
+
+// iperf3 reports per-interval receiver data only for the reverse flow of --bidir runs
+const udpIntervalReceiver = (
+  data: IperfUdpReportData,
+  interval: UdpInterval,
+): UdpIntervalReceiver | undefined =>
+  data.start?.test_start?.bidir === 1 ? interval.sum_bidir_reverse : undefined;
+
+const toMbps = (bitsPerSecond: number | undefined): number | null =>
+  bitsPerSecond == null ? null : bitsPerSecond / 1_000_000;
+
+const formatBytes = (bytes: number) => {
+  const gb = bytes / 1_000_000_000;
+  if (gb >= 1) return `${gb.toFixed(2)} GB`;
+  const mb = bytes / 1_000_000;
+  return `${mb.toFixed(2)} MB`;
+};
+
+const udpTotals = (reports: IperfUdpReport[]) => {
+  let bytesSent = 0;
+  let bytesReceived = 0;
+  let duration = 0;
+  let payloadSize: number | undefined;
+
+  for (const report of reports) {
+    const sent = report.data.end?.sum_sent;
+    bytesSent += sent?.bytes ?? 0;
+    bytesReceived += udpReceiverSummary(report.data)?.bytes ?? 0;
+    duration = Math.max(duration, sent?.seconds ?? 0);
+    payloadSize ??= report.data.start?.test_start?.blksize;
+  }
+
+  return { bytesSent, bytesReceived, duration, payloadSize };
+};
+
+const SummaryItem = (props: {
+  label: string;
+  color: string;
+  value: string;
+}) => (
+  <div style={{ display: "flex", "align-items": "center", gap: "8px" }}>
+    <span style={{ "font-weight": "500", color: props.color }}>
+      {props.label}
+    </span>
+    <span style={{ color: "#333" }}>{props.value}</span>
+  </div>
+);
+
 // Test Summary Banner - shows total data transferred and duration
 const IperfUdpTestSummary = (props: { reports: IperfUdpReport[] }) => {
-  // Calculate totals from all reports
-  const totals = () => {
-    let totalBytesSent = 0;
-    let totalBytesReceived = 0;
-    let maxDuration = 0;
-    let payloadSize: number | null = null;
-
-    for (const report of props.reports) {
-      const sent = report.data.end?.sum_sent;
-      const received = report.data.end?.sum_received;
-
-      if (sent?.bytes) totalBytesSent += sent.bytes;
-      if (received?.bytes) totalBytesReceived += received.bytes;
-      if (sent?.seconds && sent.seconds > maxDuration) {
-        maxDuration = sent.seconds;
-      }
-      // Get blksize from test_start (should be same across all reports)
-      if (payloadSize === null && report.data.start?.test_start?.blksize) {
-        payloadSize = report.data.start.test_start.blksize;
-      }
-    }
-
-    return {
-      bytesSent: totalBytesSent,
-      bytesReceived: totalBytesReceived,
-      duration: maxDuration,
-      payloadSize,
-    };
-  };
-
-  const formatBytes = (bytes: number) => {
-    const gb = bytes / 1_000_000_000;
-    if (gb >= 1) return `${gb.toFixed(2)} GB`;
-    const mb = bytes / 1_000_000;
-    return `${mb.toFixed(2)} MB`;
-  };
-
-  const t = totals();
-
-  if (t.duration === 0 && t.bytesSent === 0) return null;
+  const totals = createMemo(() => udpTotals(props.reports));
 
   return (
-    <div
-      style={{
-        background: "#f0f5ff",
-        border: "1px solid #adc6ff",
-        "border-radius": "6px",
-        padding: "12px 16px",
-        "margin-bottom": "16px",
-        display: "flex",
-        "flex-wrap": "wrap",
-        gap: "24px",
-      }}
-    >
-      {t.duration > 0 && (
-        <div style={{ display: "flex", "align-items": "center", gap: "8px" }}>
-          <span style={{ "font-weight": "500", color: "#1890ff" }}>
-            Duration:
-          </span>
-          <span style={{ color: "#333" }}>{t.duration.toFixed(1)}s</span>
-        </div>
-      )}
-      {t.bytesSent > 0 && (
-        <div style={{ display: "flex", "align-items": "center", gap: "8px" }}>
-          <span style={{ "font-weight": "500", color: "#722ed1" }}>
-            Data Sent:
-          </span>
-          <span style={{ color: "#333" }}>{formatBytes(t.bytesSent)}</span>
-        </div>
-      )}
-      {t.bytesReceived > 0 && (
-        <div style={{ display: "flex", "align-items": "center", gap: "8px" }}>
-          <span style={{ "font-weight": "500", color: "#13c2c2" }}>
-            Data Received:
-          </span>
-          <span style={{ color: "#333" }}>{formatBytes(t.bytesReceived)}</span>
-        </div>
-      )}
-      {t.payloadSize !== null && t.payloadSize > 0 && (
-        <div style={{ display: "flex", "align-items": "center", gap: "8px" }}>
-          <span style={{ "font-weight": "500", color: "#fa8c16" }}>
-            Payload Size:
-          </span>
-          <span style={{ color: "#333" }}>{t.payloadSize} bytes</span>
-        </div>
-      )}
-    </div>
+    <Show when={totals().duration > 0 || totals().bytesSent > 0}>
+      <div
+        style={{
+          background: "#f0f5ff",
+          border: "1px solid #adc6ff",
+          "border-radius": "6px",
+          padding: "12px 16px",
+          "margin-bottom": "16px",
+          display: "flex",
+          "flex-wrap": "wrap",
+          gap: "24px",
+        }}
+      >
+        <Show when={totals().duration > 0}>
+          <SummaryItem
+            label="Duration:"
+            color="#1890ff"
+            value={`${totals().duration.toFixed(1)}s`}
+          />
+        </Show>
+        <Show when={totals().bytesSent > 0}>
+          <SummaryItem
+            label="Data Sent:"
+            color="#722ed1"
+            value={formatBytes(totals().bytesSent)}
+          />
+        </Show>
+        <Show when={totals().bytesReceived > 0}>
+          <SummaryItem
+            label="Data Received:"
+            color="#13c2c2"
+            value={formatBytes(totals().bytesReceived)}
+          />
+        </Show>
+        <Show when={totals().payloadSize}>
+          {(size) => (
+            <SummaryItem
+              label="Payload Size:"
+              color="#fa8c16"
+              value={`${size()} bytes`}
+            />
+          )}
+        </Show>
+      </div>
+    </Show>
   );
 };
 
-// --- Helper Function for UDP Throughput Stats ---
-const getUdpThroughputStats = (reportData: IperfUdpReportData) => {
-  // Averages from the 'end' summary (Client's perspective)
-  // Avg Sent: What the client sent (primary direction)
-  const avgSentMbps =
-    (reportData.end?.sum_sent?.bits_per_second ?? 0) / 1000000;
-  // Avg Received: What the client received (reverse direction in --bidir)
-  const avgRecvMbps =
-    (reportData.end?.sum_received_bidir_reverse?.bits_per_second ?? 0) /
-    1000000;
+interface MbpsRange {
+  min: number;
+  max: number;
+}
 
-  let minSentMbps = avgSentMbps;
-  let maxSentMbps = avgSentMbps;
-  let minRecvMbps = avgRecvMbps;
-  let maxRecvMbps = avgRecvMbps;
+interface UdpThroughputStats {
+  name: string;
+  avgSentMbps: number | null;
+  sentRange: MbpsRange | null;
+  avgRecvMbps: number | null;
+  recvRange: MbpsRange | null;
+}
 
-  // Calculate Min/Max from intervals if available
-  if (reportData.intervals && reportData.intervals.length > 0) {
-    // Sent: Use intervals[].sum.bits_per_second
-    const validSentIntervals = reportData.intervals.filter(
-      (i) => i.sum?.bits_per_second != null,
-    );
-    if (validSentIntervals.length > 0) {
-      const sentRates = validSentIntervals.map(
-        (interval) => interval.sum.bits_per_second / 1000000,
-      );
-      minSentMbps = Math.min(...sentRates);
-      maxSentMbps = Math.max(...sentRates);
-    }
+const rangeOf = (values: (number | null)[]): MbpsRange | null => {
+  const present = values.filter((value): value is number => value != null);
+  if (present.length === 0) return null;
+  return { min: Math.min(...present), max: Math.max(...present) };
+};
 
-    // Received: Use intervals[].sum_bidir_reverse.bits_per_second
-    const validRecvIntervals = reportData.intervals.filter(
-      (i) => i.sum_bidir_reverse?.bits_per_second != null,
-    );
-    if (validRecvIntervals.length > 0) {
-      const recvRates = validRecvIntervals.map((interval) => {
-        if (interval.sum_bidir_reverse) {
-          return interval.sum_bidir_reverse.bits_per_second / 1000000; // Use non-null assertion as we checked
-        } else {
-          throw new Error("sum_bidir_reverse is missing in intervals");
-        }
-      });
-      minRecvMbps = Math.min(...recvRates);
-      maxRecvMbps = Math.max(...recvRates);
-    }
-  }
-
+const getUdpThroughputStats = (report: IperfUdpReport): UdpThroughputStats => {
+  const data = report.data;
+  const intervals = data.intervals ?? [];
   return {
-    avgSentMbps,
-    minSentMbps,
-    maxSentMbps,
-    avgRecvMbps,
-    minRecvMbps,
-    maxRecvMbps,
+    name: report.name ?? "Unknown Report",
+    avgSentMbps: toMbps(data.end?.sum_sent?.bits_per_second),
+    sentRange: rangeOf(
+      intervals.map((interval) => toMbps(interval.sum?.bits_per_second)),
+    ),
+    avgRecvMbps: toMbps(udpReceiverSummary(data)?.bits_per_second),
+    recvRange: rangeOf(
+      intervals.map((interval) =>
+        toMbps(udpIntervalReceiver(data, interval)?.bits_per_second),
+      ),
+    ),
   };
 };
 
-// --- Chart Creation Functions (Modified & Completed) ---
+const SENT_SERIES = "Average Sent";
+const RECV_SERIES = "Average Received";
+const SENT_COLOR = "#3498db";
+const RECV_COLOR = "#2ecc71";
 
-// Throughput Chart Creator for UDP
+const formatMbps = (value: number | null) =>
+  value == null ? "n/a" : `${value.toFixed(1)} Mbps`;
+
+const rangeNote = (avg: number | null, range: MbpsRange | null) =>
+  range && (range.min !== avg || range.max !== avg)
+    ? `&nbsp;&nbsp;&nbsp;<small>Min: ${range.min.toFixed(1)} Mbps | Max: ${range.max.toFixed(1)} Mbps</small><br/>`
+    : "";
+
+const throughputTooltip = (
+  stats: UdpThroughputStats[],
+  params: TooltipComponentFormatterCallbackParams,
+) => {
+  const list = Array.isArray(params) ? params : [params];
+  const first = list[0];
+  const item = first ? stats[first.dataIndex] : undefined;
+  if (!item) return "";
+  const marker = (seriesName: string) => {
+    const found = list.find((p) => p.seriesName === seriesName)?.marker;
+    return typeof found === "string" ? found : "";
+  };
+  return [
+    `<b>${item.name}</b><br/>`,
+    `${marker(SENT_SERIES)} Avg Sent: ${formatMbps(item.avgSentMbps)}<br/>`,
+    rangeNote(item.avgSentMbps, item.sentRange),
+    `${marker(RECV_SERIES)} Avg Recv: ${formatMbps(item.avgRecvMbps)}<br/>`,
+    rangeNote(item.avgRecvMbps, item.recvRange),
+  ]
+    .join("")
+    .replace(/<br\/>$/, "");
+};
+
+const throughputErrorBars = (
+  stats: UdpThroughputStats[],
+  avg: (item: UdpThroughputStats) => number | null,
+  range: (item: UdpThroughputStats) => MbpsRange | null,
+  barIndex: number,
+) => ({
+  ...createErrorBarSeries(
+    stats.map((item) => {
+      const value = avg(item);
+      return range(item) ?? (value == null ? null : { min: value, max: value });
+    }),
+    {
+      barIndex,
+      totalBars: 2,
+      labels: {
+        values: stats.map((item) => {
+          const value = avg(item);
+          return value == null ? null : formatMbps(value);
+        }),
+      },
+    },
+  ),
+  yAxisIndex: barIndex,
+});
+
+const throughputAxis = (name: string, color: string, showSplit: boolean) => ({
+  type: "value" as const,
+  name,
+  min: 0,
+  boundaryGap: [0, "10%"] as [number, string],
+  axisLine: { show: true, lineStyle: { color } },
+  axisLabel: { formatter: formatAxisValue },
+  splitLine: { show: showSplit },
+});
+
+// Sender and receiver rates differ by orders of magnitude, so each gets its own axis
 const createUdpThroughputOption = (
   reports: IperfUdpReport[],
 ): echarts.EChartsOption | null => {
-  if (!reports || reports.length === 0) return null;
-
-  const throughputStats = reports.map((report) => ({
-    name: report.name ?? "Unknown Report",
-    stats: getUdpThroughputStats(report.data),
-  }));
-
-  // Check if there's any meaningful data to plot
-  const hasData = throughputStats.some(
-    (item) => item.stats.avgSentMbps > 0 || item.stats.avgRecvMbps > 0,
+  const stats = reports.map(getUdpThroughputStats);
+  const hasData = stats.some(
+    (item) => item.avgSentMbps != null || item.avgRecvMbps != null,
   );
   if (!hasData) return null;
-
-  interface EchartTooltipParam {
-    marker: string;
-    name: string;
-    dataIndex: number;
-    seriesName: string;
-    value: number;
-  }
-
-  type EchartTooltipFormatterParams = EchartTooltipParam | EchartTooltipParam[];
 
   return {
     title: {
       text: "Average Throughput",
-      subtext: "Higher is better",
+      subtext: "Higher is better | Sent and received use separate axes",
       left: "center",
       subtextStyle: { color: "#888", fontSize: 12 },
     },
     tooltip: {
       trigger: "axis",
       axisPointer: { type: "shadow" },
-      formatter: (params: any): string => {
-        const tooltipParams = Array.isArray(params) ? params : [params];
-        if (!tooltipParams || tooltipParams.length === 0) return "";
-        const reportIndex = tooltipParams[0].dataIndex;
-        const reportStat = throughputStats[reportIndex];
-        if (!reportStat) return "";
-
-        let tooltipText = `<b>${reportStat.name}</b><br/>`;
-        const sentParam = tooltipParams.find(
-          (p: any) => p.seriesName === "Average Sent",
-        );
-        const recvParam = tooltipParams.find(
-          (p: any) => p.seriesName === "Average Received",
-        );
-        if (sentParam) {
-          tooltipText += `${sentParam.marker ?? ""} Avg Sent: ${reportStat.stats.avgSentMbps.toFixed(
-            1,
-          )} Mbps<br/>`;
-          if (
-            reportStat.stats.minSentMbps !== reportStat.stats.avgSentMbps ||
-            reportStat.stats.maxSentMbps !== reportStat.stats.avgSentMbps
-          ) {
-            tooltipText += `&nbsp;&nbsp;&nbsp;<small>Min: ${reportStat.stats.minSentMbps.toFixed(
-              1,
-            )} Mbps | Max: ${reportStat.stats.maxSentMbps.toFixed(1)} Mbps</small><br/>`;
-          }
-        }
-        if (recvParam) {
-          tooltipText += `${recvParam.marker ?? ""} Avg Recv: ${reportStat.stats.avgRecvMbps.toFixed(
-            1,
-          )} Mbps<br/>`;
-          if (
-            reportStat.stats.minRecvMbps !== reportStat.stats.avgRecvMbps ||
-            reportStat.stats.maxRecvMbps !== reportStat.stats.avgRecvMbps
-          ) {
-            tooltipText += `&nbsp;&nbsp;&nbsp;<small>Min: ${reportStat.stats.minRecvMbps.toFixed(
-              1,
-            )} Mbps | Max: ${reportStat.stats.maxRecvMbps.toFixed(1)} Mbps</small>`;
-          }
-        }
-        if (tooltipText.endsWith("<br/>")) {
-          tooltipText = tooltipText.substring(0, tooltipText.length - 5);
-        }
-        return tooltipText;
-      },
+      formatter: (params: TooltipComponentFormatterCallbackParams) =>
+        throughputTooltip(stats, params),
       confine: true,
     },
-    legend: {
-      data: ["Average Sent", "Average Received"],
-      bottom: 10,
-    },
+    legend: { data: [SENT_SERIES, RECV_SERIES], bottom: 10 },
     grid: {
       left: "3%",
-      right: "4%",
+      right: "6%",
       bottom: "40px",
       top: "15%",
       containLabel: true,
@@ -467,104 +477,80 @@ const createUdpThroughputOption = (
     },
     xAxis: {
       type: "category",
-      data: throughputStats.map((item) => item.name),
-      axisLabel: {
-        interval: 0,
-        rotate: reports.length > 5 ? 30 : 0,
-      },
+      data: stats.map((item) => item.name),
+      axisLabel: { interval: 0, rotate: reports.length > 5 ? 30 : 0 },
     },
-    yAxis: {
-      type: "value",
-      name: "Mbps",
-      boundaryGap: [0, "10%"],
-      axisLabel: { formatter: formatAxisValue },
-      nameTextStyle: {
-        align: "left",
-      },
-    },
+    yAxis: [
+      throughputAxis("Sent (Mbps)", SENT_COLOR, true),
+      throughputAxis("Received (Mbps)", RECV_COLOR, false),
+    ],
     series: [
       {
-        name: "Average Sent",
+        name: SENT_SERIES,
         type: "bar",
-        data: throughputStats.map((item) =>
-          (item?.stats?.avgSentMbps ?? 0).toFixed(1),
-        ),
-        color: "#3498db",
-        label: { show: false },
+        yAxisIndex: 0,
+        data: stats.map((item) => item.avgSentMbps),
+        color: SENT_COLOR,
         emphasis: { focus: "series" },
       },
       {
-        name: "Average Received",
+        name: RECV_SERIES,
         type: "bar",
-        data: throughputStats.map((item) =>
-          (item?.stats?.avgRecvMbps ?? 0).toFixed(1),
-        ),
-        color: "#2ecc71",
-        label: { show: false },
+        yAxisIndex: 1,
+        data: stats.map((item) => item.avgRecvMbps),
+        color: RECV_COLOR,
         emphasis: { focus: "series" },
       },
-      createErrorBarSeries(
-        throughputStats.map((item) => ({
-          min: item.stats.minSentMbps,
-          max: item.stats.maxSentMbps,
-        })),
-        {
-          barIndex: 0,
-          totalBars: 2,
-          labels: {
-            values: throughputStats.map(
-              (item) => `${(item?.stats?.avgSentMbps ?? 0).toFixed(1)} Mbps`,
-            ),
-          },
-        },
+      throughputErrorBars(
+        stats,
+        (item) => item.avgSentMbps,
+        (item) => item.sentRange,
+        0,
       ),
-      createErrorBarSeries(
-        throughputStats.map((item) => ({
-          min: item.stats.minRecvMbps,
-          max: item.stats.maxRecvMbps,
-        })),
-        {
-          barIndex: 1,
-          totalBars: 2,
-          labels: {
-            values: throughputStats.map(
-              (item) => `${(item?.stats?.avgRecvMbps ?? 0).toFixed(1)} Mbps`,
-            ),
-          },
-        },
+      throughputErrorBars(
+        stats,
+        (item) => item.avgRecvMbps,
+        (item) => item.recvRange,
+        1,
       ),
     ],
   };
 };
 
-// Packet Loss Chart Creator
-const createPacketLossOption = (
+interface ReceiverMetricSpec {
+  key: "lost_percent" | "jitter_ms";
+  title: string;
+  seriesName: string;
+  axisName: string;
+  unit: string;
+  digits: number;
+  color: string;
+  axisMax?: number;
+}
+
+// Bar chart of one receiver-side summary metric, missing values stay absent
+const createReceiverMetricOption = (
   reports: IperfUdpReport[],
+  spec: ReceiverMetricSpec,
 ): echarts.EChartsOption | null => {
-  if (!reports || reports.length === 0) return null;
+  const points = reports
+    .map((report) => ({
+      name: report.name ?? "Unknown Report",
+      value: udpReceiverSummary(report.data)?.[spec.key] ?? null,
+    }))
+    .sort(
+      (a, b) => (a.value ?? Number.MAX_VALUE) - (b.value ?? Number.MAX_VALUE),
+    );
+  if (points.every((point) => point.value == null)) return null;
 
-  // Sort by packet loss (ascending - lower is better)
-  const sortedReports = [...reports].sort((a, b) => {
-    const aLoss = a.data?.end?.sum_received_bidir_reverse?.lost_percent ?? 0;
-    const bLoss = b.data?.end?.sum_received_bidir_reverse?.lost_percent ?? 0;
-    return aLoss - bLoss;
-  });
-
-  // Plot loss for the reverse direction (client receiving) as it's often paired with jitter
-  const lossData = sortedReports.map((report) => ({
-    name: report.name ?? "Unknown Report",
-    // Use sum_received_bidir_reverse for client-received loss in bidir test
-    value: (
-      report.data?.end?.sum_received_bidir_reverse?.lost_percent ?? 0
-    ).toFixed(1),
-  }));
-
-  const hasData = lossData.some((item) => parseFloat(item.value) > 0);
-  // Don't return null even if loss is 0, showing 0% loss is informative
+  const format = (value: unknown) =>
+    typeof value === "number"
+      ? `${value.toFixed(spec.digits)}${spec.unit}`
+      : "n/a";
 
   return {
     title: {
-      text: "Overall Packet Loss (Reverse Direction)", // Clarified Title
+      text: spec.title,
       subtext: "Lower is better",
       left: "center",
       subtextStyle: { color: "#888", fontSize: 12 },
@@ -572,12 +558,9 @@ const createPacketLossOption = (
     tooltip: {
       trigger: "axis",
       axisPointer: { type: "shadow" },
-      formatter: function (params) {
-        const tooltipParams = Array.isArray(params) ? params : [params];
-        if (!tooltipParams || tooltipParams.length === 0) return "";
-        const value = tooltipParams[0].value;
-        const name = tooltipParams[0].name;
-        return `${name}: ${value}%`;
+      formatter: (params: TooltipComponentFormatterCallbackParams) => {
+        const param = Array.isArray(params) ? params[0] : params;
+        return param ? `${param.name}: ${format(param.value)}` : "";
       },
     },
     grid: {
@@ -598,30 +581,28 @@ const createPacketLossOption = (
     },
     xAxis: {
       type: "category",
-      data: lossData.map((item) => item.name),
-      axisLabel: {
-        interval: 0,
-        rotate: reports.length > 5 ? 30 : 0,
-      },
+      data: points.map((point) => point.name),
+      axisLabel: { interval: 0, rotate: reports.length > 5 ? 30 : 0 },
     },
     yAxis: {
       type: "value",
-      name: "Packet Loss (%)",
-      max: 100,
+      name: spec.axisName,
       min: 0,
+      max: spec.axisMax,
       axisLabel: { formatter: formatAxisValue },
       nameTextStyle: { align: "left" },
     },
     series: [
       {
-        name: "Packet Loss",
+        name: spec.seriesName,
         type: "bar",
-        data: lossData.map((item) => item.value),
-        color: "#e74c3c",
+        data: points.map((point) => point.value),
+        color: spec.color,
         label: {
           show: true,
           position: "top",
-          formatter: "{c}%",
+          formatter: (param: DefaultLabelFormatterCallbackParams) =>
+            format(param.value),
           fontSize: 10,
         },
         emphasis: { focus: "series" },
@@ -630,96 +611,28 @@ const createPacketLossOption = (
   };
 };
 
-// Jitter Chart Creator
-const createJitterOption = (
-  reports: IperfUdpReport[],
-): echarts.EChartsOption | null => {
-  if (!reports || reports.length === 0) return null;
-
-  // Sort by jitter (ascending - lower is better)
-  const sortedReports = [...reports].sort((a, b) => {
-    const aJitter = a.data?.end?.sum_received_bidir_reverse?.jitter_ms ?? 0;
-    const bJitter = b.data?.end?.sum_received_bidir_reverse?.jitter_ms ?? 0;
-    return aJitter - bJitter;
+const createPacketLossOption = (reports: IperfUdpReport[]) =>
+  createReceiverMetricOption(reports, {
+    key: "lost_percent",
+    title: "Overall Packet Loss (Receiver)",
+    seriesName: "Packet Loss",
+    axisName: "Packet Loss (%)",
+    unit: "%",
+    digits: 2,
+    color: "#e74c3c",
+    axisMax: 100,
   });
 
-  // Plot jitter for the reverse direction (client receiving)
-  const jitterData = sortedReports.map((report) => ({
-    name: report.name ?? "Unknown Report",
-    // Use sum_received_bidir_reverse for client-received jitter in bidir test
-    value: (
-      report.data?.end?.sum_received_bidir_reverse?.jitter_ms ?? 0
-    ).toFixed(3),
-  }));
-
-  const hasData = jitterData.some((item) => parseFloat(item.value) > 0);
-  // Don't return null if jitter is 0, showing 0ms is informative
-
-  return {
-    title: {
-      text: "Average Jitter (Reverse Direction)", // Clarified Title
-      subtext: "Lower is better",
-      left: "center",
-      subtextStyle: { color: "#888", fontSize: 12 },
-    },
-    tooltip: {
-      trigger: "axis",
-      axisPointer: { type: "shadow" },
-      formatter: (params: any): string => {
-        const tooltipParams = Array.isArray(params) ? params : [params];
-        if (!tooltipParams || tooltipParams.length === 0) return "";
-        const value = tooltipParams[0].value;
-        const name = tooltipParams[0].name;
-        return `${name}: ${value} ms`;
-      },
-    },
-    grid: {
-      left: "3%",
-      right: "4%",
-      bottom: "3%",
-      top: "15%",
-      containLabel: true,
-    },
-    toolbox: {
-      feature: {
-        saveAsImage: { title: "Save Image" },
-        dataView: { show: true, readOnly: false, title: "View Data" },
-      },
-      orient: "vertical",
-      right: 10,
-      top: "center",
-    },
-    xAxis: {
-      type: "category",
-      data: jitterData.map((item) => item.name),
-      axisLabel: {
-        interval: 0,
-        rotate: reports.length > 5 ? 30 : 0,
-      },
-    },
-    yAxis: {
-      type: "value",
-      name: "Jitter (ms)",
-      axisLabel: { formatter: formatAxisValue },
-      nameTextStyle: { align: "left" },
-    },
-    series: [
-      {
-        name: "Jitter",
-        type: "bar",
-        data: jitterData.map((item) => item.value),
-        color: "#9b59b6",
-        label: {
-          show: true,
-          position: "top",
-          formatter: "{c} ms",
-          fontSize: 10,
-        },
-        emphasis: { focus: "series" },
-      },
-    ],
-  };
-};
+const createJitterOption = (reports: IperfUdpReport[]) =>
+  createReceiverMetricOption(reports, {
+    key: "jitter_ms",
+    title: "Average Jitter (Receiver)",
+    seriesName: "Jitter",
+    axisName: "Jitter (ms)",
+    unit: " ms",
+    digits: 3,
+    color: "#9b59b6",
+  });
 
 // CPU Utilization Chart Creator for UDP
 const createUdpCpuOption = (
@@ -859,185 +772,155 @@ const createUdpCpuOption = (
   };
 };
 
-// Time Series Chart Creator for UDP
+interface UdpIntervalSeries {
+  name: string;
+  throughput: Map<string, number | null>;
+  loss: Map<string, number | null>;
+  jitter: Map<string, number | null>;
+}
+
+const collectIntervalSeries = (report: IperfUdpReport): UdpIntervalSeries => {
+  const series: UdpIntervalSeries = {
+    name: report.name ?? "Unknown Report",
+    throughput: new Map(),
+    loss: new Map(),
+    jitter: new Map(),
+  };
+  for (const interval of report.data?.intervals ?? []) {
+    const time = interval.sum?.end?.toFixed(2);
+    if (time == null) continue;
+    const receiver = udpIntervalReceiver(report.data, interval);
+    series.throughput.set(time, toMbps(interval.sum?.bits_per_second));
+    series.loss.set(time, receiver?.lost_percent ?? null);
+    series.jitter.set(time, receiver?.jitter_ms ?? null);
+  }
+  return series;
+};
+
+const TIME_SERIES_COLORS = [
+  "#3498db",
+  "#e74c3c",
+  "#9b59b6",
+  "#2ecc71",
+  "#f39c12",
+  "#1abc9c",
+  "#d35400",
+  "#34495e",
+];
+
+const lineSeries = (
+  name: string,
+  data: (number | null)[],
+  color: string,
+  yAxisIndex: number,
+  dashed = false,
+): echarts.LineSeriesOption[] =>
+  data.some((value) => value !== null)
+    ? [
+        {
+          name,
+          type: "line",
+          data,
+          color,
+          symbol: "none",
+          yAxisIndex,
+          lineStyle: dashed ? { type: "dashed" } : undefined,
+          emphasis: { focus: "series" },
+        },
+      ]
+    : [];
+
+const buildTimeSeries = (
+  collected: UdpIntervalSeries[],
+  times: string[],
+): echarts.LineSeriesOption[] =>
+  collected.flatMap((series, index) => {
+    const color = (offset: number) =>
+      TIME_SERIES_COLORS[(index * 3 + offset) % TIME_SERIES_COLORS.length];
+    const align = (values: Map<string, number | null>) =>
+      times.map((time) => values.get(time) ?? null);
+    return [
+      ...lineSeries(
+        `${series.name} Throughput`,
+        align(series.throughput),
+        color(0),
+        0,
+      ),
+      ...lineSeries(`${series.name} Pkt Loss`, align(series.loss), color(1), 1),
+      ...lineSeries(
+        `${series.name} Jitter`,
+        align(series.jitter),
+        color(2),
+        1,
+        true,
+      ),
+    ];
+  });
+
+const timeSeriesAxes = (hasReceiver: boolean) => {
+  const throughputAxis = {
+    type: "value" as const,
+    name: "Throughput (Mbps)",
+    position: "left" as const,
+    axisLine: { show: true, lineStyle: { color: TIME_SERIES_COLORS[0] } },
+    axisLabel: { formatter: formatAxisValue },
+    nameTextStyle: { align: "left" as const },
+    min: 0,
+  };
+  const receiverAxis = {
+    type: "value" as const,
+    name: "Loss (%) / Jitter (ms)",
+    position: "right" as const,
+    axisLine: { show: true, lineStyle: { color: TIME_SERIES_COLORS[1] } },
+    axisLabel: { formatter: formatAxisValue },
+    nameTextStyle: { align: "right" as const },
+    min: 0,
+    splitLine: { show: false },
+  };
+  return hasReceiver ? [throughputAxis, receiverAxis] : [throughputAxis];
+};
+
+// Loss and jitter get their own axis only when the runs carry per-interval receiver data
 const createUdpTimeSeriesOption = (
   reports: IperfUdpReport[],
 ): echarts.EChartsOption | null => {
-  if (!reports || reports.length === 0) return null;
-
-  const allTimeStampsSet = new Set<string>();
-  const seriesCollection: {
-    reportName: string;
-    throughput: { time: string; value: number | null }[];
-    packetLoss: { time: string; value: number | null }[];
-    jitter: { time: string; value: number | null }[];
-  }[] = [];
-
-  reports.forEach((report) => {
-    if (!report.data?.intervals || report.data.intervals.length === 0) {
-      console.warn(`Report ${report.name ?? "Unknown"} has no interval data.`);
-      return; // Skip this report if no intervals
-    }
-
-    const currentReportSeries = {
-      reportName: report.name ?? "Unknown Report",
-      throughput: [] as { time: string; value: number | null }[],
-      packetLoss: [] as { time: string; value: number | null }[],
-      jitter: [] as { time: string; value: number | null }[],
-    };
-
-    report.data.intervals.forEach((interval) => {
-      const timestamp = interval.sum?.end?.toFixed(2); // Use 2 decimal places for time
-      if (timestamp == null) return;
-
-      allTimeStampsSet.add(timestamp);
-
-      // Primary Throughput (Client Sending)
-      const throughputVal =
-        interval.sum?.bits_per_second != null
-          ? interval.sum.bits_per_second / 1000000
-          : null;
-      currentReportSeries.throughput.push({
-        time: timestamp,
-        value: throughputVal,
-      });
-
-      // Reverse Direction Packet Loss (Client Receiving)
-      const lossVal =
-        interval.sum_bidir_reverse?.lost_percent != null
-          ? interval.sum_bidir_reverse.lost_percent
-          : null;
-      currentReportSeries.packetLoss.push({ time: timestamp, value: lossVal });
-
-      // Reverse Direction Jitter (Client Receiving)
-      const jitterVal =
-        interval.sum_bidir_reverse?.jitter_ms != null
-          ? interval.sum_bidir_reverse.jitter_ms
-          : null;
-      currentReportSeries.jitter.push({ time: timestamp, value: jitterVal });
-    });
-    seriesCollection.push(currentReportSeries);
-  });
-
-  if (seriesCollection.length === 0 || allTimeStampsSet.size === 0) {
-    console.warn(
-      "No valid interval data found across all UDP reports for time series.",
-    );
-    return null; // Return null if no data to plot
-  }
-
-  const allTimeStamps = Array.from(allTimeStampsSet).sort(
-    (a, b) => parseFloat(a) - parseFloat(b),
-  );
-
-  const finalSeries: any[] = [];
-  const colorPalette = [
-    "#3498db",
-    "#e74c3c",
-    "#9b59b6",
-    "#2ecc71",
-    "#f39c12",
-    "#1abc9c",
-    "#d35400",
-    "#34495e",
-  ];
-  let colorIndex = 0;
-
-  seriesCollection.forEach((reportSeries) => {
-    const throughputMap = new Map(
-      reportSeries.throughput.map((item) => [item.time, item.value]),
-    );
-    const lossMap = new Map(
-      reportSeries.packetLoss.map((item) => [item.time, item.value]),
-    );
-    const jitterMap = new Map(
-      reportSeries.jitter.map((item) => [item.time, item.value]),
-    );
-
-    const alignedThroughput = allTimeStamps.map(
-      (ts) => throughputMap.get(ts) ?? null,
-    );
-    const alignedLoss = allTimeStamps.map((ts) => lossMap.get(ts) ?? null);
-    const alignedJitter = allTimeStamps.map((ts) => jitterMap.get(ts) ?? null);
-
-    // Only add series if they contain at least one non-null data point
-    if (alignedThroughput.some((d) => d !== null)) {
-      finalSeries.push({
-        name: `${reportSeries.reportName} Throughput`,
-        type: "line",
-        data: alignedThroughput,
-        color: colorPalette[colorIndex % colorPalette.length],
-        symbol: "none", // Hide data point markers for cleaner lines
-        yAxisIndex: 0, // Use the first Y axis (Throughput)
-        emphasis: { focus: "series" },
-      });
-    }
-    if (alignedLoss.some((d) => d !== null)) {
-      finalSeries.push({
-        name: `${reportSeries.reportName} Pkt Loss`, // Shorter legend name
-        type: "line",
-        data: alignedLoss,
-        color: colorPalette[(colorIndex + 1) % colorPalette.length],
-        symbol: "none",
-        yAxisIndex: 1, // Use the second Y axis (Loss/Jitter)
-        emphasis: { focus: "series" },
-      });
-    }
-    if (alignedJitter.some((d) => d !== null)) {
-      finalSeries.push({
-        name: `${reportSeries.reportName} Jitter`,
-        type: "line",
-        data: alignedJitter,
-        color: colorPalette[(colorIndex + 2) % colorPalette.length],
-        symbol: "none",
-        yAxisIndex: 1, // Use the second Y axis (Loss/Jitter)
-        lineStyle: { type: "dashed" }, // Differentiate jitter line
-        emphasis: { focus: "series" },
-      });
-    }
-    colorIndex += 3; // Increment color index for next report
-  });
-
-  if (finalSeries.length === 0) {
-    console.warn(
-      "No valid series data to plot for time series after alignment.",
-    );
-    return null;
-  }
+  const collected = reports.map(collectIntervalSeries);
+  const times = Array.from(
+    new Set(collected.flatMap((series) => [...series.throughput.keys()])),
+  ).sort((a, b) => parseFloat(a) - parseFloat(b));
+  const series = buildTimeSeries(collected, times);
+  if (series.length === 0) return null;
+  const hasReceiver = series.some((item) => item.yAxisIndex === 1);
 
   return {
     title: {
       text: "Performance Over Time",
-      subtext: "Higher throughput / Lower loss & jitter is better",
+      subtext: hasReceiver
+        ? "Higher throughput / Lower loss & jitter is better"
+        : "Sender throughput | Higher is better",
       left: "center",
       subtextStyle: { color: "#888", fontSize: 12 },
     },
     tooltip: {
       trigger: "axis",
       valueFormatter: (value) =>
-        typeof value === "number"
-          ? value.toFixed(2)
-          : value != null
-            ? String(value)
-            : "N/A", // Ensure a string is returned
+        typeof value === "number" ? value.toFixed(2) : "n/a",
       confine: true,
     },
     legend: {
-      data: finalSeries.map((s) => s.name),
-      type: "scroll", // Allow scrolling if many legends
+      data: series.map((item) => String(item.name)),
+      type: "scroll",
       bottom: 10,
     },
     grid: {
       left: "3%",
       right: "4%",
-      bottom: "60px", // Adjust for potentially larger legend
+      bottom: "60px",
       top: "15%",
       containLabel: true,
     },
     toolbox: {
-      feature: {
-        saveAsImage: { title: "Save Image" },
-      },
+      feature: { saveAsImage: { title: "Save Image" } },
       orient: "vertical",
       right: 10,
       top: "center",
@@ -1047,43 +930,19 @@ const createUdpTimeSeriesOption = (
       name: "Time (s)",
       nameLocation: "middle",
       nameGap: 25,
-      boundaryGap: false, // Line charts often look better without boundary gap
-      data: allTimeStamps,
+      boundaryGap: false,
+      data: times,
       axisLabel: { formatter: "{value}s" },
     },
-    yAxis: [
-      {
-        type: "value",
-        name: "Throughput (Mbps)",
-        position: "left",
-        axisLine: { show: true, lineStyle: { color: colorPalette[0] } }, // Match first throughput color
-        axisLabel: { formatter: formatAxisValue },
-        nameTextStyle: { align: "left" },
-        min: 0, // Ensure throughput starts at 0
-      },
-      {
-        type: "value",
-        name: "Loss (%) / Jitter (ms)",
-        position: "right",
-        axisLine: { show: true, lineStyle: { color: colorPalette[1] } }, // Match first loss color
-        axisLabel: { formatter: formatAxisValue },
-        nameTextStyle: { align: "right" },
-        min: 0, // Ensure loss/jitter starts at 0
-        splitLine: { show: false }, // Avoid splitting lines from both axes overlapping
-      },
-    ],
-    series: finalSeries,
+    yAxis: timeSeriesAxes(hasReceiver),
+    series,
     dataZoom: [
-      // Add data zoom functionality
+      { type: "inside", filterMode: "filter" },
       {
-        type: "inside", // Allow zooming inside the chart area
-        filterMode: "filter", // Or 'weakFilter'
-      },
-      {
-        show: true, // Show the slider zoom control
+        show: true,
         type: "slider",
         filterMode: "filter",
-        bottom: 35, // Position below legend
+        bottom: 35,
         height: 15,
       },
     ],
@@ -1092,275 +951,175 @@ const createUdpTimeSeriesOption = (
 
 // --- Individual chart components for UDP ---
 
-export const IperfUdpThroughputChart = ({
-  reports,
-  height = 500,
-}: {
+const UnavailableBox = (props: { height: number; message: string }) => (
+  <div
+    style={{
+      height: props.height + "px",
+      display: "flex",
+      "align-items": "center",
+      "justify-content": "center",
+      border: "1px dashed #ccc",
+      margin: "10px 0",
+      color: "#888",
+    }}
+  >
+    {props.message}
+  </div>
+);
+
+const UdpChart = (props: {
+  option: echarts.EChartsOption | null;
+  height: number;
+  fallback: string;
+}) => (
+  <Show
+    when={props.option}
+    fallback={<UnavailableBox height={props.height} message={props.fallback} />}
+  >
+    {(option) => <Echart option={option()} height={props.height} />}
+  </Show>
+);
+
+interface UdpChartProps {
   reports: IperfUdpReport[];
   height?: number;
-}) => {
-  const options = createUdpThroughputOption(reports);
-  return options ? (
-    <Echart option={options} height={height} />
-  ) : (
-    <div
-      style={{
-        height: height + "px",
-        display: "flex",
-        "align-items": "center",
-        "justify-content": "center",
-        border: "1px dashed #ccc",
-        margin: "10px 0",
-      }}
-    >
-      Throughput data unavailable.
-    </div>
-  );
-};
-export const IperfUdpPacketLossChart = ({
-  reports,
-  height = 500,
-}: {
-  reports: IperfUdpReport[];
-  height?: number;
-}) => {
-  const options = createPacketLossOption(reports);
-  return options ? (
-    <Echart option={options} height={height} />
-  ) : (
-    <div
-      style={{
-        height: height + "px",
-        display: "flex",
-        "align-items": "center",
-        "justify-content": "center",
-        border: "1px dashed #ccc",
-        margin: "10px 0",
-      }}
-    >
-      Packet loss data unavailable.
-    </div>
-  );
-};
-export const IperfUdpJitterChart = ({
-  reports,
-  height = 500,
-}: {
-  reports: IperfUdpReport[];
-  height?: number;
-}) => {
-  const options = createJitterOption(reports);
-  return options ? (
-    <Echart option={options} height={height} />
-  ) : (
-    <div
-      style={{
-        height: height + "px",
-        display: "flex",
-        "align-items": "center",
-        "justify-content": "center",
-        border: "1px dashed #ccc",
-        margin: "10px 0",
-      }}
-    >
-      Jitter data unavailable.
-    </div>
-  );
-};
-export const IperfUdpTimeSeriesChart = ({
-  reports,
-  height = 700,
-}: {
-  reports: IperfUdpReport[];
-  height?: number;
-}) => {
-  const options = createUdpTimeSeriesOption(reports);
-  return options ? (
-    <Echart option={options} height={height} />
-  ) : (
-    <div
-      style={{
-        height: height + "px",
-        display: "flex",
-        "align-items": "center",
-        "justify-content": "center",
-        border: "1px dashed #ccc",
-        margin: "10px 0",
-      }}
-    >
-      Time series data unavailable or incomplete.
-    </div>
-  );
-};
-export const IperfUdpCpuChart = ({
-  reports,
-  height = 500,
-}: {
-  reports: IperfUdpReport[];
-  height?: number;
-}) => {
-  const options = createUdpCpuOption(reports);
-  return options ? (
-    <Echart option={options} height={height} />
-  ) : (
-    <div
-      style={{
-        height: height + "px",
-        display: "flex",
-        "align-items": "center",
-        "justify-content": "center",
-        border: "1px dashed #ccc",
-        margin: "10px 0",
-      }}
-    >
-      CPU data unavailable in reports.
-    </div>
-  );
-};
+}
+
+export const IperfUdpThroughputChart = (props: UdpChartProps) => (
+  <UdpChart
+    option={createUdpThroughputOption(props.reports)}
+    height={props.height ?? 500}
+    fallback="Throughput data unavailable."
+  />
+);
+export const IperfUdpPacketLossChart = (props: UdpChartProps) => (
+  <UdpChart
+    option={createPacketLossOption(props.reports)}
+    height={props.height ?? 500}
+    fallback="Packet loss data unavailable."
+  />
+);
+export const IperfUdpJitterChart = (props: UdpChartProps) => (
+  <UdpChart
+    option={createJitterOption(props.reports)}
+    height={props.height ?? 500}
+    fallback="Jitter data unavailable."
+  />
+);
+export const IperfUdpTimeSeriesChart = (props: UdpChartProps) => (
+  <UdpChart
+    option={createUdpTimeSeriesOption(props.reports)}
+    height={props.height ?? 700}
+    fallback="Time series data unavailable or incomplete."
+  />
+);
+export const IperfUdpCpuChart = (props: UdpChartProps) => (
+  <UdpChart
+    option={createUdpCpuOption(props.reports)}
+    height={props.height ?? 500}
+    fallback="CPU data unavailable in reports."
+  />
+);
 
 // --- Combined dashboard component for UDP ---
 
-export const IperfUdpCharts = ({
-  reports,
-  height = {
-    // Default heights (can be overridden by props)
-    throughput: 450, // Adjusted defaults slightly
-    timeSeries: 600,
-    packetLoss: 400,
-    jitter: 400,
-    cpu: 400,
-  },
-}: IperfUdpChartsProps) => {
-  // Basic check for reports array
-  if (!reports || reports.length === 0) {
-    return (
-      <div
-        style={{
-          background: "#f9f9f9",
-          border: "1px solid #e0e0e0",
-          "border-radius": "8px",
-          padding: "20px",
-          "text-align": "center",
-          color: "#555",
-          "font-size": "16px",
-          margin: "1rem 0",
-        }}
-      >
-        <p style={{ margin: 0 }}>
-          No UDP performance data available. Run the benchmark to generate iperf
-          UDP data.
-        </p>
-      </div>
-    );
-  }
+const NoUdpData = () => (
+  <div
+    style={{
+      background: "#f9f9f9",
+      border: "1px solid #e0e0e0",
+      "border-radius": "8px",
+      padding: "20px",
+      "text-align": "center",
+      color: "#555",
+      "font-size": "16px",
+      margin: "1rem 0",
+    }}
+  >
+    <p style={{ margin: 0 }}>
+      No UDP performance data available. Run the benchmark to generate iperf UDP
+      data.
+    </p>
+  </div>
+);
 
-  // Check if essential 'end' data exists in at least one report
-  // Specifically check fields used by the core charts (throughput, loss, jitter)
-  const hasEssentialEndData = reports.some(
-    (r) =>
-      r.data?.end?.sum_sent?.bits_per_second != null &&
-      r.data?.end?.sum_received_bidir_reverse?.lost_percent != null && // Using reverse flow loss for the chart
-      r.data?.end?.sum_received_bidir_reverse?.jitter_ms != null, // Using reverse flow jitter for the chart
-  );
-  if (!hasEssentialEndData && reports.length > 0) {
-    // Check only if reports exist
-    // Provide a more informative message if possible
-    console.warn(
-      "UDP reports might be missing essential summary data (e.g., sum_sent, sum_received_bidir_reverse loss/jitter). Charts might be empty or incomplete.",
-    );
-    // Don't return here yet, let individual charts handle missing data
-  }
-
-  // Check specifically for interval data needed by TimeSeries
-  const hasIntervalData = reports.some(
-    (r) => r.data?.intervals && r.data.intervals.length > 0,
-  );
-  // Check for CPU data
-  const hasCpuData = reports.some((r) => r.data?.end?.cpu_utilization_percent);
-
-  // Prepare effective heights using defaults and props override
-  const effectiveHeights = {
-    throughput: height.throughput ?? 450,
-    timeSeries: height.timeSeries ?? 600,
-    packetLoss: height.packetLoss ?? 400,
-    jitter: height.jitter ?? 400,
-    cpu: height.cpu ?? 400,
-  };
+export const IperfUdpCharts = (props: IperfUdpChartsProps) => {
+  const height = () => ({
+    throughput: props.height?.throughput ?? 450,
+    timeSeries: props.height?.timeSeries ?? 600,
+    packetLoss: props.height?.packetLoss ?? 400,
+    jitter: props.height?.jitter ?? 400,
+    cpu: props.height?.cpu ?? 400,
+  });
+  const hasIntervalData = () =>
+    props.reports.some((r) => (r.data?.intervals?.length ?? 0) > 0);
+  const hasCpuData = () =>
+    props.reports.some((r) => r.data?.end?.cpu_utilization_percent);
 
   return (
-    <div
-      style={{
-        display: "flex",
-        "flex-direction": "column",
-        gap: "25px",
-        padding: "10px",
-      }}
-    >
-      {/* Test Summary Banner */}
-      <IperfUdpTestSummary reports={reports} />
-
-      {/* Throughput */}
-      <IperfUdpThroughputChart
-        reports={reports}
-        height={effectiveHeights.throughput}
-      />
-
-      {/* Time Series - Conditionally render */}
-      {hasIntervalData ? (
-        <IperfUdpTimeSeriesChart
-          reports={reports}
-          height={effectiveHeights.timeSeries}
+    <Show when={props.reports.length > 0} fallback={<NoUdpData />}>
+      <div
+        style={{
+          display: "flex",
+          "flex-direction": "column",
+          gap: "25px",
+          padding: "10px",
+        }}
+      >
+        <IperfUdpTestSummary reports={props.reports} />
+        <IperfUdpThroughputChart
+          reports={props.reports}
+          height={height().throughput}
         />
-      ) : (
-        <div
-          style={{
-            height: effectiveHeights.timeSeries + "px",
-            display: "flex",
-            "align-items": "center",
-            "justify-content": "center",
-            border: "1px dashed #ccc",
-            margin: "10px 0",
-            color: "#888",
-          }}
+        <Show
+          when={hasIntervalData()}
+          fallback={
+            <UnavailableBox
+              height={height().timeSeries}
+              message="Time series chart requires interval data, which is missing or empty in all reports."
+            />
+          }
         >
-          Time series chart requires interval data, which is missing or empty in
-          all reports.
-        </div>
-      )}
-
-      {/* Packet Loss & Jitter Row */}
-      <div class="flex flex-col gap-5 lg:flex-row lg:justify-center">
-        <div class="flex-1 lg:max-w-[500px]">
-          <IperfUdpPacketLossChart
-            reports={reports}
-            height={effectiveHeights.packetLoss}
+          <IperfUdpTimeSeriesChart
+            reports={props.reports}
+            height={height().timeSeries}
           />
-        </div>
-        <div class="flex-1 lg:max-w-[500px]">
-          <IperfUdpJitterChart
-            reports={reports}
-            height={effectiveHeights.jitter}
-          />
-        </div>
-      </div>
-
-      {/* CPU - Conditionally render */}
-      {hasCpuData ? (
-        // Center the CPU chart if it's the only one in the last row conceptually
-        <div style={{ display: "flex", "justify-content": "center" }}>
-          <div style={{ width: "100%", "max-width": "600px" }}>
-            {" "}
-            {/* Control max width */}
-            <IperfUdpCpuChart reports={reports} height={effectiveHeights.cpu} />
+        </Show>
+        <div class="flex flex-col gap-5 lg:flex-row lg:justify-center">
+          <div class="flex-1 lg:max-w-[500px]">
+            <IperfUdpPacketLossChart
+              reports={props.reports}
+              height={height().packetLoss}
+            />
+          </div>
+          <div class="flex-1 lg:max-w-[500px]">
+            <IperfUdpJitterChart
+              reports={props.reports}
+              height={height().jitter}
+            />
           </div>
         </div>
-      ) : (
-        <div
-          style={{ "text-align": "center", color: "#888", margin: "10px 0" }}
+        <Show
+          when={hasCpuData()}
+          fallback={
+            <div
+              style={{
+                "text-align": "center",
+                color: "#888",
+                margin: "10px 0",
+              }}
+            >
+              CPU utilization data not available in these reports.
+            </div>
+          }
         >
-          CPU utilization data not available in these reports.
-        </div>
-      )}
-    </div>
+          <div style={{ display: "flex", "justify-content": "center" }}>
+            <div style={{ width: "100%", "max-width": "600px" }}>
+              <IperfUdpCpuChart reports={props.reports} height={height().cpu} />
+            </div>
+          </div>
+        </Show>
+      </div>
+    </Show>
   );
 };
