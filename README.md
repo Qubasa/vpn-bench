@@ -1,7 +1,7 @@
 # VPN Benchmark Tooling
 
 A fully automated and reproducible benchmark for Peer-to-Peer Mesh VPNs. 
-Current benchmark results can be viewed at https://vpnbench.clan.lol/overview
+Current benchmark results can be viewed at https://vpnbench.qubasa.blog/overview
 
 ## Screenshots
 
@@ -40,7 +40,7 @@ Let's get your development environment up and running:
 4. **Allow the devshell**
       - Clone the repository
       ```bash
-      git clone https://git.clan.lol/Qubasa/vpn-benchmark.git
+      git clone git@github.com:Qubasa/vpn-bench.git
       ```
       - Allow the devshell by
       ```bash
