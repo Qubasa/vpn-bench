@@ -1,5 +1,4 @@
 import { Typography } from "@/src/components/Typography";
-import GiteaLogo from "@/icons/gitea_logo.svg";
 import GithubLogo from "@/icons/github.svg";
 import "./css/sidebar.css";
 
@@ -48,15 +47,6 @@ export const SidebarHeader = (props: SidebarProps) => {
         <ClanTitle clanName={props.clanName} />
       </div>
       <div class="relative z-40 flex gap-1 pr-2">
-        <a
-          href="https://git.clan.lol/Qubasa/vpn-benchmark"
-          target="_blank"
-          rel="noopener noreferrer"
-          class="btn btn-square btn-ghost btn-sm"
-          title="Gitea Repository"
-        >
-          <GiteaLogo width={20} height={20} />
-        </a>
         <a
           href="https://github.com/Qubasa/vpn-bench"
           target="_blank"
