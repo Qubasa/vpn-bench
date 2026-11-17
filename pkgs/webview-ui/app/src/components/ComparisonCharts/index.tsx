@@ -19,6 +19,7 @@ import {
   ClanError,
   pairsLabel,
 } from "@/src/benchData";
+import { vpnAxisLabel, vpnOpacity } from "@/src/vpnKind";
 
 // --- Generic Bar Chart Component ---
 
@@ -179,6 +180,7 @@ const createBarChartOption = (
       type: "category",
       data: sortedData.map((d) => d.name),
       axisLabel: {
+        ...vpnAxisLabel,
         rotate: 45,
         interval: 0,
       },
@@ -283,6 +285,7 @@ const createBarChartOption = (
             itemStyle: {
               color: color,
               decal: d.pairsNote ? PARTIAL_DECAL : undefined,
+              opacity: vpnOpacity(d.name),
             },
             label: { show: false },
           };
@@ -597,6 +600,7 @@ const createDualBarChartOption = (
       type: "category",
       data: sortedData.map((d) => d.name),
       axisLabel: {
+        ...vpnAxisLabel,
         rotate: 45,
         interval: 0,
       },
@@ -640,6 +644,7 @@ const createDualBarChartOption = (
             itemStyle: {
               color: firstColor,
               decal: d.pairsNote ? PARTIAL_DECAL : undefined,
+              opacity: vpnOpacity(d.name),
             },
             label: { show: false },
           };
@@ -666,6 +671,7 @@ const createDualBarChartOption = (
             itemStyle: {
               color: secondColor,
               decal: d.pairsNote ? PARTIAL_DECAL : undefined,
+              opacity: vpnOpacity(d.name),
             },
             label: { show: false },
           };
@@ -2062,7 +2068,7 @@ export const TestDurationComparisonChart = (props: {
       xAxis: {
         type: "category",
         data: data.vpnNames,
-        axisLabel: { rotate: 45, interval: 0 },
+        axisLabel: { ...vpnAxisLabel, rotate: 45, interval: 0 },
       },
       yAxis: {
         type: "value",
@@ -2157,7 +2163,7 @@ export const SuccessRateComparisonChart = (props: {
       xAxis: {
         type: "category",
         data: vpnNames,
-        axisLabel: { rotate: 45, interval: 0 },
+        axisLabel: { ...vpnAxisLabel, rotate: 45, interval: 0 },
       },
       yAxis: {
         type: "value",
@@ -2248,7 +2254,7 @@ export const FailureCountComparisonChart = (props: {
       xAxis: {
         type: "category",
         data: data.vpnNames,
-        axisLabel: { rotate: 45, interval: 0 },
+        axisLabel: { ...vpnAxisLabel, rotate: 45, interval: 0 },
       },
       yAxis: {
         type: "value",
@@ -2475,7 +2481,7 @@ export const RetryComparisonChart = (props: {
       xAxis: {
         type: "category",
         data: data.vpnNames,
-        axisLabel: { rotate: 45, interval: 0 },
+        axisLabel: { ...vpnAxisLabel, rotate: 45, interval: 0 },
       },
       yAxis: {
         type: "value",

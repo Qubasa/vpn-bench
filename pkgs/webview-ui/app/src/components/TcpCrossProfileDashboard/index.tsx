@@ -21,6 +21,7 @@ import {
 } from "../../benchData";
 import { useAlias } from "../../AliasContext";
 import { sortTcProfiles } from "@/src/index";
+import { NonMeshNote } from "@/src/vpnKind";
 import { Tabs } from "@kobalte/core/tabs";
 import { useSearchParams } from "@solidjs/router";
 import "../VpnBenchDashboard/style.css";
@@ -149,6 +150,8 @@ export const TcpCrossProfileDashboard = (
           .
         </p>
       </div>
+
+      <NonMeshNote />
 
       <Show
         when={hasAnyData()}

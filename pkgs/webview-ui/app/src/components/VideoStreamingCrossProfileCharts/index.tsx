@@ -2,6 +2,7 @@ import { EChartsCoreOption } from "echarts";
 import { createMemo, Show } from "solid-js";
 import { Echart } from "../Echarts";
 import { profileAxisLabel } from "@/src/crossProfileLayout";
+import { vpnAxisLabel } from "@/src/vpnKind";
 import {
   CrossProfileVideoStreamingData,
   PartialPairsMap,
@@ -128,6 +129,7 @@ const createQualityHeatmapOption = (
       splitArea: {
         show: true,
       },
+      axisLabel: vpnAxisLabel,
     },
     visualMap: {
       type: "piecewise",
@@ -305,6 +307,7 @@ const createRttHeatmapOption = (
       splitArea: {
         show: true,
       },
+      axisLabel: vpnAxisLabel,
     },
     visualMap: {
       type: "piecewise",

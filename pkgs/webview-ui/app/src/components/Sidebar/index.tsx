@@ -10,6 +10,7 @@ import "./css/sidebar.css";
 import Icon from "../icon";
 import { useAlias } from "@/src/AliasContext";
 import { getVpnVersion } from "@/src/benchData";
+import { nonMeshTag } from "@/src/vpnKind";
 
 interface SidebarCategoryProps {
   title: string;
@@ -107,6 +108,7 @@ export const Sidebar = (props: RouteSectionProps) => {
                 href={route.path}
                 title={route.label}
                 version={getVpnVersion(currentAlias(), route.label)}
+                tag={nonMeshTag(route.label)}
               />
             )}
           </For>

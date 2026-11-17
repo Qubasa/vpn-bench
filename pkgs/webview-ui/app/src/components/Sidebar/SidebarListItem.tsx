@@ -7,6 +7,8 @@ interface SidebarListItem {
   title: string;
   href: string;
   version?: VpnVersion;
+  // Marks a configuration that is not a mesh VPN
+  tag?: string;
 }
 
 // Reads props inside JSX so the label follows alias changes
@@ -49,6 +51,7 @@ export const SidebarListItem = (props: SidebarListItem) => {
           inverted={true}
         >
           {props.title}
+          {props.tag && <em class="sidebar__list__tag"> ({props.tag})</em>}
         </Typography>
       </A>
       {props.version && <VersionLink version={props.version} />}

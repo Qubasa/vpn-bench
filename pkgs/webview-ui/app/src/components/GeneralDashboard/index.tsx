@@ -4,6 +4,7 @@ import { Show, createSignal, createEffect, createMemo, For } from "solid-js";
 import { ComparisonData, TCSettingsData } from "@/src/benchData";
 import { impairmentPanel } from "@/src/impairment";
 import { sortTcProfiles } from "@/src/index";
+import { NonMeshNote, vpnAxisLabel, vpnOpacity } from "@/src/vpnKind";
 import { Tabs } from "@kobalte/core/tabs";
 import {
   TcpComparisonSection,
@@ -156,6 +157,7 @@ const createConnectionTimingsOption = (
       type: "category",
       data: data.map((d) => d.name),
       axisLabel: {
+        ...vpnAxisLabel,
         rotate: 45,
         interval: 0,
       },
@@ -177,6 +179,7 @@ const createConnectionTimingsOption = (
           value: d.average,
           itemStyle: {
             color: "#1890ff",
+            opacity: vpnOpacity(d.name),
           },
         })),
         label: {
@@ -604,6 +607,8 @@ export const GeneralDashboard = (props: GeneralDashboardProps) => {
           Object.keys(currentProfileData()?.benchmarkStats ?? {}).length
         }
       />
+
+      <NonMeshNote />
 
       {/* Benchmark Type Tabs */}
       <Tabs

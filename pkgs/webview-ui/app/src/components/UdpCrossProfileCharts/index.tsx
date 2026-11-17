@@ -13,6 +13,7 @@ import {
   UdpHeatmapData,
   UdpScatterData,
 } from "../../benchData";
+import { vpnAxisLabel, vpnLegendFormatter, vpnOpacity } from "@/src/vpnKind";
 
 // Color palette for VPNs (consistent with other charts)
 const VPN_COLORS = [
@@ -147,6 +148,7 @@ const createThroughputHeatmapOption = (
       splitArea: {
         show: true,
       },
+      axisLabel: vpnAxisLabel,
     },
     visualMap: {
       type: "piecewise",
@@ -328,6 +330,7 @@ const createCpuHeatmapOption = (
       splitArea: {
         show: true,
       },
+      axisLabel: vpnAxisLabel,
     },
     visualMap: {
       type: "piecewise",
@@ -497,7 +500,7 @@ const createSmallMultiplesScatterOption = (
           symbolSize: normalizeReceived(receivedGb),
           itemStyle: {
             color: VPN_COLORS[vpnIdx % VPN_COLORS.length],
-            opacity: 0.8,
+            opacity: 0.8 * vpnOpacity(vpnName),
             borderWidth: 1,
             borderColor: "rgba(255, 255, 255, 0.8)",
           },
@@ -537,6 +540,7 @@ const createSmallMultiplesScatterOption = (
     },
     legend: {
       data: data.vpn_names,
+      formatter: vpnLegendFormatter,
       top: 55,
       type: "scroll",
       selectedMode: "multiple",
