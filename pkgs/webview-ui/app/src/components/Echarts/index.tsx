@@ -2,6 +2,7 @@ import * as echarts from "echarts";
 import { createEffect, onCleanup, onMount, on } from "solid-js";
 import { EChartsCoreOption, ResizeOpts } from "echarts";
 import { JSX } from "solid-js";
+import { seriesDataToHtml } from "./dataView";
 
 export interface EChartsProps {
   option: EChartsCoreOption;
@@ -51,28 +52,45 @@ const downloadAtExportSize = (
 };
 
 // Swaps the canvas snapshot for a render at EXPORT_WIDTH so every download
-// has the same size whatever the window width
-const withFixedSizeDownload = (
+// has the same size whatever the window width, and shows every value of
+// boxplot and error bar series in the data view
+const overrideFeature = (
+  name: string,
+  config: unknown,
+  download: () => void,
+): [string, unknown] => {
+  if (name === "saveAsImage") {
+    const { title } = (config ?? {}) as { title?: string };
+    return [
+      "myFixedSizeImage",
+      {
+        title: title ?? "Save as Image",
+        icon: DOWNLOAD_ICON,
+        onclick: download,
+      },
+    ];
+  }
+  const dataView = (config ?? {}) as { optionToContent?: unknown };
+  if (name === "dataView" && !dataView.optionToContent) {
+    return [
+      name,
+      { ...dataView, readOnly: true, optionToContent: seriesDataToHtml },
+    ];
+  }
+  return [name, config];
+};
+
+const withToolboxOverrides = (
   option: EChartsCoreOption,
   download: () => void,
 ): EChartsCoreOption => {
   const toolbox = option.toolbox as Toolbox | undefined;
-  if (!toolbox?.feature?.saveAsImage) {
+  if (!toolbox?.feature) {
     return option;
   }
-  const { title } = toolbox.feature.saveAsImage as { title?: string };
   const feature = Object.fromEntries(
     Object.entries(toolbox.feature).map(([name, config]) =>
-      name === "saveAsImage"
-        ? [
-            "myFixedSizeImage",
-            {
-              title: title ?? "Save as Image",
-              icon: DOWNLOAD_ICON,
-              onclick: download,
-            },
-          ]
-        : [name, config],
+      overrideFeature(name, config, download),
     ),
   );
   return { ...option, toolbox: { ...toolbox, feature } };
@@ -100,7 +118,7 @@ export const Echart = (props: EChartsProps) => {
         // Update chart with new option (runs on first and subsequent updates)
         if (chartInstance) {
           chartInstance.setOption(
-            withFixedSizeDownload(option, () => {
+            withToolboxOverrides(option, () => {
               if (chartInstance) {
                 downloadAtExportSize(chartInstance, props.theme);
               }
