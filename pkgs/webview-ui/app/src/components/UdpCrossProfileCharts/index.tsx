@@ -7,6 +7,9 @@ import {
 } from "@/src/crossProfileLayout";
 import {
   CrossProfileUdpData,
+  PartialPairsMap,
+  PARTIAL_PAIRS_NOTE,
+  partialPairsMark,
   UdpHeatmapData,
   UdpScatterData,
 } from "../../benchData";
@@ -43,6 +46,7 @@ const X_SYMBOL_PATH =
  */
 const createThroughputHeatmapOption = (
   data: UdpHeatmapData,
+  partial: PartialPairsMap,
 ): EChartsCoreOption => {
   const vpnNames = Object.keys(data.throughput);
 
@@ -82,7 +86,9 @@ const createThroughputHeatmapOption = (
     title: {
       text: "UDP Receiver Throughput Heatmap",
       subtext:
-        "Higher is better (green)" + (hasFailures ? " | ✕ = Failed" : ""),
+        "Higher is better (green)" +
+        (hasFailures ? " | ✕ = Failed" : "") +
+        (Object.keys(partial).length > 0 ? PARTIAL_PAIRS_NOTE : ""),
       left: "center",
     },
     toolbox: {
@@ -109,7 +115,8 @@ const createThroughputHeatmapOption = (
         const throughput = params.value[2];
         const vpnName = sortedVpnNames[sortedVpnIdx];
         const profile = formatProfileName(data.tc_profiles[profileIdx]);
-        return `<strong>${vpnName}</strong><br/>${profile}: ${throughput.toFixed(1)} Mbps`;
+        const pairs = partial[vpnName]?.[data.tc_profiles[profileIdx]] ?? "";
+        return `<strong>${vpnName}</strong><br/>${profile}: ${throughput.toFixed(1)} Mbps${pairs}`;
       },
     },
     legend: hasFailures
@@ -173,7 +180,12 @@ const createThroughputHeatmapOption = (
             // Hide label for failed cells
             const key = `${params.value[0]}-${params.value[1]}`;
             if (failedCellKeys.has(key)) return "";
-            return `${Math.round(params.value[2])}`;
+            const mark = partialPairsMark(
+              partial,
+              sortedVpnNames[params.value[1]],
+              data.tc_profiles[params.value[0]],
+            );
+            return `${Math.round(params.value[2])}${mark}`;
           },
           fontSize: 10,
         },
@@ -211,7 +223,10 @@ const createThroughputHeatmapOption = (
  * Creates the ECharts option for the sender's host CPU heatmap.
  * Lower is better (green = low CPU). Cells without a vpb CPU sample stay empty.
  */
-const createCpuHeatmapOption = (data: UdpHeatmapData): EChartsCoreOption => {
+const createCpuHeatmapOption = (
+  data: UdpHeatmapData,
+  partial: PartialPairsMap,
+): EChartsCoreOption => {
   const cpu = data.sender_host_cpu;
   const vpnNames = Object.keys(cpu);
 
@@ -253,7 +268,8 @@ const createCpuHeatmapOption = (data: UdpHeatmapData): EChartsCoreOption => {
       subtext:
         "Busy share of all cores on the client | Lower is better (green)" +
         (heatmapData.length === 0 ? " | Not measured in these results" : "") +
-        (hasFailures ? " | ✕ = Failed" : ""),
+        (hasFailures ? " | ✕ = Failed" : "") +
+        (Object.keys(partial).length > 0 ? PARTIAL_PAIRS_NOTE : ""),
       left: "center",
     },
     toolbox: {
@@ -280,7 +296,8 @@ const createCpuHeatmapOption = (data: UdpHeatmapData): EChartsCoreOption => {
         const cpu = params.value[2];
         const vpnName = sortedVpnNames[sortedVpnIdx];
         const profile = formatProfileName(data.tc_profiles[profileIdx]);
-        return `<strong>${vpnName}</strong><br/>${profile}: ${cpu.toFixed(1)}%`;
+        const pairs = partial[vpnName]?.[data.tc_profiles[profileIdx]] ?? "";
+        return `<strong>${vpnName}</strong><br/>${profile}: ${cpu.toFixed(1)}%${pairs}`;
       },
     },
     legend: hasFailures
@@ -345,7 +362,12 @@ const createCpuHeatmapOption = (data: UdpHeatmapData): EChartsCoreOption => {
             // Hide label for failed cells
             const key = `${params.value[0]}-${params.value[1]}`;
             if (failedCellKeys.has(key)) return "";
-            return `${Math.round(params.value[2])}%`;
+            const mark = partialPairsMark(
+              partial,
+              sortedVpnNames[params.value[1]],
+              data.tc_profiles[params.value[0]],
+            );
+            return `${Math.round(params.value[2])}%${mark}`;
           },
           fontSize: 10,
         },
@@ -528,6 +550,7 @@ const createSmallMultiplesScatterOption = (
 
 export interface UdpCrossProfileChartsProps {
   data: CrossProfileUdpData;
+  partialPairs?: PartialPairsMap;
 }
 
 /**
@@ -536,10 +559,10 @@ export interface UdpCrossProfileChartsProps {
 export const UdpCrossProfileCharts = (props: UdpCrossProfileChartsProps) => {
   // Memoize chart options
   const throughputHeatmapOption = createMemo(() =>
-    createThroughputHeatmapOption(props.data.heatmap),
+    createThroughputHeatmapOption(props.data.heatmap, props.partialPairs ?? {}),
   );
   const cpuHeatmapOption = createMemo(() =>
-    createCpuHeatmapOption(props.data.heatmap),
+    createCpuHeatmapOption(props.data.heatmap, props.partialPairs ?? {}),
   );
   const scatterOption = createMemo(() =>
     createSmallMultiplesScatterOption(props.data.scatter),

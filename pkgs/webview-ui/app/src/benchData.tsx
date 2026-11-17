@@ -306,6 +306,7 @@ export interface TcpIperfComparisonData extends IperfCpuComparisonData {
   client_to_server_mbps: MetricStats;
   server_to_client_mbps: MetricStats;
   retransmits: MetricStats;
+  retransmits_reverse?: MetricStats;
   retransmit_percent: MetricStats;
   max_snd_cwnd_bytes: MetricStats;
   max_snd_wnd_bytes: MetricStats;
@@ -340,6 +341,7 @@ export interface ParallelTcpComparisonData {
   client_to_server_mbps: MetricStats;
   server_to_client_mbps: MetricStats;
   total_retransmits: MetricStats;
+  total_retransmits_reverse?: MetricStats;
   retransmit_percent: MetricStats;
   max_snd_cwnd_bytes: MetricStats;
   max_snd_wnd_bytes: MetricStats;
@@ -534,21 +536,35 @@ export interface CrossProfileNixCacheData {
 // Maps VPN name to its comparison data
 export type VpnComparisonMap<T> = Record<string, T>;
 
+// Machine pairs behind a comparison entry. Missing in older datasets.
+export interface PairCounts {
+  pairs_ok?: number;
+  pairs_total?: number;
+}
+
 // VPN comparison entry that can be success or error
-export interface VpnComparisonSuccess<T> {
+export interface VpnComparisonSuccess<T> extends PairCounts {
   status: "success";
   data: T;
 }
 
-export interface VpnComparisonError {
+export interface VpnComparisonError extends PairCounts {
   status: "error";
   error_type: "CmdOut" | "ClanError";
   error: CmdOutError | ClanError;
   machine?: string;
 }
 
+// " (n/m pairs)" when only some pairs succeeded, "" when complete or unknown
+export function pairsLabel(entry: PairCounts): string {
+  const { pairs_ok: ok, pairs_total: total } = entry;
+  if (ok === undefined || total === undefined || ok >= total) return "";
+  return ` (${ok}/${total} pairs)`;
+}
+
 export type VpnComparisonEntry<T> =
-  VpnComparisonSuccess<T> | VpnComparisonError;
+  | VpnComparisonSuccess<T>
+  | VpnComparisonError;
 
 // Maps VPN name to its comparison entry (can be success or error)
 export type VpnComparisonResultMap<T> = Record<string, VpnComparisonEntry<T>>;
@@ -1133,6 +1149,48 @@ export function getComparisonDataForAlias(alias?: string): ComparisonData {
 
 // Backward compatible export: use first available alias
 export const comparisonData = getComparisonDataForAlias();
+
+// {vpn: {profile: " (n/m pairs)"}} for successful results built from fewer than all pairs
+export type PartialPairsMap = Record<string, Record<string, string>>;
+
+export const PARTIAL_PAIRS_NOTE = " | * = fewer than all pairs";
+
+export function partialPairsMark(
+  partial: PartialPairsMap,
+  vpn: string,
+  profile: string,
+): string {
+  return partial[vpn]?.[profile] ? "*" : "";
+}
+
+export type PairCountedTest =
+  | "ping"
+  | "qperf"
+  | "videoStreaming"
+  | "tcpIperf"
+  | "udpIperf"
+  | "nixCache"
+  | "parallelTcp";
+
+export function getPartialPairsForAlias(
+  test: PairCountedTest,
+  alias?: string,
+): PartialPairsMap {
+  const result: PartialPairsMap = {};
+  const profiles = getComparisonDataForAlias(alias);
+  for (const [profile, run] of Object.entries(profiles)) {
+    const entries: Record<string, PairCounts & { status: string }> =
+      run[test] ?? {};
+    for (const [vpn, entry] of Object.entries(entries)) {
+      const label = pairsLabel(entry);
+      if (entry.status === "success" && label) {
+        result[vpn] ??= {};
+        result[vpn][profile] = label;
+      }
+    }
+  }
+  return result;
+}
 
 // --- Timing Breakdown Loading ---
 

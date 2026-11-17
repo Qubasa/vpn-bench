@@ -2,7 +2,13 @@ import { EChartsCoreOption } from "echarts";
 import { createMemo, Show } from "solid-js";
 import { Echart } from "../Echarts";
 import { profileAxisLabel } from "@/src/crossProfileLayout";
-import { CrossProfileNixCacheData, NixCacheHeatmapData } from "../../benchData";
+import {
+  CrossProfileNixCacheData,
+  NixCacheHeatmapData,
+  PartialPairsMap,
+  PARTIAL_PAIRS_NOTE,
+  partialPairsMark,
+} from "../../benchData";
 
 // Format TC profile names for display
 const formatProfileName = (name: string) =>
@@ -21,6 +27,7 @@ const X_SYMBOL_PATH =
  */
 const createDownloadTimeHeatmapOption = (
   data: NixCacheHeatmapData,
+  partial: PartialPairsMap,
 ): EChartsCoreOption => {
   const vpnNames = Object.keys(data.mean_seconds);
 
@@ -60,7 +67,10 @@ const createDownloadTimeHeatmapOption = (
   return {
     title: {
       text: "Nix Cache Download Time Heatmap",
-      subtext: "Lower is better (green)" + (hasFailures ? " | ✕ = Failed" : ""),
+      subtext:
+        "Lower is better (green)" +
+        (hasFailures ? " | ✕ = Failed" : "") +
+        (Object.keys(partial).length > 0 ? PARTIAL_PAIRS_NOTE : ""),
       left: "center",
     },
     toolbox: {
@@ -87,7 +97,8 @@ const createDownloadTimeHeatmapOption = (
         const seconds = params.value[2];
         const vpnName = sortedVpnNames[sortedVpnIdx];
         const profile = formatProfileName(data.tc_profiles[profileIdx]);
-        return `<strong>${vpnName}</strong><br/>${profile}: ${seconds.toFixed(2)}s`;
+        const pairs = partial[vpnName]?.[data.tc_profiles[profileIdx]] ?? "";
+        return `<strong>${vpnName}</strong><br/>${profile}: ${seconds.toFixed(2)}s${pairs}`;
       },
     },
     legend: hasFailures
@@ -150,8 +161,13 @@ const createDownloadTimeHeatmapOption = (
           show: true,
           formatter: (params: { value: [number, number, number] }) => {
             const value = params.value[2];
-            if (value < 10) return value.toFixed(1);
-            return Math.round(value).toString();
+            const mark = partialPairsMark(
+              partial,
+              sortedVpnNames[params.value[1]],
+              data.tc_profiles[params.value[0]],
+            );
+            if (value < 10) return value.toFixed(1) + mark;
+            return Math.round(value).toString() + mark;
           },
           fontSize: 10,
         },
@@ -187,6 +203,7 @@ const createDownloadTimeHeatmapOption = (
 
 export interface NixCacheCrossProfileChartsProps {
   data: CrossProfileNixCacheData;
+  partialPairs?: PartialPairsMap;
 }
 
 /**
@@ -197,7 +214,10 @@ export const NixCacheCrossProfileCharts = (
 ) => {
   // Memoize chart options
   const downloadTimeHeatmapOption = createMemo(() =>
-    createDownloadTimeHeatmapOption(props.data.heatmap),
+    createDownloadTimeHeatmapOption(
+      props.data.heatmap,
+      props.partialPairs ?? {},
+    ),
   );
 
   // Check if data is available

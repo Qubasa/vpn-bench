@@ -5,7 +5,14 @@ import {
   profileAxisLabel,
   smallMultiplesLayout,
 } from "@/src/crossProfileLayout";
-import { Bar3DData, Scatter3DData, CrossProfileTcpData } from "../../benchData";
+import {
+  Bar3DData,
+  Scatter3DData,
+  CrossProfileTcpData,
+  PartialPairsMap,
+  PARTIAL_PAIRS_NOTE,
+  partialPairsMark,
+} from "../../benchData";
 
 // Color palette for VPNs (consistent with other charts)
 const VPN_COLORS = [
@@ -29,6 +36,7 @@ const VPN_COLORS = [
 const createThroughputHeatmapOption = (
   data: Bar3DData,
   title: string,
+  partial: PartialPairsMap,
 ): EChartsCoreOption => {
   // Find baseline profile index
   const baselineIdx = data.tc_profiles.indexOf("baseline");
@@ -71,7 +79,9 @@ const createThroughputHeatmapOption = (
   return {
     title: {
       text: `${title} Throughput Heatmap`,
-      subtext: "Higher is better (green)",
+      subtext:
+        "Higher is better (green)" +
+        (Object.keys(partial).length > 0 ? PARTIAL_PAIRS_NOTE : ""),
       left: "center",
     },
     toolbox: {
@@ -87,8 +97,9 @@ const createThroughputHeatmapOption = (
         const sortedVpnIdx = params.value[1];
         const throughput = params.value[2];
         const vpnName = sortedVpnNames[sortedVpnIdx];
-        const profile = formatProfileName(data.tc_profiles[profileIdx]);
-        return `<strong>${vpnName}</strong><br/>${profile}: ${throughput.toFixed(1)} Mbps`;
+        const profileKey = data.tc_profiles[profileIdx];
+        const pairs = partial[vpnName]?.[profileKey] ?? "";
+        return `<strong>${vpnName}</strong><br/>${formatProfileName(profileKey)}: ${throughput.toFixed(1)} Mbps${pairs}`;
       },
     },
     grid: {
@@ -140,7 +151,10 @@ const createThroughputHeatmapOption = (
         label: {
           show: true,
           formatter: (params: { value: [number, number, number] }) => {
-            return `${Math.round(params.value[2])}`;
+            const vpnName = sortedVpnNames[params.value[1]];
+            const profileKey = data.tc_profiles[params.value[0]];
+            const mark = partialPairsMark(partial, vpnName, profileKey);
+            return `${Math.round(params.value[2])}${mark}`;
           },
           fontSize: 10,
         },
@@ -309,6 +323,7 @@ const createSmallMultiplesScatterOption = (
 
 export interface TcpCrossProfileChartsProps {
   data: CrossProfileTcpData;
+  partialPairs?: PartialPairsMap;
 }
 
 /**
@@ -317,7 +332,11 @@ export interface TcpCrossProfileChartsProps {
 export const TcpCrossProfileCharts = (props: TcpCrossProfileChartsProps) => {
   // Memoize chart options for TCP
   const tcpHeatmapOption = createMemo(() =>
-    createThroughputHeatmapOption(props.data.tcp.bar3d, "TCP"),
+    createThroughputHeatmapOption(
+      props.data.tcp.bar3d,
+      "TCP",
+      props.partialPairs ?? {},
+    ),
   );
   const tcpScatterOption = createMemo(() =>
     createSmallMultiplesScatterOption(props.data.tcp.scatter3d, "TCP"),
@@ -360,6 +379,7 @@ export const ParallelTcpCrossProfileCharts = (
     createThroughputHeatmapOption(
       props.data.parallel_tcp.bar3d,
       "Parallel TCP",
+      props.partialPairs ?? {},
     ),
   );
   const parallelScatterOption = createMemo(() =>

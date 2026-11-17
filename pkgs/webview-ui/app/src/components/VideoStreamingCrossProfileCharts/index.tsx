@@ -4,6 +4,9 @@ import { Echart } from "../Echarts";
 import { profileAxisLabel } from "@/src/crossProfileLayout";
 import {
   CrossProfileVideoStreamingData,
+  PartialPairsMap,
+  PARTIAL_PAIRS_NOTE,
+  partialPairsMark,
   VideoStreamingHeatmapData,
 } from "../../benchData";
 
@@ -24,6 +27,7 @@ const X_SYMBOL_PATH =
  */
 const createQualityHeatmapOption = (
   data: VideoStreamingHeatmapData,
+  partial: PartialPairsMap,
 ): EChartsCoreOption => {
   const vpnNames = Object.keys(data.quality);
 
@@ -63,7 +67,9 @@ const createQualityHeatmapOption = (
     title: {
       text: "Video Streaming Quality Heatmap",
       subtext:
-        "Higher is better (green)" + (hasFailures ? " | ✕ = Failed" : ""),
+        "Higher is better (green)" +
+        (hasFailures ? " | ✕ = Failed" : "") +
+        (Object.keys(partial).length > 0 ? PARTIAL_PAIRS_NOTE : ""),
       left: "center",
     },
     toolbox: {
@@ -90,7 +96,8 @@ const createQualityHeatmapOption = (
         const quality = params.value[2];
         const vpnName = sortedVpnNames[sortedVpnIdx];
         const profile = formatProfileName(data.tc_profiles[profileIdx]);
-        return `<strong>${vpnName}</strong><br/>${profile}: ${quality.toFixed(1)}%`;
+        const pairs = partial[vpnName]?.[data.tc_profiles[profileIdx]] ?? "";
+        return `<strong>${vpnName}</strong><br/>${profile}: ${quality.toFixed(1)}%${pairs}`;
       },
     },
     legend: hasFailures
@@ -152,7 +159,12 @@ const createQualityHeatmapOption = (
         label: {
           show: true,
           formatter: (params: { value: [number, number, number] }) => {
-            return `${Math.round(params.value[2])}%`;
+            const mark = partialPairsMark(
+              partial,
+              sortedVpnNames[params.value[1]],
+              data.tc_profiles[params.value[0]],
+            );
+            return `${Math.round(params.value[2])}%${mark}`;
           },
           fontSize: 10,
         },
@@ -192,6 +204,7 @@ const createQualityHeatmapOption = (
  */
 const createRttHeatmapOption = (
   data: VideoStreamingHeatmapData,
+  partial: PartialPairsMap,
 ): EChartsCoreOption => {
   const vpnNames = Object.keys(data.rtt_ms);
 
@@ -230,7 +243,10 @@ const createRttHeatmapOption = (
   return {
     title: {
       text: "Video Streaming RTT Heatmap",
-      subtext: "Lower is better (green)" + (hasFailures ? " | ✕ = Failed" : ""),
+      subtext:
+        "Lower is better (green)" +
+        (hasFailures ? " | ✕ = Failed" : "") +
+        (Object.keys(partial).length > 0 ? PARTIAL_PAIRS_NOTE : ""),
       left: "center",
     },
     toolbox: {
@@ -257,7 +273,8 @@ const createRttHeatmapOption = (
         const rtt = params.value[2];
         const vpnName = sortedVpnNames[sortedVpnIdx];
         const profile = formatProfileName(data.tc_profiles[profileIdx]);
-        return `<strong>${vpnName}</strong><br/>${profile}: ${rtt.toFixed(2)} ms`;
+        const pairs = partial[vpnName]?.[data.tc_profiles[profileIdx]] ?? "";
+        return `<strong>${vpnName}</strong><br/>${profile}: ${rtt.toFixed(2)} ms${pairs}`;
       },
     },
     legend: hasFailures
@@ -320,7 +337,14 @@ const createRttHeatmapOption = (
           show: true,
           formatter: (params: { value: [number, number, number] }) => {
             const value = params.value[2];
-            return value < 10 ? value.toFixed(1) : Math.round(value).toString();
+            const mark = partialPairsMark(
+              partial,
+              sortedVpnNames[params.value[1]],
+              data.tc_profiles[params.value[0]],
+            );
+            const text =
+              value < 10 ? value.toFixed(1) : Math.round(value).toString();
+            return text + mark;
           },
           fontSize: 10,
         },
@@ -356,6 +380,7 @@ const createRttHeatmapOption = (
 
 export interface VideoStreamingCrossProfileChartsProps {
   data: CrossProfileVideoStreamingData;
+  partialPairs?: PartialPairsMap;
 }
 
 /**
@@ -366,10 +391,10 @@ export const VideoStreamingCrossProfileCharts = (
 ) => {
   // Memoize chart options
   const qualityHeatmapOption = createMemo(() =>
-    createQualityHeatmapOption(props.data.heatmap),
+    createQualityHeatmapOption(props.data.heatmap, props.partialPairs ?? {}),
   );
   const rttHeatmapOption = createMemo(() =>
-    createRttHeatmapOption(props.data.heatmap),
+    createRttHeatmapOption(props.data.heatmap, props.partialPairs ?? {}),
   );
 
   // Check if data is available

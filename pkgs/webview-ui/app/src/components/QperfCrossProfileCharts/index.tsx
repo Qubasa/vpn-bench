@@ -2,7 +2,13 @@ import { EChartsCoreOption } from "echarts";
 import { createMemo, Show } from "solid-js";
 import { Echart } from "../Echarts";
 import { profileAxisLabel } from "@/src/crossProfileLayout";
-import { CrossProfileQperfData, QperfHeatmapData } from "../../benchData";
+import {
+  CrossProfileQperfData,
+  PartialPairsMap,
+  PARTIAL_PAIRS_NOTE,
+  partialPairsMark,
+  QperfHeatmapData,
+} from "../../benchData";
 
 // Format TC profile names for display
 const formatProfileName = (name: string) =>
@@ -21,6 +27,7 @@ const X_SYMBOL_PATH =
  */
 const createBandwidthHeatmapOption = (
   data: QperfHeatmapData,
+  partial: PartialPairsMap,
 ): EChartsCoreOption => {
   const vpnNames = Object.keys(data.bandwidth);
 
@@ -60,7 +67,9 @@ const createBandwidthHeatmapOption = (
     title: {
       text: "QUIC Bandwidth Heatmap",
       subtext:
-        "Higher is better (green)" + (hasFailures ? " | ✕ = Failed" : ""),
+        "Higher is better (green)" +
+        (hasFailures ? " | ✕ = Failed" : "") +
+        (Object.keys(partial).length > 0 ? PARTIAL_PAIRS_NOTE : ""),
       left: "center",
     },
     toolbox: {
@@ -87,7 +96,8 @@ const createBandwidthHeatmapOption = (
         const bandwidth = params.value[2];
         const vpnName = sortedVpnNames[sortedVpnIdx];
         const profile = formatProfileName(data.tc_profiles[profileIdx]);
-        return `<strong>${vpnName}</strong><br/>${profile}: ${bandwidth.toFixed(1)} Mbps`;
+        const pairs = partial[vpnName]?.[data.tc_profiles[profileIdx]] ?? "";
+        return `<strong>${vpnName}</strong><br/>${profile}: ${bandwidth.toFixed(1)} Mbps${pairs}`;
       },
     },
     legend: hasFailures
@@ -148,7 +158,12 @@ const createBandwidthHeatmapOption = (
         label: {
           show: true,
           formatter: (params: { value: [number, number, number] }) => {
-            return `${Math.round(params.value[2])}`;
+            const mark = partialPairsMark(
+              partial,
+              sortedVpnNames[params.value[1]],
+              data.tc_profiles[params.value[0]],
+            );
+            return `${Math.round(params.value[2])}${mark}`;
           },
           fontSize: 10,
         },
@@ -186,7 +201,10 @@ const createBandwidthHeatmapOption = (
  * Creates the ECharts option for CPU usage heatmap.
  * Lower is better (green = low CPU).
  */
-const createCpuHeatmapOption = (data: QperfHeatmapData): EChartsCoreOption => {
+const createCpuHeatmapOption = (
+  data: QperfHeatmapData,
+  partial: PartialPairsMap,
+): EChartsCoreOption => {
   const vpnNames = Object.keys(data.cpu);
 
   // Sort by baseline CPU ascending (lowest first = best)
@@ -223,7 +241,10 @@ const createCpuHeatmapOption = (data: QperfHeatmapData): EChartsCoreOption => {
   return {
     title: {
       text: "QUIC CPU Usage Heatmap",
-      subtext: "Lower is better (green)" + (hasFailures ? " | ✕ = Failed" : ""),
+      subtext:
+        "Lower is better (green)" +
+        (hasFailures ? " | ✕ = Failed" : "") +
+        (Object.keys(partial).length > 0 ? PARTIAL_PAIRS_NOTE : ""),
       left: "center",
     },
     toolbox: {
@@ -250,7 +271,8 @@ const createCpuHeatmapOption = (data: QperfHeatmapData): EChartsCoreOption => {
         const cpu = params.value[2];
         const vpnName = sortedVpnNames[sortedVpnIdx];
         const profile = formatProfileName(data.tc_profiles[profileIdx]);
-        return `<strong>${vpnName}</strong><br/>${profile}: ${cpu.toFixed(1)}%`;
+        const pairs = partial[vpnName]?.[data.tc_profiles[profileIdx]] ?? "";
+        return `<strong>${vpnName}</strong><br/>${profile}: ${cpu.toFixed(1)}%${pairs}`;
       },
     },
     legend: hasFailures
@@ -312,7 +334,12 @@ const createCpuHeatmapOption = (data: QperfHeatmapData): EChartsCoreOption => {
         label: {
           show: true,
           formatter: (params: { value: [number, number, number] }) => {
-            return `${Math.round(params.value[2])}%`;
+            const mark = partialPairsMark(
+              partial,
+              sortedVpnNames[params.value[1]],
+              data.tc_profiles[params.value[0]],
+            );
+            return `${Math.round(params.value[2])}%${mark}`;
           },
           fontSize: 10,
         },
@@ -348,6 +375,7 @@ const createCpuHeatmapOption = (data: QperfHeatmapData): EChartsCoreOption => {
 
 export interface QperfCrossProfileChartsProps {
   data: CrossProfileQperfData;
+  partialPairs?: PartialPairsMap;
 }
 
 /**
@@ -358,10 +386,10 @@ export const QperfCrossProfileCharts = (
 ) => {
   // Memoize chart options
   const bandwidthHeatmapOption = createMemo(() =>
-    createBandwidthHeatmapOption(props.data.heatmap),
+    createBandwidthHeatmapOption(props.data.heatmap, props.partialPairs ?? {}),
   );
   const cpuHeatmapOption = createMemo(() =>
-    createCpuHeatmapOption(props.data.heatmap),
+    createCpuHeatmapOption(props.data.heatmap, props.partialPairs ?? {}),
   );
 
   // Check if data is available

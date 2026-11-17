@@ -17,6 +17,7 @@ import {
   VpnComparisonError,
   CmdOutError,
   ClanError,
+  pairsLabel,
 } from "@/src/benchData";
 
 // --- Generic Bar Chart Component ---
@@ -30,6 +31,24 @@ interface BarChartData {
   isCrashed?: boolean; // True if benchmark crashed with error, false/undefined if not run
   errorMessage?: string; // Error message for failed VPNs
   machineName?: string; // Machine that failed (if applicable)
+  pairsNote?: string; // " (n/m pairs)" when only some machine pairs succeeded
+}
+
+const PARTIAL_DECAL = {
+  symbol: "rect",
+  dashArrayX: [1, 0],
+  dashArrayY: [3, 5],
+  rotation: -Math.PI / 4,
+  color: "rgba(255, 255, 255, 0.55)",
+};
+
+function withPartialNote(
+  subtext: string | undefined,
+  data: { pairsNote?: string }[],
+): string | undefined {
+  if (!data.some((d) => d.pairsNote)) return subtext;
+  const note = "hatched = based on fewer than all pairs";
+  return subtext ? `${subtext} · ${note}` : note;
 }
 
 // Helper to get error message from comparison error
@@ -89,7 +108,7 @@ const createBarChartOption = (
   return {
     title: {
       text: title,
-      subtext: subtext,
+      subtext: withPartialNote(subtext, sortedData),
       left: "center",
       subtextStyle: {
         color: "#888",
@@ -143,7 +162,7 @@ const createBarChartOption = (
           }
         }
 
-        return `${item.name}<br/>
+        return `${item.name}${originalData.pairsNote ?? ""}<br/>
                 Average: ${originalData.value.toFixed(2)}<br/>
                 Min: ${originalData.min.toFixed(2)}<br/>
                 Max: ${originalData.max.toFixed(2)}`;
@@ -263,6 +282,7 @@ const createBarChartOption = (
             value: d.value,
             itemStyle: {
               color: color,
+              decal: d.pairsNote ? PARTIAL_DECAL : undefined,
             },
             label: { show: false },
           };
@@ -275,7 +295,9 @@ const createBarChartOption = (
         {
           labels: {
             values: sortedData.map((d) =>
-              d.isIncomplete ? null : labelFormatter(d.value),
+              d.isIncomplete
+                ? null
+                : labelFormatter(d.value) + (d.pairsNote ?? ""),
             ),
           },
         },
@@ -330,6 +352,7 @@ function metricToBarData<T>(
         min: metric.min,
         max: metric.max,
         isIncomplete: false,
+        pairsNote: pairsLabel(entry),
       });
     } else {
       // VPN failed/crashed - show error information
@@ -381,6 +404,7 @@ interface DualBarChartData {
   isCrashed?: boolean;
   errorMessage?: string;
   machineName?: string;
+  pairsNote?: string;
 }
 
 function metricsToDualBarData<T>(
@@ -420,6 +444,7 @@ function metricsToDualBarData<T>(
         receiverMin: receiverMetric.min,
         receiverMax: receiverMetric.max,
         isIncomplete: false,
+        pairsNote: pairsLabel(entry),
       });
     } else {
       result.push({
@@ -471,6 +496,7 @@ const createDualBarChartOption = (
   secondLabel = "Receiver",
   labelFormatter: (value: number) => string = (v) => v.toFixed(1),
   sortBy: "average" | "first" | "second" = "average",
+  subtext = "Higher is better",
 ) => {
   // Sort by specified value for better visualization (incomplete items at end)
   const sortedData = [...data].sort((a, b) => {
@@ -501,7 +527,7 @@ const createDualBarChartOption = (
   return {
     title: {
       text: title,
-      subtext: "Higher is better",
+      subtext: withPartialNote(subtext, sortedData),
       left: "center",
       subtextStyle: {
         color: "#888",
@@ -548,7 +574,7 @@ const createDualBarChartOption = (
           }
         }
 
-        let tooltipText = `<b>${item.name}</b><br/>`;
+        let tooltipText = `<b>${item.name}${item.pairsNote ?? ""}</b><br/>`;
         tooltipText += `<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${firstColor};margin-right:5px;"></span>`;
         tooltipText += `${firstLabel}: ${item.senderValue.toFixed(2)} (Min: ${item.senderMin.toFixed(2)}, Max: ${item.senderMax.toFixed(2)})<br/>`;
         tooltipText += `<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${secondColor};margin-right:5px;"></span>`;
@@ -611,7 +637,10 @@ const createDualBarChartOption = (
           }
           return {
             value: d.senderValue,
-            itemStyle: { color: firstColor },
+            itemStyle: {
+              color: firstColor,
+              decal: d.pairsNote ? PARTIAL_DECAL : undefined,
+            },
             label: { show: false },
           };
         }),
@@ -634,7 +663,10 @@ const createDualBarChartOption = (
           }
           return {
             value: d.receiverValue,
-            itemStyle: { color: secondColor },
+            itemStyle: {
+              color: secondColor,
+              decal: d.pairsNote ? PARTIAL_DECAL : undefined,
+            },
             label: { show: false },
           };
         }),
@@ -682,6 +714,7 @@ export const DualComparisonBarChart = (props: {
   secondLabel?: string;
   labelFormatter?: (value: number) => string;
   sortBy?: "average" | "first" | "second";
+  subtext?: string;
 }) => {
   return (
     <Show when={props.data.length > 0} fallback={<div>No data available</div>}>
@@ -696,6 +729,7 @@ export const DualComparisonBarChart = (props: {
           props.secondLabel,
           props.labelFormatter,
           props.sortBy,
+          props.subtext,
         )}
         height={props.height ?? 400}
       />
@@ -751,6 +785,55 @@ export const TcpRetransmitsComparisonChart = (props: {
     />
   );
 };
+
+function RetransmitCountChart<T>(props: {
+  data: VpnComparisonResultMap<T>;
+  title: string;
+  forward: (d: T) => MetricStats;
+  reverse: (d: T) => MetricStats | undefined;
+  allVpnNames?: string[];
+}) {
+  const hasReverse = () =>
+    Object.values(props.data).some(
+      (e) => e.status === "success" && props.reverse(e.data) !== undefined,
+    );
+  const chartData = () =>
+    metricsToDualBarData(
+      props.data,
+      props.forward,
+      props.reverse,
+      props.allVpnNames,
+      "Reverse retransmits not recorded",
+    );
+  return (
+    <Show when={hasReverse()}>
+      <DualComparisonBarChart
+        data={chartData()}
+        title={props.title}
+        yAxisLabel="Retransmits"
+        firstColor="#ff4d4f"
+        secondColor="#fa8c16"
+        firstLabel="Client → Server"
+        secondLabel="Server → Client"
+        labelFormatter={(v) => v.toFixed(0)}
+        subtext="Lower is better"
+      />
+    </Show>
+  );
+}
+
+export const TcpRetransmitCountComparisonChart = (props: {
+  data: VpnComparisonResultMap<TcpIperfComparisonData>;
+  allVpnNames?: string[];
+}) => (
+  <RetransmitCountChart
+    data={props.data}
+    title="TCP Retransmits per Direction"
+    forward={(d) => d.retransmits}
+    reverse={(d) => d.retransmits_reverse}
+    allVpnNames={props.allVpnNames}
+  />
+);
 
 export const TcpWindowSizeComparisonChart = (props: {
   data: VpnComparisonResultMap<TcpIperfComparisonData>;
@@ -1366,6 +1449,10 @@ export const TcpComparisonSection = (props: {
         data={props.data}
         allVpnNames={props.allVpnNames}
       />
+      <TcpRetransmitCountComparisonChart
+        data={props.data}
+        allVpnNames={props.allVpnNames}
+      />
       <TcpWindowSizeComparisonChart
         data={props.data}
         allVpnNames={props.allVpnNames}
@@ -1629,6 +1716,19 @@ export const ParallelTcpRetransmitsComparisonChart = (props: {
   );
 };
 
+export const ParallelTcpRetransmitCountComparisonChart = (props: {
+  data: VpnComparisonResultMap<ParallelTcpComparisonData>;
+  allVpnNames?: string[];
+}) => (
+  <RetransmitCountChart
+    data={props.data}
+    title="Parallel TCP Retransmits per Direction"
+    forward={(d) => d.total_retransmits}
+    reverse={(d) => d.total_retransmits_reverse}
+    allVpnNames={props.allVpnNames}
+  />
+);
+
 export const ParallelTcpWindowSizeComparisonChart = (props: {
   data: VpnComparisonResultMap<ParallelTcpComparisonData>;
   height?: number;
@@ -1725,6 +1825,10 @@ export const ParallelTcpComparisonSection = (props: {
         allVpnNames={props.allVpnNames}
       />
       <ParallelTcpRetransmitsComparisonChart
+        data={props.data}
+        allVpnNames={props.allVpnNames}
+      />
+      <ParallelTcpRetransmitCountComparisonChart
         data={props.data}
         allVpnNames={props.allVpnNames}
       />
@@ -2020,7 +2124,7 @@ export const SuccessRateComparisonChart = (props: {
     return {
       title: {
         text: "Benchmark Success Rate",
-        subtext: "Higher is better",
+        subtext: "Share of machine-pair runs that succeeded",
         left: "center",
         top: 0,
       },
@@ -2035,7 +2139,12 @@ export const SuccessRateComparisonChart = (props: {
         axisPointer: { type: "shadow" },
         formatter: (params: { name: string; value: number }[]) => {
           const p = params[0];
-          return `${p.name}: ${Math.round(p.value)}%`;
+          const entry = props.data[p.name];
+          const runs =
+            entry?.status === "success"
+              ? `<br/>${entry.data.successful_tests} of ${entry.data.total_tests} pair runs succeeded`
+              : "";
+          return `${p.name}: ${Math.round(p.value)}%${runs}`;
         },
       },
       grid: {
@@ -2143,7 +2252,7 @@ export const FailureCountComparisonChart = (props: {
       },
       yAxis: {
         type: "value",
-        name: "Number of Tests",
+        name: "Pair runs",
         axisLabel: { formatter: formatAxisValue },
       },
       series: [

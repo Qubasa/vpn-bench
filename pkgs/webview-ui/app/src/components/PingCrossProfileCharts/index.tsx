@@ -2,7 +2,13 @@ import { EChartsCoreOption } from "echarts";
 import { createMemo, Show } from "solid-js";
 import { Echart } from "../Echarts";
 import { profileAxisLabel } from "@/src/crossProfileLayout";
-import { CrossProfilePingData, PingHeatmapData } from "../../benchData";
+import {
+  CrossProfilePingData,
+  PartialPairsMap,
+  PARTIAL_PAIRS_NOTE,
+  partialPairsMark,
+  PingHeatmapData,
+} from "../../benchData";
 
 // Format TC profile names for display
 const formatProfileName = (name: string) =>
@@ -19,7 +25,10 @@ const X_SYMBOL_PATH =
  * Creates the ECharts option for RTT (latency) heatmap.
  * Lower is better (green = low latency).
  */
-const createRttHeatmapOption = (data: PingHeatmapData): EChartsCoreOption => {
+const createRttHeatmapOption = (
+  data: PingHeatmapData,
+  partial: PartialPairsMap,
+): EChartsCoreOption => {
   const vpnNames = Object.keys(data.rtt);
 
   // Sort by baseline RTT ascending (lowest first = best)
@@ -56,7 +65,10 @@ const createRttHeatmapOption = (data: PingHeatmapData): EChartsCoreOption => {
   return {
     title: {
       text: "Ping Average RTT Heatmap",
-      subtext: "Lower is better (green)" + (hasFailures ? " | ✕ = Failed" : ""),
+      subtext:
+        "Lower is better (green)" +
+        (hasFailures ? " | ✕ = Failed" : "") +
+        (Object.keys(partial).length > 0 ? PARTIAL_PAIRS_NOTE : ""),
       left: "center",
     },
     toolbox: {
@@ -83,7 +95,8 @@ const createRttHeatmapOption = (data: PingHeatmapData): EChartsCoreOption => {
         const rtt = params.value[2];
         const vpnName = sortedVpnNames[sortedVpnIdx];
         const profile = formatProfileName(data.tc_profiles[profileIdx]);
-        return `<strong>${vpnName}</strong><br/>${profile}: ${rtt.toFixed(2)} ms`;
+        const pairs = partial[vpnName]?.[data.tc_profiles[profileIdx]] ?? "";
+        return `<strong>${vpnName}</strong><br/>${profile}: ${rtt.toFixed(2)} ms${pairs}`;
       },
     },
     legend: hasFailures
@@ -149,7 +162,14 @@ const createRttHeatmapOption = (data: PingHeatmapData): EChartsCoreOption => {
             const key = `${params.value[0]}-${params.value[1]}`;
             if (failedCellKeys.has(key)) return "";
             const value = params.value[2];
-            return value < 10 ? value.toFixed(1) : Math.round(value).toString();
+            const mark = partialPairsMark(
+              partial,
+              sortedVpnNames[params.value[1]],
+              data.tc_profiles[params.value[0]],
+            );
+            const text =
+              value < 10 ? value.toFixed(1) : Math.round(value).toString();
+            return text + mark;
           },
           fontSize: 10,
         },
@@ -189,6 +209,7 @@ const createRttHeatmapOption = (data: PingHeatmapData): EChartsCoreOption => {
  */
 const createPacketLossHeatmapOption = (
   data: PingHeatmapData,
+  partial: PartialPairsMap,
 ): EChartsCoreOption => {
   const vpnNames = Object.keys(data.packet_loss);
 
@@ -230,7 +251,8 @@ const createPacketLossHeatmapOption = (
       text: "Ping Packet Loss Heatmap",
       subtext:
         "Lower is better (green = 0% loss)" +
-        (hasFailures ? " | ✕ = Failed" : ""),
+        (hasFailures ? " | ✕ = Failed" : "") +
+        (Object.keys(partial).length > 0 ? PARTIAL_PAIRS_NOTE : ""),
       left: "center",
     },
     toolbox: {
@@ -257,7 +279,8 @@ const createPacketLossHeatmapOption = (
         const loss = params.value[2];
         const vpnName = sortedVpnNames[sortedVpnIdx];
         const profile = formatProfileName(data.tc_profiles[profileIdx]);
-        return `<strong>${vpnName}</strong><br/>${profile}: ${loss.toFixed(2)}%`;
+        const pairs = partial[vpnName]?.[data.tc_profiles[profileIdx]] ?? "";
+        return `<strong>${vpnName}</strong><br/>${profile}: ${loss.toFixed(2)}%${pairs}`;
       },
     },
     legend: hasFailures
@@ -318,8 +341,13 @@ const createPacketLossHeatmapOption = (
           show: true,
           formatter: (params: { value: [number, number, number] }) => {
             const value = params.value[2];
-            if (value === 0) return "0";
-            return value < 1 ? value.toFixed(2) : value.toFixed(1);
+            const mark = partialPairsMark(
+              partial,
+              sortedVpnNames[params.value[1]],
+              data.tc_profiles[params.value[0]],
+            );
+            if (value === 0) return `0${mark}`;
+            return (value < 1 ? value.toFixed(2) : value.toFixed(1)) + mark;
           },
           fontSize: 10,
         },
@@ -355,6 +383,7 @@ const createPacketLossHeatmapOption = (
 
 export interface PingCrossProfileChartsProps {
   data: CrossProfilePingData;
+  partialPairs?: PartialPairsMap;
 }
 
 /**
@@ -363,10 +392,10 @@ export interface PingCrossProfileChartsProps {
 export const PingCrossProfileCharts = (props: PingCrossProfileChartsProps) => {
   // Memoize chart options
   const rttHeatmapOption = createMemo(() =>
-    createRttHeatmapOption(props.data.heatmap),
+    createRttHeatmapOption(props.data.heatmap, props.partialPairs ?? {}),
   );
   const packetLossHeatmapOption = createMemo(() =>
-    createPacketLossHeatmapOption(props.data.heatmap),
+    createPacketLossHeatmapOption(props.data.heatmap, props.partialPairs ?? {}),
   );
 
   // Check if data is available

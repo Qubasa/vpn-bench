@@ -16,6 +16,8 @@ import {
   getCrossProfileQperfDataForAlias,
   getCrossProfileVideoStreamingDataForAlias,
   getCrossProfileNixCacheDataForAlias,
+  getPartialPairsForAlias,
+  PairCountedTest,
 } from "../../benchData";
 import { useAlias } from "../../AliasContext";
 import { sortTcProfiles } from "@/src/index";
@@ -53,6 +55,8 @@ export const TcpCrossProfileDashboard = (
     getCrossProfileVideoStreamingDataForAlias(currentAlias());
   const nixCacheData = () =>
     getCrossProfileNixCacheDataForAlias(currentAlias());
+  const partialPairs = (test: PairCountedTest) =>
+    getPartialPairsForAlias(test, currentAlias());
 
   // Get URL search params for state sync
   const [searchParams, setSearchParams] = useSearchParams();
@@ -194,7 +198,12 @@ export const TcpCrossProfileDashboard = (
                 <FallbackMessage message="No TCP cross-profile data available" />
               }
             >
-              {(tcpData) => <TcpCrossProfileCharts data={tcpData()} />}
+              {(tcpData) => (
+                <TcpCrossProfileCharts
+                  data={tcpData()}
+                  partialPairs={partialPairs("tcpIperf")}
+                />
+              )}
             </Show>
           </Tabs.Content>
 
@@ -224,7 +233,10 @@ export const TcpCrossProfileDashboard = (
                     tests simultaneously. Throughput values shown are the sum of
                     all machine pairs combined.
                   </div>
-                  <ParallelTcpCrossProfileCharts data={tcpData()} />
+                  <ParallelTcpCrossProfileCharts
+                    data={tcpData()}
+                    partialPairs={partialPairs("parallelTcp")}
+                  />
                 </>
               )}
             </Show>
@@ -237,7 +249,12 @@ export const TcpCrossProfileDashboard = (
                 <FallbackMessage message="No UDP cross-profile data available" />
               }
             >
-              {(d) => <UdpCrossProfileCharts data={d()} />}
+              {(d) => (
+                <UdpCrossProfileCharts
+                  data={d()}
+                  partialPairs={partialPairs("udpIperf")}
+                />
+              )}
             </Show>
           </Tabs.Content>
 
@@ -248,7 +265,12 @@ export const TcpCrossProfileDashboard = (
                 <FallbackMessage message="No Ping cross-profile data available" />
               }
             >
-              {(d) => <PingCrossProfileCharts data={d()} />}
+              {(d) => (
+                <PingCrossProfileCharts
+                  data={d()}
+                  partialPairs={partialPairs("ping")}
+                />
+              )}
             </Show>
           </Tabs.Content>
 
@@ -259,7 +281,12 @@ export const TcpCrossProfileDashboard = (
                 <FallbackMessage message="No QUIC cross-profile data available" />
               }
             >
-              {(d) => <QperfCrossProfileCharts data={d()} />}
+              {(d) => (
+                <QperfCrossProfileCharts
+                  data={d()}
+                  partialPairs={partialPairs("qperf")}
+                />
+              )}
             </Show>
           </Tabs.Content>
 
@@ -273,7 +300,12 @@ export const TcpCrossProfileDashboard = (
                 <FallbackMessage message="No Video Streaming cross-profile data available" />
               }
             >
-              {(d) => <VideoStreamingCrossProfileCharts data={d()} />}
+              {(d) => (
+                <VideoStreamingCrossProfileCharts
+                  data={d()}
+                  partialPairs={partialPairs("videoStreaming")}
+                />
+              )}
             </Show>
           </Tabs.Content>
 
@@ -284,7 +316,12 @@ export const TcpCrossProfileDashboard = (
                 <FallbackMessage message="No Nix Cache cross-profile data available" />
               }
             >
-              {(d) => <NixCacheCrossProfileCharts data={d()} />}
+              {(d) => (
+                <NixCacheCrossProfileCharts
+                  data={d()}
+                  partialPairs={partialPairs("nixCache")}
+                />
+              )}
             </Show>
           </Tabs.Content>
         </Tabs>
