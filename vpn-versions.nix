@@ -27,6 +27,7 @@ let
     "fc5c3ec22090b5b2a0f274e863651fe9ca489bf4" = "1.16.2";
     "2872934d005dce7fbcc30e5e57f7c435c4203147" = "v0.1.0+69";
     "f5902acab6dd2f1a68bf6e4c89e352ed71f93698" = "cjdns-v22.3";
+    "499a86f4bc4795310ead5f06ecd5907e585acef4" = "v0.83.1";
   };
 
   sourceUrl =
@@ -142,6 +143,10 @@ let
       src = inputs.nebula;
       pkg = pkgsX86.nebula;
     };
+    netbird = {
+      src = inputs.netbird;
+      pkg = pkgsX86.netbird;
+    };
     tailscale = {
       src = inputs.tailscale;
       pkg = pkgsX86.tailscale;
@@ -239,6 +244,7 @@ let
     Hyprspace = [ "hyprspace" ];
     Mycelium = [ "mycelium" ];
     Nebula = [ "nebula" ];
+    Netbird = [ "netbird" ];
     Tinc = [ "tinc" ];
     Tincr = [ "tincr" ];
     VpnCloud = [ "vpncloud" ];

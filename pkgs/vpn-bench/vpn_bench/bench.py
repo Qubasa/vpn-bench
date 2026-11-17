@@ -85,6 +85,8 @@ def get_vpn_service_name(vpn: VPN) -> str | None:
             return "tinc.tincr.service"
         case VPN.Headscale:
             return "tailscaled.service"
+        case VPN.Netbird:
+            return "netbird.service"
         case VPN.Yip:
             return "yipd.service"
         case VPN.Cjdns:

@@ -353,6 +353,35 @@ def install_headscale(config: Config, tr_machines: list[TrMachine]) -> None:
     inventory_store.write(inventory, message="Add headscale configuration")
 
 
+def install_netbird(config: Config, tr_machines: list[TrMachine]) -> None:
+    inventory_store = InventoryStore(Flake(str(config.clan_dir)))
+    inventory = inventory_store.read()
+    conf: dict[str, Any] = {
+        "module": {"name": "netbird", "input": "cvpn-bench"},
+        "roles": {
+            "controller": {"machines": {}, "settings": {}},
+            "peer": {
+                "machines": {},
+            },
+        },
+    }
+    for machine_num, tr_machine in enumerate(tr_machines):
+        if machine_num == 0:
+            if tr_machine["ipv4"] is None:
+                msg = "NetBird controller requires a public IPv4 address"
+                raise VpnBenchError(msg)
+            log.info(f"Setting up {tr_machine['name']} as the netbird controller")
+            conf["roles"]["controller"]["machines"][tr_machine["name"]] = {}
+            conf["roles"]["controller"]["settings"]["publicAddress"] = tr_machine[
+                "ipv4"
+            ]
+        # All machines (including controller) are peers
+        log.info(f"Adding {tr_machine['name']} to the netbird peers")
+        conf["roles"]["peer"]["machines"][tr_machine["name"]] = {}
+    set_value_by_path_tuple(inventory, ("instances", "netbird"), conf)
+    inventory_store.write(inventory, message="Add netbird configuration")
+
+
 def _public_address_peers(
     vpn_name: str, tr_machines: list[TrMachine]
 ) -> dict[str, Any]:
@@ -440,6 +469,14 @@ def get_vpn_ips(
                 result = ssh_run(
                     machine_connection(machine),
                     ["tailscale", "ip", "-6"],
+                    RunOpts(log=Log.BOTH),
+                )
+                vpn_ip = result.stdout.strip()
+            case VPN.Netbird:
+                # The NetBird management server assigns IPs when a peer joins
+                result = ssh_run(
+                    machine_connection(machine),
+                    ["netbird", "status", "--ipv4"],
                     RunOpts(log=Log.BOTH),
                 )
                 vpn_ip = result.stdout.strip()
@@ -667,6 +704,8 @@ def install_vpn(
                 install_tincr(config, tr_machines)
             case VPN.Headscale:
                 install_headscale(config, tr_machines)
+            case VPN.Netbird:
+                install_netbird(config, tr_machines)
             case VPN.Yip:
                 install_yip(config, tr_machines)
             case VPN.Cjdns:
@@ -687,9 +726,9 @@ def install_vpn(
     else:
         remove_optimized_kernel_profile(config)
 
-    # Headscale needs a different flow: deploy first, then query IPs
-    # (because tailscale assigns IPs dynamically after authentication)
-    if vpn == VPN.Headscale:
+    # VPNs whose IPs the control server assigns at join time need a different flow:
+    # deploy first, then query IPs
+    if vpn in (VPN.Headscale, VPN.Netbird):
         # Run generators and deploy VPN machines FIRST
         with timed_op("run_generators"):
             run_generators(
@@ -702,7 +741,7 @@ def install_vpn(
         with timed_op("deploy_vpn_machines"):
             deploy_machines(machines, build_host=build_host, ssh_key=config.ssh_keys[0])
 
-        # NOW query IPs (tailscale is running and authenticated)
+        # NOW query IPs (the join units have authenticated every peer)
         with timed_op("get_vpn_ips"):
             bmachines = get_vpn_ips(config, machines, vpn, tr_machines)
             save_machine_layout(config, vpn, bmachines)

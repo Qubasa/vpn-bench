@@ -57,6 +57,7 @@ class VPN(Enum):
     Tinc = "tinc"
     Tincr = "tincr"
     Headscale = "headscale"
+    Netbird = "netbird"
     Yip = "yip"
     Cjdns = "cjdns"
 
@@ -97,6 +98,9 @@ class VPN(Enum):
                 return ["/etc/tinc"]
             case VPN.Headscale:
                 return ["/var/lib/headscale", "/var/lib/tailscale"]
+            case VPN.Netbird:
+                # A client's login belongs to the server's account, so both go together
+                return ["/var/lib/netbird", "/var/lib/netbird-server"]
             case VPN.Yip:
                 return []  # yipd keeps no state, its config lives in /run/yipd
             case VPN.Cjdns:

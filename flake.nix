@@ -64,6 +64,10 @@
     url = "github:cjdelisle/cjdns/cjdns-v22.3";
     flake = false;
   };
+  inputs.netbird = {
+    url = "github:netbirdio/netbird/v0.83.1";
+    flake = false;
+  };
   # Official apps that live outside the VPN's repository, pinned to their last commit before
   # the benchmarked VPN commit. Only the source analysis reads them.
   inputs.wireguard-apple = {
@@ -135,6 +139,7 @@
         ./pkgs/mycelium/flake-module.nix
         ./pkgs/yip/flake-module.nix
         ./pkgs/cjdns/flake-module.nix
+        ./pkgs/netbird/flake-module.nix
       ];
 
       flake =
@@ -231,6 +236,7 @@
           );
           "yip" = lib.modules.importApply ./clanModules/yip { packages = self.packages; };
           "cjdns" = lib.modules.importApply ./clanModules/cjdns { packages = self.packages; };
+          "netbird" = lib.modules.importApply ./clanModules/netbird { packages = self.packages; };
           "phantun" = (lib.modules.importApply ./clanModules/phantun { packages = self.packages; });
           "tcp-reorder-tune" = ./clanModules/tcp-reorder-tune;
         };
