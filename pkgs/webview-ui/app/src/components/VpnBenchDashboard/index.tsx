@@ -293,10 +293,26 @@ export const VpnDashboard = (props: VpnDashboardProps) => {
   });
 
   // Default values remain mostly the same
-  const tcpHeight = props.tcpHeight || {/* ... defaults ... */};
-  const udpHeight = props.udpHeight || {/* ... defaults ... */};
-  const pingHeight = props.pingHeight || {/* ... defaults ... */};
-  const ristStreamHeight = props.ristStreamHeight || {/* ... defaults ... */};
+  const tcpHeight =
+    props.tcpHeight ||
+    {
+      /* ... defaults ... */
+    };
+  const udpHeight =
+    props.udpHeight ||
+    {
+      /* ... defaults ... */
+    };
+  const pingHeight =
+    props.pingHeight ||
+    {
+      /* ... defaults ... */
+    };
+  const ristStreamHeight =
+    props.ristStreamHeight ||
+    {
+      /* ... defaults ... */
+    };
   const tabLabels = {
     info: props.tabLabels?.info || "Overview",
     tcp: props.tabLabels?.tcp || "TCP Performance",
@@ -543,6 +559,9 @@ export const VpnDashboard = (props: VpnDashboardProps) => {
                 const failedPairs = data.pairs.filter(
                   (pair) => pair.error !== undefined,
                 );
+                const missingPairs = data.pairs
+                  .filter((pair) => pair.result === undefined)
+                  .map((pair) => `${pair.source} → ${pair.target}`);
 
                 return (
                   <>
@@ -603,11 +622,19 @@ export const VpnDashboard = (props: VpnDashboardProps) => {
                           color: "#276749",
                         }}
                       >
-                        <strong>Parallel Test:</strong> All {reports.length}{" "}
-                        machine pairs ran TCP tests simultaneously. Throughput
-                        values shown are the sum of all machine pairs combined.
+                        <strong>Parallel Test:</strong> {reports.length} of{" "}
+                        {data.pairs.length} machine pairs ran TCP tests
+                        simultaneously. Values are per pair and per direction.
+                        <Show when={missingPairs.length > 0}>
+                          {" "}
+                          Failed: {missingPairs.join(", ")}.
+                        </Show>
                       </div>
-                      <IperfTcpCharts reports={reports} height={tcpHeight} />
+                      <IperfTcpCharts
+                        reports={reports}
+                        height={tcpHeight}
+                        vpnCpuNotSampled
+                      />
                     </Show>
                   </>
                 );

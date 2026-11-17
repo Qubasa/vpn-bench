@@ -1,3 +1,4 @@
+import { createMemo, Show } from "solid-js";
 import { Echart } from "../Echarts";
 import { createErrorBarSeries } from "../Echarts/errorBars";
 import { formatAxisValue } from "../Echarts/formatters";
@@ -92,6 +93,7 @@ export interface IperfTcpReport {
 
 interface IperfTcpChartsProps {
   reports: IperfTcpReport[];
+  vpnCpuNotSampled?: boolean;
   height?: {
     throughput?: number;
     timeSeries?: number;
@@ -135,48 +137,50 @@ const IperfTestSummary = (props: { reports: IperfTcpReport[] }) => {
     return `${mb.toFixed(2)} MB`;
   };
 
-  const t = totals();
-
-  if (t.duration === 0 && t.bytesSent === 0) return null;
+  const t = createMemo(totals);
 
   return (
-    <div
-      style={{
-        background: "#f0f5ff",
-        border: "1px solid #adc6ff",
-        "border-radius": "6px",
-        padding: "12px 16px",
-        "margin-bottom": "16px",
-        display: "flex",
-        "flex-wrap": "wrap",
-        gap: "24px",
-      }}
-    >
-      {t.duration > 0 && (
-        <div style={{ display: "flex", "align-items": "center", gap: "8px" }}>
-          <span style={{ "font-weight": "500", color: "#1890ff" }}>
-            Duration:
-          </span>
-          <span style={{ color: "#333" }}>{t.duration.toFixed(1)}s</span>
-        </div>
-      )}
-      {t.bytesSent > 0 && (
-        <div style={{ display: "flex", "align-items": "center", gap: "8px" }}>
-          <span style={{ "font-weight": "500", color: "#722ed1" }}>
-            Data Sent:
-          </span>
-          <span style={{ color: "#333" }}>{formatBytes(t.bytesSent)}</span>
-        </div>
-      )}
-      {t.bytesReceived > 0 && (
-        <div style={{ display: "flex", "align-items": "center", gap: "8px" }}>
-          <span style={{ "font-weight": "500", color: "#13c2c2" }}>
-            Data Received:
-          </span>
-          <span style={{ color: "#333" }}>{formatBytes(t.bytesReceived)}</span>
-        </div>
-      )}
-    </div>
+    <Show when={t().duration > 0 || t().bytesSent > 0}>
+      <div
+        style={{
+          background: "#f0f5ff",
+          border: "1px solid #adc6ff",
+          "border-radius": "6px",
+          padding: "12px 16px",
+          "margin-bottom": "16px",
+          display: "flex",
+          "flex-wrap": "wrap",
+          gap: "24px",
+        }}
+      >
+        <Show when={t().duration > 0}>
+          <div style={{ display: "flex", "align-items": "center", gap: "8px" }}>
+            <span style={{ "font-weight": "500", color: "#1890ff" }}>
+              Duration:
+            </span>
+            <span style={{ color: "#333" }}>{t().duration.toFixed(1)}s</span>
+          </div>
+        </Show>
+        <Show when={t().bytesSent > 0}>
+          <div style={{ display: "flex", "align-items": "center", gap: "8px" }}>
+            <span style={{ "font-weight": "500", color: "#722ed1" }}>
+              Data Sent:
+            </span>
+            <span style={{ color: "#333" }}>{formatBytes(t().bytesSent)}</span>
+          </div>
+        </Show>
+        <Show when={t().bytesReceived > 0}>
+          <div style={{ display: "flex", "align-items": "center", gap: "8px" }}>
+            <span style={{ "font-weight": "500", color: "#13c2c2" }}>
+              Data Received:
+            </span>
+            <span style={{ color: "#333" }}>
+              {formatBytes(t().bytesReceived)}
+            </span>
+          </div>
+        </Show>
+      </div>
+    </Show>
   );
 };
 
@@ -602,7 +606,10 @@ const createThroughputOption = (reports: IperfTcpReport[]) => {
   };
 };
 // Per-process CPU chart (all series in % of one core)
-const createCpuOption = (reports: IperfTcpReport[]) => {
+const createCpuOption = (
+  reports: IperfTcpReport[],
+  vpnCpuNotSampled = false,
+) => {
   const percentLabel = { show: true, position: "top", formatter: "{c} %" };
   const vpnPercent = (
     report: IperfTcpReport,
@@ -653,12 +660,15 @@ const createCpuOption = (reports: IperfTcpReport[]) => {
     },
   ];
   const series = [...vpnSeries, ...iperf3Series];
+  const missingVpnNote = vpnCpuNotSampled
+    ? "VPN process CPU is not sampled in the parallel test"
+    : "VPN process not measured (kernel datapath or older result)";
   return {
     title: {
       text: "Average Process CPU",
       subtext: hasVpnCpu
         ? "Lower is better"
-        : "Lower is better | VPN process not measured (kernel datapath or older result)",
+        : `Lower is better | ${missingVpnNote}`,
       left: "center",
       subtextStyle: { color: "#888", fontSize: 12 },
     },
@@ -700,6 +710,34 @@ const createCpuOption = (reports: IperfTcpReport[]) => {
 
 // Retransmits Chart Creator
 const createRetransmitsOption = (reports: IperfTcpReport[]) => {
+  const bidir = reports.some(
+    (report) => report.data.end.sum_sent_bidir_reverse !== undefined,
+  );
+  const barLabel = { show: true, position: "top", formatter: "{c}" };
+  const reverseSeries = bidir
+    ? [
+        {
+          name: SERVER_TO_CLIENT,
+          type: "bar",
+          data: reports.map(
+            (report) =>
+              report.data.end.sum_sent_bidir_reverse?.retransmits ?? null,
+          ),
+          color: "#2ecc71",
+          label: barLabel,
+        },
+      ]
+    : [];
+  const series = [
+    {
+      name: bidir ? CLIENT_TO_SERVER : "Retransmits",
+      type: "bar",
+      data: reports.map((report) => report.data.end.sum_sent.retransmits),
+      color: "#f39c12",
+      label: barLabel,
+    },
+    ...reverseSeries,
+  ];
   return {
     title: {
       text: "Total TCP Retransmits",
@@ -712,6 +750,10 @@ const createRetransmitsOption = (reports: IperfTcpReport[]) => {
       axisPointer: {
         type: "shadow",
       },
+    },
+    legend: {
+      data: series.map((s) => s.name),
+      top: 50,
     },
     grid: {
       left: "3%",
@@ -735,76 +777,85 @@ const createRetransmitsOption = (reports: IperfTcpReport[]) => {
       name: "Count",
       axisLabel: { formatter: formatAxisValue },
     },
-    series: [
-      {
-        name: "Retransmits",
-        type: "bar",
-        data: reports.map((report) => report.data.end.sum_sent.retransmits),
-        color: "#f39c12",
-        label: {
-          show: true,
-          position: "top",
-          formatter: "{c}",
-        },
-      },
-    ],
+    series,
   };
+};
+
+const TIME_SERIES_PALETTE = [
+  "#3498db",
+  "#2ecc71",
+  "#e74c3c",
+  "#f39c12",
+  "#9b59b6",
+  "#1abc9c",
+  "#d35400",
+  "#34495e",
+  "#16a085",
+  "#c0392b",
+];
+
+interface LineSeries {
+  name: string;
+  type: "line";
+  data: (number | null)[];
+  color: string;
+  lineStyle: { type: "solid" | "dashed" };
+}
+
+// Solid line is client→server, dashed line in the same colour is server→client
+const createPairLines = (
+  report: IperfTcpReport,
+  color: string,
+  bidir: boolean,
+): LineSeries[] => {
+  const intervals = report.data.intervals ?? [];
+  const forward: LineSeries = {
+    name: bidir ? `${report.name} (C→S)` : report.name,
+    type: "line",
+    data: intervals.map((interval) =>
+      parseFloat((interval.sum.bits_per_second / 1000000).toFixed(1)),
+    ),
+    color,
+    lineStyle: { type: "solid" },
+  };
+  if (!bidir) return [forward];
+  const reverse: LineSeries = {
+    name: `${report.name} (S→C)`,
+    type: "line",
+    data: intervals.map((interval) =>
+      interval.sum_bidir_reverse
+        ? parseFloat(
+            (interval.sum_bidir_reverse.bits_per_second / 1000000).toFixed(1),
+          )
+        : null,
+    ),
+    color,
+    lineStyle: { type: "dashed" },
+  };
+  return [forward, reverse];
 };
 
 // Time Series Chart Creator
 const createTimeSeriesOption = (reports: IperfTcpReport[]) => {
-  // Get all intervals from all reports
   const allTimeStamps: string[] = [];
-  const seriesData: {
-    name: string;
-    type: string;
-    data: number[];
-    color: string;
-  }[] = [];
+  const bidir = reports.some((report) =>
+    report.data.intervals?.some(
+      (interval) => interval.sum_bidir_reverse !== undefined,
+    ),
+  );
 
-  // Generate colors dynamically based on number of reports
-  const colorPalette = [
-    "#3498db",
-    "#2ecc71",
-    "#e74c3c",
-    "#f39c12",
-    "#9b59b6",
-    "#1abc9c",
-    "#d35400",
-    "#34495e",
-    "#16a085",
-    "#c0392b",
-  ];
-
-  // Process each report's intervals
-  reports.forEach((report, index) => {
+  const seriesData = reports.flatMap((report, index): LineSeries[] => {
     if (!report.data.intervals || report.data.intervals.length === 0) {
-      return;
+      return [];
     }
-
-    // Extract time points from this report
-    const reportTimeStamps = report.data.intervals.map((interval) =>
-      interval.sum.end.toFixed(1),
-    );
-
-    // Combine with master list
-    reportTimeStamps.forEach((stamp) => {
+    report.data.intervals.forEach((interval) => {
+      const stamp = interval.sum.end.toFixed(1);
       if (!allTimeStamps.includes(stamp)) {
         allTimeStamps.push(stamp);
       }
     });
-
-    // Create series data for this report
-    const throughputData = report.data.intervals.map((interval) =>
-      parseFloat((interval.sum.bits_per_second / 1000000).toFixed(1)),
-    );
-
-    seriesData.push({
-      name: report.name,
-      type: "line",
-      data: throughputData,
-      color: colorPalette[index % colorPalette.length],
-    });
+    const color = TIME_SERIES_PALETTE[index % TIME_SERIES_PALETTE.length];
+    return createPairLines(report, color, bidir);
   });
 
   // Sort timestamps numerically
@@ -819,9 +870,12 @@ const createTimeSeriesOption = (reports: IperfTcpReport[]) => {
     },
     tooltip: {
       trigger: "axis",
+      valueFormatter: (value: number | null) =>
+        value === null ? "-" : `${value} Mbps`,
     },
     legend: {
-      data: reports.map((report) => report.name),
+      type: "scroll",
+      data: seriesData.map((series) => series.name),
       top: 50,
     },
     grid: {
@@ -881,10 +935,11 @@ export const IperfTimeSeriesChart = (props: {
 export const IperfCpuChart = (props: {
   reports: IperfTcpReport[];
   height?: number;
+  vpnCpuNotSampled?: boolean;
 }) => {
   return (
     <Echart
-      option={createCpuOption(props.reports)}
+      option={createCpuOption(props.reports, props.vpnCpuNotSampled)}
       height={props.height || 500}
     />
   );
@@ -928,7 +983,11 @@ export const IperfTcpCharts = (props: IperfTcpChartsProps) => {
 
       <div class="flex flex-col gap-5 lg:flex-row">
         <div class="flex-1">
-          <IperfCpuChart reports={props.reports} height={height().cpu} />
+          <IperfCpuChart
+            reports={props.reports}
+            height={height().cpu}
+            vpnCpuNotSampled={props.vpnCpuNotSampled}
+          />
         </div>
         <div class="flex-1">
           <IperfRetransmitsChart
