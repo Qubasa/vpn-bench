@@ -1,8 +1,67 @@
 {
     "status": "success",
     "data": {
+        "Wireguard": {
+            "status": "success",
+            "pairs_ok": 3,
+            "pairs_total": 3,
+            "data": {
+                "rtt_min_ms": {
+                    "min": 0.754,
+                    "average": 0.9361111111111111,
+                    "max": 1.136,
+                    "percentiles": {
+                        "p25": 0.8706666666666667,
+                        "p50": 0.9566666666666667,
+                        "p75": 0.981
+                    }
+                },
+                "rtt_avg_ms": {
+                    "min": 1.101,
+                    "average": 1.2083333333333333,
+                    "max": 1.382,
+                    "percentiles": {
+                        "p25": 1.1886666666666668,
+                        "p50": 1.1993333333333334,
+                        "p75": 1.2369999999999999
+                    }
+                },
+                "rtt_max_ms": {
+                    "min": 1.297,
+                    "average": 1.8913333333333333,
+                    "max": 3.585,
+                    "percentiles": {
+                        "p25": 1.3863333333333334,
+                        "p50": 1.4276666666666666,
+                        "p75": 2.86
+                    }
+                },
+                "rtt_mdev_ms": {
+                    "min": 0.076,
+                    "average": 0.1371111111111111,
+                    "max": 0.363,
+                    "percentiles": {
+                        "p25": 0.08700000000000001,
+                        "p50": 0.092,
+                        "p75": 0.23233333333333334
+                    }
+                },
+                "packet_loss_percent": {
+                    "min": 0.0,
+                    "average": 0.0,
+                    "max": 0.0,
+                    "percentiles": {
+                        "p25": 0.0,
+                        "p50": 0.0,
+                        "p75": 0.0
+                    }
+                }
+            }
+        },
         "Internal": {
             "status": "success",
+            "pairs_ok": 3,
+            "pairs_total": 3,
             "data": {
                 "rtt_min_ms": {
                     "min": 0.358,
@@ -58,6 +117,8 @@
         },
         "Tinc": {
             "status": "success",
+            "pairs_ok": 3,
+            "pairs_total": 3,
             "data": {
                 "rtt_min_ms": {
                     "min": 0.706,
@@ -113,6 +174,8 @@
         },
         "Headscale": {
             "status": "success",
+            "pairs_ok": 3,
+            "pairs_total": 3,
             "data": {
                 "rtt_min_ms": {
                     "min": 1.109,
@@ -168,6 +231,8 @@
         },
         "Zerotier": {
             "status": "success",
+            "pairs_ok": 3,
+            "pairs_total": 3,
             "data": {
                 "rtt_min_ms": {
                     "min": 0.806,
@@ -207,61 +272,6 @@
                         "p25": 0.06933333333333333,
                         "p50": 0.08033333333333333,
                         "p75": 0.86
-                    }
-                },
-                "packet_loss_percent": {
-                    "min": 0.0,
-                    "average": 0.0,
-                    "max": 0.0,
-                    "percentiles": {
-                        "p25": 0.0,
-                        "p50": 0.0,
-                        "p75": 0.0
-                    }
-                }
-            }
-        },
-        "Wireguard": {
-            "status": "success",
-            "data": {
-                "rtt_min_ms": {
-                    "min": 0.754,
-                    "average": 0.9361111111111111,
-                    "max": 1.136,
-                    "percentiles": {
-                        "p25": 0.8706666666666667,
-                        "p50": 0.9566666666666667,
-                        "p75": 0.981
-                    }
-                },
-                "rtt_avg_ms": {
-                    "min": 1.101,
-                    "average": 1.2083333333333333,
-                    "max": 1.382,
-                    "percentiles": {
-                        "p25": 1.1886666666666668,
-                        "p50": 1.1993333333333334,
-                        "p75": 1.2369999999999999
-                    }
-                },
-                "rtt_max_ms": {
-                    "min": 1.297,
-                    "average": 1.8913333333333333,
-                    "max": 3.585,
-                    "percentiles": {
-                        "p25": 1.3863333333333334,
-                        "p50": 1.4276666666666666,
-                        "p75": 2.86
-                    }
-                },
-                "rtt_mdev_ms": {
-                    "min": 0.076,
-                    "average": 0.1371111111111111,
-                    "max": 0.363,
-                    "percentiles": {
-                        "p25": 0.08700000000000001,
-                        "p50": 0.092,
-                        "p75": 0.23233333333333334
                     }
                 },
                 "packet_loss_percent": {

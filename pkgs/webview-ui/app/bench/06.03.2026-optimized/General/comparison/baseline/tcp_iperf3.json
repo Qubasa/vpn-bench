@@ -3,6 +3,8 @@
     "data": {
         "Headscale": {
             "status": "success",
+            "pairs_ok": 3,
+            "pairs_total": 3,
             "data": {
                 "client_to_server_mbps": {
                     "min": 791.753282617589,
@@ -34,14 +36,24 @@
                         "p75": 119.0
                     }
                 },
-                "retransmit_percent": {
-                    "min": 0.0005689330231160986,
-                    "average": 0.00477181269488484,
-                    "max": 0.010694747249038421,
+                "retransmits_reverse": {
+                    "min": 33.0,
+                    "average": 74.33333333333333,
+                    "max": 107.0,
                     "percentiles": {
-                        "p25": 0.00477181269488484,
-                        "p50": 0.00477181269488484,
-                        "p75": 0.00477181269488484
+                        "p25": 74.33333333333333,
+                        "p50": 74.33333333333333,
+                        "p75": 74.33333333333333
+                    }
+                },
+                "retransmit_percent": {
+                    "min": 0.0021572736846237677,
+                    "average": 0.0038615840336474216,
+                    "max": 0.007050419670861383,
+                    "percentiles": {
+                        "p25": 0.0038615840336474216,
+                        "p50": 0.0038615840336474216,
+                        "p75": 0.0038615840336474216
                     }
                 },
                 "max_snd_cwnd_bytes": {
@@ -118,6 +130,8 @@
         },
         "Internal": {
             "status": "success",
+            "pairs_ok": 3,
+            "pairs_total": 3,
             "data": {
                 "client_to_server_mbps": {
                     "min": 930.9357059891793,
@@ -140,6 +154,16 @@
                     }
                 },
                 "retransmits": {
+                    "min": 0.0,
+                    "average": 0.0,
+                    "max": 0.0,
+                    "percentiles": {
+                        "p25": 0.0,
+                        "p50": 0.0,
+                        "p75": 0.0
+                    }
+                },
+                "retransmits_reverse": {
                     "min": 0.0,
                     "average": 0.0,
                     "max": 0.0,

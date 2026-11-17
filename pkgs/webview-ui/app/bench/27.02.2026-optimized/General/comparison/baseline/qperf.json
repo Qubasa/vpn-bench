@@ -1,8 +1,57 @@
 {
     "status": "success",
     "data": {
+        "Wireguard": {
+            "status": "success",
+            "pairs_ok": 3,
+            "pairs_total": 3,
+            "data": {
+                "total_bandwidth_mbps": {
+                    "min": 841.4000000000001,
+                    "average": 844.4644444444444,
+                    "max": 854.1,
+                    "percentiles": {
+                        "p25": 844.1666666666667,
+                        "p50": 844.2833333333334,
+                        "p75": 844.4416666666667
+                    }
+                },
+                "cpu_usage_percent": {
+                    "min": 15.87,
+                    "average": 35.36526388888889,
+                    "max": 63.16,
+                    "percentiles": {
+                        "p25": 30.826666666666668,
+                        "p50": 36.98833333333334,
+                        "p75": 38.615833333333335
+                    }
+                },
+                "ttfb_ms": {
+                    "min": 15.0,
+                    "average": 20.125,
+                    "max": 28.0,
+                    "percentiles": {
+                        "p25": 17.75,
+                        "p50": 19.666666666666668,
+                        "p75": 22.083333333333332
+                    }
+                },
+                "conn_time_ms": {
+                    "min": 14.0,
+                    "average": 18.791666666666668,
+                    "max": 26.0,
+                    "percentiles": {
+                        "p25": 16.416666666666668,
+                        "p50": 18.333333333333332,
+                        "p75": 20.583333333333332
+                    }
+                }
+            }
+        },
         "Internal": {
             "status": "success",
+            "pairs_ok": 3,
+            "pairs_total": 3,
             "data": {
                 "total_bandwidth_mbps": {
                     "min": 875.8,
@@ -48,6 +97,8 @@
         },
         "Tinc": {
             "status": "success",
+            "pairs_ok": 3,
+            "pairs_total": 3,
             "data": {
                 "total_bandwidth_mbps": {
                     "min": 537.79,
@@ -93,6 +144,8 @@
         },
         "Zerotier": {
             "status": "success",
+            "pairs_ok": 3,
+            "pairs_total": 3,
             "data": {
                 "total_bandwidth_mbps": {
                     "min": 826.3799999999999,
@@ -132,51 +185,6 @@
                         "p25": 18.166666666666668,
                         "p50": 20.833333333333332,
                         "p75": 23.75
-                    }
-                }
-            }
-        },
-        "Wireguard": {
-            "status": "success",
-            "data": {
-                "total_bandwidth_mbps": {
-                    "min": 841.4000000000001,
-                    "average": 844.4644444444444,
-                    "max": 854.1,
-                    "percentiles": {
-                        "p25": 844.1666666666667,
-                        "p50": 844.2833333333334,
-                        "p75": 844.4416666666667
-                    }
-                },
-                "cpu_usage_percent": {
-                    "min": 15.87,
-                    "average": 35.36526388888889,
-                    "max": 63.16,
-                    "percentiles": {
-                        "p25": 30.826666666666668,
-                        "p50": 36.98833333333334,
-                        "p75": 38.615833333333335
-                    }
-                },
-                "ttfb_ms": {
-                    "min": 15.0,
-                    "average": 20.125,
-                    "max": 28.0,
-                    "percentiles": {
-                        "p25": 17.75,
-                        "p50": 19.666666666666668,
-                        "p75": 22.083333333333332
-                    }
-                },
-                "conn_time_ms": {
-                    "min": 14.0,
-                    "average": 18.791666666666668,
-                    "max": 26.0,
-                    "percentiles": {
-                        "p25": 16.416666666666668,
-                        "p50": 18.333333333333332,
-                        "p75": 20.583333333333332
                     }
                 }
             }

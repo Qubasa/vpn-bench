@@ -1,8 +1,87 @@
 {
     "status": "success",
     "data": {
+        "Wireguard": {
+            "status": "success",
+            "pairs_ok": 3,
+            "pairs_total": 3,
+            "data": {
+                "bitrate_kbps": {
+                    "min": 3294.8,
+                    "average": 3347.5988505747127,
+                    "max": 3491.9,
+                    "percentiles": {
+                        "p25": 3320.733333333333,
+                        "p50": 3334.1666666666665,
+                        "p75": 3358.2000000000003
+                    }
+                },
+                "fps": {
+                    "min": 31.0,
+                    "average": 32.13793103448276,
+                    "max": 45.0,
+                    "percentiles": {
+                        "p25": 31.0,
+                        "p50": 31.0,
+                        "p75": 32.0
+                    }
+                },
+                "dropped_frames": {
+                    "min": 15.0,
+                    "average": 15.0,
+                    "max": 15.0,
+                    "percentiles": {
+                        "p25": 15.0,
+                        "p50": 15.0,
+                        "p75": 15.0
+                    }
+                },
+                "quality": {
+                    "min": 98.0,
+                    "average": 99.3010752688172,
+                    "max": 100.0,
+                    "percentiles": {
+                        "p25": 99.0,
+                        "p50": 99.0,
+                        "p75": 100.0
+                    }
+                },
+                "rtt_ms": {
+                    "min": 4.997040169342395,
+                    "average": 7.958044234638317,
+                    "max": 10.083125551372106,
+                    "percentiles": {
+                        "p25": 7.373322484200694,
+                        "p50": 7.993230380660278,
+                        "p75": 8.526134028891645
+                    }
+                },
+                "packets_recovered": {
+                    "min": 0.0,
+                    "average": 1.3225806451612903,
+                    "max": 7.0,
+                    "percentiles": {
+                        "p25": 0.0,
+                        "p50": 1.0,
+                        "p75": 2.0
+                    }
+                },
+                "packets_dropped": {
+                    "min": 0.0,
+                    "average": 1790.236559139785,
+                    "max": 55498.0,
+                    "percentiles": {
+                        "p25": 0.0,
+                        "p50": 0.0,
+                        "p75": 0.0
+                    }
+                }
+            }
+        },
         "Internal": {
             "status": "success",
+            "pairs_ok": 3,
+            "pairs_total": 3,
             "data": {
                 "bitrate_kbps": {
                     "min": 3292.8,
@@ -78,6 +157,8 @@
         },
         "Tinc": {
             "status": "success",
+            "pairs_ok": 3,
+            "pairs_total": 3,
             "data": {
                 "bitrate_kbps": {
                     "min": 3296.8,
@@ -153,6 +234,8 @@
         },
         "Headscale": {
             "status": "success",
+            "pairs_ok": 3,
+            "pairs_total": 3,
             "data": {
                 "bitrate_kbps": {
                     "min": 3301.8,
@@ -228,6 +311,8 @@
         },
         "Zerotier": {
             "status": "success",
+            "pairs_ok": 3,
+            "pairs_total": 3,
             "data": {
                 "bitrate_kbps": {
                     "min": 3297.8,
@@ -293,81 +378,6 @@
                     "min": 0.0,
                     "average": 1790.0537634408602,
                     "max": 55494.0,
-                    "percentiles": {
-                        "p25": 0.0,
-                        "p50": 0.0,
-                        "p75": 0.0
-                    }
-                }
-            }
-        },
-        "Wireguard": {
-            "status": "success",
-            "data": {
-                "bitrate_kbps": {
-                    "min": 3294.8,
-                    "average": 3347.5988505747127,
-                    "max": 3491.9,
-                    "percentiles": {
-                        "p25": 3320.733333333333,
-                        "p50": 3334.1666666666665,
-                        "p75": 3358.2000000000003
-                    }
-                },
-                "fps": {
-                    "min": 31.0,
-                    "average": 32.13793103448276,
-                    "max": 45.0,
-                    "percentiles": {
-                        "p25": 31.0,
-                        "p50": 31.0,
-                        "p75": 32.0
-                    }
-                },
-                "dropped_frames": {
-                    "min": 15.0,
-                    "average": 15.0,
-                    "max": 15.0,
-                    "percentiles": {
-                        "p25": 15.0,
-                        "p50": 15.0,
-                        "p75": 15.0
-                    }
-                },
-                "quality": {
-                    "min": 98.0,
-                    "average": 99.3010752688172,
-                    "max": 100.0,
-                    "percentiles": {
-                        "p25": 99.0,
-                        "p50": 99.0,
-                        "p75": 100.0
-                    }
-                },
-                "rtt_ms": {
-                    "min": 4.997040169342395,
-                    "average": 7.958044234638317,
-                    "max": 10.083125551372106,
-                    "percentiles": {
-                        "p25": 7.373322484200694,
-                        "p50": 7.993230380660278,
-                        "p75": 8.526134028891645
-                    }
-                },
-                "packets_recovered": {
-                    "min": 0.0,
-                    "average": 1.3225806451612903,
-                    "max": 7.0,
-                    "percentiles": {
-                        "p25": 0.0,
-                        "p50": 1.0,
-                        "p75": 2.0
-                    }
-                },
-                "packets_dropped": {
-                    "min": 0.0,
-                    "average": 1790.236559139785,
-                    "max": 55498.0,
                     "percentiles": {
                         "p25": 0.0,
                         "p50": 0.0,

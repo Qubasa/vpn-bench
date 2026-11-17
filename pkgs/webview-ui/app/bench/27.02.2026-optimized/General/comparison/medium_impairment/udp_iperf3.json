@@ -1,8 +1,117 @@
 {
     "status": "success",
     "data": {
+        "Wireguard": {
+            "status": "success",
+            "pairs_ok": 1,
+            "pairs_total": 3,
+            "data": {
+                "sender_throughput_mbps": {
+                    "min": 2683.401586882604,
+                    "average": 2683.401586882604,
+                    "max": 2683.401586882604,
+                    "percentiles": {
+                        "p25": 2683.401586882604,
+                        "p50": 2683.401586882604,
+                        "p75": 2683.401586882604
+                    }
+                },
+                "receiver_throughput_mbps": {
+                    "min": 907.7990845556591,
+                    "average": 907.7990845556591,
+                    "max": 907.7990845556591,
+                    "percentiles": {
+                        "p25": 907.7990845556591,
+                        "p50": 907.7990845556591,
+                        "p75": 907.7990845556591
+                    }
+                },
+                "jitter_ms": {
+                    "min": 0.9690607515714733,
+                    "average": 0.9690607515714733,
+                    "max": 0.9690607515714733,
+                    "percentiles": {
+                        "p25": 0.9690607515714733,
+                        "p50": 0.9690607515714733,
+                        "p75": 0.9690607515714733
+                    }
+                },
+                "lost_percent": {
+                    "min": 66.14576904358607,
+                    "average": 66.14576904358607,
+                    "max": 66.14576904358607,
+                    "percentiles": {
+                        "p25": 66.14576904358607,
+                        "p50": 66.14576904358607,
+                        "p75": 66.14576904358607
+                    }
+                },
+                "total_bytes_sent": {
+                    "min": 10063035360.0,
+                    "average": 10063035360.0,
+                    "max": 10063035360.0,
+                    "percentiles": {
+                        "p25": 10063035360.0,
+                        "p50": 10063035360.0,
+                        "p75": 10063035360.0
+                    }
+                },
+                "total_bytes_received": {
+                    "min": 3406759128.0,
+                    "average": 3406759128.0,
+                    "max": 3406759128.0,
+                    "percentiles": {
+                        "p25": 3406759128.0,
+                        "p50": 3406759128.0,
+                        "p75": 3406759128.0
+                    }
+                },
+                "duration_seconds": {
+                    "min": 30.000833,
+                    "average": 30.000833,
+                    "max": 30.000833,
+                    "percentiles": {
+                        "p25": 30.000833,
+                        "p50": 30.000833,
+                        "p75": 30.000833
+                    }
+                },
+                "blksize_bytes": {
+                    "min": 1368.0,
+                    "average": 1368.0,
+                    "max": 1368.0,
+                    "percentiles": {
+                        "p25": 1368.0,
+                        "p50": 1368.0,
+                        "p75": 1368.0
+                    }
+                },
+                "iperf3_client_cpu_percent": {
+                    "min": 109.70602805778404,
+                    "average": 109.70602805778404,
+                    "max": 109.70602805778404,
+                    "percentiles": {
+                        "p25": 109.70602805778404,
+                        "p50": 109.70602805778404,
+                        "p75": 109.70602805778404
+                    }
+                },
+                "iperf3_server_cpu_percent": {
+                    "min": 103.08811623510694,
+                    "average": 103.08811623510694,
+                    "max": 103.08811623510694,
+                    "percentiles": {
+                        "p25": 103.08811623510694,
+                        "p50": 103.08811623510694,
+                        "p75": 103.08811623510694
+                    }
+                }
+            }
+        },
         "Internal": {
             "status": "success",
+            "pairs_ok": 1,
+            "pairs_total": 3,
             "data": {
                 "sender_throughput_mbps": {
                     "min": 4962.655245581757,
@@ -108,6 +217,8 @@
         },
         "Tinc": {
             "status": "error",
+            "pairs_ok": 0,
+            "pairs_total": 3,
             "error_type": "CmdOut",
             "error": {
                 "stdout": "{\n\t\"start\":\t{\n\t\t\"connected\":\t[{\n\t\t\t\t\"socket\":\t5,\n\t\t\t\t\"local_host\":\t\"fd63:7b6d:b690:1:6e8c:eb12:7b9b:8aa8\",\n\t\t\t\t\"local_port\":\t47727,\n\t\t\t\t\"remote_host\":\t\"fd63:7b6d:b690:1:d6ec:5608:53a0:8d36\",\n\t\t\t\t\"remote_port\":\t5201\n\t\t\t}],\n\t\t\"version\":\t\"iperf 3.20\",\n\t\t\"system_info\":\t\"Linux lom 6.12.57 #1-NixOS SMP PREEMPT_DYNAMIC Sun Nov  2 13:15:23 UTC 2025 x86_64\",\n\t\t\"timestamp\":\t{\n\t\t\t\"time\":\t\"Fri, 27 Feb 2026 14:07:39 GMT\",\n\t\t\t\"timesecs\":\t1772201259,\n\t\t\t\"timemillisecs\":\t1772201259725\n\t\t},\n\t\t\"connecting_to\":\t{\n\t\t\t\"host\":\t\"vpn.yuki\",\n\t\t\t\"port\":\t5201\n\t\t},\n\t\t\"cookie\":\t\"ufpdz52zgtyr45h7thtnjzks4hps3hzs7inu\",\n\t\t\"target_bitrate\":\t0,\n\t\t\"fq_rate\":\t0,\n\t\t\"sock_bufsize\":\t0,\n\t\t\"sndbuf_actual\":\t212992,\n\t\t\"rcvbuf_actual\":\t212992\n\t},\n\t\"intervals\":\t[],\n\t\"end\":\t{\n\t},\n\t\"error\":\t\"unable to read from stream socket: No such file or directory\"\n}\n",
@@ -140,6 +251,8 @@
         },
         "Headscale": {
             "status": "success",
+            "pairs_ok": 1,
+            "pairs_total": 3,
             "data": {
                 "sender_throughput_mbps": {
                     "min": 2824.3941794863376,
@@ -245,6 +358,8 @@
         },
         "Zerotier": {
             "status": "error",
+            "pairs_ok": 0,
+            "pairs_total": 3,
             "error_type": "CmdOut",
             "error": {
                 "stdout": "{\n\t\"start\":\t{\n\t\t\"connected\":\t[{\n\t\t\t\t\"socket\":\t5,\n\t\t\t\t\"local_host\":\t\"fd62:20d6:53d2:1c61:6799:9362:20d6:53d2\",\n\t\t\t\t\"local_port\":\t54724,\n\t\t\t\t\"remote_host\":\t\"fd62:20d6:53d2:1c61:6799:932f:abf:5689\",\n\t\t\t\t\"remote_port\":\t5201\n\t\t\t}],\n\t\t\"version\":\t\"iperf 3.20\",\n\t\t\"system_info\":\t\"Linux lom 6.12.57 #1-NixOS SMP PREEMPT_DYNAMIC Sun Nov  2 13:15:23 UTC 2025 x86_64\",\n\t\t\"timestamp\":\t{\n\t\t\t\"time\":\t\"Fri, 27 Feb 2026 11:53:58 GMT\",\n\t\t\t\"timesecs\":\t1772193238,\n\t\t\t\"timemillisecs\":\t1772193238019\n\t\t},\n\t\t\"connecting_to\":\t{\n\t\t\t\"host\":\t\"vpn.yuki\",\n\t\t\t\"port\":\t5201\n\t\t},\n\t\t\"cookie\":\t\"ongf6cajr55tlqisyi2opvzm6mcqfrmd4ae4\",\n\t\t\"target_bitrate\":\t0,\n\t\t\"fq_rate\":\t0,\n\t\t\"sock_bufsize\":\t0,\n\t\t\"sndbuf_actual\":\t212992,\n\t\t\"rcvbuf_actual\":\t212992\n\t},\n\t\"intervals\":\t[],\n\t\"end\":\t{\n\t},\n\t\"error\":\t\"unable to read from stream socket: No such file or directory\"\n}\n",
@@ -274,111 +389,6 @@
                 "returncode": 1
             },
             "machine": "0_lom"
-        },
-        "Wireguard": {
-            "status": "success",
-            "data": {
-                "sender_throughput_mbps": {
-                    "min": 2683.401586882604,
-                    "average": 2683.401586882604,
-                    "max": 2683.401586882604,
-                    "percentiles": {
-                        "p25": 2683.401586882604,
-                        "p50": 2683.401586882604,
-                        "p75": 2683.401586882604
-                    }
-                },
-                "receiver_throughput_mbps": {
-                    "min": 907.7990845556591,
-                    "average": 907.7990845556591,
-                    "max": 907.7990845556591,
-                    "percentiles": {
-                        "p25": 907.7990845556591,
-                        "p50": 907.7990845556591,
-                        "p75": 907.7990845556591
-                    }
-                },
-                "jitter_ms": {
-                    "min": 0.9690607515714733,
-                    "average": 0.9690607515714733,
-                    "max": 0.9690607515714733,
-                    "percentiles": {
-                        "p25": 0.9690607515714733,
-                        "p50": 0.9690607515714733,
-                        "p75": 0.9690607515714733
-                    }
-                },
-                "lost_percent": {
-                    "min": 66.14576904358607,
-                    "average": 66.14576904358607,
-                    "max": 66.14576904358607,
-                    "percentiles": {
-                        "p25": 66.14576904358607,
-                        "p50": 66.14576904358607,
-                        "p75": 66.14576904358607
-                    }
-                },
-                "total_bytes_sent": {
-                    "min": 10063035360.0,
-                    "average": 10063035360.0,
-                    "max": 10063035360.0,
-                    "percentiles": {
-                        "p25": 10063035360.0,
-                        "p50": 10063035360.0,
-                        "p75": 10063035360.0
-                    }
-                },
-                "total_bytes_received": {
-                    "min": 3406759128.0,
-                    "average": 3406759128.0,
-                    "max": 3406759128.0,
-                    "percentiles": {
-                        "p25": 3406759128.0,
-                        "p50": 3406759128.0,
-                        "p75": 3406759128.0
-                    }
-                },
-                "duration_seconds": {
-                    "min": 30.000833,
-                    "average": 30.000833,
-                    "max": 30.000833,
-                    "percentiles": {
-                        "p25": 30.000833,
-                        "p50": 30.000833,
-                        "p75": 30.000833
-                    }
-                },
-                "blksize_bytes": {
-                    "min": 1368.0,
-                    "average": 1368.0,
-                    "max": 1368.0,
-                    "percentiles": {
-                        "p25": 1368.0,
-                        "p50": 1368.0,
-                        "p75": 1368.0
-                    }
-                },
-                "iperf3_client_cpu_percent": {
-                    "min": 109.70602805778404,
-                    "average": 109.70602805778404,
-                    "max": 109.70602805778404,
-                    "percentiles": {
-                        "p25": 109.70602805778404,
-                        "p50": 109.70602805778404,
-                        "p75": 109.70602805778404
-                    }
-                },
-                "iperf3_server_cpu_percent": {
-                    "min": 103.08811623510694,
-                    "average": 103.08811623510694,
-                    "max": 103.08811623510694,
-                    "percentiles": {
-                        "p25": 103.08811623510694,
-                        "p50": 103.08811623510694,
-                        "p75": 103.08811623510694
-                    }
-                }
-            }
         }
     }
 }
