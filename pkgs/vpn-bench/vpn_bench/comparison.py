@@ -9,9 +9,9 @@ import ipaddress
 import json
 import logging
 import statistics
-from collections.abc import Sequence
+from collections.abc import Callable, Mapping, Sequence
 from pathlib import Path
-from typing import Any, Literal, TypedDict
+from typing import Any, Literal, NamedTuple, TypedDict
 
 from vpn_bench.errors import save_bench_report
 
@@ -171,7 +171,8 @@ class TcpIperfComparisonDict(CpuComparisonDict, total=True):
 
     client_to_server_mbps: MetricStatsDict  # end.sum_received
     server_to_client_mbps: MetricStatsDict  # end.sum_received_bidir_reverse
-    retransmits: MetricStatsDict
+    retransmits: MetricStatsDict  # end.sum_sent.retransmits
+    retransmits_reverse: MetricStatsDict  # end.sum_sent_bidir_reverse.retransmits
     retransmit_percent: MetricStatsDict  # Retransmits as % of estimated packets
     max_snd_cwnd_bytes: MetricStatsDict  # Max congestion window in bytes
     max_snd_wnd_bytes: MetricStatsDict  # Max send window in bytes
@@ -214,7 +215,8 @@ class ParallelTcpComparisonDict(TypedDict):
 
     client_to_server_mbps: MetricStatsDict
     server_to_client_mbps: MetricStatsDict
-    total_retransmits: MetricStatsDict  # Sum of retransmits
+    total_retransmits: MetricStatsDict  # Sum of client->server retransmits
+    total_retransmits_reverse: MetricStatsDict  # Sum of server->client retransmits
     retransmit_percent: MetricStatsDict  # Retransmits as % of estimated packets
     max_snd_cwnd_bytes: MetricStatsDict  # Max congestion window across all pairs
     max_snd_wnd_bytes: MetricStatsDict  # Max send window across all pairs
@@ -976,20 +978,32 @@ def aggregate_cpu_metrics(
     return aggregated
 
 
+def tcp_received_nothing(end: dict[str, Any]) -> bool:
+    """True if a bidir iperf3 TCP run delivered zero bytes in both directions."""
+    forward_bytes = end.get("sum_received", {}).get("bytes", 0)
+    reverse_bytes = end.get("sum_received_bidir_reverse", {}).get("bytes", 0)
+    return forward_bytes == 0 and reverse_bytes == 0
+
+
 def extract_tcp_iperf_metrics(data: dict[str, Any]) -> TcpIperfComparisonDict | None:
     """Extract key metrics from a bidirectional iperf3 TCP JSON output."""
     try:
         end = data.get("end", {})
         sum_sent = end.get("sum_sent", {})
+        sum_sent_reverse = end.get("sum_sent_bidir_reverse", {})
         forward = end.get("sum_received", {})
         reverse = end.get("sum_received_bidir_reverse")
         if reverse is None:
             log.warning("TCP iperf3 result has no reverse direction (not --bidir)")
             return None
+        if tcp_received_nothing(end):
+            log.warning("TCP iperf3 result received zero bytes in both directions")
+            return None
 
         tcp_mss = tcp_data_mss(data)
         retransmits = sum_sent.get("retransmits", 0)
-        bytes_sent = sum_sent.get("bytes", 0)
+        retransmits_reverse = sum_sent_reverse.get("retransmits", 0)
+        bytes_sent = sum_sent.get("bytes", 0) + sum_sent_reverse.get("bytes", 0)
         duration_seconds = sum_sent.get("seconds", 0)
 
         client_to_server_mbps = forward.get("bits_per_second", 0) / 1_000_000
@@ -1005,7 +1019,9 @@ def extract_tcp_iperf_metrics(data: dict[str, Any]) -> TcpIperfComparisonDict | 
                 max_snd_cwnd = max(max_snd_cwnd, sender_data.get("max_snd_cwnd", 0))
                 max_snd_wnd = max(max_snd_wnd, sender_data.get("max_snd_wnd", 0))
 
-        retransmit_pct = calculate_retransmit_percent(retransmits, bytes_sent, tcp_mss)
+        retransmit_pct = calculate_retransmit_percent(
+            retransmits + retransmits_reverse, bytes_sent, tcp_mss
+        )
 
         # iperf3 reports the CPU of its own client and server processes only
         iperf3_cpu = end.get("cpu_utilization_percent", {})
@@ -1014,6 +1030,7 @@ def extract_tcp_iperf_metrics(data: dict[str, Any]) -> TcpIperfComparisonDict | 
             "client_to_server_mbps": _single_value_stats(client_to_server_mbps),
             "server_to_client_mbps": _single_value_stats(server_to_client_mbps),
             "retransmits": _single_value_stats(float(retransmits)),
+            "retransmits_reverse": _single_value_stats(float(retransmits_reverse)),
             "retransmit_percent": _single_value_stats(retransmit_pct),
             "max_snd_cwnd_bytes": _single_value_stats(float(max_snd_cwnd)),
             "max_snd_wnd_bytes": _single_value_stats(float(max_snd_wnd)),
@@ -1071,6 +1088,9 @@ def aggregate_tcp_iperf_data(
             [m["server_to_client_mbps"] for m in metrics_list]
         ),
         "retransmits": aggregate_metric_stats([m["retransmits"] for m in metrics_list]),
+        "retransmits_reverse": aggregate_metric_stats(
+            [m["retransmits_reverse"] for m in metrics_list]
+        ),
         "retransmit_percent": aggregate_metric_stats(
             [m["retransmit_percent"] for m in metrics_list]
         ),
@@ -1311,6 +1331,7 @@ def extract_parallel_tcp_metrics(
         total_client_to_server_mbps = 0.0
         total_server_to_client_mbps = 0.0
         total_retransmits = 0
+        total_retransmits_reverse = 0
         max_snd_cwnd = 0
         max_snd_wnd = 0
         total_bytes_sent = 0
@@ -1328,14 +1349,17 @@ def extract_parallel_tcp_metrics(
             end = result.get("end", {})
 
             sum_sent = end.get("sum_sent", {})
+            sum_sent_reverse = end.get("sum_sent_bidir_reverse", {})
             retransmits = sum_sent.get("retransmits", 0)
-            bytes_sent = sum_sent.get("bytes", 0)
+            bytes_sent = sum_sent.get("bytes", 0) + sum_sent_reverse.get("bytes", 0)
 
             forward = end.get("sum_received", {})
             reverse = end.get("sum_received_bidir_reverse")
             if reverse is None:
                 log.warning("Parallel TCP pair has no reverse direction (not --bidir)")
                 return None
+            if tcp_received_nothing(end):
+                continue
 
             # Get duration and MSS from first successful pair (all pairs run same duration)
             if successful_pairs == 0:
@@ -1353,6 +1377,7 @@ def extract_parallel_tcp_metrics(
             total_client_to_server_mbps += forward.get("bits_per_second", 0) / 1_000_000
             total_server_to_client_mbps += reverse.get("bits_per_second", 0) / 1_000_000
             total_retransmits += retransmits
+            total_retransmits_reverse += sum_sent_reverse.get("retransmits", 0)
             total_bytes_sent += bytes_sent
             total_client_to_server_bytes += forward.get("bytes", 0)
             total_server_to_client_bytes += reverse.get("bytes", 0)
@@ -1363,7 +1388,7 @@ def extract_parallel_tcp_metrics(
 
         # Calculate retransmit percentage using actual MSS from iperf3
         retransmit_pct = calculate_retransmit_percent(
-            total_retransmits, total_bytes_sent, tcp_mss
+            total_retransmits + total_retransmits_reverse, total_bytes_sent, tcp_mss
         )
 
         def single_value_stats(value: float) -> MetricStatsDict:
@@ -1378,6 +1403,9 @@ def extract_parallel_tcp_metrics(
             "client_to_server_mbps": single_value_stats(total_client_to_server_mbps),
             "server_to_client_mbps": single_value_stats(total_server_to_client_mbps),
             "total_retransmits": single_value_stats(float(total_retransmits)),
+            "total_retransmits_reverse": single_value_stats(
+                float(total_retransmits_reverse)
+            ),
             "retransmit_percent": single_value_stats(retransmit_pct),
             "max_snd_cwnd_bytes": single_value_stats(float(max_snd_cwnd)),
             "max_snd_wnd_bytes": single_value_stats(float(max_snd_wnd)),
@@ -1429,6 +1457,176 @@ def get_vpn_error_for_run_level_test(
         }
 
     return None
+
+
+def _machine_dirs(vpn_dir: Path) -> list[Path]:
+    if not vpn_dir.exists():
+        return []
+    return [d for d in sorted(vpn_dir.iterdir()) if d.is_dir()]
+
+
+def count_machine_pairs(
+    vpn_dir: Path, test_file: str, is_usable: Callable[[dict[str, Any]], bool]
+) -> tuple[int, int]:
+    """Count (usable, attempted) machine pairs of a per-machine test."""
+    attempted = [d / test_file for d in _machine_dirs(vpn_dir)]
+    attempted = [p for p in attempted if p.exists()]
+    usable = 0
+    for path in attempted:
+        data = load_json_data(path)
+        if data and is_usable(data):
+            usable += 1
+    return usable, len(attempted)
+
+
+def _parallel_pair_usable(pair: dict[str, Any]) -> bool:
+    result = pair.get("result")
+    if result is None:
+        return False
+    end = result.get("end", {})
+    return "sum_received_bidir_reverse" in end and not tcp_received_nothing(end)
+
+
+def count_parallel_pairs(vpn_dir: Path, test_file: str) -> tuple[int, int]:
+    """Count (usable, attempted) pairs of the run-level parallel TCP test."""
+    result = load_json_with_errors(vpn_dir / test_file)
+    if result is None:
+        return 0, 0
+    if result.get("status") != "success":
+        return 0, len(_machine_dirs(vpn_dir))
+    pairs = result.get("data", {}).get("pairs", [])
+    return sum(1 for p in pairs if _parallel_pair_usable(p)), len(pairs)
+
+
+class TestSpec(NamedTuple):
+    """How to aggregate, count and save one benchmark test across VPNs."""
+
+    test_file: str
+    output_file: str
+    label: str
+    aggregate: Callable[[Path, str, str], Mapping[str, object] | None]
+    is_usable: Callable[[dict[str, Any]], bool] | None
+    check_duration: bool
+
+
+def _has_rist_data(data: dict[str, Any]) -> bool:
+    return bool(data.get("encoding") or data.get("network"))
+
+
+TEST_SPECS: dict[str, TestSpec] = {
+    "ping": TestSpec(
+        "ping.json", "ping.json", "ping", aggregate_ping_data, bool, False
+    ),
+    "qperf": TestSpec(
+        "qperf.json", "qperf.json", "qperf", aggregate_qperf_data, bool, False
+    ),
+    "video": TestSpec(
+        "rist_stream.json",
+        "video_streaming.json",
+        "video streaming",
+        aggregate_rist_data,
+        _has_rist_data,
+        False,
+    ),
+    "tcp": TestSpec(
+        "tcp_iperf3.json",
+        "tcp_iperf3.json",
+        "TCP iperf3",
+        aggregate_tcp_iperf_data,
+        lambda d: extract_tcp_iperf_metrics(d) is not None,
+        True,
+    ),
+    "udp": TestSpec(
+        "udp_iperf3.json",
+        "udp_iperf3.json",
+        "UDP iperf3",
+        aggregate_udp_iperf_data,
+        lambda d: extract_udp_iperf_metrics(d) is not None,
+        True,
+    ),
+    "nix_cache": TestSpec(
+        "nix_cache.json",
+        "nix_cache.json",
+        "Nix Cache",
+        aggregate_nix_cache_data,
+        lambda d: extract_nix_cache_metrics(d) is not None,
+        False,
+    ),
+    "parallel_tcp": TestSpec(
+        "parallel_tcp_iperf3.json",
+        "parallel_tcp_iperf3.json",
+        "Parallel TCP",
+        aggregate_parallel_tcp_data,
+        None,
+        True,
+    ),
+}
+
+
+def build_vpn_test_entry(
+    bench_dir: Path, vpn_name: str, run_alias: str, spec: TestSpec
+) -> dict[str, Any] | None:
+    """Comparison entry of one VPN for one test, with pair counts."""
+    vpn_dir = bench_dir / vpn_name / run_alias
+    if spec.is_usable is None:
+        pairs_ok, pairs_total = count_parallel_pairs(vpn_dir, spec.test_file)
+        error_info = get_vpn_error_for_run_level_test(
+            bench_dir, vpn_name, run_alias, spec.test_file
+        )
+    else:
+        pairs_ok, pairs_total = count_machine_pairs(
+            vpn_dir, spec.test_file, spec.is_usable
+        )
+        error_info = get_vpn_error_for_test(
+            bench_dir, vpn_name, run_alias, spec.test_file
+        )
+    counts = {"pairs_ok": pairs_ok, "pairs_total": pairs_total}
+    data = spec.aggregate(bench_dir, vpn_name, run_alias)
+    if data:
+        return {"status": "success", **counts, "data": data}
+    if error_info:
+        return {
+            "status": "error",
+            **counts,
+            "error_type": error_info["error_type"],
+            "error": error_info["error"],
+            "machine": error_info["machine"],
+        }
+    if pairs_total > 0:
+        return {
+            "status": "error",
+            **counts,
+            "error_type": "NoUsableData",
+            "error": f"All {pairs_total} pairs returned no data (0 bytes received)",
+            "machine": None,
+        }
+    return None
+
+
+def build_and_save_test_comparison(
+    bench_dir: Path, vpn_dirs: list[Path], run_alias: str, spec: TestSpec
+) -> dict[str, Any]:
+    """Build one test's comparison across VPNs and save it for the run alias."""
+    comparison: dict[str, Any] = {}
+    for vpn_dir in vpn_dirs:
+        entry = build_vpn_test_entry(bench_dir, vpn_dir.name, run_alias, spec)
+        if entry:
+            comparison[vpn_dir.name] = entry
+    if not comparison:
+        return comparison
+    save_bench_report(
+        bench_dir / "General" / "comparison" / run_alias,
+        comparison,
+        spec.output_file,
+    )
+    if spec.check_duration:
+        check_duration_consistency(comparison, spec.label)
+    success_count = sum(1 for v in comparison.values() if v["status"] == "success")
+    error_count = len(comparison) - success_count
+    log.info(
+        f"  Saved {spec.label} comparison ({success_count} success, {error_count} errors)"
+    )
+    return comparison
 
 
 def aggregate_timing_data(
@@ -2090,13 +2288,7 @@ def aggregate_benchmark_stats(
     bench_dir: Path,
     vpn_name: str,
     run_alias: str,
-    tcp_comparison: dict[str, Any],
-    udp_comparison: dict[str, Any],
-    ping_comparison: dict[str, Any],
-    qperf_comparison: dict[str, Any],
-    video_comparison: dict[str, Any],
-    nix_cache_comparison: dict[str, Any],
-    parallel_tcp_comparison: dict[str, Any],
+    test_comparisons: Mapping[str, dict[str, Any]],
 ) -> BenchmarkStatsDict | None:
     """Aggregate benchmark statistics for a VPN including test durations and failure rates."""
 
@@ -2223,31 +2415,15 @@ def aggregate_benchmark_stats(
     video_retries = extract_retries_from_raw_files("rist_stream.json")
     nix_cache_retries = extract_retries_from_raw_files("nix_cache.json")
 
-    # Count successes and failures across all test types
-    test_comparisons = [
-        ("tcp", tcp_comparison),
-        ("udp", udp_comparison),
-        ("ping", ping_comparison),
-        ("qperf", qperf_comparison),
-        ("video", video_comparison),
-        ("nix_cache", nix_cache_comparison),
-        ("parallel_tcp", parallel_tcp_comparison),
-    ]
-
-    total_tests = 0
     successful_tests = 0
     failed_tests = 0
+    for comparison in test_comparisons.values():
+        entry = comparison.get(vpn_name)
+        if entry:
+            successful_tests += entry["pairs_ok"]
+            failed_tests += entry["pairs_total"] - entry["pairs_ok"]
 
-    for _test_name, comparison in test_comparisons:
-        if vpn_name in comparison:
-            total_tests += 1
-            entry = comparison[vpn_name]
-            if entry.get("status") == "success":
-                successful_tests += 1
-            else:
-                failed_tests += 1
-
-    # Calculate success rate
+    total_tests = successful_tests + failed_tests
     success_rate = (successful_tests / total_tests * 100) if total_tests > 0 else 0.0
 
     return {
@@ -2326,226 +2502,10 @@ def generate_comparison_data(bench_dir: Path, clan_dir: Path | None = None) -> N
         run_comparison_dir = comparison_dir / run_alias
         run_comparison_dir.mkdir(parents=True, exist_ok=True)
 
-        # Aggregate ping data (including errors)
-        ping_comparison: dict[str, Any] = {}
-        for vpn_dir in vpn_dirs:
-            ping_data = aggregate_ping_data(bench_dir, vpn_dir.name, run_alias)
-            if ping_data:
-                ping_comparison[vpn_dir.name] = {"status": "success", "data": ping_data}
-            else:
-                # Check if there are any error files
-                error_info = get_vpn_error_for_test(
-                    bench_dir, vpn_dir.name, run_alias, "ping.json"
-                )
-                if error_info:
-                    ping_comparison[vpn_dir.name] = {
-                        "status": "error",
-                        "error_type": error_info["error_type"],
-                        "error": error_info["error"],
-                        "machine": error_info["machine"],
-                    }
-
-        if ping_comparison:
-            save_bench_report(run_comparison_dir, ping_comparison, "ping.json")
-            success_count = sum(
-                1 for v in ping_comparison.values() if v.get("status") == "success"
-            )
-            error_count = len(ping_comparison) - success_count
-            log.info(
-                f"  Saved ping comparison ({success_count} success, {error_count} errors)"
-            )
-
-        # Aggregate qperf data (including errors)
-        qperf_comparison: dict[str, Any] = {}
-        for vpn_dir in vpn_dirs:
-            qperf_data = aggregate_qperf_data(bench_dir, vpn_dir.name, run_alias)
-            if qperf_data:
-                qperf_comparison[vpn_dir.name] = {
-                    "status": "success",
-                    "data": qperf_data,
-                }
-            else:
-                error_info = get_vpn_error_for_test(
-                    bench_dir, vpn_dir.name, run_alias, "qperf.json"
-                )
-                if error_info:
-                    qperf_comparison[vpn_dir.name] = {
-                        "status": "error",
-                        "error_type": error_info["error_type"],
-                        "error": error_info["error"],
-                        "machine": error_info["machine"],
-                    }
-
-        if qperf_comparison:
-            save_bench_report(run_comparison_dir, qperf_comparison, "qperf.json")
-            success_count = sum(
-                1 for v in qperf_comparison.values() if v.get("status") == "success"
-            )
-            error_count = len(qperf_comparison) - success_count
-            log.info(
-                f"  Saved qperf comparison ({success_count} success, {error_count} errors)"
-            )
-
-        # Aggregate RIST data (including errors)
-        rist_comparison: dict[str, Any] = {}
-        for vpn_dir in vpn_dirs:
-            rist_data = aggregate_rist_data(bench_dir, vpn_dir.name, run_alias)
-            if rist_data:
-                rist_comparison[vpn_dir.name] = {"status": "success", "data": rist_data}
-            else:
-                error_info = get_vpn_error_for_test(
-                    bench_dir, vpn_dir.name, run_alias, "rist_stream.json"
-                )
-                if error_info:
-                    rist_comparison[vpn_dir.name] = {
-                        "status": "error",
-                        "error_type": error_info["error_type"],
-                        "error": error_info["error"],
-                        "machine": error_info["machine"],
-                    }
-
-        if rist_comparison:
-            save_bench_report(
-                run_comparison_dir, rist_comparison, "video_streaming.json"
-            )
-            success_count = sum(
-                1 for v in rist_comparison.values() if v.get("status") == "success"
-            )
-            error_count = len(rist_comparison) - success_count
-            log.info(
-                f"  Saved video streaming comparison ({success_count} success, {error_count} errors)"
-            )
-
-        # Aggregate TCP iperf3 data (including errors)
-        tcp_comparison: dict[str, Any] = {}
-        for vpn_dir in vpn_dirs:
-            tcp_data = aggregate_tcp_iperf_data(bench_dir, vpn_dir.name, run_alias)
-            if tcp_data:
-                tcp_comparison[vpn_dir.name] = {"status": "success", "data": tcp_data}
-            else:
-                error_info = get_vpn_error_for_test(
-                    bench_dir, vpn_dir.name, run_alias, "tcp_iperf3.json"
-                )
-                if error_info:
-                    tcp_comparison[vpn_dir.name] = {
-                        "status": "error",
-                        "error_type": error_info["error_type"],
-                        "error": error_info["error"],
-                        "machine": error_info["machine"],
-                    }
-
-        if tcp_comparison:
-            save_bench_report(run_comparison_dir, tcp_comparison, "tcp_iperf3.json")
-            check_duration_consistency(tcp_comparison, "TCP iperf3")
-            success_count = sum(
-                1 for v in tcp_comparison.values() if v.get("status") == "success"
-            )
-            error_count = len(tcp_comparison) - success_count
-            log.info(
-                f"  Saved TCP iperf3 comparison ({success_count} success, {error_count} errors)"
-            )
-
-        # Aggregate UDP iperf3 data (including errors)
-        udp_comparison: dict[str, Any] = {}
-        for vpn_dir in vpn_dirs:
-            udp_data = aggregate_udp_iperf_data(bench_dir, vpn_dir.name, run_alias)
-            if udp_data:
-                udp_comparison[vpn_dir.name] = {"status": "success", "data": udp_data}
-            else:
-                error_info = get_vpn_error_for_test(
-                    bench_dir, vpn_dir.name, run_alias, "udp_iperf3.json"
-                )
-                if error_info:
-                    udp_comparison[vpn_dir.name] = {
-                        "status": "error",
-                        "error_type": error_info["error_type"],
-                        "error": error_info["error"],
-                        "machine": error_info["machine"],
-                    }
-
-        if udp_comparison:
-            save_bench_report(run_comparison_dir, udp_comparison, "udp_iperf3.json")
-            check_duration_consistency(udp_comparison, "UDP iperf3")
-            success_count = sum(
-                1 for v in udp_comparison.values() if v.get("status") == "success"
-            )
-            error_count = len(udp_comparison) - success_count
-            log.info(
-                f"  Saved UDP iperf3 comparison ({success_count} success, {error_count} errors)"
-            )
-
-        # Aggregate Nix Cache data (including errors)
-        nix_cache_comparison: dict[str, Any] = {}
-        for vpn_dir in vpn_dirs:
-            nix_cache_data = aggregate_nix_cache_data(
-                bench_dir, vpn_dir.name, run_alias
-            )
-            if nix_cache_data:
-                nix_cache_comparison[vpn_dir.name] = {
-                    "status": "success",
-                    "data": nix_cache_data,
-                }
-            else:
-                error_info = get_vpn_error_for_test(
-                    bench_dir, vpn_dir.name, run_alias, "nix_cache.json"
-                )
-                if error_info:
-                    nix_cache_comparison[vpn_dir.name] = {
-                        "status": "error",
-                        "error_type": error_info["error_type"],
-                        "error": error_info["error"],
-                        "machine": error_info["machine"],
-                    }
-
-        if nix_cache_comparison:
-            save_bench_report(
-                run_comparison_dir, nix_cache_comparison, "nix_cache.json"
-            )
-            success_count = sum(
-                1 for v in nix_cache_comparison.values() if v.get("status") == "success"
-            )
-            error_count = len(nix_cache_comparison) - success_count
-            log.info(
-                f"  Saved Nix Cache comparison ({success_count} success, {error_count} errors)"
-            )
-
-        # Aggregate Parallel TCP data (including errors)
-        parallel_tcp_comparison: dict[str, Any] = {}
-        for vpn_dir in vpn_dirs:
-            parallel_tcp_data = aggregate_parallel_tcp_data(
-                bench_dir, vpn_dir.name, run_alias
-            )
-            if parallel_tcp_data:
-                parallel_tcp_comparison[vpn_dir.name] = {
-                    "status": "success",
-                    "data": parallel_tcp_data,
-                }
-            else:
-                error_info = get_vpn_error_for_run_level_test(
-                    bench_dir, vpn_dir.name, run_alias, "parallel_tcp_iperf3.json"
-                )
-                if error_info:
-                    parallel_tcp_comparison[vpn_dir.name] = {
-                        "status": "error",
-                        "error_type": error_info["error_type"],
-                        "error": error_info["error"],
-                        "machine": error_info["machine"],
-                    }
-
-        if parallel_tcp_comparison:
-            save_bench_report(
-                run_comparison_dir, parallel_tcp_comparison, "parallel_tcp_iperf3.json"
-            )
-            check_duration_consistency(parallel_tcp_comparison, "Parallel TCP iperf3")
-            success_count = sum(
-                1
-                for v in parallel_tcp_comparison.values()
-                if v.get("status") == "success"
-            )
-            error_count = len(parallel_tcp_comparison) - success_count
-            log.info(
-                f"  Saved Parallel TCP comparison ({success_count} success, {error_count} errors)"
-            )
+        comparisons = {
+            key: build_and_save_test_comparison(bench_dir, vpn_dirs, run_alias, spec)
+            for key, spec in TEST_SPECS.items()
+        }
 
         # Aggregate timing data
         timing_comparison: dict[str, Any] = {}
@@ -2570,13 +2530,7 @@ def generate_comparison_data(bench_dir: Path, clan_dir: Path | None = None) -> N
                 bench_dir,
                 vpn_dir.name,
                 run_alias,
-                tcp_comparison,
-                udp_comparison,
-                ping_comparison,
-                qperf_comparison,
-                rist_comparison,
-                nix_cache_comparison,
-                parallel_tcp_comparison,
+                comparisons,
             )
             if stats:
                 benchmark_stats[vpn_dir.name] = {
