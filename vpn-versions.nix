@@ -54,6 +54,22 @@ let
     else
       throw "vpn-versions.nix: no file URL for input type ${locked.type}";
 
+  # Fails when a package claims a release its pinned source does not carry. A describe that is
+  # only the short rev names no release, so nothing is checked. nixpkgs' `-unstable-<date>`
+  # suffix marks commits after the release it follows.
+  checkPkgVersion =
+    input: rev: describeValue:
+    let
+      pkg = component.${input}.pkg;
+      release = builtins.head (lib.splitString "-unstable-" pkg.version);
+      tag = lib.removePrefix "v" (builtins.head (lib.splitString "+" describeValue));
+      untagged = lib.hasPrefix describeValue rev;
+    in
+    if pkg == null || !(pkg ? version) || untagged || lib.hasSuffix release tag then
+      describeValue
+    else
+      throw "vpn-versions.nix: package of input ${input} says version ${pkg.version}, but its pinned rev ${rev} is ${describeValue}";
+
   inputVersion =
     input:
     let
@@ -62,9 +78,10 @@ let
     {
       inherit input;
       inherit (locked) rev;
-      version =
+      version = checkPkgVersion input locked.rev (
         describe.${locked.rev}
-          or (throw "vpn-versions.nix: add the git describe of ${input} ${locked.rev} to `describe`");
+          or (throw "vpn-versions.nix: add the git describe of ${input} ${locked.rev} to `describe`")
+      );
       url = sourceUrl locked;
     };
 
