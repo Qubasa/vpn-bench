@@ -26,6 +26,7 @@ let
     "27047635f237d1f3e0b08c0f487674757f30d2f7" = "v1.104.4";
     "fc5c3ec22090b5b2a0f274e863651fe9ca489bf4" = "1.16.2";
     "2872934d005dce7fbcc30e5e57f7c435c4203147" = "v0.1.0+69";
+    "f5902acab6dd2f1a68bf6e4c89e352ed71f93698" = "cjdns-v22.3";
   };
 
   sourceUrl =
@@ -113,6 +114,10 @@ let
 
   # Source tree and the package whose build inputs are its dependencies.
   component = {
+    cjdns = {
+      src = inputs.cjdns;
+      pkg = pkgsX86.cjdns;
+    };
     easytier = {
       src = inputs.easytier;
       pkg = pkgsX86.easytier;
@@ -225,6 +230,7 @@ let
 
   # Components of each VPN, the one carrying the traffic first.
   components = {
+    Cjdns = [ "cjdns" ];
     Easytier = [ "easytier" ];
     Headscale = [
       "tailscale"

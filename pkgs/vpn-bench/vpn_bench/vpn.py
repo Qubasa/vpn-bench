@@ -381,6 +381,19 @@ def install_yip(config: Config, tr_machines: list[TrMachine]) -> None:
     inventory_store.write(inventory, message="Add yip configuration")
 
 
+def install_cjdns(config: Config, tr_machines: list[TrMachine]) -> None:
+    inventory_store = InventoryStore(Flake(str(config.clan_dir)))
+    inventory = inventory_store.read()
+    conf: dict[str, Any] = {
+        "module": {"name": "cjdns", "input": "cvpn-bench"},
+        "roles": {
+            "peer": {"machines": _public_address_peers("cjdns", tr_machines)},
+        },
+    }
+    set_value_by_path_tuple(inventory, ("instances", "cjdns"), conf)
+    inventory_store.write(inventory, message="Add cjdns configuration")
+
+
 def get_vpn_ips(
     config: Config, machines: list[Machine], vpn: VPN, tr_machines: list[TrMachine]
 ) -> list[BenchMachine]:
@@ -420,6 +433,8 @@ def get_vpn_ips(
                 vpn_ip = get_machine_var(machine, "tincr-tincr/ip").value.decode()
             case VPN.Yip:
                 vpn_ip = get_machine_var(machine, "yip-yip/ip").value.decode()
+            case VPN.Cjdns:
+                vpn_ip = get_machine_var(machine, "cjdns-cjdns/ip").value.decode()
             case VPN.Headscale:
                 # Headscale assigns IPs dynamically, query IPv6 via tailscale CLI
                 result = ssh_run(
@@ -654,6 +669,8 @@ def install_vpn(
                 install_headscale(config, tr_machines)
             case VPN.Yip:
                 install_yip(config, tr_machines)
+            case VPN.Cjdns:
+                install_cjdns(config, tr_machines)
             case VPN.Internal:
                 pass
             case _:

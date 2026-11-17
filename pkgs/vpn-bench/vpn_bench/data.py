@@ -58,6 +58,7 @@ class VPN(Enum):
     Tincr = "tincr"
     Headscale = "headscale"
     Yip = "yip"
+    Cjdns = "cjdns"
 
     @staticmethod
     def from_str(label: str) -> "VPN":
@@ -98,6 +99,8 @@ class VPN(Enum):
                 return ["/var/lib/headscale", "/var/lib/tailscale"]
             case VPN.Yip:
                 return []  # yipd keeps no state, its config lives in /run/yipd
+            case VPN.Cjdns:
+                return []  # Keys come from clan vars, config lives in /run/cjdns
             case _:
                 msg = f"Missing state directories for VPN: {self}"
                 raise NotImplementedError(msg)

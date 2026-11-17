@@ -1,0 +1,15 @@
+diff --git a/rust/cjdns_sys/src/rffi/event_loop/mod.rs b/rust/cjdns_sys/src/rffi/event_loop/mod.rs
+index 91fe210c..2869a32d 100644
+--- a/rust/cjdns_sys/src/rffi/event_loop/mod.rs
++++ b/rust/cjdns_sys/src/rffi/event_loop/mod.rs
+@@ -56,6 +56,10 @@ pub extern "C" fn Rffi_startEventLoop(event_loop: *mut RTypes_EventLoop_t) {
+     // This should be called with the c lock held because it's being called from C
+     glock::Rffi_gunlock();
+     let _ = quit_recv.blocking_recv();
++    // The caller is C code which continues to run after the loop stops (e.g. cjdroute's
++    // Configurator making one admin RPC after another), so it must get the lock back.
++    // Otherwise it races the tokio threads which deliver UDP/socket data into C.
++    glock::Rffi_glock();
+ }
+ 
+ /// Create a new EventLoop data repository.

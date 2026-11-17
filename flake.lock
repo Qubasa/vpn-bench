@@ -1,5 +1,22 @@
 {
   "nodes": {
+    "cjdns": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1765387844,
+        "narHash": "sha256-A5KPcjFrCIYhT/6W+J4Nvb1y23cAgv9M6PWcyN43st4=",
+        "owner": "cjdelisle",
+        "repo": "cjdns",
+        "rev": "f5902acab6dd2f1a68bf6e4c89e352ed71f93698",
+        "type": "github"
+      },
+      "original": {
+        "owner": "cjdelisle",
+        "ref": "cjdns-v22.3",
+        "repo": "cjdns",
+        "type": "github"
+      }
+    },
     "clan-core": {
       "inputs": {
         "data-mesher": "data-mesher",
@@ -367,6 +384,7 @@
     },
     "root": {
       "inputs": {
+        "cjdns": "cjdns",
         "clan-core": "clan-core",
         "easytier": "easytier",
         "flake-parts": "flake-parts_2",
