@@ -113,6 +113,13 @@ This will start the benchmark, with all tests and all vpns.
 vpb bench --test all --vpn all
 ```
 
+## VPN deployments
+
+[VPN_DEPLOYMENTS.md](VPN_DEPLOYMENTS.md) describes how the benchmark deploys each
+VPN: roles, discovery and relay settings, encryption, ports, how each machine's
+overlay IP is found, deviations from upstream defaults, and known caveats that
+affect the results.
+
 ## VPN versions
 
 No VPN is taken from nixpkgs. Each one is built from its upstream repository,

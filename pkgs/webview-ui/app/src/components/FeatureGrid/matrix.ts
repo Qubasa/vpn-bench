@@ -104,24 +104,24 @@ export const percent = (score: Score): number =>
   Math.round((score.points * 100) / score.total);
 
 /** ✓ = 1, ◐ = 0.5, ✗ = 0; N/A and ? leave the denominator. */
+export const scoreCells = (cells: Iterable<Cell>): Score => {
+  const score = { points: 0, total: 0 };
+  for (const cell of cells) {
+    const points = POINTS[cell];
+    if (points !== undefined) {
+      score.points += points;
+      score.total += 1;
+    }
+  }
+  return score;
+};
+
 export const scoreMatrix = (matrix: FeatureMatrix): VpnScores[] => {
   const sharedRows = [...matrix.rows.values()].filter((cells) =>
     cells.every((cell) => POINTS[cell] !== undefined),
   );
-  const tally = (
-    rowCells: Iterable<readonly Cell[]>,
-    column: number,
-  ): Score => {
-    const score = { points: 0, total: 0 };
-    for (const cells of rowCells) {
-      const points = POINTS[cells[column]];
-      if (points !== undefined) {
-        score.points += points;
-        score.total += 1;
-      }
-    }
-    return score;
-  };
+  const tally = (rowCells: Iterable<readonly Cell[]>, column: number): Score =>
+    scoreCells([...rowCells].map((cells) => cells[column]));
   return matrix.vpns.map((vpn, column) => ({
     vpn,
     categories: [...matrix.categories.values()].map((rowCells) =>

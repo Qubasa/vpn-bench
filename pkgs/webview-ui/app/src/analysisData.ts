@@ -111,13 +111,19 @@ export function getVpnCitations(
 }
 
 /**
- * Matrix columns follow the key order of the matrix analysis `revs`, which
- * `vpb analyze` writes sorted by VPN directory, the order the matrix uses.
- * Matrix row names are overview item names, At a Glance rows in bold.
+ * VPN directory of every matrix column. Matrix columns follow the key order of the
+ * matrix analysis `revs`, which `vpb analyze` writes sorted by VPN directory, the
+ * order the matrix uses.
  */
+export function matrixVpnDirs(alias: string): string[] {
+  return Object.keys(getMatrixAnalysis(alias)?.revs ?? {});
+}
+
+/** Matrix row names are overview item names, At a Glance rows in bold. */
 export function matrixCellSources(alias: string): CellSourceLookup {
-  const vpns = Object.keys(getMatrixAnalysis(alias)?.revs ?? {});
-  const columns = vpns.map((vpn) => getVpnCitations(alias, vpn));
+  const columns = matrixVpnDirs(alias).map((vpn) =>
+    getVpnCitations(alias, vpn),
+  );
   return (feature, column) => {
     const cited = columns[column];
     const citation = cited?.items[feature.replaceAll("**", "")]?.[0];
@@ -127,4 +133,21 @@ export function matrixCellSources(alias: string): CellSourceLookup {
     const url = cited.links[citation];
     return url === undefined ? undefined : { citation, url };
   };
+}
+
+/** Bold titles of the numbered or bulleted items under `## Potential Security Concerns`. */
+export function potentialSecurityConcerns(overview: string): string[] {
+  const titles: string[] = [];
+  let inSection = false;
+  for (const line of overview.split("\n")) {
+    if (line.startsWith("#")) {
+      inSection = line.trim() === "## Potential Security Concerns";
+      continue;
+    }
+    const title = /^(?:\d+\.|-) \*\*(.+?)\*\*/.exec(line)?.[1];
+    if (inSection && title !== undefined) {
+      titles.push(title.replace(/\.$/, ""));
+    }
+  }
+  return titles;
 }

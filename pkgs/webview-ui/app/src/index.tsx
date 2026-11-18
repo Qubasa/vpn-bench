@@ -52,6 +52,7 @@ import {
 } from "./analysisData";
 import { FeatureMatrixPage } from "./components/FeatureMatrixPage";
 import { HardwarePage } from "./components/HardwarePage";
+import { WhichVpnPage } from "./components/WhichVpn";
 
 export const client = new QueryClient();
 
@@ -386,6 +387,21 @@ function generateAppRouteFromGeneralData(
   ];
 }
 
+// Unpublished: the dev server shows it, `vite build` leaves it out
+function generateWhichVpnRoute(): AppRoute[] {
+  if (!import.meta.env.DEV) {
+    return [];
+  }
+  return [
+    {
+      path: "/which-vpn",
+      label: "Which VPN for … (dev)",
+      component: () => <WhichVpnPage />,
+      category: "analysis" as const,
+    },
+  ];
+}
+
 function generateCrossProfileRoute(): AppRoute[] {
   return [
     {
@@ -434,6 +450,7 @@ export const routes: AppRoute[] =
           ),
         },
         ...generateRoutesFromAllBenchData(allBenchData),
+        ...generateWhichVpnRoute(),
         ...generateAppRouteFromGeneralData(comparisonData),
         ...generateCrossProfileRoute(),
         ...generateFeatureMatrixRoute(),

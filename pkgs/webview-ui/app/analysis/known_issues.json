@@ -1,0 +1,12 @@
+{
+  "issues": [
+    {
+      "vpn": "Easytier",
+      "severity": "critical",
+      "title": "The handshake leaks a crackable network credential",
+      "summary": "The first handshake request carries an unsalted SipHash digest of the network name and secret in clear text. A captured digest can be replayed to join the network, and a weak secret can be cracked offline, which also yields the traffic keys.",
+      "checked": "v2.4.5+57 (7aba65ea) and HEAD c5d7327",
+      "source": "Master thesis, section \"EasyTier: the handshake leaks a crackable network credential\""
+    }
+  ]
+}
