@@ -2452,6 +2452,186 @@ def aggregate_benchmark_stats(
 # --- Main Generation Function ---
 
 
+# --- Per-pair results for the "Which VPN for ..." page ---
+
+# A TCP pair that moved no bytes for this long measured an outage, not a throughput
+STALL_SECONDS = 5.0
+
+type PairStatus = Literal["ok", "failed", "stalled"]
+type PairMetrics = dict[str, float]
+
+
+class PairResultDict(TypedDict):
+    """Outcome of one machine pair in one test, with its metrics if it delivered data."""
+
+    pair: str
+    status: PairStatus
+    metrics: PairMetrics
+
+
+class PairResultsDict(TypedDict):
+    """Per-pair outcomes of every test, by condition (TC profile), VPN and test."""
+
+    stall_seconds: float
+    conditions: list[str]
+    results: dict[str, dict[str, dict[str, list[PairResultDict]]]]
+
+
+def longest_silence_seconds(data: dict[str, Any]) -> float:
+    """Longest run of iperf3 intervals without a byte, in either direction."""
+    longest = 0.0
+    for direction in ("sum", "sum_bidir_reverse"):
+        silent = 0.0
+        for interval in data.get("intervals", []):
+            total = interval.get(direction)
+            if total is None:
+                continue
+            silent = silent + total["seconds"] if total["bytes"] == 0 else 0.0
+            longest = max(longest, silent)
+    return longest
+
+
+def tcp_pair_metrics(data: dict[str, Any]) -> PairMetrics | None:
+    """Mean throughput of both directions and host CPU per 100 Mbit/s moved."""
+    metrics = extract_tcp_iperf_metrics(data)
+    if metrics is None:
+        return None
+    forward = metrics["client_to_server_mbps"]["average"]
+    reverse = metrics["server_to_client_mbps"]["average"]
+    pair: PairMetrics = {"mbps": (forward + reverse) / 2}
+    cpu = data.get("vpb", {}).get("cpu")
+    if cpu:
+        host_percent = (
+            cpu["client"]["host_percent"] + cpu["server"]["host_percent"]
+        ) / 2
+        pair["host_cpu_percent_per_100_mbps"] = host_percent / (forward + reverse) * 100
+    return pair
+
+
+def _ping_pair_metrics(data: dict[str, Any]) -> PairMetrics | None:
+    return {
+        "rtt_ms": data["rtt_avg_ms"]["average"],
+        "jitter_ms": data["rtt_mdev_ms"]["average"],
+        "loss_percent": data["packet_loss_percent"]["average"],
+    }
+
+
+def _video_pair_metrics(data: dict[str, Any]) -> PairMetrics | None:
+    if not _has_rist_data(data):
+        return None
+    network = data.get("network", {})
+    return {
+        key: network[key]["average"]
+        for key in ("quality", "packets_dropped")
+        if key in network
+    }
+
+
+def _nix_cache_pair_metrics(data: dict[str, Any]) -> PairMetrics | None:
+    metrics = extract_nix_cache_metrics(data)
+    return None if metrics is None else {"seconds": metrics["mean_seconds"]["average"]}
+
+
+def _udp_pair_metrics(data: dict[str, Any]) -> PairMetrics | None:
+    return None if extract_udp_iperf_metrics(data) is None else {}
+
+
+def _qperf_pair_metrics(data: dict[str, Any]) -> PairMetrics | None:
+    return {}
+
+
+PAIR_METRICS: dict[str, Callable[[dict[str, Any]], PairMetrics | None]] = {
+    "ping": _ping_pair_metrics,
+    "qperf": _qperf_pair_metrics,
+    "video": _video_pair_metrics,
+    "tcp": tcp_pair_metrics,
+    "udp": _udp_pair_metrics,
+    "nix_cache": _nix_cache_pair_metrics,
+    "parallel_tcp": tcp_pair_metrics,
+}
+
+
+def pair_result(
+    name: str,
+    data: dict[str, Any] | None,
+    extract: Callable[[dict[str, Any]], PairMetrics | None],
+) -> PairResultDict:
+    """Classify one pair: failed without usable data, stalled on a long silence."""
+    metrics = None if data is None else extract(data)
+    if data is None or metrics is None:
+        return {"pair": name, "status": "failed", "metrics": {}}
+    stalled = longest_silence_seconds(data) >= STALL_SECONDS
+    return {"pair": name, "status": "stalled" if stalled else "ok", "metrics": metrics}
+
+
+def _success_data(loaded: LoadResult) -> dict[str, Any] | None:
+    return loaded.get("data") if loaded.get("status") == "success" else None
+
+
+def machine_pair_results(run_dir: Path, test_key: str) -> list[PairResultDict]:
+    """Results of a per-machine test, one per machine that ran it."""
+    results: list[PairResultDict] = []
+    for machine_dir in _machine_dirs(run_dir):
+        loaded = load_json_with_errors(machine_dir / TEST_SPECS[test_key].test_file)
+        if loaded is not None:
+            results.append(
+                pair_result(
+                    machine_dir.name, _success_data(loaded), PAIR_METRICS[test_key]
+                )
+            )
+    return results
+
+
+def parallel_pair_results(run_dir: Path) -> list[PairResultDict]:
+    """Results of the run-level parallel TCP test, one per concurrent pair."""
+    loaded = load_json_with_errors(run_dir / TEST_SPECS["parallel_tcp"].test_file)
+    if loaded is None:
+        return []
+    data = _success_data(loaded)
+    if data is None:
+        return [
+            {"pair": d.name, "status": "failed", "metrics": {}}
+            for d in _machine_dirs(run_dir)
+        ]
+    return [
+        pair_result(
+            f"{pair.get('source')}→{pair.get('target')}",
+            pair.get("result"),
+            PAIR_METRICS["parallel_tcp"],
+        )
+        for pair in data.get("pairs", [])
+    ]
+
+
+def generate_pair_results(
+    vpn_dirs: Sequence[Path], run_aliases: set[str]
+) -> PairResultsDict:
+    """Per-pair outcome of every test, so the UI can apply the pairwise noise rule."""
+    conditions = sort_tc_profiles(run_aliases)
+    results: dict[str, dict[str, dict[str, list[PairResultDict]]]] = {}
+    for condition in conditions:
+        by_vpn: dict[str, dict[str, list[PairResultDict]]] = {}
+        for vpn_dir in sorted(vpn_dirs):
+            run_dir = vpn_dir / condition
+            tests: dict[str, list[PairResultDict]] = {}
+            for key, spec in TEST_SPECS.items():
+                pairs = (
+                    parallel_pair_results(run_dir)
+                    if spec.is_usable is None
+                    else machine_pair_results(run_dir, key)
+                )
+                if pairs:
+                    tests[key] = pairs
+            if tests:
+                by_vpn[vpn_dir.name] = tests
+        results[condition] = by_vpn
+    return {
+        "stall_seconds": STALL_SECONDS,
+        "conditions": conditions,
+        "results": results,
+    }
+
+
 def vpn_kinds(vpn_dirs: Sequence[Path]) -> dict[str, dict[str, str]]:
     """Map each VPN directory, named after its `VPN` member, to the member's kind."""
     return {d.name: {"kind": VPN[d.name].kind.value} for d in sorted(vpn_dirs)}
@@ -2499,6 +2679,9 @@ def generate_comparison_data(bench_dir: Path, clan_dir: Path | None = None) -> N
         return
 
     save_bench_report(general_dir, vpn_kinds(vpn_dirs), "vpns.json")
+    save_bench_report(
+        general_dir, generate_pair_results(vpn_dirs, run_aliases), "pair_results.json"
+    )
 
     log.info(f"Found VPNs: {[d.name for d in vpn_dirs]}")
     log.info(f"Found run aliases: {run_aliases}")

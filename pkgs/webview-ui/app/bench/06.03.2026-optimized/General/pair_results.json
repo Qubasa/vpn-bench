@@ -1,0 +1,979 @@
+{
+    "status": "success",
+    "data": {
+        "stall_seconds": 5.0,
+        "conditions": [
+            "baseline",
+            "low_impairment",
+            "medium_impairment"
+        ],
+        "results": {
+            "baseline": {
+                "Headscale": {
+                    "ping": [
+                        {
+                            "pair": "0_lom",
+                            "status": "ok",
+                            "metrics": {
+                                "rtt_ms": 1.5403333333333333,
+                                "jitter_ms": 0.08133333333333334,
+                                "loss_percent": 0.0
+                            }
+                        },
+                        {
+                            "pair": "1_yuki",
+                            "status": "ok",
+                            "metrics": {
+                                "rtt_ms": 1.802,
+                                "jitter_ms": 0.096,
+                                "loss_percent": 0.0
+                            }
+                        },
+                        {
+                            "pair": "2_luna",
+                            "status": "ok",
+                            "metrics": {
+                                "rtt_ms": 1.5156666666666667,
+                                "jitter_ms": 0.09933333333333333,
+                                "loss_percent": 0.0
+                            }
+                        }
+                    ],
+                    "qperf": [
+                        {
+                            "pair": "0_lom",
+                            "status": "failed",
+                            "metrics": {}
+                        },
+                        {
+                            "pair": "1_yuki",
+                            "status": "failed",
+                            "metrics": {}
+                        },
+                        {
+                            "pair": "2_luna",
+                            "status": "failed",
+                            "metrics": {}
+                        }
+                    ],
+                    "video": [
+                        {
+                            "pair": "0_lom",
+                            "status": "ok",
+                            "metrics": {
+                                "quality": 13.0,
+                                "packets_dropped": 288.5806451612903
+                            }
+                        },
+                        {
+                            "pair": "1_yuki",
+                            "status": "ok",
+                            "metrics": {
+                                "quality": 13.064516129032258,
+                                "packets_dropped": 288.83870967741933
+                            }
+                        },
+                        {
+                            "pair": "2_luna",
+                            "status": "ok",
+                            "metrics": {
+                                "quality": 13.129032258064516,
+                                "packets_dropped": 288.64516129032256
+                            }
+                        }
+                    ],
+                    "tcp": [
+                        {
+                            "pair": "0_lom",
+                            "status": "ok",
+                            "metrics": {
+                                "mbps": 812.8087555431771
+                            }
+                        },
+                        {
+                            "pair": "1_yuki",
+                            "status": "ok",
+                            "metrics": {
+                                "mbps": 818.7972826505111
+                            }
+                        },
+                        {
+                            "pair": "2_luna",
+                            "status": "ok",
+                            "metrics": {
+                                "mbps": 798.5069408189336
+                            }
+                        }
+                    ],
+                    "udp": [
+                        {
+                            "pair": "0_lom",
+                            "status": "ok",
+                            "metrics": {}
+                        },
+                        {
+                            "pair": "1_yuki",
+                            "status": "ok",
+                            "metrics": {}
+                        },
+                        {
+                            "pair": "2_luna",
+                            "status": "ok",
+                            "metrics": {}
+                        }
+                    ],
+                    "nix_cache": [
+                        {
+                            "pair": "0_lom",
+                            "status": "ok",
+                            "metrics": {
+                                "seconds": 10.0151487701
+                            }
+                        },
+                        {
+                            "pair": "1_yuki",
+                            "status": "ok",
+                            "metrics": {
+                                "seconds": 9.405426592240001
+                            }
+                        },
+                        {
+                            "pair": "2_luna",
+                            "status": "ok",
+                            "metrics": {
+                                "seconds": 9.690146134
+                            }
+                        }
+                    ],
+                    "parallel_tcp": [
+                        {
+                            "pair": "lom\u2192yuki",
+                            "status": "ok",
+                            "metrics": {
+                                "mbps": 405.0460483255888
+                            }
+                        },
+                        {
+                            "pair": "luna\u2192lom",
+                            "status": "ok",
+                            "metrics": {
+                                "mbps": 405.4976310609248
+                            }
+                        },
+                        {
+                            "pair": "yuki\u2192luna",
+                            "status": "ok",
+                            "metrics": {
+                                "mbps": 402.4117873972382
+                            }
+                        }
+                    ]
+                },
+                "Internal": {
+                    "ping": [
+                        {
+                            "pair": "0_lom",
+                            "status": "ok",
+                            "metrics": {
+                                "rtt_ms": 0.5616666666666666,
+                                "jitter_ms": 0.036,
+                                "loss_percent": 0.0
+                            }
+                        },
+                        {
+                            "pair": "1_yuki",
+                            "status": "ok",
+                            "metrics": {
+                                "rtt_ms": 0.7083333333333333,
+                                "jitter_ms": 0.062,
+                                "loss_percent": 0.0
+                            }
+                        },
+                        {
+                            "pair": "2_luna",
+                            "status": "ok",
+                            "metrics": {
+                                "rtt_ms": 0.517,
+                                "jitter_ms": 0.043666666666666666,
+                                "loss_percent": 0.0
+                            }
+                        }
+                    ],
+                    "qperf": [
+                        {
+                            "pair": "0_lom",
+                            "status": "ok",
+                            "metrics": {}
+                        },
+                        {
+                            "pair": "1_yuki",
+                            "status": "ok",
+                            "metrics": {}
+                        },
+                        {
+                            "pair": "2_luna",
+                            "status": "ok",
+                            "metrics": {}
+                        }
+                    ],
+                    "video": [
+                        {
+                            "pair": "0_lom",
+                            "status": "ok",
+                            "metrics": {
+                                "quality": 100.0,
+                                "packets_dropped": 0.0
+                            }
+                        },
+                        {
+                            "pair": "1_yuki",
+                            "status": "ok",
+                            "metrics": {
+                                "quality": 100.0,
+                                "packets_dropped": 0.0
+                            }
+                        },
+                        {
+                            "pair": "2_luna",
+                            "status": "ok",
+                            "metrics": {
+                                "quality": 100.0,
+                                "packets_dropped": 0.0
+                            }
+                        }
+                    ],
+                    "tcp": [
+                        {
+                            "pair": "0_lom",
+                            "status": "ok",
+                            "metrics": {
+                                "mbps": 935.0382921173828
+                            }
+                        },
+                        {
+                            "pair": "1_yuki",
+                            "status": "ok",
+                            "metrics": {
+                                "mbps": 930.9706549588826
+                            }
+                        },
+                        {
+                            "pair": "2_luna",
+                            "status": "ok",
+                            "metrics": {
+                                "mbps": 935.1382159161107
+                            }
+                        }
+                    ],
+                    "udp": [
+                        {
+                            "pair": "0_lom",
+                            "status": "ok",
+                            "metrics": {}
+                        },
+                        {
+                            "pair": "1_yuki",
+                            "status": "ok",
+                            "metrics": {}
+                        },
+                        {
+                            "pair": "2_luna",
+                            "status": "ok",
+                            "metrics": {}
+                        }
+                    ],
+                    "nix_cache": [
+                        {
+                            "pair": "0_lom",
+                            "status": "ok",
+                            "metrics": {
+                                "seconds": 8.685714001460001
+                            }
+                        },
+                        {
+                            "pair": "1_yuki",
+                            "status": "ok",
+                            "metrics": {
+                                "seconds": 8.53213121938
+                            }
+                        },
+                        {
+                            "pair": "2_luna",
+                            "status": "ok",
+                            "metrics": {
+                                "seconds": 8.5819894039
+                            }
+                        }
+                    ],
+                    "parallel_tcp": [
+                        {
+                            "pair": "luna\u2192lom",
+                            "status": "ok",
+                            "metrics": {
+                                "mbps": 466.9396849352488
+                            }
+                        },
+                        {
+                            "pair": "yuki\u2192luna",
+                            "status": "ok",
+                            "metrics": {
+                                "mbps": 464.04583190748775
+                            }
+                        },
+                        {
+                            "pair": "lom\u2192yuki",
+                            "status": "ok",
+                            "metrics": {
+                                "mbps": 465.65511475754215
+                            }
+                        }
+                    ]
+                }
+            },
+            "low_impairment": {
+                "Headscale": {
+                    "ping": [
+                        {
+                            "pair": "0_lom",
+                            "status": "ok",
+                            "metrics": {
+                                "rtt_ms": 5.703,
+                                "jitter_ms": 1.5786666666666667,
+                                "loss_percent": 0.3333333333333333
+                            }
+                        },
+                        {
+                            "pair": "1_yuki",
+                            "status": "ok",
+                            "metrics": {
+                                "rtt_ms": 5.876,
+                                "jitter_ms": 1.6203333333333334,
+                                "loss_percent": 2.0
+                            }
+                        },
+                        {
+                            "pair": "2_luna",
+                            "status": "ok",
+                            "metrics": {
+                                "rtt_ms": 5.621333333333333,
+                                "jitter_ms": 1.6,
+                                "loss_percent": 0.3333333333333333
+                            }
+                        }
+                    ],
+                    "qperf": [
+                        {
+                            "pair": "0_lom",
+                            "status": "failed",
+                            "metrics": {}
+                        },
+                        {
+                            "pair": "1_yuki",
+                            "status": "failed",
+                            "metrics": {}
+                        },
+                        {
+                            "pair": "2_luna",
+                            "status": "failed",
+                            "metrics": {}
+                        }
+                    ],
+                    "video": [
+                        {
+                            "pair": "0_lom",
+                            "status": "ok",
+                            "metrics": {
+                                "quality": 12.96774193548387,
+                                "packets_dropped": 288.61290322580646
+                            }
+                        },
+                        {
+                            "pair": "1_yuki",
+                            "status": "ok",
+                            "metrics": {
+                                "quality": 13.03225806451613,
+                                "packets_dropped": 288.51612903225805
+                            }
+                        },
+                        {
+                            "pair": "2_luna",
+                            "status": "ok",
+                            "metrics": {
+                                "quality": 13.0,
+                                "packets_dropped": 288.4516129032258
+                            }
+                        }
+                    ],
+                    "tcp": [
+                        {
+                            "pair": "0_lom",
+                            "status": "ok",
+                            "metrics": {
+                                "mbps": 263.7802517730704
+                            }
+                        },
+                        {
+                            "pair": "1_yuki",
+                            "status": "ok",
+                            "metrics": {
+                                "mbps": 277.6782578813551
+                            }
+                        },
+                        {
+                            "pair": "2_luna",
+                            "status": "ok",
+                            "metrics": {
+                                "mbps": 227.5868766594891
+                            }
+                        }
+                    ],
+                    "udp": [
+                        {
+                            "pair": "0_lom",
+                            "status": "failed",
+                            "metrics": {}
+                        },
+                        {
+                            "pair": "1_yuki",
+                            "status": "failed",
+                            "metrics": {}
+                        },
+                        {
+                            "pair": "2_luna",
+                            "status": "ok",
+                            "metrics": {}
+                        }
+                    ],
+                    "nix_cache": [
+                        {
+                            "pair": "0_lom",
+                            "status": "ok",
+                            "metrics": {
+                                "seconds": 13.8356413685
+                            }
+                        },
+                        {
+                            "pair": "1_yuki",
+                            "status": "ok",
+                            "metrics": {
+                                "seconds": 13.15696702802
+                            }
+                        },
+                        {
+                            "pair": "2_luna",
+                            "status": "ok",
+                            "metrics": {
+                                "seconds": 12.86979855516
+                            }
+                        }
+                    ],
+                    "parallel_tcp": [
+                        {
+                            "pair": "luna\u2192lom",
+                            "status": "ok",
+                            "metrics": {
+                                "mbps": 241.0890913425201
+                            }
+                        },
+                        {
+                            "pair": "lom\u2192yuki",
+                            "status": "ok",
+                            "metrics": {
+                                "mbps": 235.04810495116672
+                            }
+                        },
+                        {
+                            "pair": "yuki\u2192luna",
+                            "status": "ok",
+                            "metrics": {
+                                "mbps": 233.35065195140442
+                            }
+                        }
+                    ]
+                },
+                "Internal": {
+                    "ping": [
+                        {
+                            "pair": "0_lom",
+                            "status": "ok",
+                            "metrics": {
+                                "rtt_ms": 4.675333333333334,
+                                "jitter_ms": 1.5423333333333333,
+                                "loss_percent": 0.3333333333333333
+                            }
+                        },
+                        {
+                            "pair": "1_yuki",
+                            "status": "ok",
+                            "metrics": {
+                                "rtt_ms": 4.954666666666666,
+                                "jitter_ms": 1.6003333333333334,
+                                "loss_percent": 0.6666666666666666
+                            }
+                        },
+                        {
+                            "pair": "2_luna",
+                            "status": "ok",
+                            "metrics": {
+                                "rtt_ms": 4.764333333333333,
+                                "jitter_ms": 1.6066666666666667,
+                                "loss_percent": 0.0
+                            }
+                        }
+                    ],
+                    "qperf": [
+                        {
+                            "pair": "0_lom",
+                            "status": "ok",
+                            "metrics": {}
+                        },
+                        {
+                            "pair": "1_yuki",
+                            "status": "ok",
+                            "metrics": {}
+                        },
+                        {
+                            "pair": "2_luna",
+                            "status": "ok",
+                            "metrics": {}
+                        }
+                    ],
+                    "video": [
+                        {
+                            "pair": "0_lom",
+                            "status": "ok",
+                            "metrics": {
+                                "quality": 99.35483870967742,
+                                "packets_dropped": 1790.1612903225807
+                            }
+                        },
+                        {
+                            "pair": "1_yuki",
+                            "status": "ok",
+                            "metrics": {
+                                "quality": 99.19354838709677,
+                                "packets_dropped": 1790.225806451613
+                            }
+                        },
+                        {
+                            "pair": "2_luna",
+                            "status": "ok",
+                            "metrics": {
+                                "quality": 99.12903225806451,
+                                "packets_dropped": 1790.258064516129
+                            }
+                        }
+                    ],
+                    "tcp": [
+                        {
+                            "pair": "0_lom",
+                            "status": "ok",
+                            "metrics": {
+                                "mbps": 346.6557879318501
+                            }
+                        },
+                        {
+                            "pair": "1_yuki",
+                            "status": "ok",
+                            "metrics": {
+                                "mbps": 349.77266887497467
+                            }
+                        },
+                        {
+                            "pair": "2_luna",
+                            "status": "ok",
+                            "metrics": {
+                                "mbps": 357.42112912242965
+                            }
+                        }
+                    ],
+                    "udp": [
+                        {
+                            "pair": "0_lom",
+                            "status": "failed",
+                            "metrics": {}
+                        },
+                        {
+                            "pair": "1_yuki",
+                            "status": "ok",
+                            "metrics": {}
+                        },
+                        {
+                            "pair": "2_luna",
+                            "status": "ok",
+                            "metrics": {}
+                        }
+                    ],
+                    "nix_cache": [
+                        {
+                            "pair": "0_lom",
+                            "status": "ok",
+                            "metrics": {
+                                "seconds": 11.279514125519999
+                            }
+                        },
+                        {
+                            "pair": "1_yuki",
+                            "status": "ok",
+                            "metrics": {
+                                "seconds": 11.57545187268
+                            }
+                        },
+                        {
+                            "pair": "2_luna",
+                            "status": "ok",
+                            "metrics": {
+                                "seconds": 11.41240540452
+                            }
+                        }
+                    ],
+                    "parallel_tcp": [
+                        {
+                            "pair": "luna\u2192lom",
+                            "status": "ok",
+                            "metrics": {
+                                "mbps": 286.5893813697054
+                            }
+                        },
+                        {
+                            "pair": "yuki\u2192luna",
+                            "status": "ok",
+                            "metrics": {
+                                "mbps": 288.1934279156732
+                            }
+                        },
+                        {
+                            "pair": "lom\u2192yuki",
+                            "status": "ok",
+                            "metrics": {
+                                "mbps": 319.65791123677985
+                            }
+                        }
+                    ]
+                }
+            },
+            "medium_impairment": {
+                "Headscale": {
+                    "ping": [
+                        {
+                            "pair": "0_lom",
+                            "status": "ok",
+                            "metrics": {
+                                "rtt_ms": 10.583666666666666,
+                                "jitter_ms": 5.151,
+                                "loss_percent": 1.6666666666666667
+                            }
+                        },
+                        {
+                            "pair": "1_yuki",
+                            "status": "ok",
+                            "metrics": {
+                                "rtt_ms": 10.620333333333333,
+                                "jitter_ms": 5.397666666666667,
+                                "loss_percent": 2.3333333333333335
+                            }
+                        },
+                        {
+                            "pair": "2_luna",
+                            "status": "ok",
+                            "metrics": {
+                                "rtt_ms": 10.503333333333334,
+                                "jitter_ms": 5.123333333333333,
+                                "loss_percent": 2.6666666666666665
+                            }
+                        }
+                    ],
+                    "qperf": [
+                        {
+                            "pair": "0_lom",
+                            "status": "failed",
+                            "metrics": {}
+                        },
+                        {
+                            "pair": "1_yuki",
+                            "status": "failed",
+                            "metrics": {}
+                        },
+                        {
+                            "pair": "2_luna",
+                            "status": "failed",
+                            "metrics": {}
+                        }
+                    ],
+                    "video": [
+                        {
+                            "pair": "0_lom",
+                            "status": "ok",
+                            "metrics": {
+                                "quality": 13.096774193548388,
+                                "packets_dropped": 288.48387096774195
+                            }
+                        },
+                        {
+                            "pair": "1_yuki",
+                            "status": "ok",
+                            "metrics": {
+                                "quality": 13.129032258064516,
+                                "packets_dropped": 288.6774193548387
+                            }
+                        },
+                        {
+                            "pair": "2_luna",
+                            "status": "ok",
+                            "metrics": {
+                                "quality": 13.096774193548388,
+                                "packets_dropped": 288.2258064516129
+                            }
+                        }
+                    ],
+                    "tcp": [
+                        {
+                            "pair": "0_lom",
+                            "status": "ok",
+                            "metrics": {
+                                "mbps": 55.057792105462184
+                            }
+                        },
+                        {
+                            "pair": "1_yuki",
+                            "status": "ok",
+                            "metrics": {
+                                "mbps": 50.184324012785765
+                            }
+                        },
+                        {
+                            "pair": "2_luna",
+                            "status": "ok",
+                            "metrics": {
+                                "mbps": 50.11919265498939
+                            }
+                        }
+                    ],
+                    "udp": [
+                        {
+                            "pair": "0_lom",
+                            "status": "failed",
+                            "metrics": {}
+                        },
+                        {
+                            "pair": "1_yuki",
+                            "status": "ok",
+                            "metrics": {}
+                        },
+                        {
+                            "pair": "2_luna",
+                            "status": "failed",
+                            "metrics": {}
+                        }
+                    ],
+                    "nix_cache": [
+                        {
+                            "pair": "0_lom",
+                            "status": "ok",
+                            "metrics": {
+                                "seconds": 38.41191096672
+                            }
+                        },
+                        {
+                            "pair": "1_yuki",
+                            "status": "ok",
+                            "metrics": {
+                                "seconds": 32.87762321136
+                            }
+                        },
+                        {
+                            "pair": "2_luna",
+                            "status": "ok",
+                            "metrics": {
+                                "seconds": 37.681608323300004
+                            }
+                        }
+                    ],
+                    "parallel_tcp": [
+                        {
+                            "pair": "lom\u2192yuki",
+                            "status": "ok",
+                            "metrics": {
+                                "mbps": 51.94731496253743
+                            }
+                        },
+                        {
+                            "pair": "yuki\u2192luna",
+                            "status": "ok",
+                            "metrics": {
+                                "mbps": 54.27554100983547
+                            }
+                        },
+                        {
+                            "pair": "luna\u2192lom",
+                            "status": "ok",
+                            "metrics": {
+                                "mbps": 47.74586612892605
+                            }
+                        }
+                    ]
+                },
+                "Internal": {
+                    "ping": [
+                        {
+                            "pair": "0_lom",
+                            "status": "ok",
+                            "metrics": {
+                                "rtt_ms": 9.363666666666667,
+                                "jitter_ms": 5.211333333333333,
+                                "loss_percent": 1.6666666666666667
+                            }
+                        },
+                        {
+                            "pair": "1_yuki",
+                            "status": "ok",
+                            "metrics": {
+                                "rtt_ms": 9.878666666666668,
+                                "jitter_ms": 5.066666666666666,
+                                "loss_percent": 0.6666666666666666
+                            }
+                        },
+                        {
+                            "pair": "2_luna",
+                            "status": "ok",
+                            "metrics": {
+                                "rtt_ms": 9.237666666666668,
+                                "jitter_ms": 5.199,
+                                "loss_percent": 3.3333333333333335
+                            }
+                        }
+                    ],
+                    "qperf": [
+                        {
+                            "pair": "0_lom",
+                            "status": "ok",
+                            "metrics": {}
+                        },
+                        {
+                            "pair": "1_yuki",
+                            "status": "ok",
+                            "metrics": {}
+                        },
+                        {
+                            "pair": "2_luna",
+                            "status": "ok",
+                            "metrics": {}
+                        }
+                    ],
+                    "video": [
+                        {
+                            "pair": "0_lom",
+                            "status": "ok",
+                            "metrics": {
+                                "quality": 87.80645161290323,
+                                "packets_dropped": 1790.258064516129
+                            }
+                        },
+                        {
+                            "pair": "1_yuki",
+                            "status": "ok",
+                            "metrics": {
+                                "quality": 88.96774193548387,
+                                "packets_dropped": 1790.1612903225807
+                            }
+                        },
+                        {
+                            "pair": "2_luna",
+                            "status": "ok",
+                            "metrics": {
+                                "quality": 89.16129032258064,
+                                "packets_dropped": 1790.1935483870968
+                            }
+                        }
+                    ],
+                    "tcp": [
+                        {
+                            "pair": "0_lom",
+                            "status": "ok",
+                            "metrics": {
+                                "mbps": 62.64224940915889
+                            }
+                        },
+                        {
+                            "pair": "1_yuki",
+                            "status": "ok",
+                            "metrics": {
+                                "mbps": 74.33884875168226
+                            }
+                        },
+                        {
+                            "pair": "2_luna",
+                            "status": "ok",
+                            "metrics": {
+                                "mbps": 67.92634837816539
+                            }
+                        }
+                    ],
+                    "udp": [
+                        {
+                            "pair": "0_lom",
+                            "status": "failed",
+                            "metrics": {}
+                        },
+                        {
+                            "pair": "1_yuki",
+                            "status": "failed",
+                            "metrics": {}
+                        },
+                        {
+                            "pair": "2_luna",
+                            "status": "failed",
+                            "metrics": {}
+                        }
+                    ],
+                    "nix_cache": [
+                        {
+                            "pair": "0_lom",
+                            "status": "ok",
+                            "metrics": {
+                                "seconds": 27.1658280638
+                            }
+                        },
+                        {
+                            "pair": "1_yuki",
+                            "status": "ok",
+                            "metrics": {
+                                "seconds": 31.01231269162
+                            }
+                        },
+                        {
+                            "pair": "2_luna",
+                            "status": "ok",
+                            "metrics": {
+                                "seconds": 29.212585638700002
+                            }
+                        }
+                    ],
+                    "parallel_tcp": [
+                        {
+                            "pair": "yuki\u2192luna",
+                            "status": "ok",
+                            "metrics": {
+                                "mbps": 67.0652975720082
+                            }
+                        },
+                        {
+                            "pair": "luna\u2192lom",
+                            "status": "ok",
+                            "metrics": {
+                                "mbps": 75.38594651303092
+                            }
+                        },
+                        {
+                            "pair": "lom\u2192yuki",
+                            "status": "ok",
+                            "metrics": {
+                                "mbps": 71.14614385606194
+                            }
+                        }
+                    ]
+                }
+            }
+        }
+    }
+}
