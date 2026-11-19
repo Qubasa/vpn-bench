@@ -434,6 +434,10 @@ def _vnt_address(idx: int) -> str:
     return f"10.72.0.{idx + 2}"
 
 
+def _wireguard_go_address(idx: int) -> str:
+    return f"192.168.3.{idx + 1}"
+
+
 def install_edgevpn(config: Config, tr_machines: list[TrMachine]) -> None:
     inventory_store = InventoryStore(Flake(str(config.clan_dir)))
     inventory = inventory_store.read()
@@ -485,6 +489,28 @@ def install_nylon(config: Config, tr_machines: list[TrMachine]) -> None:
     inventory_store.write(inventory, message="Add nylon configuration")
 
 
+def install_wireguard_go(config: Config, tr_machines: list[TrMachine]) -> None:
+    inventory_store = InventoryStore(Flake(str(config.clan_dir)))
+    inventory = inventory_store.read()
+    machines: dict[str, Any] = {}
+    for idx, tr_machine in enumerate(tr_machines):
+        if tr_machine["ipv4"] is None:
+            msg = "wireguard-go requires public IPv4 addresses"
+            raise VpnBenchError(msg)
+        machines[tr_machine["name"]] = {
+            "settings": {
+                "endpoint": f"{tr_machine['ipv4']}:6667",
+                "address": _wireguard_go_address(idx),
+            }
+        }
+    conf: dict[str, Any] = {
+        "module": {"name": "wireguard-go", "input": "cvpn-bench"},
+        "roles": {"mesh": {"machines": machines}},
+    }
+    set_value_by_path_tuple(inventory, ("instances", "wireguard-go"), conf)
+    inventory_store.write(inventory, message="Add wireguard-go configuration")
+
+
 def get_vpn_ips(
     config: Config, machines: list[Machine], vpn: VPN, tr_machines: list[TrMachine]
 ) -> list[BenchMachine]:
@@ -532,6 +558,8 @@ def get_vpn_ips(
                 vpn_ip = _edgevpn_address(idx)
             case VPN.Vnt:
                 vpn_ip = _vnt_address(idx)
+            case VPN.WireguardGo:
+                vpn_ip = _wireguard_go_address(idx)
             case VPN.Headscale:
                 # Headscale assigns IPs dynamically, query IPv6 via tailscale CLI
                 result = ssh_run(
@@ -784,6 +812,8 @@ def install_vpn(
                 install_vnt(config, tr_machines)
             case VPN.Nylon:
                 install_nylon(config, tr_machines)
+            case VPN.WireguardGo:
+                install_wireguard_go(config, tr_machines)
             case VPN.Internal:
                 pass
             case _:

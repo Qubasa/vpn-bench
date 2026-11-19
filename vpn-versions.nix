@@ -32,6 +32,7 @@ let
     "cde1f801a4a746b2ac63a27e4ccf6a28486fd642" = "v2.0.12";
     "84bbe73e8e3d7bb7875bbbc746f1331a6103d10f" = "v2.0.9";
     "80b2f32036f28d0debccb9c861734b19cc6bdbf9" = "v0.4.7";
+    "f333402bd9cbe0f3eeb02507bd14e23d7d639280" = "0.0.20250522";
   };
 
   sourceUrl =
@@ -183,6 +184,10 @@ let
       src = inputs.vpncloud;
       pkg = pkgsX86.vpncloud;
     };
+    wireguard-go = {
+      src = inputs.wireguard-go;
+      pkg = pkgsX86.wireguard-go;
+    };
     wireguard-tools = {
       src = inputs.wireguard-tools;
       pkg = pkgsX86.wireguard-tools;
@@ -276,6 +281,10 @@ let
     VpnCloud = [ "vpncloud" ];
     Wireguard = [
       "linux"
+      "wireguard-tools"
+    ];
+    WireguardGo = [
+      "wireguard-go"
       "wireguard-tools"
     ];
     Yggdrasil = [ "yggdrasil" ];

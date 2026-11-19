@@ -63,6 +63,7 @@ class VPN(Enum):
     Edgevpn = "edgevpn"
     Vnt = "vnt"
     Nylon = "nylon"
+    WireguardGo = "wireguard-go"
 
     @staticmethod
     def from_str(label: str) -> "VPN":
@@ -114,6 +115,8 @@ class VPN(Enum):
                 return ["/var/lib/vnt", "/var/lib/vnts"]
             case VPN.Nylon:
                 return []  # Keys come from clan vars, config lives in /run/nylon
+            case VPN.WireguardGo:
+                return []  # The TUN device and UAPI socket go away with the process
             case _:
                 msg = f"Missing state directories for VPN: {self}"
                 raise NotImplementedError(msg)
