@@ -1,0 +1,38 @@
+# Run config for the VPNs added after 03.11.2026-full-newlock:
+#   vpb bench --config new-vpns-config.toml
+#
+# Same tests and tc profiles as that run, so the results line up with the other VPNs.
+# Connection times (initial and after reboot) are measured once, at install, before the
+# first profile. How each VPN is deployed: ../../VPN_DEPLOYMENTS.md
+
+[[benchmark]]
+vpn = "edgevpn"
+tests = ["iperf3", "iperf3-parallel-tcp", "qperf", "nix-cache", "ping", "rist-stream"]
+tc_profiles = ["baseline", "low", "medium", "high", "congestion", "reorder"]
+skip_con_times = false
+
+[[benchmark]]
+vpn = "netmaker"
+tests = ["iperf3", "iperf3-parallel-tcp", "qperf", "nix-cache", "ping", "rist-stream"]
+tc_profiles = ["baseline", "low", "medium", "high", "congestion", "reorder"]
+skip_con_times = false
+
+[[benchmark]]
+vpn = "vnt"
+tests = ["iperf3", "iperf3-parallel-tcp", "qperf", "nix-cache", "ping", "rist-stream"]
+tc_profiles = ["baseline", "low", "medium", "high", "congestion", "reorder"]
+skip_con_times = false
+
+# Before every test the bench waits until nylon routes every pair directly (up to 300 s);
+# see wait_for_direct_routes in vpn_bench/bench.py.
+[[benchmark]]
+vpn = "nylon"
+tests = ["iperf3", "iperf3-parallel-tcp", "qperf", "nix-cache", "ping", "rist-stream"]
+tc_profiles = ["baseline", "low", "medium", "high", "congestion", "reorder"]
+skip_con_times = false
+
+[[benchmark]]
+vpn = "wireguard-go"
+tests = ["iperf3", "iperf3-parallel-tcp", "qperf", "nix-cache", "ping", "rist-stream"]
+tc_profiles = ["baseline", "low", "medium", "high", "congestion", "reorder"]
+skip_con_times = false
