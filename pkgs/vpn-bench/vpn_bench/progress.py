@@ -40,6 +40,7 @@ DEFAULT_OPERATION_ESTIMATES: dict[str, float] = {
     "install_vnt_config": 5.0,
     "install_nylon_config": 5.0,
     "install_wireguard-go_config": 5.0,
+    "install_netmaker_config": 5.0,
     "install_internal_config": 1.0,
     "get_vpn_ips": 30.0,
     "install_nix_cache": 10.0,

@@ -29,6 +29,8 @@ let
     "f5902acab6dd2f1a68bf6e4c89e352ed71f93698" = "cjdns-v22.3";
     "499a86f4bc4795310ead5f06ecd5907e585acef4" = "v0.83.1";
     "c242198c4dff38c68bc221f501e4edc4f418de3c" = "v0.37.0";
+    "9b0f07fd351511a89ad5cdbf67b84c4dc0285bb4" = "v1.7.0";
+    "d2948db6a7b973b365b0938ba079486a4fb54573" = "v1.7.0";
     "cde1f801a4a746b2ac63a27e4ccf6a28486fd642" = "v2.0.12";
     "84bbe73e8e3d7bb7875bbbc746f1331a6103d10f" = "v2.0.9";
     "80b2f32036f28d0debccb9c861734b19cc6bdbf9" = "v0.4.7";
@@ -156,6 +158,14 @@ let
       src = inputs.netbird;
       pkg = pkgsX86.netbird;
     };
+    netclient = {
+      src = inputs.netclient;
+      pkg = pkgsX86.netclient;
+    };
+    netmaker = {
+      src = inputs.netmaker;
+      pkg = pkgsX86.netmaker;
+    };
     nylon = {
       src = inputs.nylon;
       pkg = pkgsX86.nylon;
@@ -271,6 +281,10 @@ let
     Mycelium = [ "mycelium" ];
     Nebula = [ "nebula" ];
     Netbird = [ "netbird" ];
+    Netmaker = [
+      "netclient"
+      "netmaker"
+    ];
     Nylon = [ "nylon" ];
     Tinc = [ "tinc" ];
     Tincr = [ "tincr" ];

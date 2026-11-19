@@ -72,6 +72,14 @@
     url = "github:mudler/edgevpn/v0.37.0";
     flake = false;
   };
+  inputs.netmaker = {
+    url = "github:gravitl/netmaker/v1.7.0";
+    flake = false;
+  };
+  inputs.netclient = {
+    url = "github:gravitl/netclient/v1.7.0";
+    flake = false;
+  };
   inputs.vnt = {
     url = "github:vnt-dev/vnt/v2.0.12";
     flake = false;
@@ -164,6 +172,7 @@
         ./pkgs/vnt/flake-module.nix
         ./pkgs/nylon/flake-module.nix
         ./pkgs/wireguard-go/flake-module.nix
+        ./pkgs/netmaker/flake-module.nix
       ];
 
       flake =
@@ -267,6 +276,7 @@
           "wireguard-go" = lib.modules.importApply ./clanModules/wireguard-go {
             packages = self.packages;
           };
+          "netmaker" = lib.modules.importApply ./clanModules/netmaker { packages = self.packages; };
           "phantun" = (lib.modules.importApply ./clanModules/phantun { packages = self.packages; });
           "tcp-reorder-tune" = ./clanModules/tcp-reorder-tune;
         };

@@ -511,6 +511,31 @@ def install_wireguard_go(config: Config, tr_machines: list[TrMachine]) -> None:
     inventory_store.write(inventory, message="Add wireguard-go configuration")
 
 
+def install_netmaker(config: Config, tr_machines: list[TrMachine]) -> None:
+    inventory_store = InventoryStore(Flake(str(config.clan_dir)))
+    inventory = inventory_store.read()
+    # Every machine's public IPv4 is its static WireGuard endpoint
+    peers = _public_address_peers("Netmaker", tr_machines)
+    controller = tr_machines[0]
+    log.info(f"Setting up {controller['name']} as the netmaker controller")
+    conf: dict[str, Any] = {
+        "module": {"name": "netmaker", "input": "cvpn-bench"},
+        "roles": {
+            "controller": {
+                "machines": {
+                    controller["name"]: {
+                        "settings": {"publicAddress": controller["ipv4"]}
+                    }
+                }
+            },
+            # All machines (including the controller) are peers
+            "peer": {"machines": peers},
+        },
+    }
+    set_value_by_path_tuple(inventory, ("instances", "netmaker"), conf)
+    inventory_store.write(inventory, message="Add netmaker configuration")
+
+
 def get_vpn_ips(
     config: Config, machines: list[Machine], vpn: VPN, tr_machines: list[TrMachine]
 ) -> list[BenchMachine]:
@@ -576,6 +601,14 @@ def get_vpn_ips(
                     RunOpts(log=Log.BOTH),
                 )
                 vpn_ip = result.stdout.strip()
+            case VPN.Netmaker:
+                # The Netmaker server assigns IPs when a peer joins
+                result = ssh_run(
+                    machine_connection(machine),
+                    ["ip", "-4", "-json", "address", "show", "dev", "netmaker"],
+                    RunOpts(log=Log.BOTH),
+                )
+                vpn_ip = json.loads(result.stdout)[0]["addr_info"][0]["local"]
             case VPN.Wireguard:
                 # TODO: We hardcode the IP address here
                 # We should get it from the var
@@ -814,6 +847,8 @@ def install_vpn(
                 install_nylon(config, tr_machines)
             case VPN.WireguardGo:
                 install_wireguard_go(config, tr_machines)
+            case VPN.Netmaker:
+                install_netmaker(config, tr_machines)
             case VPN.Internal:
                 pass
             case _:
@@ -832,7 +867,7 @@ def install_vpn(
 
     # VPNs whose IPs the control server assigns at join time need a different flow:
     # deploy first, then query IPs
-    if vpn in (VPN.Headscale, VPN.Netbird):
+    if vpn in (VPN.Headscale, VPN.Netbird, VPN.Netmaker):
         # Run generators and deploy VPN machines FIRST
         with timed_op("run_generators"):
             run_generators(

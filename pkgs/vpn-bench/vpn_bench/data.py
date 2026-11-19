@@ -64,6 +64,7 @@ class VPN(Enum):
     Vnt = "vnt"
     Nylon = "nylon"
     WireguardGo = "wireguard-go"
+    Netmaker = "netmaker"
 
     @staticmethod
     def from_str(label: str) -> "VPN":
@@ -117,6 +118,9 @@ class VPN(Enum):
                 return []  # Keys come from clan vars, config lives in /run/nylon
             case VPN.WireguardGo:
                 return []  # The TUN device and UAPI socket go away with the process
+            case VPN.Netmaker:
+                # A client's registration belongs to the server's database
+                return ["/etc/netclient", "/var/lib/netmaker"]
             case _:
                 msg = f"Missing state directories for VPN: {self}"
                 raise NotImplementedError(msg)

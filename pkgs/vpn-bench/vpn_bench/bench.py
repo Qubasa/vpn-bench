@@ -105,6 +105,8 @@ def get_vpn_service_name(vpn: VPN) -> str | None:
             return "nylon.service"
         case VPN.WireguardGo:
             return "wireguard-go-wireguard-go.service"
+        case VPN.Netmaker:
+            return "netclient.service"
         case VPN.Internal | VPN.Wireguard:
             return None
 
