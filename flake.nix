@@ -68,6 +68,10 @@
     url = "github:netbirdio/netbird/v0.83.1";
     flake = false;
   };
+  inputs.edgevpn = {
+    url = "github:mudler/edgevpn/v0.37.0";
+    flake = false;
+  };
   # Official apps that live outside the VPN's repository, pinned to their last commit before
   # the benchmarked VPN commit. Only the source analysis reads them.
   inputs.wireguard-apple = {
@@ -140,6 +144,7 @@
         ./pkgs/yip/flake-module.nix
         ./pkgs/cjdns/flake-module.nix
         ./pkgs/netbird/flake-module.nix
+        ./pkgs/edgevpn/flake-module.nix
       ];
 
       flake =
@@ -237,6 +242,7 @@
           "yip" = lib.modules.importApply ./clanModules/yip { packages = self.packages; };
           "cjdns" = lib.modules.importApply ./clanModules/cjdns { packages = self.packages; };
           "netbird" = lib.modules.importApply ./clanModules/netbird { packages = self.packages; };
+          "edgevpn" = lib.modules.importApply ./clanModules/edgevpn { packages = self.packages; };
           "phantun" = (lib.modules.importApply ./clanModules/phantun { packages = self.packages; });
           "tcp-reorder-tune" = ./clanModules/tcp-reorder-tune;
         };

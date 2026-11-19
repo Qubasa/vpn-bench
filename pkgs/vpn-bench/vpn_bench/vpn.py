@@ -423,6 +423,26 @@ def install_cjdns(config: Config, tr_machines: list[TrMachine]) -> None:
     inventory_store.write(inventory, message="Add cjdns configuration")
 
 
+# Overlay addresses of the VPNs whose clan module takes them as settings, by the
+# machine's position in tr_machines. get_vpn_ips reads them back the same way.
+def _edgevpn_address(idx: int) -> str:
+    return f"10.71.0.{idx + 1}"
+
+
+def install_edgevpn(config: Config, tr_machines: list[TrMachine]) -> None:
+    inventory_store = InventoryStore(Flake(str(config.clan_dir)))
+    inventory = inventory_store.read()
+    machines = _public_address_peers("EdgeVPN", tr_machines)
+    for idx, tr_machine in enumerate(tr_machines):
+        machines[tr_machine["name"]]["settings"]["address"] = _edgevpn_address(idx)
+    conf: dict[str, Any] = {
+        "module": {"name": "edgevpn", "input": "cvpn-bench"},
+        "roles": {"peer": {"machines": machines}},
+    }
+    set_value_by_path_tuple(inventory, ("instances", "edgevpn"), conf)
+    inventory_store.write(inventory, message="Add edgevpn configuration")
+
+
 def get_vpn_ips(
     config: Config, machines: list[Machine], vpn: VPN, tr_machines: list[TrMachine]
 ) -> list[BenchMachine]:
@@ -464,6 +484,8 @@ def get_vpn_ips(
                 vpn_ip = get_machine_var(machine, "yip-yip/ip").value.decode()
             case VPN.Cjdns:
                 vpn_ip = get_machine_var(machine, "cjdns-cjdns/ip").value.decode()
+            case VPN.Edgevpn:
+                vpn_ip = _edgevpn_address(idx)
             case VPN.Headscale:
                 # Headscale assigns IPs dynamically, query IPv6 via tailscale CLI
                 result = ssh_run(
@@ -710,6 +732,8 @@ def install_vpn(
                 install_yip(config, tr_machines)
             case VPN.Cjdns:
                 install_cjdns(config, tr_machines)
+            case VPN.Edgevpn:
+                install_edgevpn(config, tr_machines)
             case VPN.Internal:
                 pass
             case _:

@@ -28,6 +28,7 @@ let
     "2872934d005dce7fbcc30e5e57f7c435c4203147" = "v0.1.0+69";
     "f5902acab6dd2f1a68bf6e4c89e352ed71f93698" = "cjdns-v22.3";
     "499a86f4bc4795310ead5f06ecd5907e585acef4" = "v0.83.1";
+    "c242198c4dff38c68bc221f501e4edc4f418de3c" = "v0.37.0";
   };
 
   sourceUrl =
@@ -122,6 +123,10 @@ let
     easytier = {
       src = inputs.easytier;
       pkg = pkgsX86.easytier;
+    };
+    edgevpn = {
+      src = inputs.edgevpn;
+      pkg = pkgsX86.edgevpn;
     };
     headscale = {
       src = inputs.headscale;
@@ -237,6 +242,7 @@ let
   components = {
     Cjdns = [ "cjdns" ];
     Easytier = [ "easytier" ];
+    Edgevpn = [ "edgevpn" ];
     Headscale = [
       "tailscale"
       "headscale"
