@@ -472,6 +472,19 @@ def install_vnt(config: Config, tr_machines: list[TrMachine]) -> None:
     inventory_store.write(inventory, message="Add vnt configuration")
 
 
+def install_nylon(config: Config, tr_machines: list[TrMachine]) -> None:
+    inventory_store = InventoryStore(Flake(str(config.clan_dir)))
+    inventory = inventory_store.read()
+    conf: dict[str, Any] = {
+        "module": {"name": "nylon", "input": "cvpn-bench"},
+        "roles": {
+            "peer": {"machines": _public_address_peers("nylon", tr_machines)},
+        },
+    }
+    set_value_by_path_tuple(inventory, ("instances", "nylon"), conf)
+    inventory_store.write(inventory, message="Add nylon configuration")
+
+
 def get_vpn_ips(
     config: Config, machines: list[Machine], vpn: VPN, tr_machines: list[TrMachine]
 ) -> list[BenchMachine]:
@@ -513,6 +526,8 @@ def get_vpn_ips(
                 vpn_ip = get_machine_var(machine, "yip-yip/ip").value.decode()
             case VPN.Cjdns:
                 vpn_ip = get_machine_var(machine, "cjdns-cjdns/ip").value.decode()
+            case VPN.Nylon:
+                vpn_ip = get_machine_var(machine, "nylon-nylon/ip").value.decode()
             case VPN.Edgevpn:
                 vpn_ip = _edgevpn_address(idx)
             case VPN.Vnt:
@@ -767,6 +782,8 @@ def install_vpn(
                 install_edgevpn(config, tr_machines)
             case VPN.Vnt:
                 install_vnt(config, tr_machines)
+            case VPN.Nylon:
+                install_nylon(config, tr_machines)
             case VPN.Internal:
                 pass
             case _:

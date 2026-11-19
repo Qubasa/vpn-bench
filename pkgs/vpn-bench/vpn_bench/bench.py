@@ -38,6 +38,12 @@ log = logging.getLogger(__name__)
 
 VPN_SETTLE_SECONDS = 80
 
+# nylon picks routes by measured latency. Until a link has 15 one-second probes its
+# metric is a fixed placeholder, so for ~15-100 s after a (re)start some pairs are
+# relayed through a third node. Tests wait up to this long for direct routes.
+NYLON_DIRECT_ROUTES_TIMEOUT_SECONDS = 300
+NYLON_ROUTES_POLL_SECONDS = 5
+
 
 def read_cvpn_bench_lock(clan_dir: Path) -> dict[str, Any]:
     """Return the locked revision of the cvpn-bench input that the clan deploys.
@@ -95,6 +101,8 @@ def get_vpn_service_name(vpn: VPN) -> str | None:
             return "edgevpn.service"
         case VPN.Vnt:
             return "vnt.service"
+        case VPN.Nylon:
+            return "nylon.service"
         case VPN.Internal | VPN.Wireguard:
             return None
 
@@ -152,6 +160,51 @@ class VpnRestartResult:
     connectivity_wait_duration_seconds: float
 
 
+def _nylon_relayed_routes(bmachine: BenchMachine) -> list[str]:
+    """Selected routes of a nylon node whose next hop is not the destination node."""
+    result = ssh_run(
+        machine_connection(bmachine.cmachine),
+        ["nylon", "status", "--interface", "nylon", "--json"],
+        RunOpts(log=Log.NONE),
+    )
+    status = json.loads(result.stdout)["status"]
+    node = status["node"]["nodeId"]
+    relayed = []
+    for route in status["routes"]["selected"]:
+        source = route["pubRoute"]["source"]
+        if source["nodeId"] not in (node, route["nh"]):
+            relayed.append(f"{source['prefix']} via {route['nh']}")
+    return relayed
+
+
+def wait_for_direct_routes(bmachines: list[BenchMachine], vpn: VPN) -> None:
+    """Wait until a VPN that may relay while it converges routes every pair directly.
+
+    Only nylon needs this. On timeout the test runs anyway, with a warning naming
+    the relayed routes, because nylon may also keep relaying by design.
+    """
+    if vpn != VPN.Nylon:
+        return
+    deadline = time.time() + NYLON_DIRECT_ROUTES_TIMEOUT_SECONDS
+    while True:
+        relayed = {
+            bmachine.cmachine.name: routes
+            for bmachine in bmachines
+            if (routes := _nylon_relayed_routes(bmachine))
+        }
+        if not relayed:
+            log.info("nylon routes every pair directly")
+            return
+        if time.time() >= deadline:
+            log.warning(
+                "nylon still relays after "
+                f"{NYLON_DIRECT_ROUTES_TIMEOUT_SECONDS}s, testing anyway: {relayed}"
+            )
+            return
+        log.info(f"Waiting for nylon to route directly, relayed: {relayed}")
+        interruptible_sleep(NYLON_ROUTES_POLL_SECONDS)
+
+
 def restart_vpn_service(bmachines: list[BenchMachine], vpn: VPN) -> VpnRestartResult:
     """Restart the VPN service on all machines, wait for connectivity, then settle.
 
@@ -205,6 +258,7 @@ def restart_vpn_service(bmachines: list[BenchMachine], vpn: VPN) -> VpnRestartRe
     connectivity_start = time.time()
     machines = [bm.cmachine for bm in bmachines]
     wait_for_vpn_connectivity(machines)
+    wait_for_direct_routes(bmachines, vpn)
     log.info(f"VPN connected, settling for {VPN_SETTLE_SECONDS}s before the next test")
     interruptible_sleep(VPN_SETTLE_SECONDS)
     connectivity_duration = time.time() - connectivity_start
@@ -657,6 +711,8 @@ def benchmark_vpn(
             with timing.operation("tc_stabilization"):
                 log.info("TC settings applied, waiting 30 seconds for stabilization")
                 time.sleep(30)
+            with timing.operation("wait_for_direct_routes"):
+                wait_for_direct_routes(bmachines, vpn)
 
             # Run benchmarks with this configuration using per-profile tests
             with timing.operation("run_tests", profile=run_config.alias):

@@ -31,6 +31,7 @@ let
     "c242198c4dff38c68bc221f501e4edc4f418de3c" = "v0.37.0";
     "cde1f801a4a746b2ac63a27e4ccf6a28486fd642" = "v2.0.12";
     "84bbe73e8e3d7bb7875bbbc746f1331a6103d10f" = "v2.0.9";
+    "80b2f32036f28d0debccb9c861734b19cc6bdbf9" = "v0.4.7";
   };
 
   sourceUrl =
@@ -154,6 +155,10 @@ let
       src = inputs.netbird;
       pkg = pkgsX86.netbird;
     };
+    nylon = {
+      src = inputs.nylon;
+      pkg = pkgsX86.nylon;
+    };
     tailscale = {
       src = inputs.tailscale;
       pkg = pkgsX86.tailscale;
@@ -261,6 +266,7 @@ let
     Mycelium = [ "mycelium" ];
     Nebula = [ "nebula" ];
     Netbird = [ "netbird" ];
+    Nylon = [ "nylon" ];
     Tinc = [ "tinc" ];
     Tincr = [ "tincr" ];
     Vnt = [
