@@ -93,6 +93,8 @@ def get_vpn_service_name(vpn: VPN) -> str | None:
             return "cjdns.service"
         case VPN.Edgevpn:
             return "edgevpn.service"
+        case VPN.Vnt:
+            return "vnt.service"
         case VPN.Internal | VPN.Wireguard:
             return None
 

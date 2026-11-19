@@ -29,6 +29,8 @@ let
     "f5902acab6dd2f1a68bf6e4c89e352ed71f93698" = "cjdns-v22.3";
     "499a86f4bc4795310ead5f06ecd5907e585acef4" = "v0.83.1";
     "c242198c4dff38c68bc221f501e4edc4f418de3c" = "v0.37.0";
+    "cde1f801a4a746b2ac63a27e4ccf6a28486fd642" = "v2.0.12";
+    "84bbe73e8e3d7bb7875bbbc746f1331a6103d10f" = "v2.0.9";
   };
 
   sourceUrl =
@@ -164,6 +166,14 @@ let
       src = inputs.tincr;
       pkg = inputs.tincr.packages.x86_64-linux.tincd;
     };
+    vnt = {
+      src = inputs.vnt;
+      pkg = pkgsX86.vnt;
+    };
+    vnts = {
+      src = inputs.vnts;
+      pkg = pkgsX86.vnts;
+    };
     vpncloud = {
       src = inputs.vpncloud;
       pkg = pkgsX86.vpncloud;
@@ -253,6 +263,10 @@ let
     Netbird = [ "netbird" ];
     Tinc = [ "tinc" ];
     Tincr = [ "tincr" ];
+    Vnt = [
+      "vnt"
+      "vnts"
+    ];
     VpnCloud = [ "vpncloud" ];
     Wireguard = [
       "linux"

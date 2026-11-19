@@ -72,6 +72,14 @@
     url = "github:mudler/edgevpn/v0.37.0";
     flake = false;
   };
+  inputs.vnt = {
+    url = "github:vnt-dev/vnt/v2.0.12";
+    flake = false;
+  };
+  inputs.vnts = {
+    url = "github:vnt-dev/vnts/v2.0.9";
+    flake = false;
+  };
   # Official apps that live outside the VPN's repository, pinned to their last commit before
   # the benchmarked VPN commit. Only the source analysis reads them.
   inputs.wireguard-apple = {
@@ -145,6 +153,7 @@
         ./pkgs/cjdns/flake-module.nix
         ./pkgs/netbird/flake-module.nix
         ./pkgs/edgevpn/flake-module.nix
+        ./pkgs/vnt/flake-module.nix
       ];
 
       flake =
@@ -243,6 +252,7 @@
           "cjdns" = lib.modules.importApply ./clanModules/cjdns { packages = self.packages; };
           "netbird" = lib.modules.importApply ./clanModules/netbird { packages = self.packages; };
           "edgevpn" = lib.modules.importApply ./clanModules/edgevpn { packages = self.packages; };
+          "vnt" = lib.modules.importApply ./clanModules/vnt { packages = self.packages; };
           "phantun" = (lib.modules.importApply ./clanModules/phantun { packages = self.packages; });
           "tcp-reorder-tune" = ./clanModules/tcp-reorder-tune;
         };

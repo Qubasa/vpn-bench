@@ -429,6 +429,11 @@ def _edgevpn_address(idx: int) -> str:
     return f"10.71.0.{idx + 1}"
 
 
+def _vnt_address(idx: int) -> str:
+    # vnts keeps 10.72.0.1 as the network's gateway address
+    return f"10.72.0.{idx + 2}"
+
+
 def install_edgevpn(config: Config, tr_machines: list[TrMachine]) -> None:
     inventory_store = InventoryStore(Flake(str(config.clan_dir)))
     inventory = inventory_store.read()
@@ -441,6 +446,30 @@ def install_edgevpn(config: Config, tr_machines: list[TrMachine]) -> None:
     }
     set_value_by_path_tuple(inventory, ("instances", "edgevpn"), conf)
     inventory_store.write(inventory, message="Add edgevpn configuration")
+
+
+def install_vnt(config: Config, tr_machines: list[TrMachine]) -> None:
+    inventory_store = InventoryStore(Flake(str(config.clan_dir)))
+    inventory = inventory_store.read()
+    peers = _public_address_peers("VNT", tr_machines)
+    for idx, tr_machine in enumerate(tr_machines):
+        peers[tr_machine["name"]]["settings"]["ip"] = _vnt_address(idx)
+    server = tr_machines[0]
+    log.info(f"Setting up {server['name']} as the vnts server")
+    conf: dict[str, Any] = {
+        "module": {"name": "vnt", "input": "cvpn-bench"},
+        "roles": {
+            "server": {
+                "machines": {
+                    server["name"]: {"settings": {"publicAddress": server["ipv4"]}}
+                }
+            },
+            # All machines (including the server) are peers
+            "peer": {"machines": peers},
+        },
+    }
+    set_value_by_path_tuple(inventory, ("instances", "vnt"), conf)
+    inventory_store.write(inventory, message="Add vnt configuration")
 
 
 def get_vpn_ips(
@@ -486,6 +515,8 @@ def get_vpn_ips(
                 vpn_ip = get_machine_var(machine, "cjdns-cjdns/ip").value.decode()
             case VPN.Edgevpn:
                 vpn_ip = _edgevpn_address(idx)
+            case VPN.Vnt:
+                vpn_ip = _vnt_address(idx)
             case VPN.Headscale:
                 # Headscale assigns IPs dynamically, query IPv6 via tailscale CLI
                 result = ssh_run(
@@ -734,6 +765,8 @@ def install_vpn(
                 install_cjdns(config, tr_machines)
             case VPN.Edgevpn:
                 install_edgevpn(config, tr_machines)
+            case VPN.Vnt:
+                install_vnt(config, tr_machines)
             case VPN.Internal:
                 pass
             case _:

@@ -61,6 +61,7 @@ class VPN(Enum):
     Yip = "yip"
     Cjdns = "cjdns"
     Edgevpn = "edgevpn"
+    Vnt = "vnt"
 
     @staticmethod
     def from_str(label: str) -> "VPN":
@@ -108,6 +109,8 @@ class VPN(Enum):
                 return []  # Keys come from clan vars, config lives in /run/cjdns
             case VPN.Edgevpn:
                 return []  # The ledger lives in memory, the identity in clan vars
+            case VPN.Vnt:
+                return ["/var/lib/vnt", "/var/lib/vnts"]
             case _:
                 msg = f"Missing state directories for VPN: {self}"
                 raise NotImplementedError(msg)
