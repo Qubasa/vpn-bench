@@ -219,13 +219,30 @@ let
   # A store path holding a symlink, so a subdirectory of an output can be linked by name.
   linkTo = name: path: pkgs.runCommand name { } "ln -s ${path} $out";
 
+  # `go mod vendor` tree of a package's modules. A proxyVendor package's goModules is a
+  # GOPROXY download cache of module zips, so it is vendored offline from that cache to
+  # get the same layout and modules.txt as a vendorHash package.
+  goVendorTree =
+    pkg:
+    if pkg.proxyVendor or false then
+      pkgs.runCommand "${pkg.pname}-${pkg.version}-go-vendor" { nativeBuildInputs = [ pkg.go ]; } ''
+        export HOME=$TMPDIR GOPATH=$TMPDIR/go GOMODCACHE=$TMPDIR/modcache GOCACHE=$TMPDIR/cache
+        export GOPROXY=file://${pkg.goModules} GOSUMDB=off GOTOOLCHAIN=local GOFLAGS=-mod=mod
+        cp -r ${pkg.src} src
+        chmod -R u+w src
+        cd src/${pkg.modRoot or "."}
+        go mod vendor -o $out
+      ''
+    else
+      pkg.goModules;
+
   # Vendored Go modules and Go standard library, vendored crates, and the unpacked
   # and patched source of every C library the package links, each with its online link.
   dependencies =
     pkg:
     lib.optionalAttrs (pkg ? goModules) {
       go-modules = {
-        path = pkg.goModules;
+        path = goVendorTree pkg;
         link.kind = "go-modules";
       };
       go-stdlib = {
