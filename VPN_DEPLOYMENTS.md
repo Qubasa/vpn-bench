@@ -417,6 +417,11 @@ Internal and Wireguard.
 - **State wiped:** `/var/lib/netbird`, `/var/lib/netbird-server` (a client's login
   belongs to the server's account).
 - **Caveats:** the control plane and relay share machine 0 with a benchmark peer.
+  qperf fails on every pair (all profiles of `17.11.2026-newvpns-newlock`). The qperf
+  server sends with UDP GSO (`-g`), and quicly sends 1280-byte UDP payloads. Over
+  IPv4 that is 1308 bytes, more than the 1280 MTU of `wt0`, and GSO segments are
+  not fragmented, so the server's `sendmsg` fails with "Message too long". QUIC
+  applications that send 1200-byte datagrams (1228 bytes over IPv4) fit.
 
 ## Yip
 
@@ -462,7 +467,12 @@ Internal and Wireguard.
 - **Deviation:** logging is off (no `logTo`) so the debug log does not flood the
   journal during benchmarks.
 - **Caveats:** the unit restarts every 1 s with no start limit, so crash loops do
-  not stop the unit.
+  not stop the unit. qperf fails on every pair (all profiles of
+  `17.11.2026-newvpns-newlock`) for the same reason as NetBird: quicly's 1280-byte
+  UDP payloads are 1328 bytes over IPv6, more than the 1304 MTU, and the GSO
+  server's `sendmsg` fails with "Message too long". Fragmented UDP without GSO
+  crosses the tunnel, and 1200-byte QUIC datagrams (1248 bytes) fit. nix-cache
+  timed out (700 s) on all three pairs under High.
 
 ## Edgevpn
 
