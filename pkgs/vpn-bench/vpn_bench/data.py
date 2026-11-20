@@ -86,7 +86,7 @@ class VPN(Enum):
         match self:
             case VPN.Internal:
                 return VpnKind.NoVpn
-            case VPN.Wireguard:
+            case VPN.Wireguard | VPN.WireguardGo:
                 return VpnKind.PointToPoint
             case (
                 VPN.Zerotier
@@ -99,6 +99,13 @@ class VPN(Enum):
                 | VPN.Tinc
                 | VPN.Tincr
                 | VPN.Headscale
+                | VPN.Netbird
+                | VPN.Yip
+                | VPN.Cjdns
+                | VPN.Edgevpn
+                | VPN.Vnt
+                | VPN.Nylon
+                | VPN.Netmaker
             ):
                 return VpnKind.Mesh
 
